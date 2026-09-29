@@ -356,9 +356,19 @@ function iniciarAuth(modo){
   renderApp();
 }
 async function cargarLocalesSiFalta(){
-  if(S.locales.length) return;
+  // Pintamos con lo que haya en caché al toque (no bloquea el primer render)
+  // y refrescamos en segundo plano — evita que la pantalla de login quede
+  // en blanco esperando una ida y vuelta a Apps Script.
+  if(!S.locales.length){
+    const cache = ls.get("localesCache","");
+    if(cache){ try{ S.locales = JSON.parse(cache); }catch(e){} }
+  }
   const r = await api("localesActivos", {});
-  if(r && r.ok) S.locales = r.locales;
+  if(r && r.ok){
+    S.locales = r.locales;
+    ls.set("localesCache", JSON.stringify(r.locales));
+    if(S.auth && S.auth.paso==="local") renderApp();
+  }
 }
 async function cargarEmpleadosDeAuth(){
   S.auth.cargando = true; renderApp();
@@ -405,7 +415,7 @@ async function authSubmit(){
     const accion = a.modo==="setup" ? "fijarLocalDispositivo" : "login";
     const payload = a.modo==="setup"
       ? { empleadoId:a.elegido.id, pin:a.pin, local:a.local }
-      : { empleadoId:a.elegido.id, pin:a.pin };
+      : { empleadoId:a.elegido.id, pin:a.pin, local:a.local };
     const r = await api(accion, payload);
     a.cargando=false;
     if(r && r.ok){
@@ -429,7 +439,7 @@ async function authSubmit(){
     const accion = a.modo==="setup" ? "fijarLocalDispositivo" : "login";
     const payload = a.modo==="setup"
       ? { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local }
-      : { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1 };
+      : { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local };
     const r = await api(accion, payload);
     a.cargando=false;
     if(r && r.ok){
@@ -454,7 +464,14 @@ function aplicarLogin(r){
   S.auth=null;
   toast("Hola, "+r.empleado.nombre.split(" ")[0]);
   reiniciarInactividad();
-  cargarDatos();
+  if(r.datos && r.datos.ok){
+    // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
+    S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
+    S.regs = r.datos.registros; S.stock = r.datos.stock;
+  } else {
+    cargarDatos();
+  }
+  iniciarPolling();
   renderApp();
 }
 function cerrarSesion(silencioso){
@@ -946,7 +963,11 @@ document.addEventListener("submit", async e=>{
    ARRANQUE
 ============================================================ */
 async function start(){
-  await cargarLocalesSiFalta();
+  if(!S.locales.length){
+    const cache = ls.get("localesCache","");
+    if(cache){ try{ S.locales = JSON.parse(cache); }catch(e){} }
+  }
+  cargarLocalesSiFalta(); // en paralelo, no bloquea el primer render
   if(S.token && S.empleado){
     S.local = S.deviceLocal || S.empleado.local || S.local;
     if(!S.local && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor") && S.locales.length) S.local=S.locales[0].nombre;

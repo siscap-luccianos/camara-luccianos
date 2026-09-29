@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.2.0";
+const BACKEND_VERSION = "1.3.0";
 
 function doPost(e) {
   let resultado;
@@ -200,7 +200,7 @@ function empleadosGestion() {
  *  - Empleado con pin_hash: valida contra el hash guardado.
  * Bloquea 5 minutos tras 5 intentos incorrectos seguidos.
  */
-function login(empleadoId, pin, pinConfirm) {
+function login(empleadoId, pin, pinConfirm, local) {
   if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
   if (!_pinValido(pin)) return { ok: false, error: "El PIN tiene que ser de 4 números." };
 
@@ -241,7 +241,7 @@ function login(empleadoId, pin, pinConfirm) {
       sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
       _auditar("pin_creado", empleadoId, nombre, "Primer PIN creado");
       const empleado = _empleadoPorId(empleadoId);
-      return { ok: true, token: _emitirToken(empleadoId), empleado: _empleadoPublico(empleado) };
+      return _resultadoLogin(empleado, local);
     }
 
     const salt = String(datos[fila][col.salt] || "");
@@ -259,10 +259,24 @@ function login(empleadoId, pin, pinConfirm) {
     sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
     sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
     const empleado = _empleadoPorId(empleadoId);
-    return { ok: true, token: _emitirToken(empleadoId), empleado: _empleadoPublico(empleado) };
+    return _resultadoLogin(empleado, local);
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Arma la respuesta del login. Si el cliente ya sabe con qué local va a
+ *  trabajar (deviceLocal fijo en la tablet, o el que se eligió en el
+ *  selector para armar la lista de "¿quién sos?"), le devolvemos también
+ *  los datos de ese local en la MISMA respuesta — así el cliente no
+ *  necesita una segunda ida y vuelta a Apps Script (que es lo que más
+ *  demora siente en este stack) para tener algo para mostrar. */
+function _resultadoLogin(empleado, local) {
+  const resultado = { ok: true, token: _emitirToken(empleado.id), empleado: _empleadoPublico(empleado) };
+  if (local && _puedeVerLocal(empleado, local)) {
+    try { resultado.datos = datos(local, empleado); } catch (err) { /* si falla, el cliente lo pide aparte */ }
+  }
+  return resultado;
 }
 
 /** Fija el local de un dispositivo (tablet). Solo un admin puede hacerlo
