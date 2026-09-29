@@ -80,7 +80,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 |---|---|
 | `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo` |
 | `Stock` | `local`, `base`, `ts`, `empleado` |
-| `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden` |
+| `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden`, `categoria`, `peso` |
 | `Locales` | `nombre`, `grupo`, `activo` |
 | `Empleados` | `id`, `nombre`, `rol`, `local`, `pin_hash`, `salt`, `activo`, `creado_por`, `creado_ts`, `intentos`, `bloqueado_hasta` |
 | `Config` | `key`, `value` (reservada para más adelante, no la usa el código todavía) |
@@ -100,6 +100,12 @@ Editá directo la hoja `Sabores` o `Locales` (agregar una fila con los mismos en
 ## Ajustar el mínimo de un sabor
 
 Directo en la hoja `Sabores`, columna `minimo` — es el número de vasquetas/baldes bajo el cual la app lo marca en rojo y lo suma al pedido sugerido. `poblarSaboresYLocales` carga 6 para vasquetas y 3 para baldes por defecto.
+
+Nombre, tipo, categoría, mínimo, peso y alta/baja de sabores también se pueden editar directo desde la app (pestaña "Sabores", solo admin) — no hace falta tocar la planilla para eso.
+
+## Peso promedio por sabor (columna `peso`)
+
+`peso` es el peso promedio en kilos de una vasqueta/balde de ese sabor. Con eso cargado, la vista de Stock muestra los kilos totales en cámara de cada sabor (cantidad × peso) y un total general. Se carga sabor por sabor desde la app (pestaña Sabores → lápiz → Editar), no hace falta tocar la planilla. En una hoja que ya existía antes de esta columna, correr `agregarColumnaPeso()` una vez desde Setup.gs para agregarla (queda en 0 — "no cargado" — hasta que se edite cada sabor).
 
 ## Dar de alta al segundo admin o supervisor (sin pasar por Setup.gs)
 

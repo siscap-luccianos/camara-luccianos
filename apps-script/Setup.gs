@@ -22,7 +22,7 @@
 const HOJAS = {
   Registros: ["id", "clienteId", "tipo", "local", "empleadoId", "empleado", "items", "total", "remito", "ts", "anulado_por", "anulado_ts", "motivo"],
   Stock: ["local", "base", "ts", "empleado"],
-  Sabores: ["id", "nombre", "tipo", "minimo", "activo", "orden", "categoria"],
+  Sabores: ["id", "nombre", "tipo", "minimo", "activo", "orden", "categoria", "peso"],
   Locales: ["nombre", "grupo", "activo"],
   Empleados: ["id", "nombre", "rol", "local", "pin_hash", "salt", "activo", "creado_por", "creado_ts", "intentos", "bloqueado_hasta"],
   Config: ["key", "value"],
@@ -151,6 +151,35 @@ function agregarColumnaCategoria() {
     completadas++;
   }
   Logger.log("Listo — categoría completada en %s sabores (los que ya la tenían no se tocaron).", completadas);
+}
+
+/** Agrega la columna "peso" (kilos promedio por vasqueta/balde de ese
+ *  sabor) a la hoja Sabores si todavía no existe, dejando en 0 (=
+ *  "no cargado todavía") los sabores que no la tengan. El peso de
+ *  cada sabor se carga después uno por uno desde la pestaña Sabores
+ *  de la app (lápiz → Editar), no hace falta tocar la planilla a
+ *  mano. Segura de re-correr: no pisa un peso ya cargado. */
+function agregarColumnaPeso() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Sabores");
+  if (!hoja) throw new Error("No existe la hoja Sabores — corré crearHojas() primero.");
+
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  let colPeso = headers.indexOf("peso");
+  if (colPeso === -1) {
+    colPeso = headers.length;
+    hoja.getRange(1, colPeso + 1).setValue("peso").setFontWeight("bold");
+  }
+
+  let completadas = 0;
+  for (let i = 1; i < datos.length; i++) {
+    if (!datos[i].some((c) => c !== "")) continue; // fila vacía
+    if (datos[i][colPeso] !== "" && datos[i][colPeso] !== undefined) continue;
+    hoja.getRange(i + 1, colPeso + 1).setValue(0);
+    completadas++;
+  }
+  Logger.log("Listo — columna peso agregada/completada en %s sabores (en 0 hasta que se cargue el peso real de cada uno).", completadas);
 }
 
 /** A diferencia de agregarColumnaCategoria() (que solo completa lo

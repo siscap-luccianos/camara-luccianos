@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.6.0";
+const BACKEND_VERSION = "1.7.0";
 
 function doPost(e) {
   let resultado;
@@ -322,7 +322,7 @@ function _datosSinCache(local, empleado) {
 
   const sabores = _leerCrudo("Sabores")
     .filter((s) => _esVerdadero(s.activo) !== false)
-    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas" }))
+    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0 }))
     .sort((a, b) => a.orden - b.orden);
 
   return { registros: registros, stock: stock, sabores: sabores };
@@ -645,6 +645,7 @@ function adminSabor(sabor, empleado) {
     const cambios = {
       nombre: sabor.nombre, tipo: sabor.tipo, minimo: Number(sabor.minimo) || 0,
       activo: sabor.activo !== false, orden: orden, categoria: sabor.categoria || "Cremas",
+      peso: Number(sabor.peso) || 0,
     };
     const r = existente ? _actualizarCrudo("Sabores", sabor.id, cambios) : _escribirCrudo("Sabores", cambios);
     if (r.ok) _auditar("admin_sabor", empleado.id, empleado.nombre, "Sabor " + r.id + " (" + sabor.nombre + ")");
@@ -664,6 +665,7 @@ function saboresAdmin(empleado) {
     .map((s) => ({
       id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0,
       orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", activo: _esVerdadero(s.activo) !== false,
+      peso: Number(s.peso) || 0,
     }))
     .sort((a, b) => a.orden - b.orden);
   return { ok: true, sabores: sabores };
