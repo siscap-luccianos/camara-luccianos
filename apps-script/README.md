@@ -107,6 +107,8 @@ Nombre, tipo, categoría, mínimo, peso y alta/baja de sabores también se puede
 
 `peso` es el peso promedio en kilos de una vasqueta/balde de ese sabor. Con eso cargado, la vista de Stock muestra los kilos totales en cámara de cada sabor (cantidad × peso) y un total general. Se carga sabor por sabor desde la app (pestaña Sabores → lápiz → Editar), no hace falta tocar la planilla. En una hoja que ya existía antes de esta columna, correr `agregarColumnaPeso()` una vez desde Setup.gs para agregarla (queda en 0 — "no cargado" — hasta que se edite cada sabor).
 
+Ya están cargados los pesos reales de 40 sabores (de los 47), sacados de la tabla dinámica del remito de Plaza Oeste — correr `cargarPesosPromedio()` una vez desde Setup.gs para aplicarlos (pisa lo que hubiera en esos ids). Los 7 que faltan (Chocolate Platino, Chocolate vegano 81%, Dulce de Leche con Brownie, Frambuesa + Avella bianca, Mascarpone, Chantilly, Vainilla) no estaban en ese remito — se cargan a mano cuando se tenga el dato.
+
 ## Contraseña por local (columna `clave` en Locales)
 
 Un candado extra para el login: al buscar y elegir un local (en una PC, o la primera vez que se configura una tablet), si ese local tiene algo cargado en la columna `clave`, la app pide esa contraseña antes de mostrar la nómina de gente para elegir quién sos. Si `clave` está vacío, no pide nada (como hasta ahora).

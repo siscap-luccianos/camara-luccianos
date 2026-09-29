@@ -182,6 +182,49 @@ function agregarColumnaPeso() {
   Logger.log("Listo — columna peso agregada/completada en %s sabores (en 0 hasta que se cargue el peso real de cada uno).", completadas);
 }
 
+/** Peso promedio real por vasqueta, sabor por sabor — sale de la
+ *  tabla dinámica "PESO POR SABOR" del remito de Plaza Oeste
+ *  (kilos ÷ cantidad de vasquetas). Por id, no por nombre, para no
+ *  depender de que el nombre en la hoja esté escrito exactamente
+ *  igual. Los sabores que no aparecen en el remito (Chocolate
+ *  Platino, Chocolate vegano 81%, Dulce de Leche con Brownie,
+ *  Frambuesa + Avella bianca, Mascarpone, Chantilly, Vainilla)
+ *  quedan sin tocar. */
+const PESO_PROMEDIO_POR_ID = {
+  1: 4.89, 2: 4.68, 3: 4.52, 4: 3.89, 5: 3.09, 6: 3.9, 7: 3.16, 8: 4.0, 9: 4.36,
+  12: 4.39, 13: 4.08, 14: 4.03, 15: 4.44, 17: 4.47, 18: 3.99, 20: 3.64, 21: 4.08,
+  22: 3.8, 23: 4.5, 24: 4.34, 25: 4.36, 26: 3.5, 27: 3.8, 28: 3.87, 30: 3.77,
+  31: 3.59, 32: 4.17, 33: 4.22, 34: 3.47, 35: 4.35, 36: 3.55, 37: 4.42, 38: 4.78,
+  39: 4.26, 40: 3.62, 41: 4.1, 42: 4.03, 43: 3.21, 44: 3.77, 45: 3.58,
+};
+
+/** Carga el peso promedio real (PESO_PROMEDIO_POR_ID) en la hoja
+ *  Sabores. Pisa cualquier valor que ya estuviera cargado en esos ids
+ *  (es la fuente de verdad del remito) — los que no están en la lista
+ *  quedan sin tocar. Corré agregarColumnaPeso() antes si la columna
+ *  todavía no existe. */
+function cargarPesosPromedio() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Sabores");
+  if (!hoja) throw new Error("No existe la hoja Sabores — corré crearHojas() primero.");
+
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const colPeso = headers.indexOf("peso");
+  if (colPeso === -1) throw new Error("Falta la columna peso — corré agregarColumnaPeso() primero.");
+  const colId = headers.indexOf("id");
+
+  let cargados = 0;
+  for (let i = 1; i < datos.length; i++) {
+    if (!datos[i].some((c) => c !== "")) continue;
+    const id = Number(datos[i][colId]);
+    if (!(id in PESO_PROMEDIO_POR_ID)) continue;
+    hoja.getRange(i + 1, colPeso + 1).setValue(PESO_PROMEDIO_POR_ID[id]);
+    cargados++;
+  }
+  Logger.log("Listo — peso promedio cargado en %s sabores.", cargados);
+}
+
 /** A diferencia de agregarColumnaCategoria() (que solo completa lo
  *  vacío), esta SOBREESCRIBE la categoría de cada sabor con el valor de
  *  SABORES_INICIALES — para cuando se corrige la propuesta inicial
