@@ -144,6 +144,7 @@ const SABORES = [
  [41,"Súper Sabayón","v"],[42,"Tiramisú","v"],[43,"Tiramisú al pistacchio","v"],[44,"Tramontana","v"],[45,"Vasubeda","v"],
  [46,"Chantilly","b"],[47,"Vainilla","b"]
 ].map(([id,n,t])=>({id:String(id),n,t}));
+const LOCALES_PADRON = {"Propios": ["Agüero CABA", "Aldrey Mar del Plata", "Alem Mar del Plata", "Alto NOA Salta", "Alto Rosario Santa Fe", "Calle Corrientes CABA", "Central Mar del Plata", "Cerro De Las Rosas Córdoba", "Constitucion Mar del Plata", "Distrito Arcos CABA", "Dot CABA", "Galerias Pacifico CABA", "Galerias Salta", "Gallegos Mar del Plata", "Guemes Mar del Plata", "La Imprenta Gran Hotel CABA", "Martinez GBA", "Nordelta Buenos Aires", "Nuevocentro Córdoba", "Obelisco CABA", "Olivos GBA", "Oroño Santa Fe", "Paso Mar del Plata", "Patio Bullrich CABA", "Peatonal Mar del Plata", "Plaza Oeste Buenos Aires", "Posadas Misiones", "Recoleta CABA", "Roma Italia", "San Miguel GBA", "Santa Fe y Parana CABA", "Shopping Abasto 2 CABA", "Shopping Abasto CABA", "Torreon Mar del Plata", "Varese Mar del Plata"], "Franquicias": ["Adrogué GBA", "Adventure USA", "Alicante España", "Almagro CABA", "American Dream USA", "Arcos del Rosedal CABA", "Av Argentina Neuquén", "Bahia Blanca Buenos Aires", "Bahia Blanca Villa Mitre Buenos Aires", "Bajo Belgrano CABA", "Barcelona España", "Barcelona The Moon España", "Barrio Norte Tucuman", "Baxar Mercado Buenos Aires", "Belgrano C CABA", "Caballito CABA", "Cabildo y Juramento CABA", "Campana Buenos Aires", "Capital Corrientes", "Carilo Buenos Aires", "Carrasco Uruguay", "Caseros GBA", "Castelar Buenos Aires", "Catamarca Catamarca", "Chacras de Coria Mendoza", "Cid Campeador CABA", "Cipolletti Rio Negro", "City Bell Buenos Aires", "Coghlan CABA", "Colegiales CABA", "Devoto CABA", "Distrito T GBA", "General Pico Buenos Aires", "Gral Roca Rio Negro", "Granada España", "Honduras CABA", "Ituzaingo GBA", "La Plata Buenos Aires", "Lanus Buenos Aires", "Las Cañitas CABA", "Las Lomitas Buenos Aires", "Libertador CABA", "Madrid España", "Madryn Chubut", "Mar de las Pampas Buenos Aires", "Málaga I España", "Málaga Uncibay III España", "Nuñez CABA", "Palermo Buenos Aires", "Palermo Chico CABA", "Palmares Mendoza", "Parque Arauco Chile", "Parque Avellaneda Shopping GBA", "Parque Leloir GBA", "Parque Rivadavia CABA", "Paseo de la Costa Neuquén", "Paseo del Angel CABA", "Peatonal Sarmiento Mendoza", "Pilar Buenos Aires", "Pilar II Buenos Aires", "Plaza Houssay CABA", "Pocitos Uruguay", "Puerto Madero CABA", "Puerto Madero Dique CABA", "Punta Carrasco Uruguay", "Punta Carretas Uruguay", "Punta del Este Uruguay", "Quilmes GBA", "Ramos Mejia GBA", "Resistencia Chaco", "Ribera Shopping Santa Fe", "San Fernando Buenos Aires", "San Nicolas Buenos Aires", "San Telmo CABA", "Santa Fe Santa Fe", "Sawgrass USA", "Shopping Mendoza", "Tandil Buenos Aires", "The Florida Mall USA", "Valencia España", "Villa del Parque CABA", "Villa Luro CABA", "Villa Urquiza CABA", "Villa Urquiza II CABA", "Vista Pueblo Buenos Aires", "Weston USA", "Yerba Buena Tucuman"]}; // fuente: padrón de Lucciano's Academy (sin inactivas)
 const MIN = 6;
 const PH_COLORS=["#8d5a3b","#b0445a","#5f7a3a","#3b5f8d","#8d3b6f","#6b4c9a"];
 
@@ -359,8 +360,15 @@ $("#fotoIn").addEventListener("change",async e=>{
 /* ---------- data ---------- */
 function renderLocales(){
   const sel=$("#local");
-  const list=S.locales.length?S.locales:(S.local?[S.local]:[]);
-  sel.innerHTML=`<option value="">Elegir…</option>`+list.map(l=>`<option ${l===S.local?"selected":""}>${esc(l)}</option>`).join("");
+  const opt=l=>`<option ${l===S.local?"selected":""}>${esc(l)}</option>`;
+  let body;
+  if(S.locales.length) body=S.locales.map(opt).join("");
+  else{
+    const todos=[].concat(...Object.values(LOCALES_PADRON));
+    body=Object.entries(LOCALES_PADRON).map(([g,ls])=>`<optgroup label="${esc(g)}">${ls.map(opt).join("")}</optgroup>`).join("")
+      +(S.local&&!todos.includes(S.local)?opt(S.local):"");
+  }
+  sel.innerHTML=`<option value="">Elegir…</option>`+body;
 }
 function setLocal(l){
   S.local=l||null; ls.set("local",S.local||""); S.cart={salida:{},ingreso:{}}; S.conteo=null; S.confirm=false;
