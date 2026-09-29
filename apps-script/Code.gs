@@ -19,7 +19,8 @@
    puebla Sabores/Locales y da de alta al primer admin).
 =============================================================== */
 
-const SESION_DURACION_MS = 8 * 60 * 60 * 1000; // 8 horas (techo del token; el cierre "a los 60s" en tablet es del lado del cliente)
+const JORNADA_INICIO_HORA = 7; // 7am
+const JORNADA_FIN_HORA = 3; // 3am del día siguiente
 const BLOQUEO_MS = 5 * 60 * 1000; // 5 minutos de bloqueo tras 5 PIN incorrectos
 const INTENTOS_MAX = 5;
 const VENTANA_ANULAR_COLABORADOR_MS = 10 * 60 * 1000; // 10 min
@@ -30,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.9.0";
+const BACKEND_VERSION = "1.9.1";
 
 function doPost(e) {
   let resultado;
@@ -110,12 +111,27 @@ function _firmar(payloadB64) {
   return Utilities.base64EncodeWebSafe(bytes);
 }
 
+/** Fin de la jornada comercial (7am a 3am del día siguiente) que
+ *  contiene el momento "desde": si ya pasaron las 3am pero todavía no
+ *  son las 7am, es la franja "muerta" entre jornadas y se toma como
+ *  parte de la jornada que recién arranca (corta a las 3am de mañana),
+ *  igual que cualquier login después de las 7am. Si todavía no son las
+ *  3am, corta hoy a las 3am (esa jornada arrancó ayer a las 7am). */
+function _finDeJornada(desde) {
+  const d = new Date(desde);
+  const limite = new Date(d.getFullYear(), d.getMonth(), d.getDate(), JORNADA_FIN_HORA, 0, 0, 0);
+  if (d.getHours() >= JORNADA_FIN_HORA) limite.setDate(limite.getDate() + 1);
+  return limite.getTime();
+}
+
 /** Token = "<payload>.<firma>", payload = base64(empleadoId|expiraUnix).
  *  No lleva rol ni local — esos se releen frescos de Empleados en CADA
  *  request, así que un reset de PIN, una baja o un cambio de rol surten
- *  efecto al toque, sin esperar a que venza el token. */
+ *  efecto al toque, sin esperar a que venza el token. Dura hasta el
+ *  cierre de la jornada comercial (7am a 3am), no un tope fijo de
+ *  horas — así nadie queda desconectado a mitad de turno. */
 function _emitirToken(empleadoId) {
-  const expira = Date.now() + SESION_DURACION_MS;
+  const expira = _finDeJornada(Date.now());
   const payloadB64 = Utilities.base64EncodeWebSafe(String(empleadoId) + "|" + expira);
   return payloadB64 + "." + _firmar(payloadB64);
 }

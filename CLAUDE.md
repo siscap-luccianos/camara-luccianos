@@ -67,7 +67,8 @@ Reglas:
 - **PIN de 4 dígitos** (no contraseña). El encargado/supervisor da de alta con nombre y apellido; en el primer ingreso el colaborador crea su PIN (dos veces). Reset → vuelve a crearlo al próximo ingreso.
 - PIN guardado como **hash con salt** (`Utilities.computeDigest` SHA-256) en el Sheet, nunca en texto plano. Validación siempre en Apps Script, nunca en el cliente.
 - **Bloqueo**: 5 PIN incorrectos → usuario bloqueado 5 minutos.
-- **Sesión**: token temporal emitido por Apps Script; en la tablet se cierra sola tras cada registro (o 60 s de inactividad). En PC dura más (p. ej. 8 hs) para supervisores/admin.
+- **Sesión**: token temporal emitido por Apps Script, vence al cierre de la jornada comercial (7am a 3am del día siguiente) — no un tope fijo de horas, así nadie queda desconectado a mitad de turno. En la tablet igual se cierra sola tras cada registro (o 60 s de inactividad), independiente del token.
+- **Contraseña por local**: candado opcional (columna `clave` en `Locales`, texto plano, la ven admin/supervisor en la planilla) que se pide al elegir el local en el login general (PC, o al configurar una tablet nueva) antes de mostrar la nómina — evita que cualquiera vea los nombres del equipo. No se pide en una tablet ya fijada ni mientras la sesión siga activa.
 - La tablet muestra solo el equipo (colaboradores, turno y encargado) del local fijado en ese dispositivo.
 - Hoja `Empleados`: `id, nombre, rol, local (vacío para admin/supervisor), pin_hash, salt, activo, creado_por, creado_ts, intentos, bloqueado_hasta`.
 
