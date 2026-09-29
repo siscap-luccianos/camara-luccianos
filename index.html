@@ -52,12 +52,18 @@ select{max-width:220px}
 .userChip button{min-height:32px;padding:0 14px;border-radius:999px;border:0;background:var(--bg);color:var(--ink);font-weight:700;font-size:.78rem}
 .userChip #editarNombre{padding:0;width:32px;font-size:.95rem;background:transparent;color:var(--header-ink)}
 .alertPill{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;background:rgba(251,231,198,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(251,231,198,.28);color:#F2C879;font-size:.82rem;font-weight:700}
-nav[role=tablist]{display:flex;gap:4px;margin-top:12px;overflow-x:auto;max-width:980px;margin-inline:auto;padding-inline:16px;border-bottom:1px solid var(--glass-line)}
-nav[role=tablist] button{position:relative;flex:1 0 auto;background:none;border:0;padding:10px 10px 12px;font-weight:700;letter-spacing:.01em;color:var(--header-muted);white-space:nowrap;transition:color .15s}
-nav[role=tablist] button::after{content:"";position:absolute;left:8px;right:8px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:linear-gradient(90deg,var(--accent),var(--accent-hover));transform:scaleX(0);transition:transform .2s ease;transform-origin:center}
-nav[role=tablist] button[aria-selected=true]{color:var(--header-ink)}
-nav[role=tablist] button[aria-selected=true]::after{transform:scaleX(1)}
-nav[role=tablist] .n{display:inline-block;min-width:19px;padding:0 5px;margin-left:5px;border-radius:10px;background:var(--alert);color:#fff;font-size:.7rem;line-height:17px}
+.bottomNav{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:9;
+  display:flex;gap:2px;padding:6px;max-width:820px;margin-inline:auto;border-radius:28px;
+  background:linear-gradient(165deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 40%),rgba(var(--header-bg-rgb),.68);
+  backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 12px 32px rgba(0,0,0,.35)}
+.bottomNav button{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  height:58px;border:0;border-radius:20px;background:transparent;color:var(--header-muted);font-size:.66rem;font-weight:700;transition:background .15s,color .15s}
+.bottomNav button svg{width:22px;height:22px;flex:none}
+.bottomNav button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.bottomNav button[aria-selected=true]{background:rgba(255,255,255,.14);color:var(--header-ink)}
+.bottomNav .n{position:absolute;top:4px;right:18%;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--alert);color:#fff;font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+.bottomNav[hidden]{display:none}
 .alertBar{margin-top:14px;background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 14px;font-weight:700;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .alertBar span{font-weight:500;color:var(--ink)}
 .note{margin-top:14px;background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;color:var(--muted)}
@@ -504,8 +510,6 @@ function renderHeader(){
   const st = S.stock!==undefined ? stockMap() : {};
   const al = S.sabores.length ? alertas(st) : [];
   const puedeElegirLocal = S.empleado.rol==="admin" || S.empleado.rol==="supervisor";
-  const tabs = [["salida","Salida"],["ingreso","Ingreso"],["stock","Stock"],["historial","Historial"]];
-  if(S.empleado.rol!=="colaborador") tabs.push(["equipo","Equipo"]);
   return `<header>
     <div class="brand">
       <div class="tit"><h1><small>Lucciano's</small>Cámara y stock</h1></div>
@@ -518,8 +522,22 @@ function renderHeader(){
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
       <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
     </div>
-    <nav role="tablist" id="tabs">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${l}${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>
   </header>`;
+}
+
+const ICONOS_TAB = {
+  salida: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>`,
+  ingreso: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>`,
+  stock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>`,
+  historial: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+  equipo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+};
+function renderNav(){
+  if(!S.local || !S.sabores.length) return "";
+  const st=stockMap(), al=alertas(st);
+  const tabs = [["salida","Salida"],["ingreso","Ingreso"],["stock","Stock"],["historial","Historial"]];
+  if(S.empleado.rol!=="colaborador") tabs.push(["equipo","Equipo"]);
+  return `<nav role="tablist" id="tabs" class="bottomNav">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
 }
 
 function renderMain(){
@@ -730,28 +748,31 @@ async function cargarGestion(){
 
 function renderBar(){
   const bar=$("#bar"); if(!bar) return; const inn=$("#barIn");
+  let visible=false;
   if(S.tab==="stock" && S.conteo){
-    bar.hidden=false;
+    visible=true;
     inn.innerHTML = S.confirm
       ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver">Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>Guardar conteo</button>`
       : `<div class="sum">Revisá los números y guardá.</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go">Guardar conteo</button>`;
-    return;
+  } else if(S.tab==="salida" || S.tab==="ingreso"){
+    const cart=S.cart[S.tab], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
+    if(tot){
+      visible=true;
+      const verbo=S.tab==="salida"?"salida":"ingreso";
+      const st=stockMap();
+      if(S.confirm){
+        const neg=S.tab==="salida"?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
+        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>`${esc(nombre(id))} ×${q}`).join(" · ")}
+          ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}</div>
+          <button class="btn ghost" id="volver">Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>Confirmar ${verbo}</button>`;
+      } else {
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}</div>
+          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go">Registrar ${verbo}</button>`;
+      }
+    }
   }
-  if(S.tab!=="salida" && S.tab!=="ingreso"){ bar.hidden=true; return }
-  const cart=S.cart[S.tab], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
-  if(!tot){ bar.hidden=true; return }
-  bar.hidden=false;
-  const verbo=S.tab==="salida"?"salida":"ingreso";
-  const st=stockMap();
-  if(S.confirm){
-    const neg=S.tab==="salida"?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
-    inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>`${esc(nombre(id))} ×${q}`).join(" · ")}
-      ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}</div>
-      <button class="btn ghost" id="volver">Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>Confirmar ${verbo}</button>`;
-  } else {
-    inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}</div>
-      <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go">Registrar ${verbo}</button>`;
-  }
+  bar.hidden=!visible;
+  const nav=$("#tabs"); if(nav) nav.hidden=visible;
 }
 
 /* ============================================================
@@ -944,7 +965,7 @@ function renderApp(){
   const m=$("#app");
   if(S.auth){ m.innerHTML = renderAuth(); return }
   if(!S.empleado){ iniciarAuth("login"); return }
-  m.innerHTML = renderHeader() + `<div class="wrap"><main id="main">${renderMain()}</main></div>` + `<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>`;
+  m.innerHTML = renderHeader() + `<div class="wrap"><main id="main">${renderMain()}</main></div>` + renderNav() + `<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>`;
   renderBar();
   if(S.offline || S.cola.length){
     const b=document.createElement("div"); b.className="offlineBadge";
