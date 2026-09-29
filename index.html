@@ -852,7 +852,7 @@ function renderBar(){
   if(S.tab==="stock" && S.conteo){
     visible=true;
     inn.innerHTML = S.confirm
-      ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver">Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>Guardar conteo</button>`
+      ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
       : `<div class="sum">Revisá los números y guardá.</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go">Guardar conteo</button>`;
   } else if(S.tab==="salida" || S.tab==="ingreso"){
     const cart=S.cart[S.tab], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
@@ -864,7 +864,7 @@ function renderBar(){
         const neg=S.tab==="salida"?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}</div>
-          <button class="btn ghost" id="volver">Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>Confirmar ${verbo}</button>`;
+          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
         inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go">Registrar ${verbo}</button>`;
@@ -963,10 +963,19 @@ async function guardarConteo(){
   }
   S.busy=false; renderApp();
 }
-async function anularMovimiento(id){
+async function conBoton(btn, fn){
+  if(!btn || btn.disabled) return;
+  const original=btn.textContent;
+  btn.disabled=true; btn.textContent="Cargando…";
+  try{ return await fn(); }
+  finally{ btn.disabled=false; btn.textContent=original; }
+}
+async function anularMovimiento(id, btn){
   const motivo = prompt("Motivo (opcional):"); if(motivo===null) return;
-  const r = await api("anular", {registroId:id, motivo});
-  if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
+  await conBoton(btn, async ()=>{
+    const r = await api("anular", {registroId:id, motivo});
+    if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
+  });
 }
 async function editarMiNombre(){
   const actual = S.empleado.nombre;
@@ -983,23 +992,29 @@ async function editarMiNombre(){
   } else toast((r&&r.error)||"No se pudo actualizar el nombre.");
 }
 function _refrescarEquipos(){ cargarEquipo(); if(S.empleado.rol==="admin") cargarGestion(); }
-async function darDeBaja(id){
+async function darDeBaja(id, btn){
   if(!confirm("¿Dar de baja a este empleado?")) return;
-  const r = await api("bajaEmpleado", {empleadoId:id});
-  if(r && r.ok){ toast("Dado de baja"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo dar de baja.");
+  await conBoton(btn, async ()=>{
+    const r = await api("bajaEmpleado", {empleadoId:id});
+    if(r && r.ok){ toast("Dado de baja"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo dar de baja.");
+  });
 }
-async function resetearPin(id){
+async function resetearPin(id, btn){
   if(!confirm("¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso.")) return;
-  const r = await api("resetPin", {empleadoId:id});
-  if(r && r.ok) toast("PIN reseteado"); else toast((r&&r.error)||"No se pudo resetear el PIN.");
+  await conBoton(btn, async ()=>{
+    const r = await api("resetPin", {empleadoId:id});
+    if(r && r.ok) toast("PIN reseteado"); else toast((r&&r.error)||"No se pudo resetear el PIN.");
+  });
 }
-async function editarNombreEmpleado(id, actual){
+async function editarNombreEmpleado(id, actual, btn){
   const nuevo = prompt("Corregí el nombre y apellido:", actual);
   if(nuevo===null) return;
   const limpio = nuevo.trim();
   if(!limpio || limpio===actual) return;
-  const r = await api("editarNombreEmpleado", {empleadoId:id, nombre:limpio});
-  if(r && r.ok){ toast("Nombre actualizado"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo editar el nombre.");
+  await conBoton(btn, async ()=>{
+    const r = await api("editarNombreEmpleado", {empleadoId:id, nombre:limpio});
+    if(r && r.ok){ toast("Nombre actualizado"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo editar el nombre.");
+  });
 }
 
 /* ============================================================
@@ -1033,15 +1048,15 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pdec){ S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-1; renderApp(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
-  if(t.dataset.anular){ await anularMovimiento(t.dataset.anular); return }
-  if(t.dataset.baja){ await darDeBaja(t.dataset.baja); return }
-  if(t.dataset.resetpin){ await resetearPin(t.dataset.resetpin); return }
-  if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual); return }
+  if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
+  if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
+  if(t.dataset.resetpin){ await resetearPin(t.dataset.resetpin, t); return }
+  if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual, t); return }
   if(t.dataset.editarSaborBtn){ S.editandoSaborId=t.dataset.editarSaborBtn; renderApp(); return }
   if(t.dataset.cancelarSabor){ S.editandoSaborId=null; renderApp(); return }
   if(t.dataset.toggleSabor){
     const s=(S.saboresAdmin||[]).find(x=>x.id===t.dataset.toggleSabor);
-    if(s) await toggleSabor(s);
+    if(s) await conBoton(t, ()=>toggleSabor(s));
     return;
   }
 
