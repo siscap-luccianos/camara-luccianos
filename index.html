@@ -263,6 +263,7 @@ async function api(accion, payload={}, timeoutMs=20000){
     });
     const data = await res.json();
     S.offline = false;
+    if(data && data.backendVersion) S.backendVersion = data.backendVersion;
     if(data && data.sesionInvalida){ cerrarSesion(true); }
     return data;
   }catch(err){
@@ -535,7 +536,7 @@ function renderHeader(){
   const puedeElegirLocal = S.empleado.rol==="admin" || S.empleado.rol==="supervisor";
   return `<header>
     <div class="brand">
-      <div class="tit"><h1><small>Lucciano's</small>Cámara y stock</h1></div>
+      <div class="tit"><h1><small>Lucciano's${S.backendVersion?` · v${esc(S.backendVersion)}`:""}</small>Cámara y stock</h1></div>
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal

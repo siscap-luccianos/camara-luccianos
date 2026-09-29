@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.8.0";
+const BACKEND_VERSION = "1.8.1";
 
 function doPost(e) {
   let resultado;
@@ -40,6 +40,7 @@ function doPost(e) {
   } catch (err) {
     resultado = { ok: false, error: String((err && err.message) || err) };
   }
+  resultado.backendVersion = BACKEND_VERSION;
   return ContentService
     .createTextOutput(JSON.stringify(resultado))
     .setMimeType(ContentService.MimeType.JSON);
