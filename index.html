@@ -12,24 +12,20 @@
   --accent:#7A3E1D; --accent-hover:#5A2B12; --accent-ink:#ffffff; --accent-soft:#F1E4D6;
   --alert:#8A1F11; --alert-soft:#F6D5CF; --warn:#6B3F00; --warn-soft:#FBE7C6;
   --ok:#24461A; --ok-soft:#E3EEDC; --plate:#ffffff;
-  --tipo-v:#7A3E1D; --tipo-b:#C68B4E;
   --header-bg:#2A1E17; --header-bg-rgb:42,30,23; --header-ink:#F5F0E8; --header-muted:#D9CBB8; --header-chip:#3D2C22;
   --surface-rgb:255,255,255; --glass-line:rgba(255,255,255,.14);
   --wa:#1E6B45; --wa-bubble:#DCF3D0; --wa-bubble-ink:#1F2A1A; --wa-panel:#ECE5DD;
   --display:"Fraunces","Georgia",serif; --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1B1611; --surface:#241D17; --ink:#F2EAE1; --muted:#B3A395; --line:#3A2F26;
-  --accent:#D9925A; --accent-hover:#E8A671; --accent-ink:#1B1611; --accent-soft:#3A2A1E;
-  --alert:#F0968A; --alert-soft:#3D211C; --warn:#E0B266; --warn-soft:#3A2C15;
-  --ok:#8FCB9E; --ok-soft:#1B3220; --plate:#F2EAE1; --tipo-b:#B57A44;
-  --wa-bubble:#204030; --wa-bubble-ink:#DCF3D0; --wa-panel:#182721;
-  --surface-rgb:36,29,23; --glass-line:rgba(255,255,255,.08); color-scheme:dark}}
+/* Tema crema siempre, sin importar el modo del sistema — a Gabi no le
+   gustaba que la app se pusiera oscura sola en dispositivos con modo
+   oscuro activado. El tema oscuro queda armado para uso manual futuro
+   (ej. un botón de "modo oscuro"), vía data-theme="dark" explícito. */
 :root[data-theme="dark"]{
   --bg:#1B1611; --surface:#241D17; --ink:#F2EAE1; --muted:#B3A395; --line:#3A2F26;
   --accent:#D9925A; --accent-hover:#E8A671; --accent-ink:#1B1611; --accent-soft:#3A2A1E;
   --alert:#F0968A; --alert-soft:#3D211C; --warn:#E0B266; --warn-soft:#3A2C15;
-  --ok:#8FCB9E; --ok-soft:#1B3220; --plate:#F2EAE1; --tipo-b:#B57A44;
+  --ok:#8FCB9E; --ok-soft:#1B3220; --plate:#F2EAE1;
   --wa-bubble:#204030; --wa-bubble-ink:#DCF3D0; --wa-panel:#182721;
   --surface-rgb:36,29,23; --glass-line:rgba(255,255,255,.08); color-scheme:dark}
 *{box-sizing:border-box}
@@ -226,7 +222,7 @@ const S = {
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{} },
-  confirm: false, remito: "", q: "", filtroTipo: "todos", soloAlerta: false, needEmp:false,
+  confirm: false, remito: "", q: "", filtroCategoria: "todas", soloAlerta: false, needEmp:false,
   conteo: null,
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
   periodoHist: ls.get("periodoHist","7"),
@@ -570,17 +566,28 @@ function renderMain(){
   return h;
 }
 
+const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
+const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche"];
+function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
+function categoriasPresentes(){
+  const set=new Set(S.sabores.map(s=>s.categoria||"Cremas"));
+  return CATEGORIAS_ORDEN.filter(c=>set.has(c)).concat([...set].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
+}
+
 function chipFiltros(){
+  const cats=categoriasPresentes();
   return `<div class="tools">
     <div class="grow"><input type="search" id="q" placeholder="Buscar sabor" value="${esc(S.q)}"></div>
-    <button class="chip" id="fVasq" aria-pressed="${S.filtroTipo==="v"}">Vasquetas</button>
-    <button class="chip" id="fBalde" aria-pressed="${S.filtroTipo==="b"}">Baldes</button>
     <button class="chip" id="soloAlerta" aria-pressed="${S.soloAlerta}">Bajo mínimo</button>
+  </div>
+  <div class="tools catChips">
+    <button class="chip" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todos</button>
+    ${cats.map(c=>`<button class="chip" data-cat="${esc(c)}" aria-pressed="${S.filtroCategoria===c}" style="${S.filtroCategoria===c?`background:${colorCategoria(c)};border-color:${colorCategoria(c)};color:#fff`:""}">${esc(c)}</button>`).join("")}
   </div>`;
 }
 function listaFiltrada(st){
   const q=S.q.trim().toLowerCase();
-  return S.sabores.filter(s=>(!q||s.nombre.toLowerCase().includes(q))&&(S.filtroTipo==="todos"||s.tipo===S.filtroTipo)&&(!S.soloAlerta||estadoSabor(s.id,st)));
+  return S.sabores.filter(s=>(!q||s.nombre.toLowerCase().includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
 }
 
 function gridSalida(st){
@@ -590,7 +597,7 @@ function gridSalida(st){
     const c=cart[s.id]||0, ed=estadoSabor(s.id,st);
     return `<div class="card${c?" sel":""}">
       <button class="pick" data-add="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
-        <span class="strip" style="background:var(--tipo-${s.tipo})"></span>
+        <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:""}
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
@@ -598,7 +605,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   ${chipFiltros()}
-  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una ${S.filtroTipo==="b"?"balde":"vasqueta"}</p>
+  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
@@ -918,8 +925,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja); return }
   if(t.dataset.resetpin){ await resetearPin(t.dataset.resetpin); return }
 
-  if(t.id==="fVasq"){ S.filtroTipo = S.filtroTipo==="v"?"todos":"v"; renderApp(); return }
-  if(t.id==="fBalde"){ S.filtroTipo = S.filtroTipo==="b"?"todos":"b"; renderApp(); return }
+  if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[S.tab]={}; renderApp(); return }
   if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
