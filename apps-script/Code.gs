@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.0.0";
+const BACKEND_VERSION = "1.1.0";
 
 function doPost(e) {
   let resultado;
@@ -460,7 +460,11 @@ function empleadosAdmin(local, empleado) {
   if (empleado.rol === "encargado") {
     filas = filas.filter((e) => String(e.local || "").trim() === String(empleado.local).trim());
   } else if (empleado.rol === "supervisor" || empleado.rol === "admin") {
-    if (local) filas = filas.filter((e) => String(e.local || "").trim() === String(local).trim());
+    // Sin local: gestión general (admins y supervisores, que no pertenecen a
+    // ningún local puntual) — nunca la nómina completa de todos los locales.
+    filas = local
+      ? filas.filter((e) => String(e.local || "").trim() === String(local).trim())
+      : filas.filter((e) => e.rol === "admin" || e.rol === "supervisor");
   } else {
     return { ok: false, error: "No tenés permiso para ver empleados." };
   }

@@ -453,6 +453,7 @@ function aplicarLogin(r){
 function cerrarSesion(silencioso){
   limpiarSesion();
   S.local = S.deviceLocal || null;
+  S.equipo = undefined; S.gestion = undefined;
   clearTimeout(S.inactTimer);
   clearInterval(S.pollTimer);
   if(!silencioso) toast("Sesión cerrada");
@@ -674,12 +675,8 @@ function histView(){
   <p class="sec">Movimientos</p>${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}`;
 }
 
-function teamView(){
-  if(S.equipo===undefined){ S.equipo=null; cargarEquipo(); }
-  if(S.equipo===null){ return `<div class="note">Cargando equipo…</div>`; }
-  const rol=S.empleado.rol;
-  const rolesQuePuedoCrear = rol==="admin"?["admin","supervisor","encargado","colaborador"]:rol==="supervisor"?["encargado","colaborador"]:rol==="encargado"?["colaborador"]:[];
-  const fila=e=>`<div class="teamRow${e.activo?"":" baja"}">
+function _teamFila(e){
+  return `<div class="teamRow${e.activo?"":" baja"}">
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
     <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
     ${e.activo?`<div class="acciones">
@@ -687,18 +684,43 @@ function teamView(){
       <button type="button" data-baja="${e.id}">Dar de baja</button>
     </div>`:""}
   </div>`;
-  return `<p class="sec">Equipo de ${esc(S.local)}</p>
-  <div class="rows">${(S.equipo||[]).length?S.equipo.map(fila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`}</div>
-  ${rolesQuePuedoCrear.length?`<p class="sec">Dar de alta</p>
-  <form class="altaForm" id="altaForm">
+}
+function teamView(){
+  if(S.equipo===undefined){ S.equipo=null; cargarEquipo(); }
+  if(S.empleado.rol==="admin" && S.gestion===undefined){ S.gestion=null; cargarGestion(); }
+  if(S.equipo===null){ return `<div class="note">Cargando equipo…</div>`; }
+  const rol=S.empleado.rol;
+  const rolesQuePuedoCrear = rol==="admin"?["encargado","colaborador"]:rol==="supervisor"?["encargado","colaborador"]:rol==="encargado"?["colaborador"]:[];
+
+  let h="";
+  if(rol==="admin"){
+    h+=`<p class="sec">Administración general</p>
+    <div class="rows">${S.gestion===null?`<div class="empty">Cargando…</div>`:(S.gestion.length?S.gestion.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
+    <p class="sec">Dar de alta un admin o supervisor</p>
+    <form class="altaForm" id="altaFormGestion">
+      <input type="text" name="nombre" placeholder="Nombre y apellido" required>
+      <select name="rol"><option value="admin">Administrador</option><option value="supervisor">Supervisor</option></select>
+      <button class="btn" type="submit">Dar de alta</button>
+    </form>`;
+  }
+  h+=`<p class="sec">Equipo de ${esc(S.local)}</p>
+  <div class="rows">${(S.equipo||[]).length?S.equipo.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`}</div>
+  ${rolesQuePuedoCrear.length?`<p class="sec">Dar de alta en ${esc(S.local)}</p>
+  <form class="altaForm" id="altaFormEquipo">
     <input type="text" name="nombre" placeholder="Nombre y apellido" required>
     <select name="rol">${rolesQuePuedoCrear.map(r=>`<option value="${r}">${esc(ROL_LABEL[r])}</option>`).join("")}</select>
     <button class="btn" type="submit">Dar de alta</button>
   </form>`:""}`;
+  return h;
 }
 async function cargarEquipo(){
   const r = await api("empleadosAdmin", {local:S.local});
   S.equipo = (r&&r.ok) ? r.empleados : [];
+  if(S.tab==="equipo") renderApp();
+}
+async function cargarGestion(){
+  const r = await api("empleadosAdmin", {local:""});
+  S.gestion = (r&&r.ok) ? r.empleados : [];
   if(S.tab==="equipo") renderApp();
 }
 
@@ -801,10 +823,11 @@ async function anularMovimiento(id){
   const r = await api("anular", {registroId:id, motivo});
   if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
 }
+function _refrescarEquipos(){ cargarEquipo(); if(S.empleado.rol==="admin") cargarGestion(); }
 async function darDeBaja(id){
   if(!confirm("¿Dar de baja a este empleado?")) return;
   const r = await api("bajaEmpleado", {empleadoId:id});
-  if(r && r.ok){ toast("Dado de baja"); cargarEquipo(); renderApp() } else toast((r&&r.error)||"No se pudo dar de baja.");
+  if(r && r.ok){ toast("Dado de baja"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo dar de baja.");
 }
 async function resetearPin(id){
   if(!confirm("¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso.")) return;
@@ -862,11 +885,15 @@ document.addEventListener("change", e=>{
   if(e.target.id==="local"){ setLocal(e.target.value) }
 });
 document.addEventListener("submit", async e=>{
-  if(e.target.id==="altaForm"){
+  if(e.target.id==="altaFormEquipo" || e.target.id==="altaFormGestion"){
     e.preventDefault();
+    const esGestion = e.target.id==="altaFormGestion";
     const fd=new FormData(e.target);
-    const r = await api("altaEmpleado", {nombre:fd.get("nombre"), rol:fd.get("rol"), local:S.local});
-    if(r && r.ok){ toast("Alta creada"); e.target.reset(); cargarEquipo(); } else toast((r&&r.error)||"No se pudo dar de alta.");
+    const r = await api("altaEmpleado", {nombre:fd.get("nombre"), rol:fd.get("rol"), local: esGestion?"":S.local});
+    if(r && r.ok){
+      toast("Alta creada"); e.target.reset();
+      if(esGestion) cargarGestion(); else cargarEquipo();
+    } else toast((r&&r.error)||"No se pudo dar de alta.");
   }
 });
 
