@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.1.0";
+const BACKEND_VERSION = "1.2.0";
 
 function doPost(e) {
   let resultado;
@@ -75,6 +75,7 @@ function _despachar(body) {
 function _despacharConSesion(accion, body, empleado) {
   switch (accion) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
+    case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
@@ -142,6 +143,21 @@ function _verificarSesion(token) {
 
 function _empleadoPublico(empleado) {
   return { id: empleado.id, nombre: empleado.nombre, rol: empleado.rol, local: empleado.local || "" };
+}
+
+/** Cualquier empleado logueado puede corregir SU PROPIO nombre (typos al
+ *  darlo de alta) — nunca el de otro, eso sigue siendo alta/edición desde
+ *  Equipo. No hace falta ningún rol especial. */
+function actualizarMiNombre(nombre, empleado) {
+  nombre = String(nombre || "").trim();
+  if (!nombre) return { ok: false, error: "El nombre no puede quedar vacío." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    return _actualizarCrudo("Empleados", empleado.id, { nombre: nombre });
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /* ============================================================

@@ -50,6 +50,7 @@ select,input[type=text],input[type=search],input[type=number],input[type=tel]{ba
 select{max-width:220px}
 .userChip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.09);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid var(--glass-line);border-radius:999px;padding:5px 6px 5px 14px;font-size:.82rem}
 .userChip button{min-height:32px;padding:0 14px;border-radius:999px;border:0;background:var(--bg);color:var(--ink);font-weight:700;font-size:.78rem}
+.userChip #editarNombre{padding:0;width:32px;font-size:.95rem;background:transparent;color:var(--header-ink)}
 .alertPill{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;background:rgba(251,231,198,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(251,231,198,.28);color:#F2C879;font-size:.82rem;font-weight:700}
 nav[role=tablist]{display:flex;gap:4px;margin-top:12px;overflow-x:auto;max-width:980px;margin-inline:auto;padding-inline:16px;border-bottom:1px solid var(--glass-line)}
 nav[role=tablist] button{position:relative;flex:1 0 auto;background:none;border:0;padding:10px 10px 12px;font-weight:700;letter-spacing:.01em;color:var(--header-muted);white-space:nowrap;transition:color .15s}
@@ -515,7 +516,7 @@ function renderHeader(){
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
-      <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="salir">Salir</button></div>
+      <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
     </div>
     <nav role="tablist" id="tabs">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${l}${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>
   </header>`;
@@ -826,6 +827,20 @@ async function anularMovimiento(id){
   const r = await api("anular", {registroId:id, motivo});
   if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
 }
+async function editarMiNombre(){
+  const actual = S.empleado.nombre;
+  const nuevo = prompt("Corregí tu nombre y apellido:", actual);
+  if(nuevo===null) return;
+  const limpio = nuevo.trim();
+  if(!limpio || limpio===actual) return;
+  const r = await api("actualizarMiNombre", {nombre:limpio});
+  if(r && r.ok){
+    S.empleado.nombre = limpio;
+    if(!S.deviceLocal) guardarSesionPC();
+    toast("Nombre actualizado");
+    renderApp();
+  } else toast((r&&r.error)||"No se pudo actualizar el nombre.");
+}
 function _refrescarEquipos(){ cargarEquipo(); if(S.empleado.rol==="admin") cargarGestion(); }
 async function darDeBaja(id){
   if(!confirm("¿Dar de baja a este empleado?")) return;
@@ -850,6 +865,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="authLocalOk"){ const v=$("#authLocal").value; if(v) authElegirLocal(v); return }
   if(t.id==="authConfigurar"){ iniciarAuth("setup"); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
+  if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; renderApp(); return }
   if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; renderApp(); return }
