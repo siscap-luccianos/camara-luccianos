@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.7.0";
+const BACKEND_VERSION = "1.8.0";
 
 function doPost(e) {
   let resultado;
@@ -84,6 +84,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "altaEmpleado": return altaEmpleado(body.nombre, body.rol, body.local, empleado);
     case "bajaEmpleado": return bajaEmpleado(body.empleadoId, empleado);
     case "resetPin": return resetPin(body.empleadoId, empleado);
+    case "editarNombreEmpleado": return editarNombreEmpleado(body.empleadoId, body.nombre, empleado);
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
     case "adminSabor": return adminSabor(body.sabor, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
@@ -183,7 +184,7 @@ function empleadosLocal(local) {
   if (!local) return { ok: false, error: "Falta el local." };
   const filas = _leerCrudo("Empleados").filter((e) =>
     _esVerdadero(e.activo) !== false &&
-    (e.rol === "colaborador" || e.rol === "encargado") &&
+    (e.rol === "colaborador" || e.rol === "encargado" || e.rol === "turno") &&
     String(e.local || "").trim() === String(local).trim());
   return { ok: true, empleados: filas.map((e) => ({ id: e.id, nombre: e.nombre, rol: e.rol })) };
 }
@@ -490,7 +491,7 @@ function anular(registroId, motivo, empleado) {
 
     let permitido = false;
     if (empleado.rol === "admin" || empleado.rol === "supervisor") permitido = true;
-    else if (empleado.rol === "encargado" && String(empleado.local) === String(local) && edad <= VENTANA_ANULAR_ENCARGADO_MS) permitido = true;
+    else if ((empleado.rol === "encargado" || empleado.rol === "turno") && String(empleado.local) === String(local) && edad <= VENTANA_ANULAR_ENCARGADO_MS) permitido = true;
     else if (empleado.rol === "colaborador" && empleadoIdDueño === String(empleado.id) && edad <= VENTANA_ANULAR_COLABORADOR_MS) permitido = true;
 
     if (!permitido) return { ok: false, error: "No tenés permiso para anular ese movimiento (o ya pasó el tiempo permitido)." };
@@ -523,7 +524,7 @@ function eliminarRegistro(registroId, empleado) {
    EMPLEADOS — alta, baja, reset de PIN (matriz de roles)
 ============================================================ */
 
-const ROLES = ["admin", "supervisor", "encargado", "colaborador"];
+const ROLES = ["admin", "supervisor", "encargado", "turno", "colaborador"];
 
 function empleadosAdmin(local, empleado) {
   let filas = _leerCrudo("Empleados");
@@ -551,16 +552,16 @@ function altaEmpleado(nombre, rol, local, empleado) {
   nombre = String(nombre || "").trim();
   if (!nombre) return { ok: false, error: "Falta el nombre y apellido." };
   if (ROLES.indexOf(rol) === -1) return { ok: false, error: "Rol inválido." };
-  if ((rol === "encargado" || rol === "colaborador") && !local) return { ok: false, error: "Falta el local." };
+  if ((rol === "encargado" || rol === "turno" || rol === "colaborador") && !local) return { ok: false, error: "Falta el local." };
 
   if (rol === "admin" || rol === "supervisor") {
     if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede crear admins o supervisores." };
   } else if (rol === "encargado") {
     if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No tenés permiso para crear encargados." };
-  } else if (rol === "colaborador") {
-    if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para crear colaboradores." };
+  } else if (rol === "turno" || rol === "colaborador") {
+    if (empleado.rol === "turno" || empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para dar de alta empleados." };
     if (empleado.rol === "encargado" && String(empleado.local) !== String(local)) {
-      return { ok: false, error: "Un encargado solo puede dar de alta colaboradores de su propio local." };
+      return { ok: false, error: "Un encargado solo puede dar de alta empleados de su propio local." };
     }
   }
 
@@ -591,7 +592,7 @@ function bajaEmpleado(empleadoId, empleado) {
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
   else if (empleado.rol === "supervisor" && objetivo.rol !== "admin") permitido = true;
-  else if (empleado.rol === "encargado" && objetivo.rol === "colaborador" && String(objetivo.local) === String(empleado.local)) permitido = true;
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno") && String(objetivo.local) === String(empleado.local)) permitido = true;
   if (!permitido) return { ok: false, error: "No tenés permiso para dar de baja a ese empleado." };
 
   const lock = LockService.getScriptLock();
@@ -612,7 +613,7 @@ function resetPin(empleadoId, empleado) {
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
   else if (empleado.rol === "supervisor") permitido = true;
-  else if (empleado.rol === "encargado" && objetivo.rol === "colaborador" && String(objetivo.local) === String(empleado.local)) permitido = true;
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno") && String(objetivo.local) === String(empleado.local)) permitido = true;
   if (!permitido) return { ok: false, error: "No tenés permiso para resetear el PIN de ese empleado." };
 
   const lock = LockService.getScriptLock();
@@ -620,6 +621,33 @@ function resetPin(empleadoId, empleado) {
   try {
     const r = _actualizarCrudo("Empleados", empleadoId, { pin_hash: "", salt: "", intentos: 0, bloqueado_hasta: "" });
     if (r.ok) _auditar("reset_pin", empleado.id, empleado.nombre, "Reset de PIN de " + objetivo.nombre);
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** A diferencia de actualizarMiNombre() (que cada uno usa para su
+ *  propio nombre), esta la usa quien gestiona el equipo para corregir
+ *  el nombre de un colaborador o responsable de turno — mismo permiso
+ *  que resetear el PIN. */
+function editarNombreEmpleado(empleadoId, nombre, empleado) {
+  const objetivo = _empleadoPorId(empleadoId);
+  if (!objetivo) return { ok: false, error: "No se encontró ese empleado." };
+  nombre = String(nombre || "").trim();
+  if (!nombre) return { ok: false, error: "Falta el nombre." };
+
+  let permitido = false;
+  if (empleado.rol === "admin") permitido = true;
+  else if (empleado.rol === "supervisor" && objetivo.rol !== "admin") permitido = true;
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno") && String(objetivo.local) === String(empleado.local)) permitido = true;
+  if (!permitido) return { ok: false, error: "No tenés permiso para editar el nombre de ese empleado." };
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const r = _actualizarCrudo("Empleados", empleadoId, { nombre: nombre });
+    if (r.ok) _auditar("editar_nombre_empleado", empleado.id, empleado.nombre, "Nombre de \"" + objetivo.nombre + "\" -> \"" + nombre + "\"");
     return r;
   } finally {
     lock.releaseLock();

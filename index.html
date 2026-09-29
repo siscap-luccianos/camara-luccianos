@@ -395,7 +395,7 @@ async function cargarEmpleadosDeAuth(){
 function iniPersona(nombre){
   return nombre.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 }
-const ROL_LABEL = { admin:"Administrador", supervisor:"Supervisor", encargado:"Encargado", colaborador:"Colaborador" };
+const ROL_LABEL = { admin:"Administrador", supervisor:"Supervisor", encargado:"Responsable de local", turno:"Responsable de turno", colaborador:"Colaborador" };
 
 function authElegirLocal(local){ S.auth.local=local; S.auth.paso="quien"; cargarEmpleadosDeAuth() }
 function authElegirEmpleado(emp){ S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp() }
@@ -464,7 +464,7 @@ async function authSubmit(){
 }
 function aplicarLogin(r){
   S.token = r.token; S.empleado = r.empleado;
-  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="colaborador" ? r.empleado.local : S.auth.local);
+  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : S.auth.local);
   if(!S.deviceLocal) guardarSesionPC();
   S.auth=null;
   toast("Hola, "+r.empleado.nombre.split(" ")[0]);
@@ -560,7 +560,7 @@ function renderNav(){
   if(!S.local || !S.sabores.length) return "";
   const st=stockMap(), al=alertas(st);
   const tabs = [["salida","Salida"],["ingreso","Ingreso"],["stock","Stock"],["historial","Historial"]];
-  if(S.empleado.rol!=="colaborador") tabs.push(["equipo","Equipo"]);
+  if(S.empleado.rol==="admin"||S.empleado.rol==="supervisor"||S.empleado.rol==="encargado") tabs.push(["equipo","Equipo"]);
   if(S.empleado.rol==="admin") tabs.push(["sabores","Sabores"]);
   return `<nav role="tablist" id="tabs" class="bottomNav">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
 }
@@ -709,7 +709,7 @@ function puedeAnular(r){
   if(r.anulado) return false;
   const rol=S.empleado.rol, edad=Date.now()-r.ts;
   if(rol==="admin"||rol==="supervisor") return true;
-  if(rol==="encargado") return edad<=24*3600*1000;
+  if(rol==="encargado"||rol==="turno") return edad<=24*3600*1000;
   if(rol==="colaborador") return String(r.empleadoId)===String(S.empleado.id) && edad<=10*60*1000;
   return false;
 }
@@ -744,6 +744,7 @@ function _teamFila(e){
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
     <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
     ${e.activo?`<div class="acciones">
+      ${(e.rol==="colaborador"||e.rol==="turno")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
       <button type="button" data-resetpin="${e.id}">Resetear PIN</button>
       <button type="button" data-baja="${e.id}">Dar de baja</button>
     </div>`:""}
@@ -754,7 +755,7 @@ function teamView(){
   if(S.empleado.rol==="admin" && S.gestion===undefined){ S.gestion=null; cargarGestion(); }
   if(S.equipo===null){ return `<div class="note">Cargando equipo…</div>`; }
   const rol=S.empleado.rol;
-  const rolesQuePuedoCrear = rol==="admin"?["encargado","colaborador"]:rol==="supervisor"?["encargado","colaborador"]:rol==="encargado"?["colaborador"]:[];
+  const rolesQuePuedoCrear = rol==="admin"?["encargado","turno","colaborador"]:rol==="supervisor"?["encargado","turno","colaborador"]:rol==="encargado"?["turno","colaborador"]:[];
 
   let h="";
   if(rol==="admin"){
@@ -991,6 +992,14 @@ async function resetearPin(id){
   const r = await api("resetPin", {empleadoId:id});
   if(r && r.ok) toast("PIN reseteado"); else toast((r&&r.error)||"No se pudo resetear el PIN.");
 }
+async function editarNombreEmpleado(id, actual){
+  const nuevo = prompt("Corregí el nombre y apellido:", actual);
+  if(nuevo===null) return;
+  const limpio = nuevo.trim();
+  if(!limpio || limpio===actual) return;
+  const r = await api("editarNombreEmpleado", {empleadoId:id, nombre:limpio});
+  if(r && r.ok){ toast("Nombre actualizado"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo editar el nombre.");
+}
 
 /* ============================================================
    EVENTOS
@@ -1026,6 +1035,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja); return }
   if(t.dataset.resetpin){ await resetearPin(t.dataset.resetpin); return }
+  if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual); return }
   if(t.dataset.editarSaborBtn){ S.editandoSaborId=t.dataset.editarSaborBtn; renderApp(); return }
   if(t.dataset.cancelarSabor){ S.editandoSaborId=null; renderApp(); return }
   if(t.dataset.toggleSabor){

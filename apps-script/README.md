@@ -91,7 +91,7 @@ Notas:
 - `Registros.clienteId` es el id que genera el dispositivo al crear el movimiento (para la cola offline) — sirve para no duplicar un movimiento si se reintenta el envío.
 - `Empleados.local` queda vacío para `admin` y `supervisor` (no están atados a un local).
 - `Empleados.pin_hash`/`salt` nunca se llenan a mano — los genera el propio backend cuando el empleado crea su PIN.
-- `rol` es `admin`, `supervisor`, `encargado` o `colaborador` (ver la matriz de permisos en el `CLAUDE.md` de la raíz).
+- `rol` es `admin`, `supervisor`, `encargado` (se muestra como "Responsable de local"), `turno` ("Responsable de turno") o `colaborador` (ver la matriz de permisos en el `CLAUDE.md` de la raíz).
 
 ## Agregar sabores o locales nuevos
 
