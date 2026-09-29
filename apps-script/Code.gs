@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.9.1";
+const BACKEND_VERSION = "1.10.0";
 
 function doPost(e) {
   let resultado;
@@ -55,7 +55,7 @@ function doGet() {
 
 // Acciones que no requieren token (login y datos públicos no sensibles:
 // nombres de locales/empleados para armar los selectores de login).
-const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "fijarLocalDispositivo", "verificarClaveLocal"];
+const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "verificarClaveLocal"];
 
 function _despachar(body) {
   const accion = body.accion;
@@ -69,7 +69,6 @@ function _despachar(body) {
     case "empleadosLocal": return empleadosLocal(body.local);
     case "empleadosGestion": return empleadosGestion();
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm);
-    case "fijarLocalDispositivo": return fijarLocalDispositivo(body.empleadoId, body.pin, body.pinConfirm, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
@@ -312,21 +311,6 @@ function _resultadoLogin(empleado, local) {
     try { resultado.datos = datos(local, empleado); } catch (err) { /* si falla, el cliente lo pide aparte */ }
   }
   return resultado;
-}
-
-/** Fija el local de un dispositivo (tablet). Solo un admin puede hacerlo
- *  — no emite token de sesión, solo confirma para que el cliente guarde
- *  el local en localStorage y bloquee el selector. */
-function fijarLocalDispositivo(empleadoId, pin, pinConfirm, local) {
-  if (!local) return { ok: false, error: "Falta el local." };
-  const r = login(empleadoId, pin, pinConfirm);
-  // login() de arriba ya valida PIN/bloqueo (y crea el PIN si es la
-  // primera vez); reusamos su resultado pero sin devolver el token de
-  // sesión larga a la tablet — acá solo hace falta confirmar identidad.
-  if (!r.ok) return r;
-  if (r.empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede fijar el local del dispositivo." };
-  _auditar("local_dispositivo", empleadoId, r.empleado.nombre, "Local fijado: " + local);
-  return { ok: true, local: local };
 }
 
 /* ============================================================

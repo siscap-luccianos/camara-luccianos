@@ -27,13 +27,13 @@ Modelo de datos (en Sheets, ver `apps-script/README.md` para columnas exactas):
 
 1. Desplegar el backend siguiendo `apps-script/README.md` (crear planilla, pegar `Code.gs`/`Setup.gs`, `SESSION_SECRET`, poblar datos, deployar como Web App).
 2. Pegar la URL del deploy en `API_URL` de `index.html`, commitear y pushear.
-3. Fijar el local de cada tablet la primera vez (pantalla "Configurar este dispositivo", pide PIN de admin).
+3. Fijar el local de cada tablet la primera vez: cualquiera del equipo de ese local hace login normal (local + contraseña de local si tiene + su nombre + su PIN) y al final le pregunta si quiere fijar ese local en el dispositivo.
 4. Subir las 5 fotos que faltan a `fotos/`.
 
 ### Fase 1 — historial de lo pedido (todo hecho salvo el despliegue)
 1. ~~Backend Google Sheets + Apps Script~~ hecho — `apps-script/Code.gs`.
 2. ~~Usuarios, roles y PIN~~ hecho.
-3. ~~Local fijo por dispositivo~~ hecho (pantalla de configuración con PIN de admin).
+3. ~~Local fijo por dispositivo~~ hecho: se ofrece fijarlo al final del login normal (a cualquiera de encargado/turno/colaborador, no hace falta PIN de admin aparte — la contraseña del local, si tiene, ya cumple ese filtro).
 4. ~~Cola offline~~ hecho (`localStorage`, `clienteId` para deduplicar, reintento al volver la conexión y en cada polling).
 5. ~~Mínimo por sabor~~ hecho (columna `minimo` en `Sabores`).
 6. ~~Sabores desde el Sheet~~ hecho (columna `activo`; foto por id desde `fotos/`).

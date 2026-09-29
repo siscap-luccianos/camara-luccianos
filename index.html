@@ -353,11 +353,11 @@ function fotoErr(img,id){
 
 /* ============================================================
    AUTENTICACIÓN — "¿quién sos?" + PIN con teclado propio
-   S.auth = { modo:'login'|'setup', paso:'local'|'quien'|'pin'|'pinConfirm',
+   S.auth = { paso:'local'|'clave'|'quien'|'pin'|'pinConfirm',
               local, empleados, elegido:{id,nombre,rol}, pin, pin1, error, cargando }
 ============================================================ */
-function iniciarAuth(modo){
-  S.auth = { modo, paso: S.deviceLocal ? "quien" : "local", local: S.deviceLocal || null, empleados: [], elegido: null, pin: "", pin1: "", error: "", cargando:false };
+function iniciarAuth(){
+  S.auth = { paso: S.deviceLocal ? "quien" : "local", local: S.deviceLocal || null, empleados: [], elegido: null, pin: "", pin1: "", error: "", cargando:false };
   if(S.auth.paso==="quien") cargarEmpleadosDeAuth();
   renderApp();
 }
@@ -377,19 +377,20 @@ async function cargarLocalesSiFalta(){
   }
 }
 async function cargarEmpleadosDeAuth(){
+  // Cada local ve solo su propio equipo (responsable de local, de turno
+  // y colaboradores) — nunca admins/supervisores mezclados ahí, sea PC
+  // o tablet. Admin/supervisor entran por un camino aparte (ver
+  // cargarGestionDeAuth), porque no pertenecen a ningún local.
   S.auth.cargando = true; renderApp();
-  let empleados = [];
-  if(S.auth.modo==="setup"){
-    const r = await api("empleadosGestion", {});
-    empleados = (r&&r.ok?r.empleados:[]).filter(e=>e.rol==="admin");
-  } else {
-    const [rl, rg] = await Promise.all([
-      api("empleadosLocal", {local:S.auth.local}),
-      api("empleadosGestion", {}),
-    ]);
-    empleados = [].concat(rl&&rl.ok?rl.empleados:[], rg&&rg.ok?rg.empleados:[]);
-  }
-  S.auth.empleados = empleados;
+  const rl = await api("empleadosLocal", {local:S.auth.local});
+  S.auth.empleados = rl&&rl.ok?rl.empleados:[];
+  S.auth.cargando = false;
+  renderApp();
+}
+async function cargarGestionDeAuth(){
+  S.auth.cargando = true; renderApp();
+  const rg = await api("empleadosGestion", {});
+  S.auth.empleados = rg&&rg.ok?rg.empleados:[];
   S.auth.cargando = false;
   renderApp();
 }
@@ -404,6 +405,10 @@ function authElegirLocal(local){
   if(info && info.tieneClave){ S.auth.paso="clave"; S.auth.clave=""; renderApp(); }
   else { S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
 }
+function authIrAGestion(){
+  S.auth.local=null; S.auth.error="";
+  S.auth.paso="quienGestion"; cargarGestionDeAuth();
+}
 async function authEnviarClave(){
   const clave=(S.auth.clave||"").trim();
   if(!clave){ S.auth.error="Ingresá la contraseña del local."; renderApp(); return }
@@ -416,13 +421,14 @@ async function authEnviarClave(){
 function authElegirEmpleado(emp){ S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp() }
 function authVolver(){
   if(S.auth.paso==="pinConfirm"){ S.auth.paso="pin"; S.auth.pin=""; renderApp(); return }
-  if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
+  if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso = S.auth.local ? "quien" : "quienGestion"; renderApp(); return }
   if(S.auth.paso==="quien" && !S.deviceLocal){
     const info=S.locales.find(l=>l.nombre===S.auth.local);
     S.auth.paso = (info && info.tieneClave) ? "clave" : "local";
     if(S.auth.paso==="local") S.auth.local=null;
     renderApp(); return;
   }
+  if(S.auth.paso==="quienGestion"){ S.auth.paso="local"; renderApp(); return }
   if(S.auth.paso==="clave"){ S.auth.local=null; S.auth.paso="local"; renderApp(); return }
   S.auth=null; renderApp();
 }
@@ -438,23 +444,9 @@ async function authSubmit(){
   const a=S.auth;
   if(a.paso==="pin"){
     a.cargando=true; a.error=""; renderApp();
-    const accion = a.modo==="setup" ? "fijarLocalDispositivo" : "login";
-    const payload = a.modo==="setup"
-      ? { empleadoId:a.elegido.id, pin:a.pin, local:a.local }
-      : { empleadoId:a.elegido.id, pin:a.pin, local:a.local };
-    const r = await api(accion, payload);
+    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local });
     a.cargando=false;
-    if(r && r.ok){
-      if(a.modo==="setup"){
-        S.deviceLocal = a.local; ls.set("deviceLocal", a.local);
-        toast("Local fijado: "+a.local);
-        S.auth=null; S.local=a.local; S.empleado=null; S.token=null;
-        iniciarAuth("login");
-      } else {
-        aplicarLogin(r);
-      }
-      return;
-    }
+    if(r && r.ok){ aplicarLogin(r); return }
     if(r && r.primeraVez){ a.paso="pinConfirm"; a.pin1=""; renderApp(); return }
     a.error = (r&&r.error) || "No se pudo validar el PIN.";
     a.pin=""; renderApp();
@@ -462,32 +454,25 @@ async function authSubmit(){
   }
   if(a.paso==="pinConfirm"){
     a.cargando=true; a.error=""; renderApp();
-    const accion = a.modo==="setup" ? "fijarLocalDispositivo" : "login";
-    const payload = a.modo==="setup"
-      ? { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local }
-      : { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local };
-    const r = await api(accion, payload);
+    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local });
     a.cargando=false;
-    if(r && r.ok){
-      if(a.modo==="setup"){
-        S.deviceLocal = a.local; ls.set("deviceLocal", a.local);
-        toast("Local fijado: "+a.local);
-        S.auth=null; S.local=a.local; S.empleado=null; S.token=null;
-        iniciarAuth("login");
-      } else {
-        aplicarLogin(r);
-      }
-      return;
-    }
+    if(r && r.ok){ aplicarLogin(r); return }
     a.error = (r&&r.error) || "Los PIN no coinciden. Probá de nuevo.";
     a.paso="pin"; a.pin=""; a.pin1=""; renderApp();
   }
 }
 function aplicarLogin(r){
+  const yaFijado = !!S.deviceLocal;
+  const localElegido = S.auth ? S.auth.local : null;
+  const puedeFijar = ["encargado","turno","colaborador"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
   S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : S.auth.local);
+  if(!S.local && (r.empleado.rol==="admin"||r.empleado.rol==="supervisor") && S.locales.length) S.local = S.locales[0].nombre;
   if(!S.deviceLocal) guardarSesionPC();
   S.auth=null;
+  if(!yaFijado && puedeFijar && localElegido && confirm(`¿Fijar "${localElegido}" como local de este dispositivo? La próxima vez arranca directo, sin volver a elegir local.`)){
+    S.deviceLocal = localElegido; ls.set("deviceLocal", localElegido);
+  }
   toast("Hola, "+r.empleado.nombre.split(" ")[0]);
   reiniciarInactividad();
   if(r.datos && r.datos.ok){
@@ -507,7 +492,7 @@ function cerrarSesion(silencioso){
   clearTimeout(S.inactTimer);
   clearInterval(S.pollTimer);
   if(!silencioso) toast("Sesión cerrada");
-  iniciarAuth("login");
+  iniciarAuth();
 }
 function reiniciarInactividad(){
   if(!S.deviceLocal) return; // el cierre por inactividad es solo en tablet
@@ -523,7 +508,15 @@ function renderAuth(){
     cuerpo=`<h1>¿En qué local estás?</h1><p>Elegí el local para ver quién puede entrar.</p>
       <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
-      <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
+      <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>
+      <button type="button" class="pcLink" id="authGestion">¿Sos administrador o supervisor? Entrá por tu nombre</button>`;
+  } else if(a.paso==="quienGestion"){
+    cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
+      <h1>¿Quién sos?</h1>
+      <p>Administración general. Elegí tu nombre.</p>
+      ${a.cargando?`<div class="note">Cargando…</div>`:
+        a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
+        :`<div class="note">No hay administradores ni supervisores dados de alta todavía.</div>`}`;
   } else if(a.paso==="clave"){
     cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
       <h1>Contraseña de ${esc(a.local||"")}</h1>
@@ -533,12 +526,11 @@ function renderAuth(){
       <button class="btn" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>`;
   } else if(a.paso==="quien"){
     cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">← Volver</button>`}
-      <h1>${a.modo==="setup"?"¿Quién fija el local?":"¿Quién sos?"}</h1>
-      <p>${a.modo==="setup"?"Hace falta el PIN de un administrador.":"Local: "+esc(a.local||"")+". Elegí tu nombre."}</p>
+      <h1>¿Quién sos?</h1>
+      <p>Local: ${esc(a.local||"")}. Elegí tu nombre.</p>
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
-        :`<div class="note">${a.modo==="setup"?"No hay administradores dados de alta todavía.":"Todavía no hay nadie dado de alta en este local. Pedile a un encargado o supervisor que te cree el usuario."}</div>`}
-      ${!S.deviceLocal && a.modo==="login"?`<button class="pcLink" id="authConfigurar">Configurar este dispositivo como tablet de un local</button>`:""}`;
+        :`<div class="note">Todavía no hay nadie dado de alta en este local. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
@@ -1061,7 +1053,7 @@ document.addEventListener("click", async e=>{
     return;
   }
   if(t.id==="authClaveOk"){ await authEnviarClave(); return }
-  if(t.id==="authConfigurar"){ iniciarAuth("setup"); return }
+  if(t.id==="authGestion"){ authIrAGestion(); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
@@ -1184,7 +1176,7 @@ async function start(){
     iniciarPolling();
     colaFlush();
   } else {
-    iniciarAuth("login");
+    iniciarAuth();
   }
 }
 start();
@@ -1192,7 +1184,7 @@ start();
 function renderApp(){
   const m=$("#app");
   if(S.auth){ m.innerHTML = renderAuth(); return }
-  if(!S.empleado){ iniciarAuth("login"); return }
+  if(!S.empleado){ iniciarAuth(); return }
   m.innerHTML = renderHeader() + `<div class="wrap"><main id="main">${renderMain()}</main></div>` + renderNav() + `<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>`;
   renderBar();
   if(S.offline || S.cola.length){
