@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.5.0";
+const BACKEND_VERSION = "1.6.0";
 
 function doPost(e) {
   let resultado;
@@ -86,6 +86,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "resetPin": return resetPin(body.empleadoId, empleado);
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
     case "adminSabor": return adminSabor(body.sabor, empleado);
+    case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
@@ -631,21 +632,41 @@ function resetPin(empleadoId, empleado) {
 
 function adminSabor(sabor, empleado) {
   if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede editar los sabores." };
-  if (!sabor || !sabor.id) return { ok: false, error: "Falta el sabor." };
+  if (!sabor || !String(sabor.nombre || "").trim()) return { ok: false, error: "Falta el nombre del sabor." };
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
   try {
-    const existente = _leerCrudo("Sabores").filter((s) => String(s.id) === String(sabor.id))[0];
+    const todos = _leerCrudo("Sabores");
+    const existente = sabor.id ? todos.filter((s) => String(s.id) === String(sabor.id))[0] : null;
+    let orden = Number(sabor.orden) || 0;
+    if (!existente && !orden) {
+      orden = todos.reduce((max, s) => Math.max(max, Number(s.orden) || 0), 0) + 1;
+    }
     const cambios = {
       nombre: sabor.nombre, tipo: sabor.tipo, minimo: Number(sabor.minimo) || 0,
-      activo: sabor.activo !== false, orden: Number(sabor.orden) || 0, categoria: sabor.categoria || "Cremas",
+      activo: sabor.activo !== false, orden: orden, categoria: sabor.categoria || "Cremas",
     };
-    const r = existente ? _actualizarCrudo("Sabores", sabor.id, cambios) : _escribirCrudoConId("Sabores", Object.assign({ id: sabor.id }, cambios));
-    if (r.ok) _auditar("admin_sabor", empleado.id, empleado.nombre, "Sabor " + sabor.id + " (" + sabor.nombre + ")");
+    const r = existente ? _actualizarCrudo("Sabores", sabor.id, cambios) : _escribirCrudo("Sabores", cambios);
+    if (r.ok) _auditar("admin_sabor", empleado.id, empleado.nombre, "Sabor " + r.id + " (" + sabor.nombre + ")");
     return r;
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Todos los sabores, activos e inactivos — a diferencia de datos(),
+ *  que solo devuelve los activos (lo que ve el personal para registrar
+ *  movimientos). Solo admin: hace falta ver los inactivos para poder
+ *  reactivarlos o corregirlos desde la pantalla de administración. */
+function saboresAdmin(empleado) {
+  if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede ver esto." };
+  const sabores = _leerCrudo("Sabores")
+    .map((s) => ({
+      id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0,
+      orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", activo: _esVerdadero(s.activo) !== false,
+    }))
+    .sort((a, b) => a.orden - b.orden);
+  return { ok: true, sabores: sabores };
 }
 
 function adminLocal(local, empleado) {
