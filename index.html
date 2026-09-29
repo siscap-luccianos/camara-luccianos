@@ -38,7 +38,7 @@ button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:0 140px}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(var(--header-bg-rgb),.82);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);color:var(--header-ink);padding-block:14px 0;border-bottom:1px solid var(--glass-line);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:linear-gradient(165deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 40%),rgba(var(--header-bg-rgb),.62);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);color:var(--header-ink);padding-block:14px 0;border-bottom:1px solid rgba(255,255,255,.16);box-shadow:0 8px 32px rgba(0,0,0,.35)}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-inline:16px;max-width:980px;margin:0 auto}
 .brand .tit{display:flex;flex-direction:column;gap:1px}
 h1{font-family:var(--display);font-weight:700;font-size:1.4rem;margin:0;letter-spacing:-.01em}
@@ -89,7 +89,7 @@ nav[role=tablist] .n{display:inline-block;min-width:19px;padding:0 5px;margin-le
 .qty{position:absolute;top:10px;right:8px;min-width:34px;height:34px;border-radius:17px;background:var(--accent);color:var(--accent-ink);font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums;padding:0 8px;pointer-events:none}
 .minus{position:absolute;top:10px;left:8px;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-weight:800;font-size:1.1rem;line-height:1}
 .card.sel .strip{filter:brightness(0.85)}
-.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:rgba(var(--surface-rgb),.78);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 32px rgba(0,0,0,.12)}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:linear-gradient(345deg,rgba(255,255,255,.12),rgba(255,255,255,.02) 40%),rgba(var(--surface-rgb),.6);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -1px 0 rgba(255,255,255,.3),0 -8px 32px rgba(0,0,0,.28)}
 .bar .in{max-width:980px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bar .sum{flex:1 1 200px;min-width:0;font-size:.88rem;color:var(--muted)}
 .bar .sum b{color:var(--ink)}
@@ -637,6 +637,9 @@ function stockViewConteo(){
   const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}</div>
     <div class="right"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
   return `<div class="tools"><span class="grow"><b>Conteo físico:</b> escribí cuántas hay de cada sabor.</span></div>
+  <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
+    <input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0">
+    <button class="btn ghost" id="aplicarTodos" type="button">Aplicar a todos</button></div>
   ${chipFiltros()}
   <div class="rows" style="margin-top:14px">${list.map(row).join("")}</div>`;
 }
@@ -866,6 +869,11 @@ document.addEventListener("click", async e=>{
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[S.tab]={}; renderApp(); return }
   if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
+  if(t.id==="aplicarTodos"){
+    const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
+    Object.keys(S.conteo).forEach(id=>S.conteo[id]=v);
+    renderApp(); return;
+  }
   if(t.id==="cancelConteo"){ S.conteo=null; renderApp(); return }
   if(t.id==="volver"){ S.confirm=false; renderApp(); return }
   if(t.id==="go"){ S.confirm=true; renderApp(); return }
