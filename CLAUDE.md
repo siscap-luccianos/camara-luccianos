@@ -36,20 +36,20 @@ Modelo de datos actual (mantener la lógica al migrar):
 
 ### Roles y permisos (decidido)
 
-Roles: **Admin** (Gabi, crea todo) · **Supervisor** (locales asignados) · **Encargado** (un local) · **Colaborador**.
+Roles: **Admin** (Gabi, crea todo) · **Supervisor** (ve y gestiona todos los locales; elige cuál ver con un selector) · **Encargado** (un local) · **Colaborador**.
 
 | Acción | Admin | Supervisor | Encargado | Colaborador |
 |---|---|---|---|---|
 | Crear/editar locales, sabores, mínimos | ✅ | ❌ | ❌ | ❌ |
-| Crear supervisores y asignarles locales | ✅ | ❌ | ❌ | ❌ |
-| Crear encargados | ✅ | ✅ solo en sus locales | ❌ | ❌ |
+| Crear supervisores | ✅ | ❌ | ❌ | ❌ |
+| Crear encargados | ✅ | ✅ en cualquier local | ❌ | ❌ |
 | Alta/baja de colaboradores | ✅ | ✅ | ✅ solo su local | ❌ |
 | Resetear PIN | ✅ | ✅ | ✅ solo colaboradores | ❌ |
 | Anular movimiento | ✅ | ✅ | ✅ dentro de 24 hs | solo el propio, ≤10 min |
 | Borrar registros/historial (borrado real) | ✅ | ❌ | ❌ | ❌ |
 | Salida / ingreso | ✅ | ✅ | ✅ | ✅ |
 | Conteo físico | ✅ | ✅ | ✅ | ❌ |
-| Ver stock / pedido / enviar WhatsApp | ✅ | ✅ sus locales | ✅ | solo ver stock |
+| Ver stock / pedido / enviar WhatsApp | ✅ | ✅ todos (selector de local) | ✅ | solo ver stock |
 
 Reglas:
 - **Soft delete**: bajas y anulaciones nunca borran; guardan `anulado_por`, `anulado_ts`, `motivo`. Borrado real solo Admin.
@@ -59,7 +59,7 @@ Reglas:
 - **Bloqueo**: 5 PIN incorrectos → usuario bloqueado 5 minutos.
 - **Sesión**: token temporal emitido por Apps Script; en la tablet se cierra sola tras cada registro (o 60 s de inactividad). En PC dura más (p. ej. 8 hs) para supervisores/admin.
 - La tablet muestra solo los colaboradores del local fijado en ese dispositivo.
-- Hoja `Empleados`: `id, nombre, rol, local(es), pin_hash, salt, activo, creado_por, creado_ts, intentos, bloqueado_hasta`.
+- Hoja `Empleados`: `id, nombre, rol, local (vacío para admin/supervisor), pin_hash, salt, activo, creado_por, creado_ts, intentos, bloqueado_hasta`.
 
 ### Limpieza
 - Sacar las fotos base64 del HTML y cargarlas desde `fotos/`.
