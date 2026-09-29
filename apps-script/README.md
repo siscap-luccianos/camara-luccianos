@@ -1,0 +1,114 @@
+# Conectar Cámara Lucciano's a un Google Sheet real
+
+Esta carpeta no es parte de la app cliente (esa sigue siendo `index.html` en
+la raíz del repo) — son los dos archivos que hay que copiar a un proyecto de
+**Google Apps Script**, más los pasos para dejarlo andando. Nada de esto se
+puede hacer desde acá (Claude Code no tiene acceso a tu cuenta de Google) —
+son pasos manuales en `sheets.google.com` y `script.google.com`. Es el mismo
+patrón que ya usan Lucciano's Academy y SisCap.
+
+## 1. Crear la planilla
+
+1. Andá a [sheets.google.com](https://sheets.google.com) y creá una planilla nueva. Nombrala como quieras (ej. "Cámara Lucciano's — Base de datos").
+2. Anotá el nombre — no hace falta el ID, el script queda "atado" a la planilla (ver paso 2).
+
+No hace falta crear las hojas a mano: `Setup.gs` las crea con los encabezados exactos en el paso 3.
+
+## 2. Crear el proyecto de Apps Script
+
+1. En la misma planilla: menú **Extensiones → Apps Script**.
+2. Borrá el contenido de `Code.gs` que trae por defecto y pegá ahí el contenido de **`apps-script/Code.gs`** de este repo.
+3. Creá un archivo nuevo (ícono `+` al lado de "Archivos" → Script) llamado `Setup` y pegá ahí el contenido de **`apps-script/Setup.gs`**.
+4. Guardá (Ctrl/Cmd+S).
+
+## 3. Configurar el secreto de sesión (SESSION_SECRET)
+
+Sin esto, todo login y toda acción autenticada fallan con un error claro.
+
+1. En el editor de Apps Script, elegí la función `generarSessionSecretSugerido` en el desplegable de arriba y tocá **Ejecutar**.
+2. La primera vez pide autorización (tu propio script accediendo a tu propia planilla) — aceptá los permisos.
+3. Andá a **Ver → Registros de ejecución** y copiá el valor que aparece.
+4. Andá a **Configuración del proyecto** (ícono de engranaje, menú de la izquierda) → **Propiedades del script** → **Agregar propiedad del script**.
+5. Nombre de la propiedad: `SESSION_SECRET`. Valor: pegá lo que copiaste. Guardá.
+
+## 4. Crear las hojas y poblar los datos iniciales
+
+Todo esto desde el mismo desplegable de funciones, de a una:
+
+1. Elegí `crearHojas` → **Ejecutar**. Crea las 7 hojas (`Registros`, `Stock`, `Sabores`, `Locales`, `Empleados`, `Config`, `Auditoria`) con los encabezados exactos, y borra la hoja vacía por defecto ("Hoja 1"). Revisá el log: debería decir qué hojas creó.
+2. Elegí `poblarSaboresYLocales` → **Ejecutar**. Carga los 47 sabores (con mínimo 6 para vasquetas y 3 para baldes — se puede ajustar después, ver abajo) y los 122 locales activos. Es seguro volver a correrla: si algo ya está cargado, no lo duplica.
+3. Elegí `crearPrimerAdmin` → **Ejecutar**. Te da de alta a vos (Gabi) como admin, **sin PIN todavía** — lo vas a crear la primera vez que entres a la app (te va a pedir escribirlo dos veces).
+
+## 5. Desplegar como Web App
+
+1. En el editor de Apps Script: **Implementar → Nueva implementación**.
+2. Tipo: **Aplicación web**.
+3. "Ejecutar como": tu cuenta. "Quién tiene acceso": **Cualquier usuario** (así GitHub Pages puede hacer `fetch` sin pedir login de Google en cada request — el control de acceso real lo hace el PIN adentro del script).
+4. Tocá **Implementar** y copiá la URL que termina en `/exec`.
+
+## 6. Conectar la app
+
+Abrí `index.html` y pegá esa URL en la constante `API_URL`, cerca del principio del `<script>`:
+
+```js
+const API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
+```
+
+Guardá, commiteá y hacé push — GitHub Pages se actualiza sola en un par de minutos.
+
+## Cómo probar que quedó bien conectado
+
+1. Abrí la URL del deploy (`.../exec`) directo en el navegador — debería devolver `{"ok":true,"mensaje":"Cámara Lucciano's backend activo","version":"1.0.0"}`.
+2. Abrí la app publicada, elegí un local y entrá como "Gabi Busquets" (admin) — te va a pedir crear tu PIN las dos veces.
+3. Hacé una salida de prueba y confirmá que aparece la fila nueva en la hoja `Registros` de tu planilla.
+
+## Cada vez que actualices el código
+
+Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App sigue sirviendo la versión vieja hasta que crees una implementación nueva:
+
+1. **Implementar → Administrar implementaciones**.
+2. Ícono de lápiz sobre la implementación activa → en "Versión" elegí **Nueva versión** → **Implementar**.
+3. La URL `/exec` no cambia, así que no hace falta tocar `index.html` de nuevo.
+
+(Para confirmar que quedó bien: abrí la URL `/exec` en el navegador y fijate que el campo `version` coincida con `BACKEND_VERSION` de `Code.gs` — si no coincide, la implementación quedó vieja.)
+
+## Encabezados exactos de cada hoja
+
+`Setup.gs` los crea solo, pero por si hace falta tocar algo a mano:
+
+| Hoja | Encabezados (fila 1) |
+|---|---|
+| `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo` |
+| `Stock` | `local`, `base`, `ts`, `empleado` |
+| `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden` |
+| `Locales` | `nombre`, `grupo`, `activo` |
+| `Empleados` | `id`, `nombre`, `rol`, `local`, `pin_hash`, `salt`, `activo`, `creado_por`, `creado_ts`, `intentos`, `bloqueado_hasta` |
+| `Config` | `key`, `value` (reservada para más adelante, no la usa el código todavía) |
+| `Auditoria` | `id`, `ts`, `accion`, `actorId`, `actor`, `detalle` |
+
+Notas:
+- `Registros.items` y `Stock.base` guardan un JSON tipo `{"3":2,"14":1}` (id de sabor → cantidad) en una sola celda de texto.
+- `Registros.clienteId` es el id que genera el dispositivo al crear el movimiento (para la cola offline) — sirve para no duplicar un movimiento si se reintenta el envío.
+- `Empleados.local` queda vacío para `admin` y `supervisor` (no están atados a un local).
+- `Empleados.pin_hash`/`salt` nunca se llenan a mano — los genera el propio backend cuando el empleado crea su PIN.
+- `rol` es `admin`, `supervisor`, `encargado` o `colaborador` (ver la matriz de permisos en el `CLAUDE.md` de la raíz).
+
+## Agregar sabores o locales nuevos
+
+Editá directo la hoja `Sabores` o `Locales` (agregar una fila con los mismos encabezados) — no hace falta pantalla especial ni redesplegar nada, `Code.gs` lee la hoja en cada request. Para dar de baja algo sin borrarlo, poné `NO` en la columna `activo`.
+
+## Ajustar el mínimo de un sabor
+
+Directo en la hoja `Sabores`, columna `minimo` — es el número de vasquetas/baldes bajo el cual la app lo marca en rojo y lo suma al pedido sugerido. `poblarSaboresYLocales` carga 6 para vasquetas y 3 para baldes por defecto.
+
+## Dar de alta al segundo admin o supervisor (sin pasar por Setup.gs)
+
+Una vez que hay un admin activo (Gabi) y ya está conectada la app, el resto de los admins/supervisores/encargados/colaboradores se dan de alta **desde la propia app** (pantalla de Empleados, según lo que permite el rol de quien está logueado — ver la matriz de `CLAUDE.md`). `crearPrimerAdmin()` es solo para el arranque, cuando todavía no hay nadie que pueda loguearse para crear al primero.
+
+## Si algo no cierra
+
+- **"Falta configurar SESSION_SECRET..."** → repetí el paso 3.
+- **"No existe la hoja 'X'"** → corré `crearHojas()` (paso 4.1) y revisá que el nombre de la pestaña sea exactamente ese, sin tildes ni mayúsculas distintas.
+- **Error de CORS / fetch falla** → confirmá que el deploy tiene acceso "Cualquier usuario" (no "Solo yo" ni "Cualquiera con cuenta de Google en tu organización"), y que `index.html` manda el `Content-Type: text/plain;charset=utf-8` (ya viene así en el código — si lo tocaste, revisalo).
+- **Los cambios que subiste no se ven** → te falta crear una "Nueva versión" de la implementación (ver "Cada vez que actualices el código" arriba). Pegar código no alcanza.
+- **"PIN bloqueado por intentos incorrectos"** → esperar los 5 minutos, o pedirle a un admin/supervisor/encargado que use "Resetear PIN" desde la app (vuelve a pedirlo en el próximo ingreso).
