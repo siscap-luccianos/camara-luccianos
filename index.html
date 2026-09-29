@@ -481,7 +481,7 @@ function aplicarLogin(r){
 function cerrarSesion(silencioso){
   limpiarSesion();
   S.local = S.deviceLocal || null;
-  S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null;
+  S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null;
   clearTimeout(S.inactTimer);
   clearInterval(S.pollTimer);
   if(!silencioso) toast("Sesión cerrada");
@@ -789,12 +789,15 @@ async function cargarGestion(){
 ============================================================ */
 async function cargarSaboresAdmin(){
   const r = await api("saboresAdmin", {});
-  S.saboresAdmin = (r&&r.ok) ? r.sabores : [];
+  if(r && r.ok){ S.saboresAdmin = r.sabores; S.errorSaboresAdmin = null; }
+  else { S.saboresAdmin = []; S.errorSaboresAdmin = (r&&r.error) || "No se pudo conectar con el backend."; }
   if(S.tab==="sabores") renderApp();
 }
 function saboresView(){
   if(S.saboresAdmin===undefined){ S.saboresAdmin=null; cargarSaboresAdmin(); }
   if(S.saboresAdmin===null) return `<div class="note">Cargando sabores…</div>`;
+  if(S.errorSaboresAdmin) return `<div class="note">${esc(S.errorSaboresAdmin)}</div>
+    <button class="btn ghost" type="button" id="reintentarSabores" style="margin-top:10px">Reintentar</button>`;
   const opcionesCategoria = cat => CATEGORIAS_ORDEN.map(c=>`<option value="${esc(c)}" ${cat===c?"selected":""}>${esc(c)}</option>`).join("");
   const fila = s => {
     if(S.editandoSaborId===s.id){
@@ -996,6 +999,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="authConfigurar"){ iniciarAuth("setup"); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
+  if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; renderApp(); return }
