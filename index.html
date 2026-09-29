@@ -501,7 +501,7 @@ function renderAuth(){
   let cuerpo="";
   if(a.paso==="local"){
     cuerpo=`<h1>¿En qué local estás?</h1><p>Elegí el local para ver quién puede entrar.</p>
-      <input class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
+      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
   } else if(a.paso==="quien"){
@@ -540,7 +540,7 @@ function renderHeader(){
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal
-          ? `<input id="local" list="localList" value="${esc(S.local||"")}" autocomplete="off"><datalist id="localList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
+          ? `<input type="text" id="local" list="localList" value="${esc(S.local||"")}" autocomplete="off"><datalist id="localList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
@@ -1063,6 +1063,9 @@ document.addEventListener("click", async e=>{
     try{ await navigator.clipboard.writeText(txt); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); }
     return;
   }
+});
+document.addEventListener("focusin", e=>{
+  if(e.target.id==="local"||e.target.id==="authLocal") e.target.select();
 });
 document.addEventListener("input", e=>{
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
