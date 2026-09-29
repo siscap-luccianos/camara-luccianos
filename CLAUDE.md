@@ -6,33 +6,41 @@ App para registrar **salidas de cámara**, **ingresos** de vasquetas/baldes y **
 - Publicada en GitHub Pages: https://siscap-luccianos.github.io/camara-luccianos/ (rama `main`, raíz).
 - Stack objetivo: **HTML/JS estático en GitHub Pages + Google Apps Script + Google Sheets** (mismo patrón que SisCap y Lucciano's Academy, repos hermanos en la org `siscap-luccianos`).
 
-## Estado actual (29/09/2026)
+## Estado actual (29/09/2026, tarde)
 
-- `index.html`: app completa en un solo archivo (≈165 KB, fotos embebidas en base64 en la constante `FOTOS`).
-- `fotos/`: 42 fotos 160×160 de los sabores (por id). Faltan: 11 Chocolate vegano 81%, 19 Frambuesa + Avella bianca, 29 Mascarpone, 37 Pretzel, 43 Tiramisú al pistacchio.
-- `SABORES`: 47 sabores hardcodeados (45 vasquetas `v` + Chantilly y Vainilla en balde `b`).
-- `LOCALES_PADRON`: 122 locales activos (35 propios + 87 franquicias), copiados de `apps-script/Setup.gs` → `PADRON_SUCURSALES` del repo `luccianos-academy`.
-- **La persistencia usa `window.claude.use("db")` (base de artifacts de claude.ai). En GitHub Pages NO guarda nada**: botones de registrar deshabilitados. Esto es lo primero a reemplazar.
+**Fase 1 implementada de punta a punta** (backend + frontend). Falta que Gabi despliegue el backend (pasos en `apps-script/README.md`) y pegue la URL en `index.html` — hasta entonces la app publicada en GitHub Pages muestra un aviso de "backend no conectado".
 
-Modelo de datos actual (mantener la lógica al migrar):
-- `registros`: `{tipo: salida|ingreso|conteo, local, empleado, items:{idSabor:cant}, total, ts}`
-- `stock/<local>`: último conteo físico `{local, base:{idSabor:cant}, ts, empleado}`
-- Stock actual = conteo base + ingresos − salidas posteriores al conteo (`stockMap()`).
-- Alerta: sabor con stock < `MIN` (6). Pedido sugerido = salidas 7 días + MIN − stock.
+- `apps-script/Code.gs` + `apps-script/Setup.gs` + `apps-script/README.md`: backend real en Google Apps Script + Sheets. Login por PIN (hash+salt SHA-256, bloqueo 5 intentos), roles admin/supervisor/encargado/colaborador con la matriz de abajo, anular con ventana por rol, Auditoria, `LockService` en escrituras. Ver detalle de hojas/columnas en `apps-script/README.md`.
+- `index.html`: reescrito. Ya no usa `window.claude.use("db")` ni tiene `SABORES`/`LOCALES_PADRON`/fotos en base64 hardcodeados — todo (sabores, locales, stock, registros) viene del backend vía `fetch` (`accion` + `token`, `Content-Type: text/plain` para evitar preflight CORS, mismo patrón que `luccianos-academy`). Polling cada 30 s. Fotos desde `fotos/<id>.jpg` con fallback a iniciales si falta el archivo.
+- Paleta/tipografía nueva (Fraunces + Manrope, fondo crema/tinta oscura) y flujo de login con selector de persona + teclado numérico propio para el PIN, inspirados en el mockup que armó Gabi (`claude.ai/artifact/P5uG4JV3wT3c4YaSsEtG3U`).
+- `API_URL` en `index.html` todavía tiene el placeholder `PEGAR_URL_DEL_DEPLOY_DE_APPS_SCRIPT_ACA` — Gabi tiene que desplegar el backend (`apps-script/README.md`) y pegar la URL real ahí.
+- Falta cargar `fotos/11.jpg`, `19.jpg`, `29.jpg`, `37.jpg`, `43.jpg` (Chocolate vegano 81%, Frambuesa + Avella bianca, Mascarpone, Pretzel, Tiramisú al pistacchio) — mientras tanto esos sabores muestran las iniciales.
+- Probado con Playwright contra un backend simulado (ver "Convenciones"): login con PIN nuevo, salida, stock/pedido/WhatsApp, historial + anular, conteo físico y alta de empleado en Equipo, todo sin errores de consola.
 
-## Plan de trabajo (auditoría 29/09)
+Modelo de datos (en Sheets, ver `apps-script/README.md` para columnas exactas):
+- `Registros`: `{id, clienteId, tipo: salida|ingreso|conteo, local, empleadoId, empleado, items:{idSabor:cant} (JSON), total, remito, ts, anulado_por, anulado_ts, motivo}`.
+- `Stock`: una fila por local con el último conteo físico `{local, base:{idSabor:cant} (JSON), ts, empleado}`.
+- Stock actual = conteo base + ingresos − salidas posteriores al conteo (`stockMap()` en el cliente, sobre lo que devuelve `datos()`).
+- Alerta: sabor con stock bajo su `minimo` propio (columna en `Sabores`, ya no un `MIN=6` global). Pedido sugerido = consumo promedio diario (salidas 7 días / 7) × (días hasta la entrega elegidos + 1) − stock, con ajuste manual por sabor.
 
-### Fase 1 — que funcione al 100% en la tablet
-1. **Backend Google Sheets + Apps Script** (Web App, `doGet`/`doPost` JSON). Hojas: `Registros`, `Stock`, `Sabores`, `Locales`, `Empleados`, `Config`. Usar `LockService` en escrituras. Polling cada ~30 s en vez de onSnapshot.
-2. **Usuarios, roles y PIN** (DECIDIDO con Gabi 29/09 — ver sección "Roles y permisos"). Reemplaza el nombre libre guardado en localStorage (bug: el siguiente registraba con el nombre del anterior).
-3. **Local fijo por dispositivo**: configurarlo una vez con PIN de admin; selector bloqueado después.
-4. **Cola offline**: guardar movimientos pendientes en localStorage y sincronizar al volver la conexión (con id único para evitar duplicados).
-5. **Mínimo por sabor** (columna en `Sabores`), no un 6 global (los baldes no son vasquetas).
-6. **Sabores desde el Sheet** con columna `activo`; foto por id desde `fotos/`.
-7. **Anular** el último movimiento propio (≤10 min), queda registrado.
-8. **Ingreso con cantidad numérica + nº de remito** (no un toque por vasqueta).
-9. **Días hasta la próxima entrega** (2/3/4/7) para el pedido sugerido.
-10. **Botón "Enviar pedido por WhatsApp"** (`https://wa.me/?text=`), texto con sabores y cantidades.
+## Qué falta para que Gabi la use en la tablet
+
+1. Desplegar el backend siguiendo `apps-script/README.md` (crear planilla, pegar `Code.gs`/`Setup.gs`, `SESSION_SECRET`, poblar datos, deployar como Web App).
+2. Pegar la URL del deploy en `API_URL` de `index.html`, commitear y pushear.
+3. Fijar el local de cada tablet la primera vez (pantalla "Configurar este dispositivo", pide PIN de admin).
+4. Subir las 5 fotos que faltan a `fotos/`.
+
+### Fase 1 — historial de lo pedido (todo hecho salvo el despliegue)
+1. ~~Backend Google Sheets + Apps Script~~ hecho — `apps-script/Code.gs`.
+2. ~~Usuarios, roles y PIN~~ hecho.
+3. ~~Local fijo por dispositivo~~ hecho (pantalla de configuración con PIN de admin).
+4. ~~Cola offline~~ hecho (`localStorage`, `clienteId` para deduplicar, reintento al volver la conexión y en cada polling).
+5. ~~Mínimo por sabor~~ hecho (columna `minimo` en `Sabores`).
+6. ~~Sabores desde el Sheet~~ hecho (columna `activo`; foto por id desde `fotos/`).
+7. ~~Anular~~ hecho, con la ventana por rol de la matriz.
+8. ~~Ingreso con cantidad numérica + nº de remito~~ hecho.
+9. ~~Días hasta la próxima entrega~~ hecho (chips 2/3/4/7 en Stock).
+10. ~~Botón "Enviar pedido por WhatsApp"~~ hecho, con vista previa del mensaje y "Copiar texto".
 
 ### Roles y permisos (decidido)
 
@@ -61,11 +69,17 @@ Reglas:
 - La tablet muestra solo los colaboradores del local fijado en ese dispositivo.
 - Hoja `Empleados`: `id, nombre, rol, local (vacío para admin/supervisor), pin_hash, salt, activo, creado_por, creado_ts, intentos, bloqueado_hasta`.
 
-### Limpieza
-- Sacar las fotos base64 del HTML y cargarlas desde `fotos/`.
-- Quitar/limitar a admin el cambio de foto desde la app.
-- Quitar textos que mencionan "la app de Claude".
-- Mover `<title>` y fuentes al `<head>`; unidad correcta en baldes; historial filtrado por fecha real.
+### Limpieza (hecho)
+- ~~Sacar las fotos base64 del HTML y cargarlas desde `fotos/`~~ hecho.
+- ~~Quitar/limitar a admin el cambio de foto desde la app~~: se sacó el cambio de foto desde la app (no hay upload); para cambiar una foto se reemplaza el archivo `fotos/<id>.jpg` en el repo.
+- ~~Quitar textos que mencionan "la app de Claude"~~ hecho.
+- ~~Mover `<title>` y fuentes al `<head>`~~ hecho. Unidad correcta en baldes (`unidad()` según `tipo` del sabor). Historial con filtro real (Hoy/7 días/30 días/Todo).
+
+### Recortes de alcance de esta vuelta (a valorar en Fase 2)
+- Alta/edición de **sabores y locales** (mínimo, activo, nombre) no tiene pantalla propia todavía — se edita directo en las hojas `Sabores`/`Locales` (ver `apps-script/README.md`). El backend ya tiene las acciones (`adminSabor`, `adminLocal`) por si se arma la UI después.
+- El panel **Equipo** administra encargados/colaboradores del local seleccionado; para dar de alta un segundo admin o supervisor hay que hacerlo desde la cuenta de un admin existente (la app permite crearlos, pero la lista de "Equipo" no lista admins/supervisores sueltos — son gente de gestión general, no de "un local").
+- Borrado real de un movimiento (`eliminarRegistro`, solo-admin) existe en el backend pero no tiene botón en la interfaz todavía — hoy la vía normal es "Anular" (soft delete).
+- No se migró el diseño a un layout apaisado de dos paneles (grilla + carrito lateral) como el mockup de Gabi — se mantuvo la columna única responsive con la barra inferior de carrito, para no arriesgar el uso en celular/tablet angosta. Si en Fase 2 se confirma que todas las tablets son apaisadas, vale la pena revisarlo.
 
 ### Fase 2
 - Vista PC para encargado/supervisor (varios locales, consumo semanal), con PIN.
