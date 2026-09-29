@@ -24,7 +24,7 @@ Modelo de datos actual (mantener la lógica al migrar):
 
 ### Fase 1 — que funcione al 100% en la tablet
 1. **Backend Google Sheets + Apps Script** (Web App, `doGet`/`doPost` JSON). Hojas: `Registros`, `Stock`, `Sabores`, `Locales`, `Empleados`, `Config`. Usar `LockService` en escrituras. Polling cada ~30 s en vez de onSnapshot.
-2. **Identidad del empleado**: hoy el nombre queda guardado en localStorage y el siguiente registra con el nombre del anterior. Opción a definir con Gabi: lista de empleados + PIN de 4 dígitos, o nombre libre que se borra tras cada registro.
+2. **Usuarios, roles y PIN** (DECIDIDO con Gabi 29/09 — ver sección "Roles y permisos"). Reemplaza el nombre libre guardado en localStorage (bug: el siguiente registraba con el nombre del anterior).
 3. **Local fijo por dispositivo**: configurarlo una vez con PIN de admin; selector bloqueado después.
 4. **Cola offline**: guardar movimientos pendientes en localStorage y sincronizar al volver la conexión (con id único para evitar duplicados).
 5. **Mínimo por sabor** (columna en `Sabores`), no un 6 global (los baldes no son vasquetas).
@@ -33,6 +33,33 @@ Modelo de datos actual (mantener la lógica al migrar):
 8. **Ingreso con cantidad numérica + nº de remito** (no un toque por vasqueta).
 9. **Días hasta la próxima entrega** (2/3/4/7) para el pedido sugerido.
 10. **Botón "Enviar pedido por WhatsApp"** (`https://wa.me/?text=`), texto con sabores y cantidades.
+
+### Roles y permisos (decidido)
+
+Roles: **Admin** (Gabi, crea todo) · **Supervisor** (locales asignados) · **Encargado** (un local) · **Colaborador**.
+
+| Acción | Admin | Supervisor | Encargado | Colaborador |
+|---|---|---|---|---|
+| Crear/editar locales, sabores, mínimos | ✅ | ❌ | ❌ | ❌ |
+| Crear supervisores y asignarles locales | ✅ | ❌ | ❌ | ❌ |
+| Crear encargados | ✅ | ✅ solo en sus locales | ❌ | ❌ |
+| Alta/baja de colaboradores | ✅ | ✅ | ✅ solo su local | ❌ |
+| Resetear PIN | ✅ | ✅ | ✅ solo colaboradores | ❌ |
+| Anular movimiento | ✅ | ✅ | ✅ dentro de 24 hs | solo el propio, ≤10 min |
+| Borrar registros/historial (borrado real) | ✅ | ❌ | ❌ | ❌ |
+| Salida / ingreso | ✅ | ✅ | ✅ | ✅ |
+| Conteo físico | ✅ | ✅ | ✅ | ❌ |
+| Ver stock / pedido / enviar WhatsApp | ✅ | ✅ sus locales | ✅ | solo ver stock |
+
+Reglas:
+- **Soft delete**: bajas y anulaciones nunca borran; guardan `anulado_por`, `anulado_ts`, `motivo`. Borrado real solo Admin.
+- **Auditoría**: hoja `Auditoria` con toda acción administrativa (alta, baja, reset PIN, anulación, cambio de config): quién, qué, cuándo.
+- **PIN de 4 dígitos** (no contraseña). El encargado/supervisor da de alta con nombre y apellido; en el primer ingreso el colaborador crea su PIN (dos veces). Reset → vuelve a crearlo al próximo ingreso.
+- PIN guardado como **hash con salt** (`Utilities.computeDigest` SHA-256) en el Sheet, nunca en texto plano. Validación siempre en Apps Script, nunca en el cliente.
+- **Bloqueo**: 5 PIN incorrectos → usuario bloqueado 5 minutos.
+- **Sesión**: token temporal emitido por Apps Script; en la tablet se cierra sola tras cada registro (o 60 s de inactividad). En PC dura más (p. ej. 8 hs) para supervisores/admin.
+- La tablet muestra solo los colaboradores del local fijado en ese dispositivo.
+- Hoja `Empleados`: `id, nombre, rol, local(es), pin_hash, salt, activo, creado_por, creado_ts, intentos, bloqueado_hasta`.
 
 ### Limpieza
 - Sacar las fotos base64 del HTML y cargarlas desde `fotos/`.
