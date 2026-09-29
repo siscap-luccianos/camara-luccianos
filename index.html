@@ -398,12 +398,32 @@ function iniPersona(nombre){
 }
 const ROL_LABEL = { admin:"Administrador", supervisor:"Supervisor", encargado:"Responsable de local", turno:"Responsable de turno", colaborador:"Colaborador" };
 
-function authElegirLocal(local){ S.auth.local=local; S.auth.paso="quien"; cargarEmpleadosDeAuth() }
+function authElegirLocal(local){
+  S.auth.local=local; S.auth.error="";
+  const info=S.locales.find(l=>l.nombre===local);
+  if(info && info.tieneClave){ S.auth.paso="clave"; S.auth.clave=""; renderApp(); }
+  else { S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
+}
+async function authEnviarClave(){
+  const clave=(S.auth.clave||"").trim();
+  if(!clave){ S.auth.error="Ingresá la contraseña del local."; renderApp(); return }
+  S.auth.cargando=true; S.auth.error=""; renderApp();
+  const r = await api("verificarClaveLocal", {local:S.auth.local, clave});
+  S.auth.cargando=false;
+  if(r && r.ok){ S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
+  else { S.auth.error=(r&&r.error)||"No se pudo verificar la contraseña."; renderApp(); }
+}
 function authElegirEmpleado(emp){ S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp() }
 function authVolver(){
   if(S.auth.paso==="pinConfirm"){ S.auth.paso="pin"; S.auth.pin=""; renderApp(); return }
   if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
-  if(S.auth.paso==="quien" && !S.deviceLocal){ S.auth.local=null; S.auth.paso="local"; renderApp(); return }
+  if(S.auth.paso==="quien" && !S.deviceLocal){
+    const info=S.locales.find(l=>l.nombre===S.auth.local);
+    S.auth.paso = (info && info.tieneClave) ? "clave" : "local";
+    if(S.auth.paso==="local") S.auth.local=null;
+    renderApp(); return;
+  }
+  if(S.auth.paso==="clave"){ S.auth.local=null; S.auth.paso="local"; renderApp(); return }
   S.auth=null; renderApp();
 }
 async function authTecla(k){
@@ -504,8 +524,15 @@ function renderAuth(){
       <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
+  } else if(a.paso==="clave"){
+    cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
+      <h1>Contraseña de ${esc(a.local||"")}</h1>
+      <p>Pedísela a tu responsable de local.</p>
+      ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
+      <input type="password" id="authClave" placeholder="Contraseña del local" autocomplete="off" style="width:100%" ${a.cargando?"disabled":""}>
+      <button class="btn" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>`;
   } else if(a.paso==="quien"){
-    cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback>← Volver</button>`}
+    cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">← Volver</button>`}
       <h1>${a.modo==="setup"?"¿Quién fija el local?":"¿Quién sos?"}</h1>
       <p>${a.modo==="setup"?"Hace falta el PIN de un administrador.":"Local: "+esc(a.local||"")+". Elegí tu nombre."}</p>
       ${a.cargando?`<div class="note">Cargando…</div>`:
@@ -515,14 +542,14 @@ function renderAuth(){
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
-    cuerpo=`<button class="authBack" data-authback>← Volver</button>
+    cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
       <h1>${confirmando?"Repetí tu PIN":"Hola, "+esc(a.elegido.nombre.split(" ")[0])}</h1>
       <p>${confirmando?"Escribilo de nuevo para confirmarlo.":"Ingresá tu PIN de 4 números."}</p>
       <div class="dots">${[0,1,2,3].map(i=>`<span class="${i<val.length?"on":""}"></span>`).join("")}</div>
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       <div class="keypad">
         ${["1","2","3","4","5","6","7","8","9"].map(k=>`<button type="button" data-tecla="${k}" ${a.cargando?"disabled":""}>${k}</button>`).join("")}
-        <button type="button" class="op" data-authback ${a.cargando?"disabled":""}>Volver</button>
+        <button type="button" class="op" data-authback="1" ${a.cargando?"disabled":""}>Volver</button>
         <button type="button" data-tecla="0" ${a.cargando?"disabled":""}>0</button>
         <button type="button" class="op" data-tecla="borrar" ${a.cargando?"disabled":""}>Borrar</button>
       </div>`;
@@ -1033,6 +1060,7 @@ document.addEventListener("click", async e=>{
     authElegirLocal(v);
     return;
   }
+  if(t.id==="authClaveOk"){ await authEnviarClave(); return }
   if(t.id==="authConfigurar"){ iniciarAuth("setup"); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
@@ -1085,6 +1113,7 @@ document.addEventListener("focusin", e=>{
 document.addEventListener("input", e=>{
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
   if(e.target.id==="remito"){ S.remito=e.target.value }
+  if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.dataset.c){ S.conteo[e.target.dataset.c]=Math.max(0,parseInt(e.target.value,10)||0) }
 });
 document.addEventListener("change", e=>{

@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.8.1";
+const BACKEND_VERSION = "1.9.0";
 
 function doPost(e) {
   let resultado;
@@ -54,7 +54,7 @@ function doGet() {
 
 // Acciones que no requieren token (login y datos públicos no sensibles:
 // nombres de locales/empleados para armar los selectores de login).
-const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "fijarLocalDispositivo"];
+const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "fijarLocalDispositivo", "verificarClaveLocal"];
 
 function _despachar(body) {
   const accion = body.accion;
@@ -69,6 +69,7 @@ function _despachar(body) {
     case "empleadosGestion": return empleadosGestion();
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm);
     case "fijarLocalDispositivo": return fijarLocalDispositivo(body.empleadoId, body.pin, body.pinConfirm, body.local);
+    case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
 }
@@ -178,7 +179,22 @@ function _pinValido(pin) {
 
 function localesActivos() {
   const filas = _leerCrudo("Locales").filter((l) => _esVerdadero(l.activo) !== false);
-  return { ok: true, locales: filas.map((l) => ({ nombre: l.nombre, grupo: l.grupo || "" })) };
+  return { ok: true, locales: filas.map((l) => ({ nombre: l.nombre, grupo: l.grupo || "", tieneClave: !!String(l.clave || "").trim() })) };
+}
+
+/** Contraseña por local (no es el PIN de nadie): un candado extra para
+ *  que no cualquiera que abra la app en una PC vea la nómina de un
+ *  local. Se pide solo al buscar/elegir el local en el login general
+ *  (no en una tablet ya fijada, que salta directo a "¿quién sos?").
+ *  Se guarda en texto plano en la hoja Locales — admin/supervisor la
+ *  ven ahí para pasársela al responsable de local. */
+function verificarClaveLocal(local, clave) {
+  const fila = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
+  if (!fila) return { ok: false, error: "No se encontró el local." };
+  const claveGuardada = String(fila.clave || "").trim();
+  if (!claveGuardada) return { ok: true }; // este local no tiene clave configurada
+  if (String(clave || "").trim() !== claveGuardada) return { ok: false, error: "Contraseña incorrecta." };
+  return { ok: true };
 }
 
 function empleadosLocal(local) {

@@ -81,7 +81,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 | `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo` |
 | `Stock` | `local`, `base`, `ts`, `empleado` |
 | `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden`, `categoria`, `peso` |
-| `Locales` | `nombre`, `grupo`, `activo` |
+| `Locales` | `nombre`, `grupo`, `activo`, `clave` |
 | `Empleados` | `id`, `nombre`, `rol`, `local`, `pin_hash`, `salt`, `activo`, `creado_por`, `creado_ts`, `intentos`, `bloqueado_hasta` |
 | `Config` | `key`, `value` (reservada para más adelante, no la usa el código todavía) |
 | `Auditoria` | `id`, `ts`, `accion`, `actorId`, `actor`, `detalle` |
@@ -106,6 +106,12 @@ Nombre, tipo, categoría, mínimo, peso y alta/baja de sabores también se puede
 ## Peso promedio por sabor (columna `peso`)
 
 `peso` es el peso promedio en kilos de una vasqueta/balde de ese sabor. Con eso cargado, la vista de Stock muestra los kilos totales en cámara de cada sabor (cantidad × peso) y un total general. Se carga sabor por sabor desde la app (pestaña Sabores → lápiz → Editar), no hace falta tocar la planilla. En una hoja que ya existía antes de esta columna, correr `agregarColumnaPeso()` una vez desde Setup.gs para agregarla (queda en 0 — "no cargado" — hasta que se edite cada sabor).
+
+## Contraseña por local (columna `clave` en Locales)
+
+Un candado extra para el login: al buscar y elegir un local (en una PC, o la primera vez que se configura una tablet), si ese local tiene algo cargado en la columna `clave`, la app pide esa contraseña antes de mostrar la nómina de gente para elegir quién sos. Si `clave` está vacío, no pide nada (como hasta ahora).
+
+No es el PIN de nadie — es una clave compartida por local, para que no cualquiera que abra la app vea de entrada los nombres del equipo. Se guarda en texto plano en la hoja (no hasheada, a diferencia de los PIN) porque admin/supervisor tienen que poder verla ahí para pasársela al responsable de local. Una vez que alguien ya inició sesión, no la vuelve a pedir mientras la sesión esté activa (hasta 8 hs en PC) — solo se pide al elegir el local de cero.
 
 ## Dar de alta al segundo admin o supervisor (sin pasar por Setup.gs)
 
