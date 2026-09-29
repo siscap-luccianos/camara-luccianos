@@ -49,22 +49,28 @@ function crearHojas() {
   Logger.log("Listo — creadas: %s | ya existían: %s", creadas.join(", ") || "ninguna", yaExistian.join(", ") || "ninguna");
 }
 
-// Categoría es una propuesta razonable, no la verdad revelada — se ajusta
-// sabor por sabor editando la columna "categoria" directo en la hoja
-// Sabores (ver agregarColumnaCategoria() más abajo para migrar una
-// planilla que ya estaba en uso antes de que existiera esta columna).
+// Categoría según el catálogo oficial de Lucciano's Academy
+// (js/data/productosHeladeria.js, sacado del manual institucional 2026 —
+// ver ese repo si hace falta volver a chequear algo). "Chocolate vegano
+// 81%" y "Mascarpone" a secas (sin "con frutos rojos") no están en ese
+// catálogo — no son productos reales de la carta, así que quedan
+// inactivos por defecto (5° elemento de la tupla, false) en vez de
+// borrarlos — así el id no se recicla si algún día vuelven a existir.
+// El resto queda con el mejor criterio a mano donde no hay match — ajustable en
+// cualquier momento editando la columna "categoria" en la hoja Sabores
+// (ver agregarColumnaCategoria()/corregirCategorias() más abajo).
 const CATEGORIAS = ["Chocolates", "Cremas", "Frutales", "Dulces de leche"];
 const SABORES_INICIALES = [
-  [1, "Alfajor de nuez Lucciano's", "v", "Dulces de leche"], [2, "Alfajor Lucciano's", "v", "Dulces de leche"], [3, "Alfajor pistacchio", "v", "Cremas"], [4, "Banana Split", "v", "Frutales"],
-  [5, "Cheesecake al pistacchio", "v", "Cremas"], [6, "Chocolate blanco & pistacchio crock", "v", "Chocolates"], [7, "Chocolate Dubái", "v", "Chocolates"], [8, "Chocolate Lucciano's", "v", "Chocolates"],
-  [9, "Chocolate Lucciano's con bombón de avellanas", "v", "Chocolates"], [10, "Chocolate Platino", "v", "Chocolates"], [11, "Chocolate vegano 81%", "v", "Chocolates"], [12, "Chocotorta", "v", "Dulces de leche"],
+  [1, "Alfajor de nuez Lucciano's", "v", "Dulces de leche"], [2, "Alfajor Lucciano's", "v", "Dulces de leche"], [3, "Alfajor pistacchio", "v", "Cremas"], [4, "Banana Split", "v", "Cremas"],
+  [5, "Cheesecake al pistacchio", "v", "Cremas"], [6, "Chocolate blanco & pistacchio crock", "v", "Cremas"], [7, "Chocolate Dubái", "v", "Chocolates"], [8, "Chocolate Lucciano's", "v", "Chocolates"],
+  [9, "Chocolate Lucciano's con bombón de avellanas", "v", "Chocolates"], [10, "Chocolate Platino", "v", "Chocolates"], [11, "Chocolate vegano 81%", "v", "Chocolates", false], [12, "Chocotorta", "v", "Dulces de leche"],
   [13, "Coco rock", "v", "Cremas"], [14, "Cookies", "v", "Cremas"], [15, "Dulce de Leche & bombón de avellanas", "v", "Dulces de leche"], [16, "Dulce de Leche con Brownie", "v", "Dulces de leche"],
-  [17, "Dulce de Leche con Dulce de leche", "v", "Dulces de leche"], [18, "Dulce de leche granizado", "v", "Dulces de leche"], [19, "Frambuesa + Avella bianca", "v", "Frutales"], [20, "Frutilla", "v", "Frutales"],
-  [21, "Frutilla a la crema", "v", "Frutales"], [22, "Frutilla con Naranja", "v", "Frutales"], [23, "King bianco", "v", "Cremas"], [24, "King nero", "v", "Cremas"], [25, "Lemon pie", "v", "Frutales"],
-  [26, "Limón", "v", "Frutales"], [27, "Mandarina", "v", "Frutales"], [28, "Mango Alphonso", "v", "Frutales"], [29, "Mascarpone", "v", "Cremas"], [30, "Mascarpone con frutos rojos", "v", "Cremas"],
-  [31, "Menta Granizada", "v", "Cremas"], [32, "Mousse de Maracuyá", "v", "Frutales"], [33, "Peanut & caramel", "v", "Cremas"], [34, "Pistacchio", "v", "Cremas"], [35, "Pistacchio vegano", "v", "Cremas"],
-  [36, "Pomelo", "v", "Frutales"], [37, "Pretzel", "v", "Dulces de leche"], [38, "Sorbete dark 72%", "v", "Chocolates"], [39, "Sorbete de frutos rojos", "v", "Frutales"], [40, "Súper gianduiotto", "v", "Chocolates"],
-  [41, "Súper Sabayón", "v", "Cremas"], [42, "Tiramisú", "v", "Cremas"], [43, "Tiramisú al pistacchio", "v", "Cremas"], [44, "Tramontana", "v", "Chocolates"], [45, "Vasubeda", "v", "Cremas"],
+  [17, "Dulce de Leche con Dulce de leche", "v", "Dulces de leche"], [18, "Dulce de leche granizado", "v", "Dulces de leche"], [19, "Frambuesa + Avella bianca", "v", "Cremas"], [20, "Frutilla", "v", "Frutales"],
+  [21, "Frutilla a la crema", "v", "Cremas"], [22, "Frutilla con Naranja", "v", "Frutales"], [23, "King bianco", "v", "Cremas"], [24, "King nero", "v", "Cremas"], [25, "Lemon pie", "v", "Cremas"],
+  [26, "Limón", "v", "Frutales"], [27, "Mandarina", "v", "Frutales"], [28, "Mango Alphonso", "v", "Frutales"], [29, "Mascarpone", "v", "Cremas", false], [30, "Mascarpone con frutos rojos", "v", "Cremas"],
+  [31, "Menta Granizada", "v", "Cremas"], [32, "Mousse de Maracuyá", "v", "Cremas"], [33, "Peanut & caramel", "v", "Cremas"], [34, "Pistacchio", "v", "Cremas"], [35, "Pistacchio vegano", "v", "Frutales"],
+  [36, "Pomelo", "v", "Frutales"], [37, "Pretzel", "v", "Cremas"], [38, "Sorbete dark 72%", "v", "Chocolates"], [39, "Sorbete de frutos rojos", "v", "Frutales"], [40, "Súper gianduiotto", "v", "Cremas"],
+  [41, "Súper Sabayón", "v", "Cremas"], [42, "Tiramisú", "v", "Cremas"], [43, "Tiramisú al pistacchio", "v", "Cremas"], [44, "Tramontana", "v", "Cremas"], [45, "Vasubeda", "v", "Frutales"],
   [46, "Chantilly", "b", "Cremas"], [47, "Vainilla", "b", "Cremas"],
 ];
 
@@ -86,10 +92,10 @@ function poblarSaboresYLocales() {
   const idsExistentes = {};
   _filasComoObjetosLocal(hojaSabores).forEach((f) => { idsExistentes[String(f.id)] = true; });
   let nuevosSabores = 0;
-  SABORES_INICIALES.forEach(([id, nombre, tipo, categoria], i) => {
+  SABORES_INICIALES.forEach(([id, nombre, tipo, categoria, activo], i) => {
     if (idsExistentes[String(id)]) return;
     const fila = hojaSabores.getLastRow() + 1;
-    const valores = [id, nombre, tipo, _minimoPorDefecto(tipo), "SI", i + 1, categoria];
+    const valores = [id, nombre, tipo, _minimoPorDefecto(tipo), activo === false ? "NO" : "SI", i + 1, categoria];
     hojaSabores.getRange(fila, 1, 1, valores.length).setValues([valores]);
     nuevosSabores++;
   });
@@ -145,6 +151,71 @@ function agregarColumnaCategoria() {
     completadas++;
   }
   Logger.log("Listo — categoría completada en %s sabores (los que ya la tenían no se tocaron).", completadas);
+}
+
+/** A diferencia de agregarColumnaCategoria() (que solo completa lo
+ *  vacío), esta SOBREESCRIBE la categoría de cada sabor con el valor de
+ *  SABORES_INICIALES — para cuando se corrige la propuesta inicial
+ *  (como pasó acá: la primera versión tenía mal varios sabores) y hace
+ *  falta que la planilla ya cargada se actualice, no solo la que
+ *  arranca de cero. No toca nombre/tipo/mínimo/activo/orden, y no toca
+ *  ningún sabor que Gabi haya dado de alta a mano (id no está en
+ *  SABORES_INICIALES) — esos quedan como estén. */
+function corregirCategorias() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Sabores");
+  if (!hoja) throw new Error("No existe la hoja Sabores — corré crearHojas() primero.");
+
+  const categoriaPorId = {};
+  SABORES_INICIALES.forEach(([id, , , categoria]) => { categoriaPorId[String(id)] = categoria; });
+
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const colCategoria = headers.indexOf("categoria");
+  if (colCategoria === -1) throw new Error("Falta la columna categoria — corré agregarColumnaCategoria() primero.");
+  const colId = headers.indexOf("id");
+
+  let corregidas = 0;
+  for (let i = 1; i < datos.length; i++) {
+    if (!datos[i].some((c) => c !== "")) continue;
+    const id = String(datos[i][colId]);
+    const categoria = categoriaPorId[id];
+    if (!categoria) continue; // sabor dado de alta a mano, no está en la lista original
+    if (String(datos[i][colCategoria] || "").trim() === categoria) continue; // ya está bien
+    hoja.getRange(i + 1, colCategoria + 1).setValue(categoria);
+    corregidas++;
+  }
+  Logger.log("Listo — categoría corregida en %s sabores.", corregidas);
+}
+
+/** Desactiva (activo=NO) los sabores marcados con `false` en
+ *  SABORES_INICIALES — hoy "Chocolate vegano 81%" y "Mascarpone" a
+ *  secas, que no son productos reales de la carta (no están en el
+ *  catálogo de Lucciano's Academy). No los borra: quedan en la hoja
+ *  por si hace falta reactivarlos, simplemente dejan de aparecer en
+ *  la app (columna activo=NO). Segura de re-correr. */
+function desactivarSaboresInexistentes() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Sabores");
+  if (!hoja) throw new Error("No existe la hoja Sabores — corré crearHojas() primero.");
+
+  const idsADesactivar = SABORES_INICIALES.filter(([, , , , activo]) => activo === false).map(([id]) => String(id));
+
+  const datos = hoja.getDataRange().getValues();
+  const headers = datos[0];
+  const colActivo = headers.indexOf("activo");
+  const colId = headers.indexOf("id");
+  const colNombre = headers.indexOf("nombre");
+
+  let desactivados = [];
+  for (let i = 1; i < datos.length; i++) {
+    if (!datos[i].some((c) => c !== "")) continue;
+    const id = String(datos[i][colId]);
+    if (idsADesactivar.indexOf(id) === -1) continue;
+    hoja.getRange(i + 1, colActivo + 1).setValue("NO");
+    desactivados.push(datos[i][colNombre]);
+  }
+  Logger.log("Listo — desactivados: %s", desactivados.join(", ") || "ninguno (ya estaban desactivados o no existen en tu hoja)");
 }
 
 /** Da de alta a Gabi como el primer admin, sin PIN — lo crea él mismo

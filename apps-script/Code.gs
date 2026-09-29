@@ -30,7 +30,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.4.0";
+const BACKEND_VERSION = "1.5.0";
 
 function doPost(e) {
   let resultado;
@@ -303,10 +303,14 @@ function _puedeVerLocal(empleado, local) {
   return String(empleado.local || "").trim() === String(local || "").trim();
 }
 
-function datos(local, empleado) {
-  if (!local) return { ok: false, error: "Falta el local." };
-  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+const DATOS_CACHE_SEGUNDOS = 20;
 
+/** Ida a Sheets real (3 lecturas de hoja completa) — es lo que hace
+ *  lenta a datos(), no el tamaño de la respuesta. Se cachea el
+ *  resultado por local (ver datos()) para que cambiar de local varias
+ *  veces seguidas, o el polling cada 30s, no vuelvan a pagar ese costo
+ *  si nada cambió en el medio. */
+function _datosSinCache(local, empleado) {
   const limite = Date.now() - DIAS_HISTORIAL * 864e5;
   const registros = _leerCrudo("Registros")
     .filter((r) => String(r.local || "").trim() === String(local).trim() && Number(r.ts) >= limite)
@@ -320,7 +324,39 @@ function datos(local, empleado) {
     .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas" }))
     .sort((a, b) => a.orden - b.orden);
 
-  return { ok: true, registros: registros, stock: stock, sabores: sabores, rol: empleado.rol };
+  return { registros: registros, stock: stock, sabores: sabores };
+}
+
+function _cacheKeyDatos(local) {
+  return "datos_" + local;
+}
+
+/** Invalida el cache de un local — se llama después de cualquier
+ *  escritura que le cambie los datos (registrar, conteo, anular), así
+ *  la propia persona ve su movimiento reflejado al toque en vez de
+ *  esperar hasta 20s a que venza el cache. */
+function _invalidarCacheDatos(local) {
+  try { CacheService.getScriptCache().remove(_cacheKeyDatos(local)); } catch (err) { /* no crítico */ }
+}
+
+function datos(local, empleado) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+
+  const cache = CacheService.getScriptCache();
+  const key = _cacheKeyDatos(local);
+  let base;
+  try {
+    const cacheado = cache.get(key);
+    if (cacheado) base = JSON.parse(cacheado);
+  } catch (err) { /* si el cache falla, seguimos sin él */ }
+
+  if (!base) {
+    base = _datosSinCache(local, empleado);
+    try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
+  }
+
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, rol: empleado.rol };
 }
 
 function _registroPublico(r) {
@@ -371,6 +407,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado) {
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
       anulado_por: "", anulado_ts: "", motivo: "",
     });
+    _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
   } finally {
     lock.releaseLock();
@@ -417,6 +454,7 @@ function conteo(clienteId, local, items, empleado) {
         if (fila[h] !== undefined) _escribirCeldaSinAdivinar(sheet.getRange(filaIdx + 1, i + 1), fila[h]);
       });
     }
+    _invalidarCacheDatos(local);
     return { ok: true, ts: ts };
   } finally {
     lock.releaseLock();
@@ -460,6 +498,7 @@ function anular(registroId, motivo, empleado) {
     sheet.getRange(idx + 1, col.anulado_ts + 1).setValue(Date.now());
     sheet.getRange(idx + 1, col.motivo + 1).setValue(motivo || "");
     _auditar("anular", empleado.id, empleado.nombre, "Movimiento " + registroId + " (" + filas[idx][col.tipo] + ", " + local + ")" + (motivo ? ": " + motivo : ""));
+    _invalidarCacheDatos(local);
     return { ok: true };
   } finally {
     lock.releaseLock();

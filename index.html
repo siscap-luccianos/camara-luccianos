@@ -239,7 +239,7 @@ function limpiarSesion(){ S.token=null; S.empleado=null; ls.del("sesionToken"); 
    API — fetch POST text/plain (evita preflight CORS), acción
    despachada por "accion". Mismo patrón que luccianos-academy.
 ============================================================ */
-async function api(accion, payload={}, timeoutMs=12000){
+async function api(accion, payload={}, timeoutMs=20000){
   if(!API_URL || API_URL.indexOf("PEGAR_URL")===0){
     return { ok:false, error:"El backend todavía no está conectado. Avisale a Gabi que falta pegar la URL de Apps Script en index.html." };
   }
@@ -555,7 +555,10 @@ function renderNav(){
 
 function renderMain(){
   if(!S.local) return `<div class="note">Elegí el local arriba para empezar.</div>`;
-  if(!S.sabores.length) return `<div class="note">Cargando datos de ${esc(S.local)}…</div>`;
+  if(!S.sabores.length){
+    if(S.errorCarga) return `<div class="note">${esc(S.errorCarga)}<br><button class="btn ghost" id="reintentarCarga" style="margin-top:10px">Reintentar</button></div>`;
+    return `<div class="note">Cargando datos de ${esc(S.local)}…</div>`;
+  }
   const st=stockMap();
   let h="";
   if(S.tab==="salida") h=gridSalida(st);
@@ -802,14 +805,23 @@ function renderBar(){
 /* ============================================================
    CARGA DE DATOS + POLLING (reemplaza los onSnapshot)
 ============================================================ */
+function _datosCacheKey(local){ return "datosCache_"+local }
 async function cargarDatos(){
   if(!S.local || !S.token) return;
-  const r = await api("datos", {local:S.local});
-  if(!r || !r.ok) return;
+  const local=S.local; // por si cambia de local mientras esta llamada está en vuelo
+  const r = await api("datos", {local});
+  if(local!==S.local) return; // el usuario ya se movió a otro local, esta respuesta quedó vieja
+  if(!r || !r.ok){
+    S.errorCarga = (r&&r.error) || "No se pudo conectar con el backend. Se va a reintentar solo.";
+    if(!S.sabores.length) renderApp();
+    return;
+  }
+  S.errorCarga = null;
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.regs = r.registros;
   S.stock = r.stock;
+  try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, registros:r.registros, stock:r.stock})); }catch(e){}
   if(!S.conteo) renderApp(); else renderBar();
 }
 function iniciarPolling(){
@@ -817,8 +829,19 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined;
+  S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   S.cart={salida:{},ingreso:{}}; S.conteo=null; S.confirm=false; S.equipo=undefined; S.pedidoAdj={};
+  // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
+  // mientras se refresca en segundo plano — evita la pantalla en blanco al
+  // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
+  try{
+    const cache = ls.get(_datosCacheKey(local),"");
+    if(cache){
+      const d = JSON.parse(cache);
+      S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
+      S.regs = d.registros; S.stock = d.stock;
+    }
+  }catch(e){}
   cargarDatos(); renderApp();
 }
 
@@ -910,6 +933,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="authLocalOk"){ const v=$("#authLocal").value; if(v) authElegirLocal(v); return }
   if(t.id==="authConfigurar"){ iniciarAuth("setup"); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
+  if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; renderApp(); return }
