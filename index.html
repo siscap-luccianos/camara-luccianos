@@ -1079,32 +1079,46 @@ document.addEventListener("change", e=>{
     else e.target.value=S.local||"";
   }
 });
+async function conBotonCargando(form, fn){
+  const btn=form.querySelector('button[type=submit]');
+  if(!btn || btn.disabled) return;
+  const textoOriginal=btn.textContent;
+  btn.disabled=true; btn.textContent="Cargando…";
+  try{ await fn(); }
+  finally{ btn.disabled=false; btn.textContent=textoOriginal; }
+}
 document.addEventListener("submit", async e=>{
   if(e.target.id==="altaFormEquipo" || e.target.id==="altaFormGestion"){
     e.preventDefault();
-    const esGestion = e.target.id==="altaFormGestion";
-    const fd=new FormData(e.target);
-    const r = await api("altaEmpleado", {nombre:fd.get("nombre"), rol:fd.get("rol"), local: esGestion?"":S.local});
-    if(r && r.ok){
-      toast("Alta creada"); e.target.reset();
-      if(esGestion) cargarGestion(); else cargarEquipo();
-    } else toast((r&&r.error)||"No se pudo dar de alta.");
+    await conBotonCargando(e.target, async ()=>{
+      const esGestion = e.target.id==="altaFormGestion";
+      const fd=new FormData(e.target);
+      const r = await api("altaEmpleado", {nombre:fd.get("nombre"), rol:fd.get("rol"), local: esGestion?"":S.local});
+      if(r && r.ok){
+        toast("Alta creada"); e.target.reset();
+        if(esGestion) cargarGestion(); else cargarEquipo();
+      } else toast((r&&r.error)||"No se pudo dar de alta.");
+    });
   }
   if(e.target.dataset && e.target.dataset.editarSabor){
     e.preventDefault();
-    const id=e.target.dataset.editarSabor;
-    const actual=(S.saboresAdmin||[]).find(x=>x.id===id);
-    const fd=new FormData(e.target);
-    await guardarSabor({
-      id, nombre:fd.get("nombre"), tipo:fd.get("tipo"), categoria:fd.get("categoria"),
-      minimo:fd.get("minimo"), peso:fd.get("peso"), orden: actual?actual.orden:0, activo: fd.get("activo")==="on",
+    await conBotonCargando(e.target, async ()=>{
+      const id=e.target.dataset.editarSabor;
+      const actual=(S.saboresAdmin||[]).find(x=>x.id===id);
+      const fd=new FormData(e.target);
+      await guardarSabor({
+        id, nombre:fd.get("nombre"), tipo:fd.get("tipo"), categoria:fd.get("categoria"),
+        minimo:fd.get("minimo"), peso:fd.get("peso"), orden: actual?actual.orden:0, activo: fd.get("activo")==="on",
+      });
     });
   }
   if(e.target.id==="altaSaborForm"){
     e.preventDefault();
-    const fd=new FormData(e.target);
-    await guardarSabor({ nombre:fd.get("nombre"), tipo:fd.get("tipo"), categoria:fd.get("categoria"), minimo:fd.get("minimo"), peso:fd.get("peso") });
-    e.target.reset();
+    await conBotonCargando(e.target, async ()=>{
+      const fd=new FormData(e.target);
+      await guardarSabor({ nombre:fd.get("nombre"), tipo:fd.get("tipo"), categoria:fd.get("categoria"), minimo:fd.get("minimo"), peso:fd.get("peso") });
+      e.target.reset();
+    });
   }
 });
 
