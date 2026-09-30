@@ -1,0 +1,13 @@
+{
+  "name": "Lucciano's Stock",
+  "short_name": "Lucciano's Stock",
+  "description": "Registro de salidas, ingresos y stock de cámara de Lucciano's.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#5E7A3F",
+  "theme_color": "#5E7A3F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
