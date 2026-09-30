@@ -348,7 +348,8 @@ function alertas(st){ return S.sabores.filter(s=>estadoSabor(s.id,st)) }
 
 function pedidoSugerido(id, st){
   const s7=salidasDias(7), promedioDiario=(s7[id]||0)/7;
-  const sug=Math.max(0, Math.ceil(promedioDiario*(S.diasEntrega+1) - st[id]));
+  let sug=Math.max(0, Math.ceil(promedioDiario*(S.diasEntrega+1) - st[id]));
+  sug = Math.ceil(sug/2)*2; // los pedidos a fábrica van de a 2 — no se puede pedir una unidad suelta
   return Math.max(0, sug + (S.pedidoAdj[id]||0));
 }
 
@@ -745,7 +746,7 @@ function stockView(st){
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${ed?` · <span style="color:var(--${ed.cls})">${ed.label}</span>`:""}${s.peso?` · ≈ ${((st[s.id]||0)*s.peso).toFixed(1)} kg`:""}</div></div>
-      ${puedePedido?`<div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar al pedido">+</button></div>`:`<div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>`}
+      ${puedePedido?`<div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar 2 del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar 2 al pedido">+</button></div>`:`<div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>`}
     </div>`};
 
   return `<div class="kpis">
@@ -1174,8 +1175,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; renderApp(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; renderApp(); return }
-  if(t.dataset.pinc){ S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+1; renderApp(); return }
-  if(t.dataset.pdec){ S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-1; renderApp(); return }
+  if(t.dataset.pinc){ S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+2; renderApp(); return }
+  if(t.dataset.pdec){ S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-2; renderApp(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
