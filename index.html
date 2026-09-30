@@ -226,7 +226,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.4.2";
+const FRONTEND_VERSION = "1.5.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -761,14 +761,14 @@ function stockView(st){
     const {s,cov,ed}=f;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${ed?` · <span style="color:var(--${ed.cls})">${ed.label}</span>`:""}${s.peso?` · ≈ ${((st[s.id]||0)*s.peso).toFixed(1)} kg`:""}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${ed?` · <span style="color:var(--${ed.cls})">${ed.label}</span>`:""}${s.peso?` · ≈ ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}</div></div>
       <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>
     </div>`};
 
   return `<div class="kpis">
     <div class="kpi"><span class="lbl">Sabores en alerta</span><span class="val${al.length?" crit":""}">${al.length}</span><span class="sub">${al.length?al.slice(0,4).map(s=>esc(s.nombre)).join(" · ")+(al.length>4?" …":""):"Todo en orden"}</span></div>
     <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
-    ${kgTotal>0?`<div class="kpi"><span class="lbl">Peso en cámara</span><span class="val">≈ ${kgTotal.toFixed(1)} kg</span><span class="sub">Solo cuenta sabores con peso cargado</span></div>`:""}
+    ${kgTotal>0?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">≈ ${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
   <div class="tools" style="margin-top:16px">
     <span class="grow" style="color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</span>
@@ -979,8 +979,14 @@ function saboresView(){
         <input type="text" name="nombre" value="${esc(s.nombre)}" required style="flex:2 1 200px">
         <select name="tipo" style="flex:0 0 110px"><option value="v" ${s.tipo==="v"?"selected":""}>Vasqueta</option><option value="b" ${s.tipo==="b"?"selected":""}>Balde</option></select>
         <select name="categoria" style="flex:1 1 140px">${opcionesCategoria(s.categoria)}</select>
-        <input type="number" name="minimo" value="${s.minimo}" min="0" style="flex:0 0 70px" title="Mínimo">
-        <input type="number" name="peso" value="${s.peso||""}" min="0" step="0.1" placeholder="Peso kg" style="flex:0 0 90px" title="Peso promedio en kg">
+        <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
+          <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
+          <input type="number" name="minimo" value="${s.minimo}" min="0" style="width:100%">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
+          <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Peso promedio (kg)</span>
+          <input type="number" name="peso" value="${s.peso||""}" min="0" step="0.1" style="width:100%">
+        </div>
         <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" name="activo" ${s.activo?"checked":""}> Activo</label>
         <button class="btn" type="submit">Guardar</button>
         <button class="btn ghost" type="button" data-cancelar-sabor="1">Cancelar</button>
@@ -1000,8 +1006,14 @@ function saboresView(){
     <input type="text" name="nombre" placeholder="Nombre del sabor" required style="flex:2 1 200px">
     <select name="tipo" style="flex:0 0 110px"><option value="v">Vasqueta</option><option value="b">Balde</option></select>
     <select name="categoria" style="flex:1 1 140px">${opcionesCategoria("")}</select>
-    <input type="number" name="minimo" placeholder="Mínimo" value="6" min="0" style="flex:0 0 70px">
-    <input type="number" name="peso" placeholder="Peso kg" min="0" step="0.1" style="flex:0 0 90px" title="Peso promedio en kg">
+    <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
+      <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
+      <input type="number" name="minimo" value="6" min="0" style="width:100%">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
+      <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Peso promedio (kg)</span>
+      <input type="number" name="peso" min="0" step="0.1" style="width:100%">
+    </div>
     <button class="btn" type="submit">Agregar</button>
   </form>`;
 }
