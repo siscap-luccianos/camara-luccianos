@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.11.0";
+const BACKEND_VERSION = "1.12.0";
 
 function doPost(e) {
   let resultado;
@@ -68,7 +68,7 @@ function _despachar(body) {
     case "localesActivos": return localesActivos();
     case "empleadosLocal": return empleadosLocal(body.local);
     case "empleadosGestion": return empleadosGestion();
-    case "login": return login(body.empleadoId, body.pin, body.pinConfirm);
+    case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
@@ -246,6 +246,7 @@ function login(empleadoId, pin, pinConfirm, local) {
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
+  let empleadoIdOk = null;
   try {
     const sheet = _sheet("Empleados");
     const datos = sheet.getDataRange().getValues();
@@ -280,29 +281,35 @@ function login(empleadoId, pin, pinConfirm, local) {
       sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
       sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
       _auditar("pin_creado", empleadoId, nombre, "Primer PIN creado");
-      const empleado = _empleadoPorId(empleadoId);
-      return _resultadoLogin(empleado, local);
-    }
-
-    const salt = String(datos[fila][col.salt] || "");
-    if (_hashPin(pin, salt) !== pinHash) {
-      const intentos = (Number(datos[fila][col.intentos]) || 0) + 1;
-      sheet.getRange(fila + 1, col.intentos + 1).setValue(intentos);
-      if (intentos >= INTENTOS_MAX) {
-        sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue(Date.now() + BLOQUEO_MS);
-        _auditar("pin_bloqueado", empleadoId, nombre, "5 intentos incorrectos");
-        return { ok: false, error: "PIN incorrecto. Se bloqueó por 5 minutos por intentos fallidos." };
+      empleadoIdOk = empleadoId;
+    } else {
+      const salt = String(datos[fila][col.salt] || "");
+      if (_hashPin(pin, salt) !== pinHash) {
+        const intentos = (Number(datos[fila][col.intentos]) || 0) + 1;
+        sheet.getRange(fila + 1, col.intentos + 1).setValue(intentos);
+        if (intentos >= INTENTOS_MAX) {
+          sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue(Date.now() + BLOQUEO_MS);
+          _auditar("pin_bloqueado", empleadoId, nombre, "5 intentos incorrectos");
+          return { ok: false, error: "PIN incorrecto. Se bloqueó por 5 minutos por intentos fallidos." };
+        }
+        return { ok: false, error: "PIN incorrecto (" + intentos + "/" + INTENTOS_MAX + ")." };
       }
-      return { ok: false, error: "PIN incorrecto (" + intentos + "/" + INTENTOS_MAX + ")." };
-    }
 
-    sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
-    sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
-    const empleado = _empleadoPorId(empleadoId);
-    return _resultadoLogin(empleado, local);
+      sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
+      sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
+      empleadoIdOk = empleadoId;
+    }
   } finally {
     lock.releaseLock();
   }
+
+  // Soltamos el candado global ACÁ, antes de armar la respuesta — lo que
+  // sigue (emitir el token y, si corresponde, traer los datos del local)
+  // es de solo lectura y no necesita bloquear a otros locales mientras
+  // tanto. Esto es lo que más recorta la espera cuando varias personas
+  // entran casi al mismo tiempo en distintos locales.
+  const empleado = _empleadoPorId(empleadoIdOk);
+  return _resultadoLogin(empleado, local);
 }
 
 /** Arma la respuesta del login. Si el cliente ya sabe con qué local va a
@@ -328,7 +335,7 @@ function _puedeVerLocal(empleado, local) {
   return String(empleado.local || "").trim() === String(local || "").trim();
 }
 
-const DATOS_CACHE_SEGUNDOS = 20;
+const DATOS_CACHE_SEGUNDOS = 45; // más que POLL_MS (30s) del cliente, para que la mayoría de los sondeos reutilicen el cache en vez de releer toda la hoja de Registros
 
 /** Ida a Sheets real (3 lecturas de hoja completa) — es lo que hace
  *  lenta a datos(), no el tamaño de la respuesta. Se cachea el
@@ -826,18 +833,26 @@ function _escribirCeldaSinAdivinar(celda, valor) {
  *  histórico en Script Properties), así un id borrado no se le
  *  hereda por accidente a un registro nuevo. */
 function _proximoId(sheet) {
-  const datos = sheet.getDataRange().getValues();
-  const headers = datos[0];
-  const colId = headers.indexOf("id");
-  let maxActual = 0;
-  for (let i = 1; i < datos.length; i++) {
-    const v = Number(datos[i][colId]);
-    if (v > maxActual) maxActual = v;
-  }
   const props = PropertiesService.getScriptProperties();
   const clave = "proximoId_" + sheet.getName();
   const maxGuardado = Number(props.getProperty(clave)) || 0;
-  const nuevoId = Math.max(maxActual, maxGuardado) + 1;
+  let maxActual = maxGuardado;
+  if (!maxGuardado) {
+    // Primera vez que esta hoja pide un id: todavía no hay nada guardado en
+    // Script Properties, así que la escaneamos una única vez para arrancar
+    // el correlativo. De ahí en más ya queda guardado acá y no hace falta
+    // releer la hoja entera (que puede tener miles de filas en Registros)
+    // en cada alta — eso era lo que hacía cada vez más lento registrar
+    // una salida/ingreso a medida que se acumulaba historial.
+    const datos = sheet.getDataRange().getValues();
+    const headers = datos[0];
+    const colId = headers.indexOf("id");
+    for (let i = 1; i < datos.length; i++) {
+      const v = Number(datos[i][colId]);
+      if (v > maxActual) maxActual = v;
+    }
+  }
+  const nuevoId = maxActual + 1;
   props.setProperty(clave, String(nuevoId));
   return nuevoId;
 }
