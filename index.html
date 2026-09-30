@@ -384,9 +384,10 @@ async function cargarEmpleadosDeAuth(){
   // que admin/supervisor entren: se ve igual que cualquier local en el
   // buscador, nadie que no sepa que existe lo encuentra, y si tiene
   // contraseña cargada queda protegido igual que cualquier otro.
-  S.auth.cargando = true; renderApp();
+  S.auth.cargando = true; S.auth.errorCarga = ""; renderApp();
   const r = S.auth.esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local:S.auth.local});
   S.auth.empleados = r&&r.ok?r.empleados:[];
+  S.auth.errorCarga = (!r||!r.ok) ? ((r&&r.error)||"No se pudo conectar con el backend.") : "";
   S.auth.cargando = false;
   renderApp();
 }
@@ -543,6 +544,7 @@ function renderAuth(){
       <h1>¿Quién sos?</h1>
       <p>${a.esGestion?"Elegí tu nombre.":"Local: "+esc(a.local||"")+". Elegí tu nombre."}</p>
       ${a.cargando?`<div class="note">Cargando…</div>`:
+        a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
         :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
@@ -1071,11 +1073,13 @@ document.addEventListener("click", async e=>{
   if(t.id==="authLocalOk"){
     const v=$("#authLocal").value.trim();
     if(!v) return;
-    if(!S.locales.some(l=>l.nombre===v)){ toast("Elegí un local de la lista"); return }
-    authElegirLocal(v);
+    const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase());
+    if(!match){ toast("Elegí un local de la lista"); return }
+    authElegirLocal(match.nombre);
     return;
   }
   if(t.id==="authClaveOk"){ await authEnviarClave(); return }
+  if(t.id==="authReintentar"){ await cargarEmpleadosDeAuth(); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
@@ -1133,7 +1137,8 @@ document.addEventListener("input", e=>{
 document.addEventListener("change", e=>{
   if(e.target.id==="local"){
     const v=e.target.value.trim();
-    if(v && v!==S.local && S.locales.some(l=>l.nombre===v && !l.esGestion)) setLocal(v);
+    const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
+    if(match && match.nombre!==S.local) setLocal(match.nombre);
     else e.target.value=S.local||"";
   }
 });
