@@ -213,7 +213,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.1.1";
+const FRONTEND_VERSION = "1.2.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -763,7 +763,10 @@ function stockView(st){
   </div>
   ${chipFiltros()}
   <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
-  ${puedePedido?`<div class="tools" style="margin-top:16px"><button class="btn" id="verPedidoBtn" style="width:100%">Revisar pedido →</button></div>`:""}`;
+  ${puedePedido?`<div class="tools" style="margin-top:16px">
+    <div class="grow" style="font-size:.85rem;color:var(--muted)">La app arma un pedido sugerido para <b style="color:var(--ink)">${al.length}</b> ${al.length===1?"sabor que está bajo":"sabores que están bajos"}</div>
+    <button class="btn" id="verPedidoBtn" style="white-space:nowrap">Ver pedido sugerido →</button>
+  </div>`:""}`;
 }
 
 function stockViewPedido(st){
@@ -771,7 +774,7 @@ function stockViewPedido(st){
   let pedidoTotal=0;
   const filas=S.sabores.map(s=>{
     const ped=pedidoSugerido(s.id,st); pedidoTotal+=ped;
-    return {s, ped};
+    return {s, ped, vendido:s7[s.id]||0};
   });
   const dias=[2,3,4,7];
   const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
@@ -781,20 +784,34 @@ function stockViewPedido(st){
   const listaVisible = listaFiltrada(st);
 
   const row=f=>{
-    const {s,ped}=f;
-    return `<div class="row">
-      ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día</div></div>
-      <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar 2 del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar 2 al pedido">+</button></div>
+    const {s,ped,vendido}=f;
+    return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:10px">
+        ${plateHTML(s.id)}
+        <div class="nm" style="flex:1;min-width:0">${esc(s.nombre)}<div class="meta">Tenés ${st[s.id]} hoy · vendiste ${vendido} esta semana</div></div>
+      </div>
+      <div style="height:1px;background:var(--line)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div>
+          <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Calculado automáticamente</div>
+          <div style="font-size:.75rem;color:var(--muted)">Podés ajustarlo con − y +</div>
+        </div>
+        <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar 2 del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar 2 al pedido">+</button></div>
+      </div>
     </div>`};
 
   return `<button class="authBack" type="button" id="volverPedido">← Volver a Stock</button>
-  <div class="kpis" style="margin-top:10px">
+  <p class="sec" style="margin-top:6px">Pedido sugerido</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">La app calcula esto sola con tu stock de hoy y lo que se vendió esta semana. Podés cambiar cualquier número antes de mandarlo.</p>
+  <div style="background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-bottom:14px">
+    <b>¿Cómo se calcula?</b> Lo que vendiste por día × los días hasta que llegue el próximo pedido, menos lo que ya te queda. Elegí primero en cuántos días llega:
+  </div>
+  <div class="kpis">
     <div class="kpi"><span class="lbl">Próxima entrega en</span><div class="diasChips">${dias.map(d=>`<button type="button" class="chip" data-dias="${d}" aria-pressed="${S.diasEntrega===d}">${d} días</button>`).join("")}</div><span class="sub">+ 1 día de stock de seguridad</span></div>
-    <div class="kpi"><span class="lbl">Total del pedido</span><span class="val">${pedidoTotal}</span><span class="sub">unidades, siempre en múltiplos de 2</span></div>
+    <div class="kpi"><span class="lbl">Total a pedir</span><span class="val">${pedidoTotal}</span><span class="sub">unidades, siempre en múltiplos de 2</span></div>
   </div>
   ${chipFiltros()}
-  <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
+  <div style="margin-top:14px;gap:10px;display:flex;flex-direction:column;background:none;border:0">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
   <div class="waPanel">
     <p class="sec" style="margin:0">Mensaje del pedido</p>
     <div class="waBubbleBox"><div class="waBubble">${esc(waText)}</div></div>
