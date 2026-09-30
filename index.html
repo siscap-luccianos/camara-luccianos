@@ -684,7 +684,7 @@ function gridSalida(st){
       <button class="pick" data-add="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
-        ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:""}
+        ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
