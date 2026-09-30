@@ -226,7 +226,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.4.0";
+const FRONTEND_VERSION = "1.4.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1349,7 +1349,7 @@ document.addEventListener("submit", async e=>{
    mismo archivo con un parámetro que cambia siempre (así esa lectura
    puntual no puede venir de la caché), y avisar si difiere.
 ============================================================ */
-const CHEQUEO_VERSION_MS = 15 * 60 * 1000;
+const CHEQUEO_VERSION_MS = 5 * 60 * 1000;
 let avisoVersionMostrado = false;
 
 async function versionPublicada(){
