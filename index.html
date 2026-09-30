@@ -227,7 +227,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.8.0";
+const FRONTEND_VERSION = "1.8.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -593,7 +593,7 @@ function renderAuth(){
   if(a.paso==="local"){
     cuerpo=`<img src="icons/icon-192.png" alt="Lucciano's" style="width:72px;height:72px;border-radius:18px">
       <div class="disp" style="font-size:1.4rem;font-weight:700;color:var(--ink)">Lucciano's</div>
-      <h1 style="margin-top:10px">Seleccioná tu local</h1><p>Elegí dónde estás para continuar.</p>
+      <h1 style="margin-top:10px">Bienvenido</h1><p>Elegí tu local.</p>
       <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
