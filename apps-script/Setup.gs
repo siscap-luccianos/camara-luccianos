@@ -23,7 +23,7 @@ const HOJAS = {
   Registros: ["id", "clienteId", "tipo", "local", "empleadoId", "empleado", "items", "total", "remito", "ts", "anulado_por", "anulado_ts", "motivo"],
   Stock: ["local", "base", "ts", "empleado"],
   Sabores: ["id", "nombre", "tipo", "minimo", "activo", "orden", "categoria", "peso"],
-  Locales: ["nombre", "grupo", "activo", "clave"],
+  Locales: ["nombre", "grupo", "activo", "clave", "operaciones"],
   Empleados: ["id", "nombre", "rol", "local", "pin_hash", "salt", "activo", "creado_por", "creado_ts", "intentos", "bloqueado_hasta"],
   Config: ["key", "value"],
   Auditoria: ["id", "ts", "accion", "actorId", "actor", "detalle"],
@@ -180,6 +180,51 @@ function agregarColumnaPeso() {
     completadas++;
   }
   Logger.log("Listo — columna peso agregada/completada en %s sabores (en 0 hasta que se cargue el peso real de cada uno).", completadas);
+}
+
+/** Agrega la columna "operaciones" a la hoja Locales si todavía no
+ *  existe (queda en NO para todas las filas existentes). Corré esto
+ *  antes de crearLocalOperaciones() en una planilla que ya tenía
+ *  Locales poblada. Segura de re-correr. */
+function agregarColumnaOperaciones() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Locales");
+  if (!hoja) throw new Error("No existe la hoja Locales — corré crearHojas() primero.");
+
+  const headers = hoja.getDataRange().getValues()[0];
+  if (headers.indexOf("operaciones") !== -1) { Logger.log("Ya existe la columna operaciones."); return; }
+  hoja.getRange(1, headers.length + 1).setValue("operaciones").setFontWeight("bold");
+  Logger.log("Columna operaciones agregada.");
+}
+
+/** Crea el local trucho "Operaciones" — la puerta de entrada de
+ *  admin/supervisor. Se ve en el buscador de local del login igual
+ *  que cualquier local real, así que nadie que no sepa que existe la
+ *  encuentra; y como cualquier local puede tener su propia columna
+ *  `clave`, conviene cargarle una contraseña ahí mismo en la hoja
+ *  para que quede protegida igual que un local de verdad. Admin y
+ *  supervisor son los únicos roles que aparecen en su lista de
+ *  "¿Quién sos?" (ver empleadosGestion en Code.gs) — no hace falta
+ *  crear empleados con local="Operaciones", ya están dados de alta
+ *  como admin/supervisor de siempre. Segura de re-correr: no
+ *  duplica la fila si ya existe. */
+function crearLocalOperaciones() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Locales");
+  if (!hoja) throw new Error("No existe la hoja Locales — corré crearHojas() primero.");
+  const headers = hoja.getDataRange().getValues()[0];
+  if (headers.indexOf("operaciones") === -1) throw new Error("Falta la columna operaciones — corré agregarColumnaOperaciones() primero.");
+
+  const filas = _filasComoObjetosLocal(hoja);
+  if (filas.some((f) => f.nombre === "Operaciones")) { Logger.log("Ya existe el local Operaciones."); return; }
+
+  const fila = headers.map((h) => {
+    if (h === "nombre") return "Operaciones";
+    if (h === "activo") return "SI";
+    return "";
+  });
+  hoja.appendRow(fila);
+  Logger.log('Listo — se creó el local "Operaciones". Cargale una contraseña en la columna clave si querés protegerlo.');
 }
 
 /** Peso promedio real por vasqueta, sabor por sabor — sale de la

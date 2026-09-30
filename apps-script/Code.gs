@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.10.0";
+const BACKEND_VERSION = "1.11.0";
 
 function doPost(e) {
   let resultado;
@@ -194,7 +194,13 @@ function _pinValido(pin) {
 
 function localesActivos() {
   const filas = _leerCrudo("Locales").filter((l) => _esVerdadero(l.activo) !== false);
-  return { ok: true, locales: filas.map((l) => ({ nombre: l.nombre, grupo: l.grupo || "", tieneClave: !!String(l.clave || "").trim() })) };
+  return {
+    ok: true,
+    locales: filas.map((l) => ({
+      nombre: l.nombre, grupo: l.grupo || "", tieneClave: !!String(l.clave || "").trim(),
+      esGestion: _esVerdadero(l.operaciones) === true,
+    })),
+  };
 }
 
 /** Contraseña por local (no es el PIN de nadie): un candado extra para

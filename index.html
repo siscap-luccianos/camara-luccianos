@@ -380,18 +380,13 @@ async function cargarLocalesSiFalta(){
 async function cargarEmpleadosDeAuth(){
   // Cada local ve solo su propio equipo (responsable de local, de turno
   // y colaboradores) — nunca admins/supervisores mezclados ahí, sea PC
-  // o tablet. Admin/supervisor entran por un camino aparte (ver
-  // cargarGestionDeAuth), porque no pertenecen a ningún local.
+  // o tablet. "Operaciones" (S.auth.esGestion) es un local trucho para
+  // que admin/supervisor entren: se ve igual que cualquier local en el
+  // buscador, nadie que no sepa que existe lo encuentra, y si tiene
+  // contraseña cargada queda protegido igual que cualquier otro.
   S.auth.cargando = true; renderApp();
-  const rl = await api("empleadosLocal", {local:S.auth.local});
-  S.auth.empleados = rl&&rl.ok?rl.empleados:[];
-  S.auth.cargando = false;
-  renderApp();
-}
-async function cargarGestionDeAuth(){
-  S.auth.cargando = true; renderApp();
-  const rg = await api("empleadosGestion", {});
-  S.auth.empleados = rg&&rg.ok?rg.empleados:[];
+  const r = S.auth.esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local:S.auth.local});
+  S.auth.empleados = r&&r.ok?r.empleados:[];
   S.auth.cargando = false;
   renderApp();
 }
@@ -403,12 +398,9 @@ const ROL_LABEL = { admin:"Administrador", supervisor:"Supervisor", encargado:"R
 function authElegirLocal(local){
   S.auth.local=local; S.auth.error="";
   const info=S.locales.find(l=>l.nombre===local);
+  S.auth.esGestion = !!(info && info.esGestion);
   if(info && info.tieneClave){ S.auth.paso="clave"; S.auth.clave=""; renderApp(); }
   else { S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
-}
-function authIrAGestion(){
-  S.auth.local=null; S.auth.error="";
-  S.auth.paso="quienGestion"; cargarGestionDeAuth();
 }
 async function authEnviarClave(){
   const clave=(S.auth.clave||"").trim();
@@ -422,14 +414,13 @@ async function authEnviarClave(){
 function authElegirEmpleado(emp){ S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp() }
 function authVolver(){
   if(S.auth.paso==="pinConfirm"){ S.auth.paso="pin"; S.auth.pin=""; renderApp(); return }
-  if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso = S.auth.local ? "quien" : "quienGestion"; renderApp(); return }
+  if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
   if(S.auth.paso==="quien" && !S.deviceLocal){
     const info=S.locales.find(l=>l.nombre===S.auth.local);
     S.auth.paso = (info && info.tieneClave) ? "clave" : "local";
     if(S.auth.paso==="local") S.auth.local=null;
     renderApp(); return;
   }
-  if(S.auth.paso==="quienGestion"){ S.auth.paso="local"; renderApp(); return }
   if(S.auth.paso==="clave"){ S.auth.local=null; S.auth.paso="local"; renderApp(); return }
   S.auth=null; renderApp();
 }
@@ -464,11 +455,15 @@ async function authSubmit(){
 }
 function aplicarLogin(r){
   const yaFijado = !!S.deviceLocal;
-  const localElegido = S.auth ? S.auth.local : null;
+  const esGestion = S.auth ? S.auth.esGestion : false;
+  const localElegido = (S.auth && !esGestion) ? S.auth.local : null;
   const puedeFijar = ["encargado","turno","colaborador"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
-  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : S.auth.local);
-  if(!S.local && (r.empleado.rol==="admin"||r.empleado.rol==="supervisor") && S.locales.length) S.local = S.locales[0].nombre;
+  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : localElegido);
+  if(!S.local && (r.empleado.rol==="admin"||r.empleado.rol==="supervisor")){
+    const primero = S.locales.find(l=>!l.esGestion);
+    if(primero) S.local = primero.nombre;
+  }
   if(!S.deviceLocal) guardarSesionPC();
   S.auth=null;
   if(!yaFijado && puedeFijar && localElegido && confirm(`¿Fijar "${localElegido}" como local de este dispositivo? La próxima vez arranca directo, sin volver a elegir local.`)){
@@ -535,29 +530,21 @@ function renderAuth(){
     cuerpo=`<h1>¿En qué local estás?</h1><p>Elegí el local para ver quién puede entrar.</p>
       <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
-      <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>
-      <button type="button" class="pcLink" id="authGestion">¿Sos administrador o supervisor? Entrá por tu nombre</button>`;
-  } else if(a.paso==="quienGestion"){
-    cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
-      <h1>¿Quién sos?</h1>
-      <p>Administración general. Elegí tu nombre.</p>
-      ${a.cargando?`<div class="note">Cargando…</div>`:
-        a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
-        :`<div class="note">No hay administradores ni supervisores dados de alta todavía.</div>`}`;
+      <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
   } else if(a.paso==="clave"){
     cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
       <h1>Contraseña de ${esc(a.local||"")}</h1>
-      <p>Pedísela a tu responsable de local.</p>
+      <p>Pedísela a quien te haya dado de alta.</p>
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
-      <input type="password" id="authClave" placeholder="Contraseña del local" autocomplete="off" style="width:100%" ${a.cargando?"disabled":""}>
+      <input type="password" id="authClave" placeholder="Contraseña" autocomplete="off" style="width:100%" ${a.cargando?"disabled":""}>
       <button class="btn" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>`;
   } else if(a.paso==="quien"){
     cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">← Volver</button>`}
       <h1>¿Quién sos?</h1>
-      <p>Local: ${esc(a.local||"")}. Elegí tu nombre.</p>
+      <p>${a.esGestion?"Elegí tu nombre.":"Local: "+esc(a.local||"")+". Elegí tu nombre."}</p>
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
-        :`<div class="note">Todavía no hay nadie dado de alta en este local. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
+        :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
@@ -586,7 +573,7 @@ function renderHeader(){
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal
-          ? `<input type="text" id="local" list="localList" value="${esc(S.local||"")}" autocomplete="off"><datalist id="localList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
+          ? `<input type="text" id="local" list="localList" value="${esc(S.local||"")}" autocomplete="off"><datalist id="localList">${S.locales.filter(l=>!l.esGestion).map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
@@ -1089,7 +1076,6 @@ document.addEventListener("click", async e=>{
     return;
   }
   if(t.id==="authClaveOk"){ await authEnviarClave(); return }
-  if(t.id==="authGestion"){ authIrAGestion(); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
@@ -1147,7 +1133,7 @@ document.addEventListener("input", e=>{
 document.addEventListener("change", e=>{
   if(e.target.id==="local"){
     const v=e.target.value.trim();
-    if(v && v!==S.local && S.locales.some(l=>l.nombre===v)) setLocal(v);
+    if(v && v!==S.local && S.locales.some(l=>l.nombre===v && !l.esGestion)) setLocal(v);
     else e.target.value=S.local||"";
   }
 });
@@ -1205,7 +1191,10 @@ async function start(){
   cargarLocalesSiFalta(); // en paralelo, no bloquea el primer render
   if(S.token && S.empleado){
     S.local = S.deviceLocal || S.empleado.local || S.local;
-    if(!S.local && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor") && S.locales.length) S.local=S.locales[0].nombre;
+    if(!S.local && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")){
+      const primero = S.locales.find(l=>!l.esGestion);
+      if(primero) S.local = primero.nombre;
+    }
     renderApp();
     reiniciarInactividad();
     await cargarDatos();

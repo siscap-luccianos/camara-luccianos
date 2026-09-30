@@ -81,7 +81,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 | `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo` |
 | `Stock` | `local`, `base`, `ts`, `empleado` |
 | `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden`, `categoria`, `peso` |
-| `Locales` | `nombre`, `grupo`, `activo`, `clave` |
+| `Locales` | `nombre`, `grupo`, `activo`, `clave`, `operaciones` |
 | `Empleados` | `id`, `nombre`, `rol`, `local`, `pin_hash`, `salt`, `activo`, `creado_por`, `creado_ts`, `intentos`, `bloqueado_hasta` |
 | `Config` | `key`, `value` (reservada para más adelante, no la usa el código todavía) |
 | `Auditoria` | `id`, `ts`, `accion`, `actorId`, `actor`, `detalle` |
@@ -113,7 +113,18 @@ Ya están cargados los pesos reales de 40 sabores (de los 47), sacados de la tab
 
 Un candado extra para el login: al buscar y elegir un local (en una PC, o la primera vez que se configura una tablet), si ese local tiene algo cargado en la columna `clave`, la app pide esa contraseña antes de mostrar la nómina de gente para elegir quién sos. Si `clave` está vacío, no pide nada (como hasta ahora).
 
-No es el PIN de nadie — es una clave compartida por local, para que no cualquiera que abra la app vea de entrada los nombres del equipo. Se guarda en texto plano en la hoja (no hasheada, a diferencia de los PIN) porque admin/supervisor tienen que poder verla ahí para pasársela al responsable de local. Una vez que alguien ya inició sesión, no la vuelve a pedir mientras la sesión esté activa (hasta 8 hs en PC) — solo se pide al elegir el local de cero.
+No es el PIN de nadie — es una clave compartida por local, para que no cualquiera que abra la app vea de entrada los nombres del equipo. Se guarda en texto plano en la hoja (no hasheada, a diferencia de los PIN) porque admin/supervisor tienen que poder verla ahí para pasársela al responsable de local. Una vez que alguien ya inició sesión, no la vuelve a pedir mientras la sesión esté activa — solo se pide al elegir el local de cero.
+
+## Cómo entran admin y supervisor (local "Operaciones")
+
+Admin y supervisor no pertenecen a ningún local, así que en vez de un link aparte y visible para "soy admin", entran por un local trucho llamado **Operaciones**: aparece mezclado en el mismo buscador que cualquier local real, nadie que no sepa que existe lo encuentra, y si le cargás una `clave` (muy recomendable) queda protegido exactamente igual que un local de verdad.
+
+Para armarlo (una sola vez):
+1. Corré `agregarColumnaOperaciones()` desde Setup.gs (agrega la columna a `Locales` si todavía no existe).
+2. Corré `crearLocalOperaciones()` desde Setup.gs (crea la fila "Operaciones" con `activo=SI`).
+3. En la hoja `Locales`, buscá esa fila y cargale una contraseña en la columna `clave`.
+
+No hace falta crear ningún empleado con `local="Operaciones"` — quien elige ese local y pone la contraseña ve la lista de todos los admins/supervisores ya dados de alta (columna `rol`), no la nómina de un local. Podés cambiarle el nombre a otra cosa editando la celda `nombre` de esa fila; el backend lo reconoce por la columna `operaciones=SI`, no por el nombre.
 
 ## Dar de alta al segundo admin o supervisor (sin pasar por Setup.gs)
 
