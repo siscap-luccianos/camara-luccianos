@@ -213,7 +213,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.2.0";
+const FRONTEND_VERSION = "1.2.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -601,7 +601,7 @@ function renderAuth(){
       <h1>${confirmando?"Repetí tu PIN":"Hola, "+esc(a.elegido.nombre.split(" ")[0])}</h1>
       <p>${confirmando?"Escribilo de nuevo para confirmarlo.":"Ingresá tu PIN de 4 números."}</p>
       <div class="dots">${[0,1,2,3].map(i=>`<span class="${i<val.length?"on":""}"></span>`).join("")}</div>
-      ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
+      ${a.cargando?`<div class="note">Verificando…</div>`:a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       <div class="keypad">
         ${["1","2","3","4","5","6","7","8","9"].map(k=>`<button type="button" data-tecla="${k}" ${a.cargando?"disabled":""}>${k}</button>`).join("")}
         <button type="button" class="op" data-authback="1" ${a.cargando?"disabled":""}>Volver</button>
@@ -1354,7 +1354,7 @@ function renderBloqueo(){
     <h1>Sesión bloqueada</h1>
     <p>${esc(S.empleado.nombre.split(" ")[0])}, ingresá tu PIN para seguir.</p>
     <div class="dots">${[0,1,2,3].map(i=>`<span class="${i<S.bloqueoPin.length?"on":""}"></span>`).join("")}</div>
-    ${S.bloqueoError?`<div class="warn">${esc(S.bloqueoError)}</div>`:""}
+    ${S.bloqueoCargando?`<div class="note">Verificando…</div>`:S.bloqueoError?`<div class="warn">${esc(S.bloqueoError)}</div>`:""}
     <div class="keypad">
       ${["1","2","3","4","5","6","7","8","9"].map(k=>`<button type="button" data-tecla-bloqueo="${k}" ${S.bloqueoCargando?"disabled":""}>${k}</button>`).join("")}
       <button type="button" class="op" id="bloqueoSalir" ${S.bloqueoCargando?"disabled":""}>Salir</button>
