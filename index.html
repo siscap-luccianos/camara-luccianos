@@ -207,6 +207,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .localSel input{width:130px}
   .userChip{font-size:.76rem;padding:4px 5px 4px 12px}
   .alertPill{font-size:.76rem;padding:6px 11px}
+  .authList{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -226,7 +227,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.7.1";
+const FRONTEND_VERSION = "1.7.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
