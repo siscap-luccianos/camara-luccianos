@@ -213,7 +213,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.1.0";
+const FRONTEND_VERSION = "1.1.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -677,7 +677,7 @@ function chipFiltros(){
   const cats=categoriasPresentes();
   return `<div class="tools">
     <div class="grow"><input type="search" id="q" placeholder="Buscar sabor" value="${esc(S.q)}"></div>
-    <button class="chip" id="soloAlerta" aria-pressed="${S.soloAlerta}">Bajo mínimo</button>
+    <button class="chip" id="soloAlerta" aria-pressed="${S.soloAlerta}">Debajo del mínimo</button>
   </div>
   <div class="tools catChips">
     <button class="chip" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todos</button>
@@ -754,7 +754,7 @@ function stockView(st){
 
   return `<div class="kpis">
     <div class="kpi"><span class="lbl">Sabores en alerta</span><span class="val${al.length?" crit":""}">${al.length}</span><span class="sub">${al.length?al.slice(0,4).map(s=>esc(s.nombre)).join(" · ")+(al.length>4?" …":""):"Todo en orden"}</span></div>
-    <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">≈ ${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
+    <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
     ${kgTotal>0?`<div class="kpi"><span class="lbl">Peso en cámara</span><span class="val">≈ ${kgTotal.toFixed(1)} kg</span><span class="sub">Solo cuenta sabores con peso cargado</span></div>`:""}
   </div>
   <div class="tools" style="margin-top:16px">
