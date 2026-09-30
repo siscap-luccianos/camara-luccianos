@@ -998,7 +998,13 @@ async function cargarDatos(){
   S.regs = r.registros;
   S.stock = r.stock;
   try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, registros:r.registros, stock:r.stock})); }catch(e){}
-  if(!S.conteo) renderApp(); else renderBar();
+  if(S.conteo){ renderBar(); return }
+  if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
+  renderApp();
+}
+function _estaEscribiendo(){
+  const t = document.activeElement && document.activeElement.tagName;
+  return t==="INPUT" || t==="TEXTAREA" || t==="SELECT";
 }
 function iniciarPolling(){
   clearInterval(S.pollTimer);
