@@ -226,7 +226,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.5.0";
+const FRONTEND_VERSION = "1.6.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -522,8 +522,12 @@ function aplicarLogin(r){
   S.token = r.token; S.empleado = r.empleado;
   S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : localElegido);
   if(!S.local && (r.empleado.rol==="admin"||r.empleado.rol==="supervisor")){
-    const primero = S.locales.find(l=>!l.esGestion);
-    if(primero) S.local = primero.nombre;
+    // No arrancamos en el primer local de la lista (era siempre el mismo,
+    // por orden alfabético) — retomamos el último que se estaba mirando en
+    // este dispositivo, si sigue siendo válido; si no hay ninguno guardado,
+    // queda sin local elegido y se pide arriba, en vez de mandar a uno fijo.
+    const ultimo = ls.get("ultimoLocal","");
+    if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
   }
   if(!S.deviceLocal) guardarSesionPC();
   S.auth=null;
@@ -1089,6 +1093,7 @@ function iniciarPolling(){
 }
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined; S.errorCarga=null;
+  try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{}}; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={};
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
@@ -1409,8 +1414,8 @@ async function start(){
   if(S.token && S.empleado){
     S.local = S.deviceLocal || S.empleado.local || S.local;
     if(!S.local && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")){
-      const primero = S.locales.find(l=>!l.esGestion);
-      if(primero) S.local = primero.nombre;
+      const ultimo = ls.get("ultimoLocal","");
+      if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
     }
     renderApp();
     reiniciarInactividad();
