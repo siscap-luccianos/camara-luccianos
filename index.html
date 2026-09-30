@@ -390,6 +390,7 @@ function cargarLocalesSiFalta(){
   }
   return refrescarLocales();
 }
+function _empleadosCacheKey(esGestion, local){ return esGestion ? "empleadosCache_gestion" : "empleadosCache_"+local }
 async function cargarEmpleadosDeAuth(){
   // Cada local ve solo su propio equipo (responsable de local, de turno
   // y colaboradores) — nunca admins/supervisores mezclados ahí, sea PC
@@ -397,10 +398,29 @@ async function cargarEmpleadosDeAuth(){
   // que admin/supervisor entren: se ve igual que cualquier local en el
   // buscador, nadie que no sepa que existe lo encuentra, y si tiene
   // contraseña cargada queda protegido igual que cualquier otro.
-  S.auth.cargando = true; S.auth.errorCarga = ""; renderApp();
-  const r = S.auth.esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local:S.auth.local});
-  S.auth.empleados = r&&r.ok?r.empleados:[];
-  S.auth.errorCarga = (!r||!r.ok) ? ((r&&r.error)||"No se pudo conectar con el backend.") : "";
+  const esGestion = S.auth.esGestion, local = S.auth.local;
+  const key = _empleadosCacheKey(esGestion, local);
+  // Pintamos al toque con la nómina que vimos la última vez en este local
+  // (si la hay) mientras se refresca en segundo plano — el mismo criterio
+  // que ya usamos para el stock: no hacer esperar al backend para mostrar
+  // algo, y autocorregirse solo si cambió algo.
+  let pintadoDeCache = false;
+  if(!S.auth.empleados.length){
+    try{
+      const cache = ls.get(key, "");
+      if(cache){ S.auth.empleados = JSON.parse(cache); pintadoDeCache = true; }
+    }catch(e){}
+  }
+  S.auth.cargando = !pintadoDeCache; S.auth.errorCarga = ""; renderApp();
+  const r = esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local});
+  if(!S.auth || S.auth.paso!=="quien" || S.auth.esGestion!==esGestion || S.auth.local!==local) return; // se movió de pantalla mientras esperábamos
+  if(r && r.ok){
+    S.auth.empleados = r.empleados;
+    S.auth.errorCarga = "";
+    try{ ls.set(key, JSON.stringify(r.empleados)); }catch(e){}
+  } else if(!pintadoDeCache){
+    S.auth.errorCarga = (r&&r.error)||"No se pudo conectar con el backend.";
+  }
   S.auth.cargando = false;
   renderApp();
 }
