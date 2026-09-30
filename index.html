@@ -209,6 +209,12 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 ============================================================ */
 const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOKQEE-rHvj515lYWpuEDybrhM1stfZUsaGVZjXc3IgL1oi/exec";
 
+// Versión del FRONTEND (este archivo) — se bumpea en cada cambio de index.html,
+// independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
+// Sirve para confirmar a simple vista, mirando el header, que el dispositivo
+// ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
+const FRONTEND_VERSION = "1.0.0";
+
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
 const INACTIVIDAD_PC_MS = 3 * 60 * 1000;
@@ -611,7 +617,7 @@ function renderHeader(){
   const puedeElegirLocal = S.empleado.rol==="admin" || S.empleado.rol==="supervisor";
   return `<header>
     <div class="brand">
-      <div class="tit"><h1><small>Lucciano's${S.backendVersion?` · v${esc(S.backendVersion)}`:""}</small>Cámara y stock</h1></div>
+      <div class="tit"><h1><small>Lucciano's · front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}</small>Cámara y stock</h1></div>
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal
