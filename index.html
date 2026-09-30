@@ -205,6 +205,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
+const INACTIVIDAD_PC_MS = 3 * 60 * 1000;
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -495,11 +496,37 @@ function cerrarSesion(silencioso){
   iniciarAuth();
 }
 function reiniciarInactividad(){
-  if(!S.deviceLocal) return; // el cierre por inactividad es solo en tablet
   clearTimeout(S.inactTimer);
-  S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
+  if(S.deviceLocal){
+    // Tablet: se cierra la sesión entera (vuelve a elegir quién sos).
+    S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
+  } else {
+    // PC: no cierra sesión, solo bloquea la pantalla — así si alguien
+    // deja la PC abierta, nadie puede tocar nada sin el PIN.
+    S.inactTimer = setTimeout(()=>bloquearPC(), INACTIVIDAD_PC_MS);
+  }
 }
-["click","input","touchstart"].forEach(ev=>document.addEventListener(ev, ()=>{ if(S.empleado) reiniciarInactividad() }, {passive:true}));
+function bloquearPC(){
+  if(S.bloqueado) return;
+  S.bloqueado = true; S.bloqueoPin = ""; S.bloqueoError = "";
+  renderApp();
+}
+async function desbloquearPC(){
+  if(S.bloqueoPin.length!==4) return;
+  S.bloqueoCargando = true; S.bloqueoError=""; renderApp();
+  const r = await api("login", { empleadoId:S.empleado.id, pin:S.bloqueoPin, local:S.local });
+  S.bloqueoCargando = false;
+  if(r && r.ok){
+    S.token = r.token; guardarSesionPC();
+    S.bloqueado = false; S.bloqueoPin = "";
+    reiniciarInactividad();
+    renderApp();
+  } else {
+    S.bloqueoError = (r&&r.error) || "PIN incorrecto.";
+    S.bloqueoPin = ""; renderApp();
+  }
+}
+["click","input","touchstart"].forEach(ev=>document.addEventListener(ev, ()=>{ if(S.empleado && !S.bloqueado) reiniciarInactividad() }, {passive:true}));
 
 function renderAuth(){
   const a=S.auth;
@@ -1045,6 +1072,15 @@ document.addEventListener("click", async e=>{
   if(t.dataset.authback){ authVolver(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
+  if(t.dataset.teclaBloqueo){
+    if(S.bloqueoCargando) return;
+    if(t.dataset.teclaBloqueo==="borrar") S.bloqueoPin = S.bloqueoPin.slice(0,-1);
+    else if(S.bloqueoPin.length<4) S.bloqueoPin += t.dataset.teclaBloqueo;
+    renderApp();
+    if(S.bloqueoPin.length===4) setTimeout(desbloquearPC, 150);
+    return;
+  }
+  if(t.id==="bloqueoSalir"){ S.bloqueado=false; S.bloqueoPin=""; cerrarSesion(false); return }
   if(t.id==="authLocalOk"){
     const v=$("#authLocal").value.trim();
     if(!v) return;
@@ -1181,10 +1217,25 @@ async function start(){
 }
 start();
 
+function renderBloqueo(){
+  return `<div class="authWrap"><div class="authCard">
+    <h1>Sesión bloqueada</h1>
+    <p>${esc(S.empleado.nombre.split(" ")[0])}, ingresá tu PIN para seguir.</p>
+    <div class="dots">${[0,1,2,3].map(i=>`<span class="${i<S.bloqueoPin.length?"on":""}"></span>`).join("")}</div>
+    ${S.bloqueoError?`<div class="warn">${esc(S.bloqueoError)}</div>`:""}
+    <div class="keypad">
+      ${["1","2","3","4","5","6","7","8","9"].map(k=>`<button type="button" data-tecla-bloqueo="${k}" ${S.bloqueoCargando?"disabled":""}>${k}</button>`).join("")}
+      <button type="button" class="op" id="bloqueoSalir" ${S.bloqueoCargando?"disabled":""}>Salir</button>
+      <button type="button" data-tecla-bloqueo="0" ${S.bloqueoCargando?"disabled":""}>0</button>
+      <button type="button" class="op" data-tecla-bloqueo="borrar" ${S.bloqueoCargando?"disabled":""}>Borrar</button>
+    </div>
+  </div></div>`;
+}
 function renderApp(){
   const m=$("#app");
   if(S.auth){ m.innerHTML = renderAuth(); return }
   if(!S.empleado){ iniciarAuth(); return }
+  if(S.bloqueado){ m.innerHTML = renderBloqueo(); return }
   m.innerHTML = renderHeader() + `<div class="wrap"><main id="main">${renderMain()}</main></div>` + renderNav() + `<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>`;
   renderBar();
   if(S.offline || S.cola.length){
