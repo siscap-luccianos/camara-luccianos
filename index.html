@@ -518,7 +518,7 @@ function aplicarLogin(r){
 function cerrarSesion(silencioso){
   limpiarSesion();
   S.local = S.deviceLocal || null;
-  S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null;
+  S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null; S.errorEquipo = null; S.errorGestion = null;
   clearTimeout(S.inactTimer);
   clearInterval(S.pollTimer);
   if(!silencioso) toast("Sesión cerrada");
@@ -820,16 +820,17 @@ function _teamFila(e){
   </div>`;
 }
 function teamView(){
-  if(S.equipo===undefined){ S.equipo=null; cargarEquipo(); }
-  if(S.empleado.rol==="admin" && S.gestion===undefined){ S.gestion=null; cargarGestion(); }
+  if(S.equipo===undefined){ S.equipo=null; S.errorEquipo=null; cargarEquipo(); }
+  if(S.empleado.rol==="admin" && S.gestion===undefined){ S.gestion=null; S.errorGestion=null; cargarGestion(); }
   if(S.equipo===null){ return `<div class="note">Cargando equipo…</div>`; }
   const rol=S.empleado.rol;
   const rolesQuePuedoCrear = rol==="admin"?["encargado","turno","colaborador"]:rol==="supervisor"?["encargado","turno","colaborador"]:rol==="encargado"?["turno","colaborador"]:[];
 
+  const bloqueError = (msg,idBtn)=>`<div class="empty">${esc(msg)}</div><button class="btn ghost" type="button" id="${idBtn}" style="margin-top:10px">Reintentar</button>`;
   let h="";
   if(rol==="admin"){
     h+=`<p class="sec">Administración general</p>
-    <div class="rows">${S.gestion===null?`<div class="empty">Cargando…</div>`:(S.gestion.length?S.gestion.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
+    <div class="rows">${S.gestion===null?`<div class="empty">Cargando…</div>`:S.errorGestion?bloqueError(S.errorGestion,"reintentarGestion"):(S.gestion.length?S.gestion.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
     <p class="sec">Dar de alta un admin o supervisor</p>
     <form class="altaForm" id="altaFormGestion">
       <input type="text" name="nombre" placeholder="Nombre y apellido" required>
@@ -838,7 +839,7 @@ function teamView(){
     </form>`;
   }
   h+=`<p class="sec">Equipo de ${esc(S.local)}</p>
-  <div class="rows">${(S.equipo||[]).length?S.equipo.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`}</div>
+  <div class="rows">${S.errorEquipo?bloqueError(S.errorEquipo,"reintentarEquipo"):((S.equipo||[]).length?S.equipo.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
   ${rolesQuePuedoCrear.length?`<p class="sec">Dar de alta en ${esc(S.local)}</p>
   <form class="altaForm" id="altaFormEquipo">
     <input type="text" name="nombre" placeholder="Nombre y apellido" required>
@@ -847,14 +848,42 @@ function teamView(){
   </form>`:""}`;
   return h;
 }
+function _equipoCacheKey(local){ return "equipoCache_"+local }
 async function cargarEquipo(){
-  const r = await api("empleadosAdmin", {local:S.local});
-  S.equipo = (r&&r.ok) ? r.empleados : [];
+  const local = S.local;
+  // Pintamos al toque con el último equipo que vimos de este local (si lo hay)
+  // mientras se refresca en segundo plano, mismo criterio que ya usamos en
+  // el login: no confundir "no llegó respuesta" con "no hay nadie cargado".
+  if(S.equipo===null){
+    try{
+      const c = ls.get(_equipoCacheKey(local), "");
+      if(c){ S.equipo = JSON.parse(c); S.errorEquipo = null; if(S.tab==="equipo") renderApp(); }
+    }catch(e){}
+  }
+  const r = await api("empleadosAdmin", {local});
+  if(S.local!==local) return; // se cambió de local mientras esperábamos
+  if(r && r.ok){
+    S.equipo = r.empleados; S.errorEquipo = null;
+    try{ ls.set(_equipoCacheKey(local), JSON.stringify(r.empleados)); }catch(e){}
+  } else if(!S.equipo || !S.equipo.length){
+    S.equipo = []; S.errorEquipo = (r&&r.error) || "No se pudo conectar con el backend.";
+  }
   if(S.tab==="equipo") renderApp();
 }
 async function cargarGestion(){
+  if(S.gestion===null){
+    try{
+      const c = ls.get("gestionCache", "");
+      if(c){ S.gestion = JSON.parse(c); S.errorGestion = null; if(S.tab==="equipo") renderApp(); }
+    }catch(e){}
+  }
   const r = await api("empleadosAdmin", {local:""});
-  S.gestion = (r&&r.ok) ? r.empleados : [];
+  if(r && r.ok){
+    S.gestion = r.empleados; S.errorGestion = null;
+    try{ ls.set("gestionCache", JSON.stringify(r.empleados)); }catch(e){}
+  } else if(!S.gestion || !S.gestion.length){
+    S.gestion = []; S.errorGestion = (r&&r.error) || "No se pudo conectar con el backend.";
+  }
   if(S.tab==="equipo") renderApp();
 }
 
@@ -971,7 +1000,7 @@ function iniciarPolling(){
 }
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined; S.errorCarga=null;
-  S.cart={salida:{},ingreso:{}}; S.conteo=null; S.confirm=false; S.equipo=undefined; S.pedidoAdj={};
+  S.cart={salida:{},ingreso:{}}; S.conteo=null; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={};
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1124,6 +1153,8 @@ document.addEventListener("click", async e=>{
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
+  if(t.id==="reintentarEquipo"){ S.equipo=undefined; renderApp(); return }
+  if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; renderApp(); return }
