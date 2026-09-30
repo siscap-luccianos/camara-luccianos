@@ -367,7 +367,20 @@ function iniciarAuth(){
   if(S.auth.paso==="quien") cargarEmpleadosDeAuth();
   renderApp();
 }
-async function cargarLocalesSiFalta(){
+let localesFetchPromise = null;
+function refrescarLocales(){
+  localesFetchPromise = _refrescarLocales();
+  return localesFetchPromise;
+}
+async function _refrescarLocales(){
+  const r = await api("localesActivos", {});
+  if(r && r.ok){
+    S.locales = r.locales;
+    ls.set("localesCache", JSON.stringify(r.locales));
+    if(S.auth && S.auth.paso==="local") renderApp();
+  }
+}
+function cargarLocalesSiFalta(){
   // Pintamos con lo que haya en caché al toque (no bloquea el primer render)
   // y refrescamos en segundo plano — evita que la pantalla de login quede
   // en blanco esperando una ida y vuelta a Apps Script.
@@ -375,12 +388,7 @@ async function cargarLocalesSiFalta(){
     const cache = ls.get("localesCache","");
     if(cache){ try{ S.locales = JSON.parse(cache); }catch(e){} }
   }
-  const r = await api("localesActivos", {});
-  if(r && r.ok){
-    S.locales = r.locales;
-    ls.set("localesCache", JSON.stringify(r.locales));
-    if(S.auth && S.auth.paso==="local") renderApp();
-  }
+  return refrescarLocales();
 }
 async function cargarEmpleadosDeAuth(){
   // Cada local ve solo su propio equipo (responsable de local, de turno
@@ -1080,13 +1088,12 @@ document.addEventListener("click", async e=>{
     if(!v) return;
     let match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase());
     if(!match){ toast("Elegí un local de la lista"); return }
-    // chequeamos contra el dato más fresco antes de decidir si es el local de gestión (admin/supervisor) o uno normal
-    t.disabled = true; t.textContent = "Verificando…";
-    const r = await api("localesActivos", {});
-    t.disabled = false; t.textContent = "Continuar";
-    if(r && r.ok){
-      S.locales = r.locales;
-      ls.set("localesCache", JSON.stringify(r.locales));
+    // si el pedido inicial de locales todavía no terminó, esperamos ESE mismo pedido (no disparamos uno nuevo)
+    // para no sumar una ida y vuelta extra al backend en el caso normal (que ya terminó hace rato)
+    if(localesFetchPromise){
+      t.disabled = true; t.textContent = "Verificando…";
+      await localesFetchPromise;
+      t.disabled = false; t.textContent = "Continuar";
       match = S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase()) || match;
     }
     authElegirLocal(match.nombre);
