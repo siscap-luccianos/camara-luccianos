@@ -221,6 +221,7 @@ function crearLocalOperaciones() {
   const fila = headers.map((h) => {
     if (h === "nombre") return "Operaciones";
     if (h === "activo") return "SI";
+    if (h === "operaciones") return "SI";
     return "";
   });
   hoja.appendRow(fila);
