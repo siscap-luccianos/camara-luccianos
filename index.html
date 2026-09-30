@@ -249,29 +249,34 @@ function limpiarSesion(){ S.token=null; S.empleado=null; ls.del("sesionToken"); 
    API — fetch POST text/plain (evita preflight CORS), acción
    despachada por "accion". Mismo patrón que luccianos-academy.
 ============================================================ */
-async function api(accion, payload={}, timeoutMs=20000){
+async function api(accion, payload={}, timeoutMs=30000){
   if(!API_URL || API_URL.indexOf("PEGAR_URL")===0){
     return { ok:false, error:"El backend todavía no está conectado. Avisale a Gabi que falta pegar la URL de Apps Script en index.html." };
   }
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), timeoutMs);
-  try{
-    const res = await fetch(API_URL, {
-      method:"POST",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify(Object.assign({accion, token:S.token}, payload)),
-      signal: ctrl.signal,
-    });
-    const data = await res.json();
-    S.offline = false;
-    if(data && data.backendVersion) S.backendVersion = data.backendVersion;
-    if(data && data.sesionInvalida){ cerrarSesion(true); }
-    return data;
-  }catch(err){
-    S.offline = true;
-    return { ok:false, error:"Sin conexión.", offline:true };
-  }finally{
-    clearTimeout(t);
+  for(let intento=0; intento<2; intento++){
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+    try{
+      const res = await fetch(API_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify(Object.assign({accion, token:S.token}, payload)),
+        signal: ctrl.signal,
+      });
+      const data = await res.json();
+      S.offline = false;
+      if(data && data.backendVersion) S.backendVersion = data.backendVersion;
+      if(data && data.sesionInvalida){ cerrarSesion(true); }
+      return data;
+    }catch(err){
+      clearTimeout(t);
+      if(intento===0) continue; // primer intento falló (puede ser un cuelgue puntual de Apps Script) — reintentamos una vez antes de avisar
+      S.offline = true;
+      const esTimeout = err && err.name==="AbortError";
+      return { ok:false, error: esTimeout ? "El backend tardó demasiado en responder. Probá de nuevo." : "Sin conexión.", offline:true };
+    }finally{
+      clearTimeout(t);
+    }
   }
 }
 
@@ -1073,8 +1078,17 @@ document.addEventListener("click", async e=>{
   if(t.id==="authLocalOk"){
     const v=$("#authLocal").value.trim();
     if(!v) return;
-    const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase());
+    let match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase());
     if(!match){ toast("Elegí un local de la lista"); return }
+    // chequeamos contra el dato más fresco antes de decidir si es el local de gestión (admin/supervisor) o uno normal
+    t.disabled = true; t.textContent = "Verificando…";
+    const r = await api("localesActivos", {});
+    t.disabled = false; t.textContent = "Continuar";
+    if(r && r.ok){
+      S.locales = r.locales;
+      ls.set("localesCache", JSON.stringify(r.locales));
+      match = S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase()) || match;
+    }
     authElegirLocal(match.nombre);
     return;
   }
