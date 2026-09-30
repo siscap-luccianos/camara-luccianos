@@ -226,7 +226,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.6.0";
+const FRONTEND_VERSION = "1.6.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -520,15 +520,13 @@ function aplicarLogin(r){
   const localElegido = (S.auth && !esGestion) ? S.auth.local : null;
   const puedeFijar = ["encargado","turno","colaborador"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
+  // Admin/supervisor: un login NUEVO (recién entrando, o después de haber
+  // tocado "Salir") arranca siempre neutral, sin local elegido — nunca el
+  // primero de la lista ni el último que se había mirado. Retomar el
+  // último local solo tiene sentido si la sesión seguía abierta (ver
+  // start(), que sí usa "ultimoLocal" para sobrevivir a un refresco de
+  // página sin haber cerrado sesión).
   S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : localElegido);
-  if(!S.local && (r.empleado.rol==="admin"||r.empleado.rol==="supervisor")){
-    // No arrancamos en el primer local de la lista (era siempre el mismo,
-    // por orden alfabético) — retomamos el último que se estaba mirando en
-    // este dispositivo, si sigue siendo válido; si no hay ninguno guardado,
-    // queda sin local elegido y se pide arriba, en vez de mandar a uno fijo.
-    const ultimo = ls.get("ultimoLocal","");
-    if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
-  }
   if(!S.deviceLocal) guardarSesionPC();
   S.auth=null;
   if(!yaFijado && puedeFijar && localElegido && confirm(`¿Fijar "${localElegido}" como local de este dispositivo? La próxima vez arranca directo, sin volver a elegir local.`)){
