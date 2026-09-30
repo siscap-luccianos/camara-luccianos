@@ -226,7 +226,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.4.1";
+const FRONTEND_VERSION = "1.4.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -277,7 +277,7 @@ function limpiarSesion(){ S.token=null; S.empleado=null; ls.del("sesionToken"); 
 ============================================================ */
 async function api(accion, payload={}, timeoutMs=30000){
   if(!API_URL || API_URL.indexOf("PEGAR_URL")===0){
-    return { ok:false, error:"El backend todavía no está conectado. Avisale a Gabi que falta pegar la URL de Apps Script en index.html." };
+    return { ok:false, error:"La app todavía no está conectada. Avisale a Gabi que falta pegar la URL de Apps Script en index.html." };
   }
   for(let intento=0; intento<2; intento++){
     const ctrl = new AbortController();
@@ -299,7 +299,7 @@ async function api(accion, payload={}, timeoutMs=30000){
       if(intento===0) continue; // primer intento falló (puede ser un cuelgue puntual de Apps Script) — reintentamos una vez antes de avisar
       S.offline = true;
       const esTimeout = err && err.name==="AbortError";
-      return { ok:false, error: esTimeout ? "El backend tardó demasiado en responder. Probá de nuevo." : "Sin conexión.", offline:true };
+      return { ok:false, error: esTimeout ? "Está tardando más de lo normal. Probá de nuevo." : "Sin conexión.", offline:true };
     }finally{
       clearTimeout(t);
     }
@@ -446,7 +446,7 @@ async function cargarEmpleadosDeAuth(){
     S.auth.errorCarga = "";
     try{ ls.set(key, JSON.stringify(r.empleados)); }catch(e){}
   } else if(!pintadoDeCache){
-    S.auth.errorCarga = (r&&r.error)||"No se pudo conectar con el backend.";
+    S.auth.errorCarga = (r&&r.error)||"No se pudo conectar. Probá de nuevo.";
   }
   S.auth.cargando = false;
   renderApp();
@@ -937,7 +937,7 @@ async function cargarEquipo(){
     S.equipo = r.empleados; S.errorEquipo = null;
     try{ ls.set(_equipoCacheKey(local), JSON.stringify(r.empleados)); }catch(e){}
   } else if(!S.equipo || !S.equipo.length){
-    S.equipo = []; S.errorEquipo = (r&&r.error) || "No se pudo conectar con el backend.";
+    S.equipo = []; S.errorEquipo = (r&&r.error) || "No se pudo conectar. Probá de nuevo.";
   }
   if(S.tab==="equipo") renderApp();
 }
@@ -953,7 +953,7 @@ async function cargarGestion(){
     S.gestion = r.empleados; S.errorGestion = null;
     try{ ls.set("gestionCache", JSON.stringify(r.empleados)); }catch(e){}
   } else if(!S.gestion || !S.gestion.length){
-    S.gestion = []; S.errorGestion = (r&&r.error) || "No se pudo conectar con el backend.";
+    S.gestion = []; S.errorGestion = (r&&r.error) || "No se pudo conectar. Probá de nuevo.";
   }
   if(S.tab==="equipo") renderApp();
 }
@@ -964,7 +964,7 @@ async function cargarGestion(){
 async function cargarSaboresAdmin(){
   const r = await api("saboresAdmin", {});
   if(r && r.ok){ S.saboresAdmin = r.sabores; S.errorSaboresAdmin = null; }
-  else { S.saboresAdmin = []; S.errorSaboresAdmin = (r&&r.error) || "No se pudo conectar con el backend."; }
+  else { S.saboresAdmin = []; S.errorSaboresAdmin = (r&&r.error) || "No se pudo conectar. Probá de nuevo."; }
   if(S.tab==="sabores") renderApp();
 }
 function saboresView(){
@@ -1053,7 +1053,7 @@ async function cargarDatos(){
   const r = await api("datos", {local});
   if(local!==S.local) return; // el usuario ya se movió a otro local, esta respuesta quedó vieja
   if(!r || !r.ok){
-    S.errorCarga = (r&&r.error) || "No se pudo conectar con el backend. Se va a reintentar solo.";
+    S.errorCarga = (r&&r.error) || "No se pudo conectar. Se va a reintentar solo.";
     if(!S.sabores.length) renderApp();
     return;
   }
