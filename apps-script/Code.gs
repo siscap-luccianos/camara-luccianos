@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.13.0";
+const BACKEND_VERSION = "1.14.0";
 
 function doPost(e) {
   let resultado;
@@ -543,8 +543,16 @@ function eliminarRegistro(registroId, empleado) {
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
   try {
+    // Necesitamos el local ANTES de borrar la fila, para poder invalidar el
+    // cache de datos() de ese local — si no, un admin que borra una
+    // salida/ingreso de prueba puede ver el stock viejo hasta 45s (lo que
+    // dure el cache) en vez de corregirse al toque.
+    const objetivo = _leerCrudo("Registros").filter((x) => String(x.id) === String(registroId))[0];
     const r = _eliminarCrudo("Registros", registroId);
-    if (r.ok) _auditar("eliminar_registro", empleado.id, empleado.nombre, "Registro " + registroId + " borrado definitivamente");
+    if (r.ok) {
+      _auditar("eliminar_registro", empleado.id, empleado.nombre, "Registro " + registroId + " borrado definitivamente");
+      if (objetivo && objetivo.local) _invalidarCacheDatos(objetivo.local);
+    }
     return r;
   } finally {
     lock.releaseLock();

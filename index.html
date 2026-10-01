@@ -227,7 +227,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.11.0";
+const FRONTEND_VERSION = "1.12.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -881,7 +881,7 @@ function histView(){
     <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div>`:`<div class="items">${it(r)}</div>`}
     ${r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
-    ${S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}">Eliminar</button>`:""}
+    ${S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`).join("");
   return `<div class="tools"><div style="display:flex;gap:6px">
       ${[["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="chip" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("")}
@@ -1178,8 +1178,11 @@ async function anularMovimiento(id, btn){
     if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
   });
 }
-async function eliminarRegistroDef(id, btn){
-  if(!confirm("¿Eliminar este movimiento del todo? No es como anular: desaparece de la planilla y no se puede deshacer.")) return;
+async function eliminarRegistroDef(id, tipo, btn){
+  const aviso = tipo==="conteo"
+    ? "¿Eliminar este conteo físico del todo? Ojo: esto borra el registro del historial, pero NO corrige el stock — un conteo pisa el stock directo al guardarlo, así que si cargaste números mal tenés que hacer un conteo nuevo con los números correctos. No se puede deshacer."
+    : "¿Eliminar este movimiento del todo? No es como anular: desaparece de la planilla y no se puede deshacer.";
+  if(!confirm(aviso)) return;
   await conBoton(btn, async ()=>{
     const r = await api("eliminarRegistro", {registroId:id});
     if(r && r.ok){ toast("Movimiento eliminado"); cargarDatos() } else toast((r&&r.error)||"No se pudo eliminar.");
@@ -1285,7 +1288,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
-  if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t); return }
+  if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t.dataset.tipoReg, t); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
   if(t.dataset.resetpin){ await resetearPin(t.dataset.resetpin, t); return }
   if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual, t); return }
