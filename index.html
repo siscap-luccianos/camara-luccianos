@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.14.0";
+const FRONTEND_VERSION = "1.15.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -585,6 +585,7 @@ function cerrarSesion(silencioso){
 }
 function reiniciarInactividad(){
   clearTimeout(S.inactTimer);
+  if(S.lectorRemito) return; // leyendo/revisando un remito: no se cierra ni se bloquea solo
   if(S.deviceLocal){
     // Tablet: se cierra la sesión entera (vuelve a elegir quién sos).
     S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
@@ -1381,13 +1382,14 @@ document.addEventListener("click", async e=>{
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[S.tab]={}; renderApp(); return }
   if(t.id==="btnLeerRemito"){ $("#inputRemitoFoto").click(); return }
-  if(t.id==="remitoCancelar"){ S.lectorRemito=null; renderApp(); return }
+  if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
   if(t.id==="remitoCargar"){
     const lr=S.lectorRemito;
     lr.items.forEach(it=>{ if(it.saborId && !it.ignorar && it.cantidad>0) S.cart.ingreso[it.saborId]=(S.cart.ingreso[it.saborId]||0)+it.cantidad; });
     if(lr.remitoDetectado) S.remito=lr.remitoDetectado;
     S.fotoRemitoUrl=lr.fotoUrl||"";
     S.lectorRemito=null;
+    reiniciarInactividad();
     toast("Cargado al carrito — revisá y confirmá el ingreso");
     renderApp();
     return;
@@ -1429,6 +1431,7 @@ document.addEventListener("change", e=>{
       const dataUrl=lector.result;
       const base64=dataUrl.split(",")[1];
       S.lectorRemito={ paso:"leyendo", fotoDataUrl:dataUrl };
+      reiniciarInactividad(); // cancela el timer que ya estaba corriendo de antes de abrir el lector
       renderApp();
       leerRemitoFoto(base64, file.type||"image/jpeg");
     };
