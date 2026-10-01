@@ -94,6 +94,7 @@ Reglas:
   - El empleado SIEMPRE revisa y puede corregir cantidades/sabores antes de confirmar — nunca se carga el ingreso solo. Los renglones donde el nombre no matchea con el catálogo de `Sabores` (o la lectura es dudosa) se marcan aparte y piden elegir el sabor a mano.
   - El remito trae otros productos (chocolates en tableta, sin gluten) que no son sabores de cámara — esos renglones se ignoran, no se cargan.
   - Guardado: el registro de `Registros` queda igual que cualquier ingreso hoy (sabor, cantidad, nº de remito, fecha, quién lo cargó) — nada nuevo ahí. Además, la foto original del remito se sube a una carpeta de Google Drive (misma cuenta que la planilla, vía `DriveApp` desde Apps Script) y se guarda el link en esa fila, para poder comparar contra el papel si alguna vez hay una diferencia.
+  - Estructura de carpetas en Drive (acordada 01/10/2026): `Remitos/<Local>/<AAAA-MM>/<AAAA-MM-DD>_remito-<número>.jpg` — una subcarpeta por local, y dentro una por mes (no hace falta carpeta de fecha exacta aparte, ya queda en el nombre del archivo).
   - El número de remito y el local ya se pueden pre-completar leyéndolos de la foto (el remito de ejemplo tenía "Recoleta Vicente López" como cliente).
 
 ## Convenciones
