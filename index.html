@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.17.0";
+const FRONTEND_VERSION = "1.17.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -494,6 +494,7 @@ function authElegirEmpleado(emp){
 /** Operaciones (admin/supervisor) no pide PIN — alcanza con la
  *  contraseña del local que ya se validó en el paso anterior. */
 async function authEntrarGestion(emp){
+  if(S.auth.cargando) return; // evita disparar varios pedidos si toca de nuevo mientras espera
   S.auth.elegido=emp; S.auth.cargando=true; S.auth.error=""; renderApp();
   const r = await api("loginGestion", { empleadoId:emp.id, clave:S.auth.clave, local:S.auth.local });
   S.auth.cargando=false;

@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.16.0";
+const BACKEND_VERSION = "1.16.1";
 
 function doPost(e) {
   let resultado;
@@ -350,7 +350,13 @@ function login(empleadoId, pin, pinConfirm, local) {
  *  demora siente en este stack) para tener algo para mostrar. */
 function _resultadoLogin(empleado, local) {
   const resultado = { ok: true, token: _emitirToken(empleado.id), empleado: _empleadoPublico(empleado) };
-  if (local && _puedeVerLocal(empleado, local)) {
+  const filaLocal = local ? _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0] : null;
+  const esLocalDeGestion = !!(filaLocal && _esVerdadero(filaLocal.operaciones) === true);
+  // Admin/supervisor entrando por Operaciones no aterriza en ningún local
+  // real (el cliente arranca en "elegí el local arriba"), así que traer el
+  // stock/historial de "Operaciones" es trabajo de más — ahí es donde más
+  // se siente la demora, porque lee toda la hoja Registros para nada.
+  if (local && !esLocalDeGestion && _puedeVerLocal(empleado, local)) {
     try { resultado.datos = datos(local, empleado); } catch (err) { /* si falla, el cliente lo pide aparte */ }
   }
   return resultado;
