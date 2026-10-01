@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.17.0";
+const BACKEND_VERSION = "1.18.0";
 
 function doPost(e) {
   let resultado;
@@ -1109,16 +1109,36 @@ function _proximoId(sheet) {
   return nuevoId;
 }
 
+/** Arma la fila (valores + formatos) para escribirla de una sola vez
+ *  en vez de una llamada a Sheets por columna — con ~14 columnas en
+ *  Registros, eso eran hasta 28 idas y vueltas por cada salida/ingreso/
+ *  conteo, y era lo que más demoraba "Guardando…" cuando la planilla
+ *  tenía varios locales escribiendo a la vez. */
+function _filaParaEscribir(headers, filaCompleta) {
+  const valores = [];
+  const formatos = [];
+  headers.forEach((h) => {
+    const valor = filaCompleta[h] !== undefined ? _sanitizarCelda(filaCompleta[h]) : "";
+    valores.push(valor);
+    formatos.push(typeof valor === "string" ? "@" : "General");
+  });
+  return { valores: valores, formatos: formatos };
+}
+
+function _escribirFilaCompleta(sheet, headers, filaCompleta) {
+  const destino = sheet.getLastRow() + 1;
+  const { valores, formatos } = _filaParaEscribir(headers, filaCompleta);
+  const rango = sheet.getRange(destino, 1, 1, headers.length);
+  rango.setNumberFormats([formatos]);
+  rango.setValues([valores]);
+}
+
 function _escribirCrudo(hoja, fila) {
   const sheet = _sheet(hoja);
   const headers = sheet.getDataRange().getValues()[0];
   const nuevoId = _proximoId(sheet);
   const filaCompleta = Object.assign({}, fila, { id: nuevoId });
-  const destino = sheet.getLastRow() + 1;
-  headers.forEach((h, i) => {
-    const valor = filaCompleta[h] !== undefined ? _sanitizarCelda(filaCompleta[h]) : "";
-    _escribirCeldaSinAdivinar(sheet.getRange(destino, i + 1), valor);
-  });
+  _escribirFilaCompleta(sheet, headers, filaCompleta);
   return { ok: true, id: nuevoId };
 }
 
@@ -1127,11 +1147,7 @@ function _escribirCrudo(hoja, fila) {
 function _escribirCrudoConId(hoja, fila) {
   const sheet = _sheet(hoja);
   const headers = sheet.getDataRange().getValues()[0];
-  const destino = sheet.getLastRow() + 1;
-  headers.forEach((h, i) => {
-    const valor = fila[h] !== undefined ? _sanitizarCelda(fila[h]) : "";
-    _escribirCeldaSinAdivinar(sheet.getRange(destino, i + 1), valor);
-  });
+  _escribirFilaCompleta(sheet, headers, fila);
   return { ok: true, id: fila.id };
 }
 
