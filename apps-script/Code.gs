@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.15.0";
+const BACKEND_VERSION = "1.15.1";
 
 function doPost(e) {
   let resultado;
@@ -534,7 +534,7 @@ function _leerRemitoConIA(fotoBase64, mimeType) {
   const prompt = "Esta es la foto de un remito de helados Lucciano's. Quiero SOLO los renglones que están bajo el encabezado de productos \"SABORES\" (ignorá Chocolates, Tabletas, Sin Gluten, Palitos y cualquier otra sección). Para cada uno de esos renglones, tomá el nombre del sabor tal cual está escrito y la cantidad de bultos/vasquetas (la primera columna numérica, \"Cantidad/Bultos\", NO los kilos). También fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<como figura impreso>\",\"cantidad\":<número entero>}]}";
 
   const payload = {
-    model: "claude-sonnet-4-5",
+    model: "claude-sonnet-5-5",
     max_tokens: 2048,
     messages: [{
       role: "user",
