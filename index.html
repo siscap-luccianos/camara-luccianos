@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.13.0";
+const FRONTEND_VERSION = "1.14.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -500,6 +500,15 @@ function authVolver(){
   if(S.auth.paso==="clave"){ S.auth.local=null; S.auth.paso="local"; renderApp(); return }
   S.auth=null; renderApp();
 }
+/** Desfija el local guardado en este dispositivo — para cuando alguien
+ *  fijó un local por error (p. ej. un admin/supervisor que tocó "sí" sin
+ *  querer) y necesita volver a elegir, incluida la entrada a Operaciones. */
+function cambiarDispositivo(){
+  if(!confirm("¿Dejar de usar este local fijo en este dispositivo? La próxima vez va a volver a pedir elegir el local.")) return;
+  S.deviceLocal=null; ls.del("deviceLocal");
+  S.auth={ paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false };
+  renderApp();
+}
 async function authTecla(k){
   const cur = S.auth.paso==="pinConfirm" ? "pin1" : "pin";
   if(k==="borrar"){ S.auth[cur]=S.auth[cur].slice(0,-1); renderApp(); return }
@@ -624,7 +633,7 @@ function renderAuth(){
       <input type="password" id="authClave" placeholder="Contraseña" autocomplete="off" style="width:100%" ${a.cargando?"disabled":""}>
       <button class="btn" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>`;
   } else if(a.paso==="quien"){
-    cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">← Volver</button>`}
+    cuerpo=`${S.deviceLocal?`<button class="authBack" type="button" data-cambiar-dispositivo="1">¿No es tu local? Cambiar</button>`:`<button class="authBack" data-authback="1">← Volver</button>`}
       <h1>Elegí tu perfil</h1>
       <p>${a.esGestion?"Tocá tu tarjeta para continuar.":"Local: "+esc(a.local||"")+". Tocá tu tarjeta para continuar."}</p>
       ${a.cargando?`<div class="note">Cargando…</div>`:
@@ -1308,6 +1317,7 @@ document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
 
   if(t.dataset.authback){ authVolver(); return }
+  if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
   if(t.dataset.teclaBloqueo){
