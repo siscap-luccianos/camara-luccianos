@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.12.0";
+const BACKEND_VERSION = "1.13.0";
 
 function doPost(e) {
   let resultado;
@@ -85,6 +85,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
     case "altaEmpleado": return altaEmpleado(body.nombre, body.rol, body.local, empleado);
     case "bajaEmpleado": return bajaEmpleado(body.empleadoId, empleado);
+    case "eliminarEmpleado": return eliminarEmpleado(body.empleadoId, empleado);
     case "resetPin": return resetPin(body.empleadoId, empleado);
     case "editarNombreEmpleado": return editarNombreEmpleado(body.empleadoId, body.nombre, empleado);
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
@@ -630,6 +631,27 @@ function bajaEmpleado(empleadoId, empleado) {
   try {
     const r = _actualizarCrudo("Empleados", empleadoId, { activo: false });
     if (r.ok) _auditar("baja_empleado", empleado.id, empleado.nombre, "Baja de " + objetivo.nombre);
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Borrado real (no soft-delete) — solo admin, y solo sobre alguien ya
+ *  dado de baja, para evitar borrar por error a alguien todavía activo
+ *  sin pasar primero por "Dar de baja". Pensado para limpiar altas
+ *  duplicadas por error (p. ej. cargar el mismo nombre varias veces). */
+function eliminarEmpleado(empleadoId, empleado) {
+  if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede eliminar empleados del todo." };
+  const objetivo = _empleadoPorId(empleadoId);
+  if (!objetivo) return { ok: false, error: "No se encontró ese empleado." };
+  if (_esVerdadero(objetivo.activo) !== false) return { ok: false, error: "Primero tenés que dar de baja a este empleado antes de eliminarlo del todo." };
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const r = _eliminarCrudo("Empleados", empleadoId);
+    if (r.ok) _auditar("eliminar_empleado", empleado.id, empleado.nombre, "Empleado " + objetivo.nombre + " (id " + empleadoId + ") borrado definitivamente");
     return r;
   } finally {
     lock.releaseLock();

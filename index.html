@@ -227,7 +227,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.9.1";
+const FRONTEND_VERSION = "1.10.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -528,6 +528,11 @@ function aplicarLogin(r){
   // start(), que sí usa "ultimoLocal" para sobrevivir a un refresco de
   // página sin haber cerrado sesión).
   S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : localElegido);
+  // Siempre arranca en "Salida" — si no, a quien entra por primera vez le
+  // puede quedar pegada la pestaña en la que estaba el usuario anterior en
+  // este mismo dispositivo (por ejemplo "Equipo", que ni siquiera tendría
+  // permiso de ver).
+  S.tab = "salida";
   if(!S.deviceLocal) guardarSesionPC();
   S.auth=null;
   if(!yaFijado && puedeFijar && localElegido && confirm(`¿Fijar "${localElegido}" como local de este dispositivo? La próxima vez arranca directo, sin volver a elegir local.`)){
@@ -548,6 +553,7 @@ function aplicarLogin(r){
 function cerrarSesion(silencioso){
   limpiarSesion();
   S.local = S.deviceLocal || null;
+  S.tab = "salida";
   S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null; S.errorEquipo = null; S.errorGestion = null;
   clearTimeout(S.inactTimer);
   clearInterval(S.pollTimer);
@@ -884,6 +890,7 @@ function histView(){
 }
 
 function _teamFila(e){
+  const puedeEliminar = S.empleado.rol==="admin" && !e.activo;
   return `<div class="teamRow${e.activo?"":" baja"}">
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
     <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
@@ -891,6 +898,8 @@ function _teamFila(e){
       ${(e.rol==="colaborador"||e.rol==="turno")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
       <button type="button" data-resetpin="${e.id}">Resetear PIN</button>
       <button type="button" data-baja="${e.id}">Dar de baja</button>
+    </div>`:puedeEliminar?`<div class="acciones">
+      <button type="button" style="color:var(--alert);border-color:var(--alert)" data-eliminar-emp="${e.id}" data-nombre-emp="${esc(e.nombre)}">Eliminar definitivamente</button>
     </div>`:""}
   </div>`;
 }
@@ -1190,6 +1199,13 @@ async function darDeBaja(id, btn){
     if(r && r.ok){ toast("Dado de baja"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo dar de baja.");
   });
 }
+async function eliminarEmpleadoDef(id, nombre, btn){
+  if(!confirm(`¿Eliminar a "${nombre}" del todo? No es como dar de baja: esto borra el registro entero y no se puede deshacer.`)) return;
+  await conBoton(btn, async ()=>{
+    const r = await api("eliminarEmpleado", {empleadoId:id});
+    if(r && r.ok){ toast("Empleado eliminado"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo eliminar.");
+  });
+}
 async function resetearPin(id, btn){
   if(!confirm("¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso.")) return;
   await conBoton(btn, async ()=>{
@@ -1264,6 +1280,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
   if(t.dataset.resetpin){ await resetearPin(t.dataset.resetpin, t); return }
   if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual, t); return }
+  if(t.dataset.eliminarEmp){ await eliminarEmpleadoDef(t.dataset.eliminarEmp, t.dataset.nombreEmp, t); return }
   if(t.dataset.editarSaborBtn){ S.editandoSaborId=t.dataset.editarSaborBtn; renderApp(); return }
   if(t.dataset.cancelarSabor){ S.editandoSaborId=null; renderApp(); return }
   if(t.dataset.toggleSabor){
