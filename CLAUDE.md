@@ -89,6 +89,12 @@ Reglas:
 - Vista PC para encargado/supervisor (varios locales, consumo semanal), con PIN.
 - PWA instalable (manifest + service worker, como Academy).
 - Alerta por mail cuando un sabor queda bajo mínimo.
+- **Lector de remitos por foto** (acordado con Gabi 01/10/2026, no empezado — ver maqueta en `https://claude.ai/artifact/EpdrEMYvv45T49C86nfEog`):
+  - Flujo: en Ingreso, sacar/elegir una foto del remito del proveedor en vez de tipear sabor por sabor. Se manda a un modelo con visión (tiene que pasar por el backend — Apps Script guarda la clave de la API en Script Properties, nunca en el cliente) que devuelve sabor + cantidad por renglón.
+  - El empleado SIEMPRE revisa y puede corregir cantidades/sabores antes de confirmar — nunca se carga el ingreso solo. Los renglones donde el nombre no matchea con el catálogo de `Sabores` (o la lectura es dudosa) se marcan aparte y piden elegir el sabor a mano.
+  - El remito trae otros productos (chocolates en tableta, sin gluten) que no son sabores de cámara — esos renglones se ignoran, no se cargan.
+  - Guardado: el registro de `Registros` queda igual que cualquier ingreso hoy (sabor, cantidad, nº de remito, fecha, quién lo cargó) — nada nuevo ahí. Además, la foto original del remito se sube a una carpeta de Google Drive (misma cuenta que la planilla, vía `DriveApp` desde Apps Script) y se guarda el link en esa fila, para poder comparar contra el papel si alguna vez hay una diferencia.
+  - El número de remito y el local ya se pueden pre-completar leyéndolos de la foto (el remito de ejemplo tenía "Recoleta Vicente López" como cliente).
 
 ## Convenciones
 - Todo en español. Commits en español, descriptivos.
