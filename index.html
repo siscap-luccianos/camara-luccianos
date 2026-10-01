@@ -167,6 +167,19 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 @media (min-width:900px){.avisoActualizacion{bottom:24px}}
 .remitoRow{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .remitoRow input{flex:1 1 220px}
+/* --- lector de remitos --- */
+.photoStage{position:relative;border-radius:16px;overflow:hidden;margin-top:14px;background:#000;max-height:50vh;aspect-ratio:3/4}
+.photoStage img{width:100%;height:100%;object-fit:cover;display:block;opacity:.88}
+.scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent) 20%,#fff 50%,var(--accent) 80%,transparent);box-shadow:0 0 16px 4px var(--accent);animation:scan 1.8s ease-in-out infinite}
+@keyframes scan{0%{top:4%}50%{top:94%}100%{top:4%}}
+.scanOverlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.55));display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:22px;gap:6px;text-align:center}
+.scanOverlay b{color:#fff;font-family:var(--display);font-size:1.1rem}
+.scanOverlay span{color:rgba(255,255,255,.78);font-size:.8rem}
+.row.flag{background:var(--warn-soft);border-radius:12px;padding:8px 10px;margin:4px 0}
+.row.flag .meta{color:var(--warn);font-weight:600}
+.flagPick{grid-column:1/-1;margin-top:8px}
+.flagPick select{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.remitoResumen{display:flex;gap:10px;align-items:flex-start;background:var(--ok-soft);color:var(--ok);border-radius:12px;padding:11px 13px;font-size:.84rem;font-weight:600;margin-top:12px}
 /* --- auth --- */
 .authWrap{max-width:460px;margin:36px auto;padding:0 16px}
 .authCard{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center}
@@ -227,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.12.0";
+const FRONTEND_VERSION = "1.13.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -258,8 +271,9 @@ const S = {
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{} },
-  confirm: false, remito: "", q: "", filtroCategoria: "todas", soloAlerta: false, needEmp:false,
+  confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroCategoria: "todas", soloAlerta: false, needEmp:false,
   conteo: null,
+  lectorRemito: null,
   verPedido: false,
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
   periodoHist: ls.get("periodoHist","7"),
@@ -731,7 +745,56 @@ function gridSalida(st){
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
+function lectorRemitoView(){
+  const lr=S.lectorRemito;
+  if(lr.paso==="leyendo"){
+    return `<p class="sec">Leer remito</p>
+    <div class="photoStage">
+      <img src="${lr.fotoDataUrl}" alt="Foto del remito">
+      <div class="scanline"></div>
+      <div class="scanOverlay"><b>Leyendo el remito…</b><span>Separando sabores y cantidades…</span></div>
+    </div>`;
+  }
+  if(lr.paso==="error"){
+    return `<p class="sec">Leer remito</p>
+    <div class="empty">${esc(lr.error)}</div>
+    <button class="btn ghost" type="button" id="remitoCancelar" style="margin-top:10px">Volver</button>`;
+  }
+  const total=lr.items.reduce((a,it)=>a+(it.ignorar?0:(it.cantidad||0)),0);
+  const sinResolver=lr.items.filter(it=>!it.saborId && !it.ignorar).length;
+  const fila=(it,i)=>{
+    const flag=!it.saborId && !it.ignorar;
+    return `<div class="row${flag?" flag":""}">
+      ${it.saborId?plateHTML(it.saborId):`<span class="plate" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--warn);font-weight:800">?</span>`}
+      <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:""}</div>
+      <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
+      ${flag||it.ignorar?`<div class="flagPick"><select data-remito-elegir="${i}">
+        <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>
+        ${S.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}
+        <option value="ignorar" ${it.ignorar?"selected":""}>Ignorar este renglón</option>
+      </select></div>`:""}
+    </div>`;
+  };
+  return `<p class="sec">Detectado en el remito</p>
+  <div class="remitoResumen">${lr.items.length} renglones, ${total} unidades en total.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
+  ${lr.remitoDetectado?`<p class="lede" style="margin:8px 0 0;color:var(--muted)">N° de remito detectado: <b style="color:var(--ink)">${esc(lr.remitoDetectado)}</b></p>`:""}
+  <div class="rows" style="margin-top:14px">${lr.items.map(fila).join("")}</div>
+  <div style="display:flex;gap:10px;margin-top:16px">
+    <button class="btn ghost" type="button" id="remitoCancelar">Cancelar</button>
+    <button class="btn" type="button" id="remitoCargar" ${sinResolver?"disabled":""}>Cargar al carrito de ingreso</button>
+  </div>`;
+}
+async function leerRemitoFoto(base64, mime){
+  const r = await api("leerRemito", {foto:base64, mime, local:S.local}, 60000);
+  if(r && r.ok){
+    S.lectorRemito = { paso:"revision", items:r.items, remitoDetectado:r.remitoDetectado, fotoUrl:r.fotoUrl, fotoDataUrl:S.lectorRemito.fotoDataUrl };
+  } else {
+    S.lectorRemito = { paso:"error", error:(r&&r.error)||"No se pudo leer el remito. Probá de nuevo.", fotoDataUrl:S.lectorRemito.fotoDataUrl };
+  }
+  renderApp();
+}
 function gridIngreso(st){
+  if(S.lectorRemito) return lectorRemitoView();
   const cart=S.cart.ingreso;
   const list=listaFiltrada(st);
   const row=s=>{
@@ -743,7 +806,10 @@ function gridIngreso(st){
     </div>`};
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
   ${chipFiltros()}
-  <div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}"></div>
+  <div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
+    <button class="btn ghost" type="button" id="btnLeerRemito">📷 Leer remito</button>
+    <input type="file" accept="image/*" capture="environment" id="inputRemitoFoto" style="display:none">
+  </div>
   <p class="sec">Cantidad que entra de cada sabor</p>
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
@@ -1128,17 +1194,17 @@ async function guardarMovimiento(){
   const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
   const total=Object.values(items).reduce((a,b)=>a+b,0);
   const clienteId=uuid();
-  const payload={clienteId, tipo, local:S.local, items, remito: tipo==="ingreso"?S.remito.trim():undefined};
+  const payload={clienteId, tipo, local:S.local, items, remito: tipo==="ingreso"?S.remito.trim():undefined, fotoRemito: tipo==="ingreso"?(S.fotoRemitoUrl||undefined):undefined};
   const r = await api("registrar", payload);
   if(r && r.ok){
     toast((tipo==="salida"?"Salida registrada: ":"Ingreso registrado: ")+total+" u.");
-    S.cart[tipo]={}; S.remito=""; S.confirm=false;
+    S.cart[tipo]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false;
     await cargarDatos();
     if(S.deviceLocal) return cerrarSesion(true); // tablet: se cierra sola tras cada registro
   } else if(r && r.offline){
     colaAgregar("registrar", payload);
     toast("Sin conexión: se guardó y se va a enviar solo.");
-    S.cart[tipo]={}; S.remito=""; S.confirm=false;
+    S.cart[tipo]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false;
     if(S.deviceLocal) return cerrarSesion(true);
   } else {
     toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
@@ -1304,6 +1370,18 @@ document.addEventListener("click", async e=>{
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[S.tab]={}; renderApp(); return }
+  if(t.id==="btnLeerRemito"){ $("#inputRemitoFoto").click(); return }
+  if(t.id==="remitoCancelar"){ S.lectorRemito=null; renderApp(); return }
+  if(t.id==="remitoCargar"){
+    const lr=S.lectorRemito;
+    lr.items.forEach(it=>{ if(it.saborId && !it.ignorar && it.cantidad>0) S.cart.ingreso[it.saborId]=(S.cart.ingreso[it.saborId]||0)+it.cantidad; });
+    if(lr.remitoDetectado) S.remito=lr.remitoDetectado;
+    S.fotoRemitoUrl=lr.fotoUrl||"";
+    S.lectorRemito=null;
+    toast("Cargado al carrito — revisá y confirmá el ingreso");
+    renderApp();
+    return;
+  }
   if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
   if(t.id==="volverPedido"){ S.verPedido=false; renderApp(); return }
@@ -1330,8 +1408,31 @@ document.addEventListener("input", e=>{
   if(e.target.id==="remito"){ S.remito=e.target.value }
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.dataset.c){ S.conteo[e.target.dataset.c]=Math.max(0,parseInt(e.target.value,10)||0) }
+  if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
 });
 document.addEventListener("change", e=>{
+  if(e.target.id==="inputRemitoFoto"){
+    const file=e.target.files[0]; e.target.value="";
+    if(!file) return;
+    const lector=new FileReader();
+    lector.onload=()=>{
+      const dataUrl=lector.result;
+      const base64=dataUrl.split(",")[1];
+      S.lectorRemito={ paso:"leyendo", fotoDataUrl:dataUrl };
+      renderApp();
+      leerRemitoFoto(base64, file.type||"image/jpeg");
+    };
+    lector.readAsDataURL(file);
+    return;
+  }
+  if(e.target.dataset.remitoElegir!==undefined){
+    const it=S.lectorRemito.items[+e.target.dataset.remitoElegir], v=e.target.value;
+    if(v==="ignorar"){ it.ignorar=true; it.saborId=null; it.nombreSabor=null; }
+    else if(v){ it.saborId=v; it.nombreSabor=(S.saboresPorId[v]||{}).nombre||""; it.ignorar=false; }
+    else { it.saborId=null; it.nombreSabor=null; it.ignorar=false; }
+    renderApp();
+    return;
+  }
   if(e.target.id==="local"){
     const v=e.target.value.trim();
     const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);

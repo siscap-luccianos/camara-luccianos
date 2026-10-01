@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.14.0";
+const BACKEND_VERSION = "1.15.0";
 
 function doPost(e) {
   let resultado;
@@ -79,7 +79,8 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito);
+    case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
@@ -399,6 +400,7 @@ function _registroPublico(r) {
     id: String(r.id), tipo: r.tipo, local: r.local, empleado: r.empleado, items: items,
     total: Number(r.total) || 0, remito: r.remito || "", ts: Number(r.ts),
     anulado: !!r.anulado_ts, anulado_por: r.anulado_por || "", motivo: r.motivo || "",
+    foto_remito: r.foto_remito || "",
   };
 }
 
@@ -418,7 +420,7 @@ function _totalItems(items) {
   return t;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -438,13 +440,176 @@ function registrar(clienteId, tipo, local, items, remito, empleado) {
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: tipo, local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
-      anulado_por: "", anulado_ts: "", motivo: "",
+      anulado_por: "", anulado_ts: "", motivo: "", foto_remito: fotoRemito || "",
     });
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ============================================================
+   LECTOR DE REMITOS — foto del remito → IA con visión → sabores +
+   cantidades detectados, matcheados contra el catálogo. El empleado
+   siempre revisa y confirma antes de que esto se convierta en un
+   ingreso real (eso sigue pasando por registrar(), más arriba).
+
+   SETUP: Propiedades del script → agregar "ANTHROPIC_API_KEY" con una
+   clave de console.anthropic.com (⚠️ NO es la cuenta de claude.ai —
+   ver apps-script/README.md). Sin eso, esta acción devuelve un error
+   claro en vez de romper el resto de la app.
+============================================================ */
+
+/** Minúsculas, sin tildes ni signos, espacios simples — para poder
+ *  comparar "Tiramisù" con "Tiramisu" o "Pistacchio 100% Vegetal" con
+ *  "Pistacchio" sin que un detalle de tipeo rompa el match. */
+const _REGEX_MARCAS_ACENTO = new RegExp("[" + String.fromCharCode(0x0300) + "-" + String.fromCharCode(0x036f) + "]", "g");
+function _normalizar(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD").replace(_REGEX_MARCAS_ACENTO, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Busca, para un nombre detectado en el remito, el sabor del catálogo
+ *  que mejor matchea. Devuelve null si ninguno se parece lo suficiente
+ *  (el frontend lo marca para que el empleado elija a mano). */
+function _matchearSabor(nombreDetectado, sabores) {
+  const norm = _normalizar(nombreDetectado);
+  if (!norm) return null;
+  // 1) match exacto
+  let mejor = sabores.find((s) => _normalizar(s.nombre) === norm);
+  if (mejor) return { sabor: mejor, confianza: "alta" };
+  // 2) uno contiene al otro (ej. "pistacchio" vs "pistacchio 100% vegetal")
+  mejor = sabores.find((s) => {
+    const ns = _normalizar(s.nombre);
+    return ns.length > 3 && (norm.indexOf(ns) !== -1 || ns.indexOf(norm) !== -1);
+  });
+  if (mejor) return { sabor: mejor, confianza: "media" };
+  // 3) comparten la mayoría de las palabras
+  const palabrasDet = norm.split(" ").filter((w) => w.length > 2);
+  if (palabrasDet.length) {
+    let mejorScore = 0;
+    sabores.forEach((s) => {
+      const palabrasS = _normalizar(s.nombre).split(" ").filter((w) => w.length > 2);
+      if (!palabrasS.length) return;
+      const comunes = palabrasDet.filter((w) => palabrasS.indexOf(w) !== -1).length;
+      const score = comunes / Math.max(palabrasDet.length, palabrasS.length);
+      if (score > mejorScore) { mejorScore = score; mejor = s; }
+    });
+    if (mejor && mejorScore >= 0.6) return { sabor: mejor, confianza: "media" };
+  }
+  return null;
+}
+
+/** Carpeta Remitos/<Local>/<AAAA-MM>/ en el Drive de la cuenta dueña
+ *  de la planilla — la crea si no existe. */
+function _carpetaDriveRemito(local, fechaMs) {
+  const raiz = DriveApp.getRootFolder();
+  const nombreRaiz = "Remitos";
+  const carpetasRaiz = raiz.getFoldersByName(nombreRaiz);
+  const carpetaRemitos = carpetasRaiz.hasNext() ? carpetasRaiz.next() : raiz.createFolder(nombreRaiz);
+
+  const carpetasLocal = carpetaRemitos.getFoldersByName(local);
+  const carpetaLocal = carpetasLocal.hasNext() ? carpetasLocal.next() : carpetaRemitos.createFolder(local);
+
+  const d = new Date(fechaMs);
+  const mes = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  const carpetasMes = carpetaLocal.getFoldersByName(mes);
+  return carpetasMes.hasNext() ? carpetasMes.next() : carpetaLocal.createFolder(mes);
+}
+
+/** Le manda la foto a Claude (API de Anthropic, con visión) y le pide
+ *  que transcriba SOLO los renglones de la sección "SABORES" del
+ *  remito (sabor + cantidad de bultos), más el número y fecha del
+ *  remito si se ven. Devuelve el JSON ya parseado — tira error si la
+ *  clave falta o la IA no contesta algo parseable, y quien llama
+ *  decide qué hacer con eso. */
+function _leerRemitoConIA(fotoBase64, mimeType) {
+  const clave = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  if (!clave) throw new Error("Falta configurar ANTHROPIC_API_KEY en Propiedades del script (ver apps-script/README.md).");
+
+  const prompt = "Esta es la foto de un remito de helados Lucciano's. Quiero SOLO los renglones que están bajo el encabezado de productos \"SABORES\" (ignorá Chocolates, Tabletas, Sin Gluten, Palitos y cualquier otra sección). Para cada uno de esos renglones, tomá el nombre del sabor tal cual está escrito y la cantidad de bultos/vasquetas (la primera columna numérica, \"Cantidad/Bultos\", NO los kilos). También fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<como figura impreso>\",\"cantidad\":<número entero>}]}";
+
+  const payload = {
+    model: "claude-sonnet-4-5",
+    max_tokens: 2048,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "image", source: { type: "base64", media_type: mimeType || "image/jpeg", data: fotoBase64 } },
+        { type: "text", text: prompt },
+      ],
+    }],
+  };
+
+  const resp = UrlFetchApp.fetch("https://api.anthropic.com/v1/messages", {
+    method: "post",
+    contentType: "application/json",
+    headers: { "x-api-key": clave, "anthropic-version": "2023-06-01" },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true,
+  });
+
+  if (resp.getResponseCode() !== 200) {
+    throw new Error("La IA no pudo leer el remito (código " + resp.getResponseCode() + "). Probá de nuevo en un rato.");
+  }
+  const data = JSON.parse(resp.getContentText());
+  const texto = (data.content && data.content[0] && data.content[0].text) || "";
+  const match = texto.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error("La IA contestó algo que no se pudo entender. Probá con otra foto, más clara.");
+  return JSON.parse(match[0]);
+}
+
+function leerRemito(fotoBase64, mimeType, local, empleado) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  if (!fotoBase64) return { ok: false, error: "Falta la foto." };
+
+  let leido;
+  try {
+    leido = _leerRemitoConIA(fotoBase64, mimeType);
+  } catch (err) {
+    return { ok: false, error: String((err && err.message) || err) };
+  }
+
+  const sabores = _leerCrudo("Sabores")
+    .filter((s) => _esVerdadero(s.activo) !== false)
+    .map((s) => ({ id: String(s.id), nombre: s.nombre }));
+
+  const items = (leido.items || []).map((it) => {
+    const m = _matchearSabor(it.nombre, sabores);
+    return {
+      nombreDetectado: it.nombre,
+      cantidad: Math.max(0, Number(it.cantidad) || 0),
+      saborId: m ? m.sabor.id : null,
+      nombreSabor: m ? m.sabor.nombre : null,
+      confianza: m ? m.confianza : "sin_match",
+    };
+  });
+
+  // La foto se guarda en Drive apenas se lee, aunque después el empleado
+  // termine cancelando — es un costo de espacio insignificante y preferible
+  // a mandar la imagen dos veces (una para leerla, otra para guardarla).
+  let fotoUrl = "";
+  try {
+    const carpeta = _carpetaDriveRemito(local, Date.now());
+    const bytes = Utilities.base64Decode(fotoBase64);
+    const blob = Utilities.newBlob(bytes, mimeType || "image/jpeg", "remito.jpg");
+    const d = new Date();
+    const fechaArchivo = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const nombreArchivo = fechaArchivo + "_remito-" + (leido.remito || "sinnumero").replace(/[^a-zA-Z0-9-]/g, "") + ".jpg";
+    const archivo = carpeta.createFile(blob).setName(nombreArchivo);
+    fotoUrl = archivo.getUrl();
+  } catch (err) {
+    // Si falla subir a Drive, no tiramos abajo toda la lectura — el
+    // empleado puede seguir revisando y confirmando el ingreso igual,
+    // simplemente no va a quedar el link a la foto en ese registro.
+  }
+
+  return { ok: true, remitoDetectado: leido.remito || "", fechaDetectada: leido.fecha || "", items: items, fotoUrl: fotoUrl };
 }
 
 function conteo(clienteId, local, items, empleado) {

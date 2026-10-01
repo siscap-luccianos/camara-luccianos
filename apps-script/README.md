@@ -56,6 +56,16 @@ const API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
 
 Guardá, commiteá y hacé push — GitHub Pages se actualiza sola en un par de minutos.
 
+## 7. (Opcional) Lector de remitos por foto
+
+Esto es aparte de todo lo de arriba — si no lo configurás, el resto de la app funciona igual, "Leer remito" simplemente muestra un error pidiendo que lo configures.
+
+1. Andá a [console.anthropic.com](https://console.anthropic.com) y creá una cuenta — **ojo, no es lo mismo que tu cuenta de claude.ai** (esa es para chatear vos; esta es para que la app llame a la IA sola, y se paga aparte, por uso, normalmente centavos por remito leído).
+2. Ahí, **API Keys → Create Key**. Copiá la clave (empieza con `sk-ant-...`).
+3. En el editor de Apps Script: **Configuración del proyecto → Propiedades del script → Agregar propiedad del script**. Nombre: `ANTHROPIC_API_KEY`. Valor: la clave que copiaste. Guardá.
+4. Agregá la columna `foto_remito` al final de la hoja `Registros` (encabezado en la fila 1, igual que las demás) — ahí queda el link a la foto en Drive de cada ingreso cargado por foto.
+5. La primera vez que se use "Leer remito" en la app, Apps Script va a necesitar permiso para crear carpetas en tu Google Drive (la carpeta `Remitos` se crea sola, ver `CLAUDE.md`) — si pide autorizar de nuevo, es por eso, aceptá igual que la primera vez.
+
 ## Cómo probar que quedó bien conectado
 
 1. Abrí la URL del deploy (`.../exec`) directo en el navegador — debería devolver `{"ok":true,"mensaje":"Cámara Lucciano's backend activo","version":"1.0.0"}`.
@@ -78,7 +88,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 
 | Hoja | Encabezados (fila 1) |
 |---|---|
-| `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo` |
+| `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo`, `foto_remito` |
 | `Stock` | `local`, `base`, `ts`, `empleado` |
 | `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden`, `categoria`, `peso` |
 | `Locales` | `nombre`, `grupo`, `activo`, `clave`, `operaciones` |
@@ -89,6 +99,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 Notas:
 - `Registros.items` y `Stock.base` guardan un JSON tipo `{"3":2,"14":1}` (id de sabor → cantidad) en una sola celda de texto.
 - `Registros.clienteId` es el id que genera el dispositivo al crear el movimiento (para la cola offline) — sirve para no duplicar un movimiento si se reintenta el envío.
+- `Registros.foto_remito` queda vacío salvo que el ingreso se haya cargado con "Leer remito" — ver sección 7 más abajo.
 - `Empleados.local` queda vacío para `admin` y `supervisor` (no están atados a un local).
 - `Empleados.pin_hash`/`salt` nunca se llenan a mano — los genera el propio backend cuando el empleado crea su PIN.
 - `rol` es `admin`, `supervisor`, `encargado` (se muestra como "Responsable de local"), `turno` ("Responsable de turno") o `colaborador` (ver la matriz de permisos en el `CLAUDE.md` de la raíz).

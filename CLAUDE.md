@@ -18,7 +18,7 @@ App para registrar **salidas de cámara**, **ingresos** de vasquetas/baldes y **
 - Probado con Playwright contra un backend simulado (ver "Convenciones"): login con PIN nuevo, salida, stock/pedido/WhatsApp, historial + anular, conteo físico y alta de empleado en Equipo, todo sin errores de consola.
 
 Modelo de datos (en Sheets, ver `apps-script/README.md` para columnas exactas):
-- `Registros`: `{id, clienteId, tipo: salida|ingreso|conteo, local, empleadoId, empleado, items:{idSabor:cant} (JSON), total, remito, ts, anulado_por, anulado_ts, motivo}`.
+- `Registros`: `{id, clienteId, tipo: salida|ingreso|conteo, local, empleadoId, empleado, items:{idSabor:cant} (JSON), total, remito, ts, anulado_por, anulado_ts, motivo, foto_remito}`.
 - `Stock`: una fila por local con el último conteo físico `{local, base:{idSabor:cant} (JSON), ts, empleado}`.
 - Stock actual = conteo base + ingresos − salidas posteriores al conteo (`stockMap()` en el cliente, sobre lo que devuelve `datos()`).
 - Alerta: sabor con stock bajo su `minimo` propio (columna en `Sabores`, ya no un `MIN=6` global). Pedido sugerido = consumo promedio diario (salidas 7 días / 7) × (días hasta la entrega elegidos + 1) − stock, con ajuste manual por sabor.
@@ -89,13 +89,14 @@ Reglas:
 - Vista PC para encargado/supervisor (varios locales, consumo semanal), con PIN.
 - PWA instalable (manifest + service worker, como Academy).
 - Alerta por mail cuando un sabor queda bajo mínimo.
-- **Lector de remitos por foto** (acordado con Gabi 01/10/2026, no empezado — ver maqueta en `https://claude.ai/artifact/EpdrEMYvv45T49C86nfEog`):
-  - Flujo: en Ingreso, sacar/elegir una foto del remito del proveedor en vez de tipear sabor por sabor. Se manda a un modelo con visión (tiene que pasar por el backend — Apps Script guarda la clave de la API en Script Properties, nunca en el cliente) que devuelve sabor + cantidad por renglón.
-  - El empleado SIEMPRE revisa y puede corregir cantidades/sabores antes de confirmar — nunca se carga el ingreso solo. Los renglones donde el nombre no matchea con el catálogo de `Sabores` (o la lectura es dudosa) se marcan aparte y piden elegir el sabor a mano.
-  - El remito trae otros productos (chocolates en tableta, sin gluten) que no son sabores de cámara — esos renglones se ignoran, no se cargan.
-  - Guardado: el registro de `Registros` queda igual que cualquier ingreso hoy (sabor, cantidad, nº de remito, fecha, quién lo cargó) — nada nuevo ahí. Además, la foto original del remito se sube a una carpeta de Google Drive (misma cuenta que la planilla, vía `DriveApp` desde Apps Script) y se guarda el link en esa fila, para poder comparar contra el papel si alguna vez hay una diferencia.
-  - Estructura de carpetas en Drive (acordada 01/10/2026): `Remitos/<Local>/<AAAA-MM>/<AAAA-MM-DD>_remito-<número>.jpg` — una subcarpeta por local, y dentro una por mes (no hace falta carpeta de fecha exacta aparte, ya queda en el nombre del archivo).
-  - El número de remito y el local ya se pueden pre-completar leyéndolos de la foto (el remito de ejemplo tenía "Recoleta Vicente López" como cliente).
+- ~~**Lector de remitos por foto**~~ implementado 01/10/2026, falta que Gabi lo configure (no se puede probar en vivo porque necesita una clave de API propia):
+  - Backend: acción `leerRemito` en `Code.gs` — manda la foto a Claude (Anthropic, con visión) pidiéndole SOLO los renglones de la sección "SABORES" (ignora Chocolates/Tabletas/Sin Gluten), matchea cada nombre detectado contra el catálogo de `Sabores` (`_matchearSabor`: exacto → contiene → palabras en común ≥60%), sube la foto a Drive (`Remitos/<Local>/<AAAA-MM>/<AAAA-MM-DD>_remito-<número>.jpg`, se crean las carpetas solas) y devuelve todo para que el cliente lo revise — no escribe en `Registros` todavía.
+  - Frontend: botón "📷 Leer remito" en Ingreso → pantalla "Leyendo…" con la foto → pantalla de revisión (cantidad editable por renglón, los sin-match en amarillo con un `<select>` para elegir el sabor a mano o ignorar el renglón) → "Cargar al carrito de ingreso" precarga el carrito normal de Ingreso (mismo flujo de "Confirmar ingreso" de siempre, nada nuevo ahí) y precompleta el N° de remito detectado.
+  - `registrar()` ahora acepta un `fotoRemito` (URL de Drive) opcional y lo guarda en la columna nueva `Registros.foto_remito`.
+  - **Pendiente de Gabi** (ver `apps-script/README.md` sección 7, es opcional — sin esto el resto de la app funciona igual):
+    1. Crear una clave en `console.anthropic.com` (cuenta de API, **no** es la de claude.ai) y guardarla en Propiedades del script como `ANTHROPIC_API_KEY`.
+    2. Agregar la columna `foto_remito` al final de la hoja `Registros`.
+  - Maqueta original (solo referencia visual, ya no vigente — se construyó la versión real descripta arriba): `https://claude.ai/artifact/EpdrEMYvv45T49C86nfEog`.
 
 ## Convenciones
 - Todo en español. Commits en español, descriptivos.
