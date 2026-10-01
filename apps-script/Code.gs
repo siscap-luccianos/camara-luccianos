@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.16.1";
+const BACKEND_VERSION = "1.17.0";
 
 function doPost(e) {
   let resultado;
@@ -464,7 +464,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito) 
   lock.tryLock(10000);
   try {
     if (clienteId) {
-      const existente = _leerCrudo("Registros").filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
       if (existente) return { ok: true, id: existente.id, repetido: true }; // idempotencia (cola offline)
     }
     const items2 = {};
@@ -656,7 +656,7 @@ function conteo(clienteId, local, items, empleado) {
   lock.tryLock(10000);
   try {
     if (clienteId) {
-      const existente = _leerCrudo("Registros").filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
       if (existente) return { ok: true, id: existente.id, repetido: true };
     }
     const items2 = {};
@@ -1041,6 +1041,29 @@ function _filasComoObjetos(sheet) {
 
 function _leerCrudo(hoja) {
   return _filasComoObjetos(_sheet(hoja));
+}
+
+/** Como _leerCrudo, pero solo lee las últimas `maxFilas` filas en vez de
+ *  la hoja entera — para chequeos que solo necesitan historial reciente
+ *  (ej. no duplicar un movimiento de la cola offline, que siempre se
+ *  reintenta a los pocos segundos/minutos, nunca meses después). En
+ *  Registros, que acumula el historial de los 35 locales juntos, leer
+ *  la hoja entera en cada salida/ingreso/conteo es lo que más lentitud
+ *  genera a medida que crece. */
+function _leerUltimasFilas(hoja, maxFilas) {
+  const sheet = _sheet(hoja);
+  const ultimaFila = sheet.getLastRow();
+  if (ultimaFila < 2) return [];
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const desde = Math.max(2, ultimaFila - maxFilas + 1);
+  const datos = sheet.getRange(desde, 1, ultimaFila - desde + 1, sheet.getLastColumn()).getValues();
+  return datos
+    .filter((fila) => fila.some((c) => c !== ""))
+    .map((fila) => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = _celdaComoTexto(fila[i]); });
+      return obj;
+    });
 }
 
 function _sanitizarCelda(v) {
