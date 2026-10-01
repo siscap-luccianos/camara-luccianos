@@ -1,5 +1,5 @@
 /* ============================================================
-   Cámara Lucciano's — Setup.gs
+   LogiStock Lucciano's — Setup.gs
 
    Se corre UNA SOLA VEZ (o cada vez que hace falta agregar algo)
    desde el editor de Apps Script, eligiendo la función en el

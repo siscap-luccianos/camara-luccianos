@@ -1,5 +1,5 @@
 /* ============================================================
-   Cámara Lucciano's — Backend (Google Apps Script)
+   LogiStock Lucciano's — Backend (Google Apps Script)
 
    Reemplaza la base de artifacts de claude.ai (window.claude.use("db"))
    por una planilla de Google Sheets real. Mismo patrón que los repos
@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.15.1";
+const BACKEND_VERSION = "1.16.0";
 
 function doPost(e) {
   let resultado;
@@ -49,13 +49,13 @@ function doPost(e) {
 
 function doGet() {
   return ContentService
-    .createTextOutput(JSON.stringify({ ok: true, mensaje: "Cámara Lucciano's backend activo", version: BACKEND_VERSION }))
+    .createTextOutput(JSON.stringify({ ok: true, mensaje: "LogiStock Lucciano's backend activo", version: BACKEND_VERSION }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
 // Acciones que no requieren token (login y datos públicos no sensibles:
 // nombres de locales/empleados para armar los selectores de login).
-const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "verificarClaveLocal"];
+const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "verificarClaveLocal"];
 
 function _despachar(body) {
   const accion = body.accion;
@@ -69,6 +69,7 @@ function _despachar(body) {
     case "empleadosLocal": return empleadosLocal(body.local);
     case "empleadosGestion": return empleadosGestion();
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local);
+    case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
@@ -233,6 +234,33 @@ function empleadosGestion() {
   const filas = _leerCrudo("Empleados").filter((e) =>
     _esVerdadero(e.activo) !== false && (e.rol === "admin" || e.rol === "supervisor"));
   return { ok: true, empleados: filas.map((e) => ({ id: e.id, nombre: e.nombre, rol: e.rol })) };
+}
+
+/** Login a Operaciones (admin/supervisor) SIN PIN — Gabi decidió que ahí
+ *  alcanza con la contraseña del local trucho "Operaciones" como único
+ *  factor. Solo vale para un local marcado operaciones=SI y con
+ *  contraseña realmente cargada (si no tiene contraseña, no se puede
+ *  entrar así — si no, quedaría sin ninguna protección). Para un local
+ *  real el PIN sigue siendo obligatorio, esto no lo toca. */
+function loginGestion(empleadoId, clave, local) {
+  if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
+  if (!filaLocal || _esVerdadero(filaLocal.operaciones) !== true) {
+    return { ok: false, error: "Esto solo vale para el acceso de administración." };
+  }
+  const claveGuardada = String(filaLocal.clave || "").trim();
+  if (!claveGuardada) {
+    return { ok: false, error: "Operaciones no tiene una contraseña configurada todavía — hay que cargarla en la columna 'clave' de la hoja Locales." };
+  }
+  if (String(clave || "").trim() !== claveGuardada) {
+    return { ok: false, error: "Contraseña incorrecta." };
+  }
+  const empleado = _empleadoPorId(empleadoId);
+  if (!empleado) return { ok: false, error: "No se encontró ese empleado." };
+  if (_esVerdadero(empleado.activo) === false) return { ok: false, error: "Ese usuario está dado de baja." };
+  if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
+  _auditar("login_gestion_sin_pin", empleado.id, empleado.nombre, "Entró a Operaciones solo con la contraseña del local (sin PIN)");
+  return _resultadoLogin(empleado, local);
 }
 
 /**

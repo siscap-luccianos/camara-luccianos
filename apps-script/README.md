@@ -1,4 +1,4 @@
-# Conectar Cámara Lucciano's a un Google Sheet real
+# Conectar LogiStock Lucciano's a un Google Sheet real
 
 Esta carpeta no es parte de la app cliente (esa sigue siendo `index.html` en
 la raíz del repo) — son los dos archivos que hay que copiar a un proyecto de
@@ -9,7 +9,7 @@ patrón que ya usan Lucciano's Academy y SisCap.
 
 ## 1. Crear la planilla
 
-1. Andá a [sheets.google.com](https://sheets.google.com) y creá una planilla nueva. Nombrala como quieras (ej. "Cámara Lucciano's — Base de datos").
+1. Andá a [sheets.google.com](https://sheets.google.com) y creá una planilla nueva. Nombrala como quieras (ej. "LogiStock Lucciano's — Base de datos").
 2. Anotá el nombre — no hace falta el ID, el script queda "atado" a la planilla (ver paso 2).
 
 No hace falta crear las hojas a mano: `Setup.gs` las crea con los encabezados exactos en el paso 3.
@@ -68,7 +68,7 @@ Esto es aparte de todo lo de arriba — si no lo configurás, el resto de la app
 
 ## Cómo probar que quedó bien conectado
 
-1. Abrí la URL del deploy (`.../exec`) directo en el navegador — debería devolver `{"ok":true,"mensaje":"Cámara Lucciano's backend activo","version":"1.0.0"}`.
+1. Abrí la URL del deploy (`.../exec`) directo en el navegador — debería devolver `{"ok":true,"mensaje":"LogiStock Lucciano's backend activo","version":"1.0.0"}`.
 2. Abrí la app publicada, elegí un local y entrá como "Gabi Busquets" (admin) — te va a pedir crear tu PIN las dos veces.
 3. Hacé una salida de prueba y confirmá que aparece la fila nueva en la hoja `Registros` de tu planilla.
 

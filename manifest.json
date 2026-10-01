@@ -1,6 +1,6 @@
 {
-  "name": "Lucciano's Stock",
-  "short_name": "Lucciano's Stock",
+  "name": "LogiStock Lucciano's",
+  "short_name": "LogiStock",
   "description": "Registro de salidas, ingresos y stock de cámara de Lucciano's.",
   "start_url": "./",
   "display": "standalone",

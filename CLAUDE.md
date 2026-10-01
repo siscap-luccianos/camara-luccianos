@@ -1,4 +1,4 @@
-# Cámara Lucciano's — contexto del proyecto
+# LogiStock Lucciano's — contexto del proyecto
 
 App para registrar **salidas de cámara**, **ingresos** de vasquetas/baldes y **stock** de sabores de helado por local de Lucciano's. Se usa en una **tablet junto a la cámara** (empleados) y en **PC** (encargado/supervisor).
 
@@ -69,7 +69,8 @@ Reglas:
 - **Bloqueo**: 5 PIN incorrectos → usuario bloqueado 5 minutos.
 - **Sesión**: token temporal emitido por Apps Script, vence al cierre de la jornada comercial (7am a 3am del día siguiente) — no un tope fijo de horas, así nadie queda desconectado a mitad de turno. En la tablet se cierra sola tras cada registro (o 60 s de inactividad). En PC no se cierra por inactividad, pero a los 3 min sin tocar nada la pantalla se **bloquea** (pide de nuevo el PIN de quien está logueado, sin perder lo que estaba haciendo) — así si alguien deja la PC abierta nadie puede tocar nada sin el PIN; tiene un botón "Salir" para cerrar sesión del todo si no es la misma persona.
 - **Contraseña por local**: candado opcional (columna `clave` en `Locales`, texto plano, la ven admin/supervisor en la planilla) que se pide al elegir el local en el login general (PC, o al configurar una tablet nueva) antes de mostrar la nómina — evita que cualquiera vea los nombres del equipo. No se pide en una tablet ya fijada ni mientras la sesión siga activa.
-- **Cómo entran admin y supervisor**: no hay link visible de "soy admin" (exponía sus nombres a cualquiera) — entran por un local trucho llamado **Operaciones** (columna `Locales.operaciones=SI`), que se ve mezclado en el buscador igual que cualquier local real. Con contraseña cargada (recomendado) queda protegido igual que un local de verdad. Ver `apps-script/README.md` para armarlo.
+- **Cómo entran admin y supervisor**: no hay link visible de "soy admin" (exponía sus nombres a cualquiera) — entran por un local trucho llamado **Operaciones** (columna `Locales.operaciones=SI`), que se ve mezclado en el buscador igual que cualquier local real. Requiere contraseña cargada (columna `clave`, **obligatoria** para este local en particular — sin ella no se puede entrar así). Ver `apps-script/README.md` para armarlo.
+- **Operaciones no pide PIN** (decidido por Gabi 01/10/2026): una vez puesta la contraseña del local, elegir el perfil (admin/supervisor) entra directo — la contraseña de Operaciones es el único factor ahí, no se valida el PIN personal de esa cuenta. Backend: acción `loginGestion` (`empleadoId`, `clave`, `local`), exige `Locales.operaciones=SI` y una `clave` realmente cargada; nunca aplica a un local real (ahí el PIN sigue siendo obligatorio, sin cambios).
 - La tablet muestra solo el equipo (colaboradores, turno y encargado) del local fijado en ese dispositivo.
 - Hoja `Empleados`: `id, nombre, rol, local (vacío para admin/supervisor), pin_hash, salt, activo, creado_por, creado_ts, intentos, bloqueado_hasta`.
 

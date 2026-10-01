@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Cámara Lucciano's</title>
+<title>LogiStock Lucciano's</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="theme-color" content="#5E7A3F">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Lucciano's Stock">
+<meta name="apple-mobile-web-app-title" content="LogiStock Lucciano's">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
 <style>
@@ -230,7 +230,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 
 <script>
 /* ============================================================
-   Cámara Lucciano's — cliente estático (GitHub Pages)
+   LogiStock Lucciano's — cliente estático (GitHub Pages)
    Backend: Google Apps Script + Google Sheets (ver apps-script/).
    Pegá acá la URL del deploy (termina en /exec).
 ============================================================ */
@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.15.0";
+const FRONTEND_VERSION = "1.17.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -487,7 +487,20 @@ async function authEnviarClave(){
   if(r && r.ok){ S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
   else { S.auth.error=(r&&r.error)||"No se pudo verificar la contraseña."; renderApp(); }
 }
-function authElegirEmpleado(emp){ S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp() }
+function authElegirEmpleado(emp){
+  if(S.auth.esGestion){ authEntrarGestion(emp); return }
+  S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp();
+}
+/** Operaciones (admin/supervisor) no pide PIN — alcanza con la
+ *  contraseña del local que ya se validó en el paso anterior. */
+async function authEntrarGestion(emp){
+  S.auth.elegido=emp; S.auth.cargando=true; S.auth.error=""; renderApp();
+  const r = await api("loginGestion", { empleadoId:emp.id, clave:S.auth.clave, local:S.auth.local });
+  S.auth.cargando=false;
+  if(r && r.ok){ aplicarLogin(r); return }
+  S.auth.elegido=null; S.auth.error=(r&&r.error)||"No se pudo entrar. Probá de nuevo.";
+  renderApp();
+}
 function authVolver(){
   if(S.auth.paso==="pinConfirm"){ S.auth.paso="pin"; S.auth.pin=""; renderApp(); return }
   if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
@@ -637,6 +650,7 @@ function renderAuth(){
     cuerpo=`${S.deviceLocal?`<button class="authBack" type="button" data-cambiar-dispositivo="1">¿No es tu local? Cambiar</button>`:`<button class="authBack" data-authback="1">← Volver</button>`}
       <h1>Elegí tu perfil</h1>
       <p>${a.esGestion?"Tocá tu tarjeta para continuar.":"Local: "+esc(a.local||"")+". Tocá tu tarjeta para continuar."}</p>
+      ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
@@ -665,7 +679,7 @@ function renderHeader(){
   const puedeElegirLocal = S.empleado.rol==="admin" || S.empleado.rol==="supervisor";
   return `<header>
     <div class="brand">
-      <div class="tit"><h1><small>Lucciano's · front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}</small>Cámara y stock</h1></div>
+      <div class="tit"><h1><small>front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}</small>LogiStock Lucciano's</h1></div>
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal

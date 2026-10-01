@@ -1,4 +1,4 @@
-# Cámara Lucciano's
+# LogiStock Lucciano's
 
 App para registrar las salidas de cámara y los ingresos de vasquetas/baldes por local, controlar el stock diario, pedir por WhatsApp cuando un sabor queda bajo mínimo, y llevar de alta/baja al equipo con login por PIN.
 
