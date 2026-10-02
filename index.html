@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.18.0";
+const FRONTEND_VERSION = "1.19.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1226,12 +1226,10 @@ async function guardarMovimiento(){
     toast((tipo==="salida"?"Salida registrada: ":"Ingreso registrado: ")+total+" u.");
     S.cart[tipo]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false;
     await cargarDatos();
-    if(S.deviceLocal) return cerrarSesion(true); // tablet: se cierra sola tras cada registro
   } else if(r && r.offline){
     colaAgregar("registrar", payload);
     toast("Sin conexión: se guardó y se va a enviar solo.");
     S.cart[tipo]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false;
-    if(S.deviceLocal) return cerrarSesion(true);
   } else {
     toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
   }
