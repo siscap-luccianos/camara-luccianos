@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.17.1";
+const FRONTEND_VERSION = "1.18.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -589,6 +589,7 @@ function aplicarLogin(r){
 }
 function cerrarSesion(silencioso){
   limpiarSesion();
+  S.busy = false; // si se cierra la sesión en medio de un guardado (ej. auto-cierre de tablet tras una salida), que no quede "Guardando…" trabado para la próxima persona que entre
   S.local = S.deviceLocal || null;
   S.tab = "salida";
   S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null; S.errorEquipo = null; S.errorGestion = null;
