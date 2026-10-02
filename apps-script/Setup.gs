@@ -20,7 +20,7 @@
 =============================================================== */
 
 const HOJAS = {
-  Registros: ["id", "clienteId", "tipo", "local", "empleadoId", "empleado", "items", "total", "remito", "ts", "anulado_por", "anulado_ts", "motivo"],
+  Registros: ["id", "clienteId", "tipo", "local", "empleadoId", "empleado", "items", "total", "remito", "ts", "anulado_por", "anulado_ts", "motivo", "foto_remito", "subtipo"],
   Stock: ["local", "base", "ts", "empleado"],
   Sabores: ["id", "nombre", "tipo", "minimo", "activo", "orden", "categoria", "peso"],
   Locales: ["nombre", "grupo", "activo", "clave", "operaciones"],

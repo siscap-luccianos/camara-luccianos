@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.18.0";
+const BACKEND_VERSION = "1.19.0";
 
 function doPost(e) {
   let resultado;
@@ -80,7 +80,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
@@ -431,10 +431,10 @@ function _registroPublico(r) {
   let items = {};
   try { items = JSON.parse(r.items || "{}"); } catch (e) { items = {}; }
   return {
-    id: String(r.id), tipo: r.tipo, local: r.local, empleado: r.empleado, items: items,
+    id: String(r.id), tipo: r.tipo, local: r.local, empleadoId: String(r.empleadoId || ""), empleado: r.empleado, items: items,
     total: Number(r.total) || 0, remito: r.remito || "", ts: Number(r.ts),
     anulado: !!r.anulado_ts, anulado_por: r.anulado_por || "", motivo: r.motivo || "",
-    foto_remito: r.foto_remito || "",
+    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "",
   };
 }
 
@@ -454,11 +454,12 @@ function _totalItems(items) {
   return t;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!items || !Object.keys(items).length) return { ok: false, error: "No hay sabores cargados." };
+  if (subtipo && subtipo !== "devolucion") return { ok: false, error: "Subtipo de movimiento inválido." };
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -474,7 +475,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito) 
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: tipo, local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
-      anulado_por: "", anulado_ts: "", motivo: "", foto_remito: fotoRemito || "",
+      anulado_por: "", anulado_ts: "", motivo: "", foto_remito: fotoRemito || "", subtipo: subtipo || "",
     });
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };

@@ -66,6 +66,13 @@ Esto es aparte de todo lo de arriba — si no lo configurás, el resto de la app
 4. Agregá la columna `foto_remito` al final de la hoja `Registros` (encabezado en la fila 1, igual que las demás) — ahí queda el link a la foto en Drive de cada ingreso cargado por foto.
 5. La primera vez que se use "Leer remito" en la app, Apps Script va a necesitar permiso para crear carpetas en tu Google Drive (la carpeta `Remitos` se crea sola, ver `CLAUDE.md`) — si pide autorizar de nuevo, es por eso, aceptá igual que la primera vez.
 
+## 8. Función "Devolución" — agregar columna `subtipo`
+
+Esto sí hace falta para que funcione (no es opcional como el lector de remitos): el botón "Devolución" guarda el movimiento como un ingreso normal, pero marcado con `subtipo="devolucion"` para que Historial lo muestre distinto — sin esta columna, `registrar()` igual guarda la devolución bien (el stock queda correcto), pero el dato de "esto fue una devolución" no tiene dónde guardarse y en Historial aparece como un Ingreso cualquiera.
+
+1. Agregá la columna `subtipo` al final de la hoja `Registros` (encabezado en la fila 1, igual que `foto_remito`).
+2. Redesplegá el backend (`Implementar → Administrar implementaciones → ✎ → Nueva versión → Implementar`) con el `Code.gs` actualizado.
+
 ## Cómo probar que quedó bien conectado
 
 1. Abrí la URL del deploy (`.../exec`) directo en el navegador — debería devolver `{"ok":true,"mensaje":"LogiStock Lucciano's backend activo","version":"1.0.0"}`.
@@ -88,7 +95,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 
 | Hoja | Encabezados (fila 1) |
 |---|---|
-| `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo`, `foto_remito` |
+| `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo`, `foto_remito`, `subtipo` |
 | `Stock` | `local`, `base`, `ts`, `empleado` |
 | `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden`, `categoria`, `peso` |
 | `Locales` | `nombre`, `grupo`, `activo`, `clave`, `operaciones` |
@@ -100,6 +107,7 @@ Notas:
 - `Registros.items` y `Stock.base` guardan un JSON tipo `{"3":2,"14":1}` (id de sabor → cantidad) en una sola celda de texto.
 - `Registros.clienteId` es el id que genera el dispositivo al crear el movimiento (para la cola offline) — sirve para no duplicar un movimiento si se reintenta el envío.
 - `Registros.foto_remito` queda vacío salvo que el ingreso se haya cargado con "Leer remito" — ver sección 7 más abajo.
+- `Registros.subtipo` queda vacío salvo en una Devolución (vale `"devolucion"`) — ver sección 8 más abajo. Un ingreso normal nunca lo llena.
 - `Empleados.local` queda vacío para `admin` y `supervisor` (no están atados a un local).
 - `Empleados.pin_hash`/`salt` nunca se llenan a mano — los genera el propio backend cuando el empleado crea su PIN.
 - `rol` es `admin`, `supervisor`, `encargado` (se muestra como "Responsable de local"), `turno` ("Responsable de turno") o `colaborador` (ver la matriz de permisos en el `CLAUDE.md` de la raíz).
