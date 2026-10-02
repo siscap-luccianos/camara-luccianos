@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.22.0";
+const FRONTEND_VERSION = "1.23.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -279,6 +279,7 @@ const S = {
   verPedido: false,
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
   periodoHist: ls.get("periodoHist","7"),
+  semanaHist: 0, // 0=semana actual, 1=semana pasada, 2=hace 2 semanas — tabla "Salidas por sabor" de Historial
   pedidoAdj: {},
   cola: JSON.parse(ls.get("cola","[]")),
   busy: false, offline: false,
@@ -367,13 +368,44 @@ function unidad(id,n){ return tipoDe(id)==="b" ? (n===1?"balde":"baldes") : (n==
 
 function regsActivos(){ return S.regs.filter(r=>!r.anulado) }
 
-function stockMap(){
+function stockMapHasta(hasta){
   const base=(S.stock&&S.stock.base)||{}, bts=(S.stock&&S.stock.ts)||0, m={};
   S.sabores.forEach(s=>m[s.id]=+base[s.id]||0);
-  for(const r of regsActivos()){ if(r.ts<=bts) continue;
+  for(const r of regsActivos()){ if(r.ts<=bts || r.ts>hasta) continue;
     const sg=r.tipo==="ingreso"?1:r.tipo==="salida"?-1:0;
     for(const [id,q] of Object.entries(r.items||{})) if(id in m) m[id]+=sg*(+q||0); }
   return m;
+}
+function stockMap(){ return stockMapHasta(Date.now()) }
+/** Lunes 00:00 de la semana de `ts` (o de ahora si no se pasa nada). */
+function lunesDe(ts){
+  const d=new Date(ts===undefined?Date.now():ts), dow=(d.getDay()+6)%7;
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate()-dow).getTime();
+}
+/** Para cada sabor, consumo y si hubo quiebre de stock en cada una de las
+ *  últimas 3 semanas calendario COMPLETAS (lunes a domingo), sin contar la
+ *  semana en curso que todavía está a mitad — más vieja primero. Todo se
+ *  calcula sobre lo que ya trajo datos() (hasta DIAS_HISTORIAL atrás), sin
+ *  pedirle nada nuevo al backend. */
+function tendenciaSemanas(){
+  const lunesActual=lunesDe();
+  const resultado={};
+  S.sabores.forEach(s=>resultado[s.id]=[]);
+  for(let i=3;i>=1;i--){
+    const inicio=lunesActual-i*7*864e5, fin=inicio+7*864e5;
+    const stockCorrida=stockMapHasta(inicio-1);
+    const totales={}, agotado={};
+    const movs=regsActivos().filter(r=>r.ts>=inicio&&r.ts<fin&&(r.tipo==="salida"||r.tipo==="ingreso")).sort((a,b)=>a.ts-b.ts);
+    for(const r of movs){
+      for(const [id,qRaw] of Object.entries(r.items||{})){
+        const q=+qRaw||0; if(!q) continue;
+        if(r.tipo==="salida"){ totales[id]=(totales[id]||0)+q; stockCorrida[id]=(stockCorrida[id]||0)-q; if(stockCorrida[id]<=0) agotado[id]=true; }
+        else { stockCorrida[id]=(stockCorrida[id]||0)+q; }
+      }
+    }
+    S.sabores.forEach(s=>resultado[s.id].push({total:totales[s.id]||0, agotado:!!agotado[s.id]}));
+  }
+  return resultado;
 }
 function salidasDias(dias){
   const since=Date.now()-dias*864e5, m={};
@@ -903,6 +935,7 @@ function stockView(st){
 
 function stockViewPedido(st){
   const s7=salidasDias(7);
+  const tendencia=tendenciaSemanas();
   let pedidoTotal=0;
   const filas=S.sabores.map(s=>{
     const ped=pedidoSugerido(s.id,st); pedidoTotal+=ped;
@@ -915,13 +948,39 @@ function stockViewPedido(st){
   const waHref = "https://wa.me/?text="+encodeURIComponent(waText);
   const listaVisible = listaFiltrada(st);
 
+  const tendenciaHTML=s=>{
+    const sem=tendencia[s.id]||[{total:0,agotado:false},{total:0,agotado:false},{total:0,agotado:false}];
+    const max=Math.max(1,...sem.map(x=>x.total));
+    const tieneAgotado=sem.some(x=>x.agotado);
+    const icono = sem[2].total>sem[0].total*1.15?"↑":sem[2].total<sem[0].total*0.85?"↓":"→";
+    return `<div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">Últimas 3 semanas</div>
+        <div style="font-size:.8rem;font-weight:800">${icono}</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:10px;height:52px">
+        ${sem.map(x=>{
+          const alto=Math.max(10,Math.round((x.total/max)*40));
+          return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+            ${x.agotado?`<div style="font-size:.62rem;color:var(--warn);font-weight:800">⚠</div>`:""}
+            <div style="height:${alto}px;width:100%;max-width:34px;border-radius:5px 5px 2px 2px;background:${x.agotado?"var(--warn-soft)":colorCategoria(s.categoria)};${x.agotado?"border:1.5px dashed var(--warn)":""}"></div>
+            <div style="font-size:.72rem;font-weight:700;color:${x.agotado?"var(--warn)":"var(--ink)"}">${x.total}</div>
+          </div>`;
+        }).join("")}
+      </div>
+      ${tieneAgotado?`<div style="margin-top:6px;font-size:.72rem;color:var(--warn);line-height:1.4">⚠ una de esas semanas se agotó antes de terminar — el consumo real pudo ser mayor.</div>`:""}
+    </div>`;
+  };
+
   const row=f=>{
     const {s,ped,vendido}=f;
-    return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px">
+    return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
         ${plateHTML(s.id)}
         <div class="nm" style="flex:1;min-width:0">${esc(s.nombre)}<div class="meta">Tenés ${st[s.id]} hoy · vendiste ${vendido} esta semana</div></div>
       </div>
+      <div style="height:1px;background:var(--line)"></div>
+      ${tendenciaHTML(s)}
       <div style="height:1px;background:var(--line)"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
         <div>
@@ -976,14 +1035,19 @@ function histView(){
   const dias = S.periodoHist==="60" ? 60 : Number(S.periodoHist);
   const desde = Date.now() - dias*864e5;
   const regs=[...S.regs].filter(r=>r.ts>=desde).sort((a,b)=>b.ts-a.ts);
-  const now=new Date(), dow=(now.getDay()+6)%7, lunes=new Date(now.getFullYear(),now.getMonth(),now.getDate()-dow).getTime();
+  // Ciclo de 3 semanas: la actual (S.semanaHist=0) + las 2 anteriores. Rota
+  // sola cada lunes porque lunesDe() siempre se calcula contra "ahora" — no
+  // hay nada guardado que haya que "pasar" de una semana a la otra.
+  const inicioSem=lunesDe()-S.semanaHist*7*864e5, finSem=inicioSem+7*864e5;
   const diasSem=["Lu","Ma","Mi","Ju","Vi","Sá","Do"], sem={};
-  for(const r of regsActivos()) if(r.tipo==="salida"&&r.ts>=lunes){const d=(new Date(r.ts).getDay()+6)%7;
+  for(const r of regsActivos()) if(r.tipo==="salida"&&r.ts>=inicioSem&&r.ts<finSem){const d=(new Date(r.ts).getDay()+6)%7;
     for(const [id,q] of Object.entries(r.items||{})){(sem[id]=sem[id]||[0,0,0,0,0,0,0])[d]+=+q||0}}
   const ids=S.sabores.filter(s=>sem[s.id]);
+  const rangoSem=`${new Date(inicioSem).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${new Date(finSem-864e5).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})}`;
+  const semanaChips=["Esta semana","Semana pasada","Hace 2 semanas"].map((l,i)=>`<button type="button" class="chip" data-semana-hist="${i}" aria-pressed="${S.semanaHist===i}">${l}</button>`).join("");
   const tabla=ids.length?`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
     ${ids.map(s=>`<tr><td>${esc(s.nombre)}</td>${sem[s.id].map(x=>`<td>${x||"·"}</td>`).join("")}<td><b>${sem[s.id].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}</tbody></table></div>`
-    :`<div class="empty">Sin salidas desde el lunes.</div>`;
+    :`<div class="empty">Sin salidas esa semana.</div>`;
   const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>r.tipo==="conteo"?`${esc(nombre(id))}: ${q}`:`${esc(nombre(id))} ×${q}`).join(" · ");
   const lista=regs.slice(0,150).map(r=>`<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${r.tipo}">${r.tipo}</span>
     <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}</span>
@@ -995,7 +1059,9 @@ function histView(){
   return `<div class="tools"><div style="display:flex;gap:6px">
       ${[["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="chip" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("")}
     </div></div>
-  <p class="sec">Salidas de esta semana por sabor</p>${tabla}
+  <p class="sec" style="margin-bottom:8px">Salidas por sabor — ${esc(rangoSem)}</p>
+  <div class="tools" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${semanaChips}</div>
+  ${tabla}
   <p class="sec">Movimientos</p>${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}`;
 }
 
@@ -1213,7 +1279,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{}}; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={};
+  S.cart={salida:{},ingreso:{}}; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1396,6 +1462,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pdec){ S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-2; renderApp(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
+  if(t.dataset.semanaHist!==undefined){ S.semanaHist=Number(t.dataset.semanaHist); renderApp(); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
   if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t.dataset.tipoReg, t); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
