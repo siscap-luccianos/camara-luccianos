@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.19.0";
+const FRONTEND_VERSION = "1.20.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -705,7 +705,9 @@ const ICONOS_TAB = {
 function renderNav(){
   if(!S.local || !S.sabores.length) return "";
   const st=stockMap(), al=alertas(st);
-  const tabs = [["salida","Salida"],["ingreso","Ingreso"],["stock","Stock"],["historial","Historial"]];
+  const tabs = [["salida","Salida"],["ingreso","Ingreso"]];
+  if(S.empleado.rol!=="colaborador") tabs.push(["stock","Stock"]);
+  tabs.push(["historial","Historial"]);
   if(S.empleado.rol==="admin"||S.empleado.rol==="supervisor"||S.empleado.rol==="encargado") tabs.push(["equipo","Equipo"]);
   if(S.empleado.rol==="admin") tabs.push(["sabores","Sabores"]);
   return `<nav role="tablist" id="tabs" class="bottomNav">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
@@ -830,12 +832,13 @@ function gridIngreso(st){
       <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
       <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
     </div>`};
+  const puedeRemito = S.empleado.rol!=="colaborador";
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
   ${chipFiltros()}
-  <div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
+  ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
     <button class="btn ghost" type="button" id="btnLeerRemito">📷 Leer remito</button>
     <input type="file" accept="image/*" capture="environment" id="inputRemitoFoto" style="display:none">
-  </div>
+  </div>`:""}
   <p class="sec">Cantidad que entra de cada sabor</p>
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }

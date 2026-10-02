@@ -56,9 +56,9 @@ Roles: **Admin** (Gabi, crea todo) · **Supervisor** (ve y gestiona todos los lo
 | Editar nombre de otro empleado | ✅ | ✅ (no admins) | ✅ solo turno/colaboradores de su local | ❌ | ❌ (solo el propio, desde el header) |
 | Anular movimiento | ✅ | ✅ | ✅ dentro de 24 hs | ✅ dentro de 24 hs | solo el propio, ≤10 min |
 | Borrar registros/historial (borrado real) | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Salida / ingreso | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Salida / ingreso | ✅ | ✅ | ✅ | ✅ | ✅ (ingreso sin N° de remito ni lector de remitos — eso lo carga encargado/turno) |
 | Conteo físico | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Ver stock / pedido / enviar WhatsApp | ✅ | ✅ todos (selector de local) | ✅ | ✅ | solo ver stock |
+| Ver stock / pedido / enviar WhatsApp | ✅ | ✅ todos (selector de local) | ✅ | ✅ | ❌ (decidido por Gabi 02/10/2026: colaborador solo tiene Salida, Ingreso e Historial, para que no toque nada por error) |
 | Ver/gestionar pestaña Equipo | ✅ | ✅ | ✅ | ❌ | ❌ |
 
 Reglas:
