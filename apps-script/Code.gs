@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.19.0";
+const BACKEND_VERSION = "1.19.1";
 
 function doPost(e) {
   let resultado;
@@ -260,7 +260,7 @@ function loginGestion(empleadoId, clave, local) {
   if (_esVerdadero(empleado.activo) === false) return { ok: false, error: "Ese usuario está dado de baja." };
   if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
   _auditar("login_gestion_sin_pin", empleado.id, empleado.nombre, "Entró a Operaciones solo con la contraseña del local (sin PIN)");
-  return _resultadoLogin(empleado, local);
+  return _resultadoLogin(empleado, local, true);
 }
 
 /**
@@ -276,7 +276,7 @@ function login(empleadoId, pin, pinConfirm, local) {
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
-  let empleadoIdOk = null;
+  let empleado = null;
   try {
     const sheet = _sheet("Empleados");
     const datos = sheet.getDataRange().getValues();
@@ -311,7 +311,6 @@ function login(empleadoId, pin, pinConfirm, local) {
       sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
       sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
       _auditar("pin_creado", empleadoId, nombre, "Primer PIN creado");
-      empleadoIdOk = empleadoId;
     } else {
       const salt = String(datos[fila][col.salt] || "");
       if (_hashPin(pin, salt) !== pinHash) {
@@ -325,10 +324,19 @@ function login(empleadoId, pin, pinConfirm, local) {
         return { ok: false, error: "PIN incorrecto (" + intentos + "/" + INTENTOS_MAX + ")." };
       }
 
-      sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
-      sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
-      empleadoIdOk = empleadoId;
+      // Solo escribimos si hacía falta limpiar algo — la gran mayoría de los
+      // logins ya tienen intentos=0 y bloqueado_hasta vacío, y reescribir lo
+      // mismo que ya había es una ida a Sheets de más en el caso común.
+      const intentosActuales = Number(datos[fila][col.intentos]) || 0;
+      if (intentosActuales !== 0 || datos[fila][col.bloqueado_hasta]) {
+        sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
+        sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
+      }
     }
+    // Armamos el empleado con la fila que ya leímos — pedirlo nuevo con
+    // _empleadoPorId() releería la hoja Empleados entera para nada.
+    empleado = {};
+    headers.forEach((h, i) => { empleado[h] = _celdaComoTexto(datos[fila][i]); });
   } finally {
     lock.releaseLock();
   }
@@ -338,8 +346,7 @@ function login(empleadoId, pin, pinConfirm, local) {
   // es de solo lectura y no necesita bloquear a otros locales mientras
   // tanto. Esto es lo que más recorta la espera cuando varias personas
   // entran casi al mismo tiempo en distintos locales.
-  const empleado = _empleadoPorId(empleadoIdOk);
-  return _resultadoLogin(empleado, local);
+  return _resultadoLogin(empleado, local, false);
 }
 
 /** Arma la respuesta del login. Si el cliente ya sabe con qué local va a
@@ -348,10 +355,12 @@ function login(empleadoId, pin, pinConfirm, local) {
  *  los datos de ese local en la MISMA respuesta — así el cliente no
  *  necesita una segunda ida y vuelta a Apps Script (que es lo que más
  *  demora siente en este stack) para tener algo para mostrar. */
-function _resultadoLogin(empleado, local) {
+/** `esLocalDeGestion` lo pasa quien llama (ya lo sabe: login() nunca es
+ *  Operaciones, loginGestion() ya leyó Locales para validar la clave) —
+ *  evita una lectura de más acá, que antes releía toda la hoja Locales
+ *  para algo que el caller ya tenía resuelto. */
+function _resultadoLogin(empleado, local, esLocalDeGestion) {
   const resultado = { ok: true, token: _emitirToken(empleado.id), empleado: _empleadoPublico(empleado) };
-  const filaLocal = local ? _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0] : null;
-  const esLocalDeGestion = !!(filaLocal && _esVerdadero(filaLocal.operaciones) === true);
   // Admin/supervisor entrando por Operaciones no aterriza en ningún local
   // real (el cliente arranca en "elegí el local arriba"), así que traer el
   // stock/historial de "Operaciones" es trabajo de más — ahí es donde más

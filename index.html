@@ -241,7 +241,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.0";
+const FRONTEND_VERSION = "1.25.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1354,32 +1354,39 @@ function setLocal(local){
 ============================================================ */
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
-  const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion";
-  const tipo = enDevolucion ? "ingreso" : S.tab; // una devolución es un ingreso con subtipo, el backend no tiene un tercer tipo de movimiento
-  const cart=S.cart[cartKey];
-  const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
-  const total=Object.values(items).reduce((a,b)=>a+b,0);
-  const clienteId=uuid();
-  const payload={clienteId, tipo, local:S.local, items,
-    remito: tipo==="ingreso"&&!enDevolucion ? S.remito.trim() : undefined,
-    fotoRemito: tipo==="ingreso"&&!enDevolucion ? (S.fotoRemitoUrl||undefined) : undefined,
-    subtipo: enDevolucion ? "devolucion" : undefined};
-  const r = await api("registrar", payload);
-  if(r && r.ok){
-    toast((S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-    S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false;
-    await cargarDatos();
-  } else if(r && r.offline){
-    colaAgregar("registrar", payload);
-    toast("Sin conexión: se guardó y se va a enviar solo.");
-    S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false;
-  } else {
-    toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
+  try{
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion";
+    const tipo = enDevolucion ? "ingreso" : S.tab; // una devolución es un ingreso con subtipo, el backend no tiene un tercer tipo de movimiento
+    const cart=S.cart[cartKey];
+    const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
+    const total=Object.values(items).reduce((a,b)=>a+b,0);
+    const clienteId=uuid();
+    const payload={clienteId, tipo, local:S.local, items,
+      remito: tipo==="ingreso"&&!enDevolucion ? S.remito.trim() : undefined,
+      fotoRemito: tipo==="ingreso"&&!enDevolucion ? (S.fotoRemitoUrl||undefined) : undefined,
+      subtipo: enDevolucion ? "devolucion" : undefined};
+    const r = await api("registrar", payload);
+    if(r && r.ok){
+      toast((S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
+      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false;
+      await cargarDatos();
+    } else if(r && r.offline){
+      colaAgregar("registrar", payload);
+      toast("Sin conexión: se guardó y se va a enviar solo.");
+      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false;
+    } else {
+      toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
+    }
+  }finally{
+    // pase lo que pase (incluso un error inesperado) el botón tiene que
+    // volver a quedar usable — si no, la tablet queda trabada en
+    // "Guardando…" para siempre y no hay forma de refrescar para salir.
+    S.busy=false; renderApp();
   }
-  S.busy=false; renderApp();
 }
 async function guardarConteo(){
   if(S.busy) return; S.busy=true; renderBar();
+  try{
   const items={}; S.sabores.forEach(s=>items[s.id]=S.conteo[s.id]||0);
   const clienteId=uuid();
   const payload={clienteId, local:S.local, items};
@@ -1395,7 +1402,9 @@ async function guardarConteo(){
   } else {
     toast((r&&r.error)||"No se pudo guardar el conteo.");
   }
-  S.busy=false; renderApp();
+  }finally{
+    S.busy=false; renderApp();
+  }
 }
 async function conBoton(btn, fn){
   if(!btn || btn.disabled) return;
@@ -1497,7 +1506,7 @@ document.addEventListener("click", async e=>{
     // para no sumar una ida y vuelta extra al backend en el caso normal (que ya terminó hace rato)
     if(localesFetchPromise){
       t.disabled = true; t.textContent = "Verificando…";
-      await localesFetchPromise;
+      try{ await localesFetchPromise; }catch(e){ /* si el refresco de fondo falló, seguimos con lo que ya teníamos en vez de quedar trabados acá */ }
       t.disabled = false; t.textContent = "Continuar";
       match = S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase()) || match;
     }
