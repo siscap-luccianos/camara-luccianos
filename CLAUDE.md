@@ -121,3 +121,4 @@ Reglas:
 - Todo en español. Commits en español, descriptivos.
 - Probar en Playwright (Chromium preinstalado) antes de pushear: sin errores de consola, flujo salida → stock → historial.
 - El código de Apps Script va en `apps-script/` con instrucciones de despliegue paso a paso para Gabi (él pega el script y hace "Implementar").
+- **Antes de armar una pantalla o flujo nuevo (no un fix chiquito), mostrar siempre un mock interactivo primero** (artifact tipo Design, canvas) para que Gabi lo vea y apruebe antes de tocar `index.html`/`Code.gs` de verdad (decidido por Gabi 02/10/2026). El canvas de mocks que ya se viene usando: `https://claude.ai/artifact/VzaSPHuerYsivU3jdwBDpZ`.
