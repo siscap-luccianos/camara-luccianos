@@ -98,6 +98,12 @@ Reglas:
     1. Crear una clave en `console.anthropic.com` (cuenta de API, **no** es la de claude.ai) y guardarla en Propiedades del script como `ANTHROPIC_API_KEY`.
     2. Agregar la columna `foto_remito` al final de la hoja `Registros`.
   - Maqueta original (solo referencia visual, ya no vigente — se construyó la versión real descripta arriba): `https://claude.ai/artifact/EpdrEMYvv45T49C86nfEog`.
+- **Icepops** (anotado 02/10/2026, todavía no arrancado — Gabi va a cargar bastantes sabores nuevos cuando se haga):
+  1. Cada Icepop con su foto (mismo sistema que los helados: `fotos/<id>.jpg`, fallback a iniciales).
+  2. Agrupados por categoría propia (no las 4 de helados — Gabi tiene que decirnos cuáles son las reales; en el mock se usaron "Frutales/Cremosos/Rellenos" como ejemplo). Ver el mock de navegación por pills (Vasquetas/Icepops → categoría → sabores) ya armado: `https://claude.ai/artifact/VzaSPHuerYsivU3jdwBDpZ`.
+  3. Que se puedan cargar por remito (el lector de remitos de arriba tendría que reconocer también la sección de Icepops del remito, no solo "SABORES").
+  4. Que el pedido sugerido evalúe Icepops igual que a los helados (consumo promedio × días hasta la entrega − stock).
+  5. **En debate, no definido todavía**: alguna forma en Historial de ver el consumo de semanas anteriores (no solo últimos 7/30 días) para evaluar el comportamiento real y ajustar mejor el pedido — ver intercambio del 02/10/2026 para la propuesta que se estaba discutiendo antes de definir esto.
 
 ## Convenciones
 - Todo en español. Commits en español, descriptivos.
