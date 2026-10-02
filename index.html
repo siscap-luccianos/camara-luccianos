@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.20.0";
+const FRONTEND_VERSION = "1.21.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -836,8 +836,10 @@ function gridIngreso(st){
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
   ${chipFiltros()}
   ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
-    <button class="btn ghost" type="button" id="btnLeerRemito">📷 Leer remito</button>
-    <input type="file" accept="image/*" capture="environment" id="inputRemitoFoto" style="display:none">
+    <button class="btn ghost" type="button" id="btnLeerRemitoCamara">📷 Sacar foto</button>
+    <button class="btn ghost" type="button" id="btnLeerRemitoGaleria">🖼️ Subir foto</button>
+    <input type="file" accept="image/*" capture="environment" id="inputRemitoFotoCamara" style="display:none">
+    <input type="file" accept="image/*" id="inputRemitoFotoGaleria" style="display:none">
   </div>`:""}
   <p class="sec">Cantidad que entra de cada sabor</p>
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -1398,7 +1400,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[S.tab]={}; renderApp(); return }
-  if(t.id==="btnLeerRemito"){ $("#inputRemitoFoto").click(); return }
+  if(t.id==="btnLeerRemitoCamara"){ $("#inputRemitoFotoCamara").click(); return }
+  if(t.id==="btnLeerRemitoGaleria"){ $("#inputRemitoFotoGaleria").click(); return }
   if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
   if(t.id==="remitoCargar"){
     const lr=S.lectorRemito;
@@ -1440,7 +1443,7 @@ document.addEventListener("input", e=>{
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
 });
 document.addEventListener("change", e=>{
-  if(e.target.id==="inputRemitoFoto"){
+  if(e.target.id==="inputRemitoFotoCamara" || e.target.id==="inputRemitoFotoGaleria"){
     const file=e.target.files[0]; e.target.value="";
     if(!file) return;
     const lector=new FileReader();
