@@ -240,7 +240,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.21.0";
+const FRONTEND_VERSION = "1.22.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -263,6 +263,8 @@ const S = {
   deviceLocal: ls.get("deviceLocal","") || null, // local fijo de este dispositivo (tablet) o null (PC/gestión)
   token: ls.get("sesionToken","") || null,
   empleado: JSON.parse(ls.get("sesionEmpleado","null")),
+  esGestion: ls.get("sesionEsGestion","")==="1", // entró por Operaciones (sin PIN propio) — el bloqueo por inactividad pide la clave de Operaciones, no un PIN
+  gestionLocal: ls.get("sesionGestionLocal","") || null,
   esTablet: false, // se decide en start(): true si hay deviceLocal
   auth: null, // pantalla de login en curso
   locales: [],
@@ -283,8 +285,14 @@ const S = {
   inactTimer: null, pollTimer: null,
 };
 
-function guardarSesionPC(){ ls.set("sesionToken", S.token||""); ls.set("sesionEmpleado", JSON.stringify(S.empleado||null)); }
-function limpiarSesion(){ S.token=null; S.empleado=null; ls.del("sesionToken"); ls.del("sesionEmpleado"); }
+function guardarSesionPC(){
+  ls.set("sesionToken", S.token||""); ls.set("sesionEmpleado", JSON.stringify(S.empleado||null));
+  ls.set("sesionEsGestion", S.esGestion?"1":"0"); ls.set("sesionGestionLocal", S.gestionLocal||"");
+}
+function limpiarSesion(){
+  S.token=null; S.empleado=null; S.esGestion=false; S.gestionLocal=null;
+  ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
+}
 
 /* ============================================================
    API — fetch POST text/plain (evita preflight CORS), acción
@@ -558,6 +566,7 @@ function aplicarLogin(r){
   const localElegido = (S.auth && !esGestion) ? S.auth.local : null;
   const puedeFijar = ["encargado","turno","colaborador"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
+  S.esGestion = esGestion; S.gestionLocal = esGestion ? S.auth.local : null;
   // Admin/supervisor: un login NUEVO (recién entrando, o después de haber
   // tocado "Salir") arranca siempre neutral, sin local elegido — nunca el
   // primero de la lista ni el último que se había mirado. Retomar el
@@ -612,22 +621,25 @@ function reiniciarInactividad(){
 }
 function bloquearPC(){
   if(S.bloqueado) return;
-  S.bloqueado = true; S.bloqueoPin = ""; S.bloqueoError = "";
+  S.bloqueado = true; S.bloqueoPin = ""; S.bloqueoClave = ""; S.bloqueoError = "";
   renderApp();
 }
 async function desbloquearPC(){
-  if(S.bloqueoPin.length!==4) return;
+  if(S.esGestion){ if(!S.bloqueoClave) return }
+  else if(S.bloqueoPin.length!==4) return;
   S.bloqueoCargando = true; S.bloqueoError=""; renderApp();
-  const r = await api("login", { empleadoId:S.empleado.id, pin:S.bloqueoPin, local:S.local });
+  const r = S.esGestion
+    ? await api("loginGestion", { empleadoId:S.empleado.id, clave:S.bloqueoClave, local:S.gestionLocal })
+    : await api("login", { empleadoId:S.empleado.id, pin:S.bloqueoPin, local:S.local });
   S.bloqueoCargando = false;
   if(r && r.ok){
     S.token = r.token; guardarSesionPC();
-    S.bloqueado = false; S.bloqueoPin = "";
+    S.bloqueado = false; S.bloqueoPin = ""; S.bloqueoClave = "";
     reiniciarInactividad();
     renderApp();
   } else {
-    S.bloqueoError = (r&&r.error) || "PIN incorrecto.";
-    S.bloqueoPin = ""; renderApp();
+    S.bloqueoError = (r&&r.error) || (S.esGestion?"Contraseña incorrecta.":"PIN incorrecto.");
+    S.bloqueoPin = ""; S.bloqueoClave = ""; renderApp();
   }
 }
 ["click","input","touchstart"].forEach(ev=>document.addEventListener(ev, ()=>{ if(S.empleado && !S.bloqueado) reiniciarInactividad() }, {passive:true}));
@@ -1348,7 +1360,8 @@ document.addEventListener("click", async e=>{
     if(S.bloqueoPin.length===4) setTimeout(desbloquearPC, 150);
     return;
   }
-  if(t.id==="bloqueoSalir"){ S.bloqueado=false; S.bloqueoPin=""; cerrarSesion(false); return }
+  if(t.id==="bloqueoDesbloquear"){ desbloquearPC(); return }
+  if(t.id==="bloqueoSalir"){ S.bloqueado=false; S.bloqueoPin=""; S.bloqueoClave=""; cerrarSesion(false); return }
   if(t.id==="authLocalOk"){
     const v=$("#authLocal").value.trim();
     if(!v) return;
@@ -1439,6 +1452,7 @@ document.addEventListener("input", e=>{
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
   if(e.target.id==="remito"){ S.remito=e.target.value }
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
+  if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
   if(e.target.dataset.c){ S.conteo[e.target.dataset.c]=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
 });
@@ -1593,6 +1607,18 @@ async function start(){
 start();
 
 function renderBloqueo(){
+  if(S.esGestion){
+    // Entró por Operaciones (sin PIN propio) — el desbloqueo pide la misma
+    // contraseña de local, no un PIN que esta cuenta nunca llegó a crear.
+    return `<div class="authWrap"><div class="authCard">
+      <h1>Sesión bloqueada</h1>
+      <p>${esc(S.empleado.nombre.split(" ")[0])}, ingresá la contraseña de Operaciones para seguir.</p>
+      <input type="password" id="bloqueoClaveInput" placeholder="Contraseña" autocomplete="off" style="width:100%" value="${esc(S.bloqueoClave)}" ${S.bloqueoCargando?"disabled":""}>
+      ${S.bloqueoCargando?`<div class="note">Verificando…</div>`:S.bloqueoError?`<div class="warn">${esc(S.bloqueoError)}</div>`:""}
+      <button type="button" class="btn" id="bloqueoDesbloquear" style="width:100%;margin-top:10px" ${S.bloqueoCargando?"disabled":""}>${S.bloqueoCargando?"Verificando…":"Desbloquear"}</button>
+      <button type="button" class="btn ghost" id="bloqueoSalir" style="width:100%;margin-top:10px" ${S.bloqueoCargando?"disabled":""}>Salir</button>
+    </div></div>`;
+  }
   return `<div class="authWrap"><div class="authCard">
     <h1>Sesión bloqueada</h1>
     <p>${esc(S.empleado.nombre.split(" ")[0])}, ingresá tu PIN para seguir.</p>
