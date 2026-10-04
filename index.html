@@ -243,7 +243,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.5";
+const FRONTEND_VERSION = "1.25.6";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1023,7 +1023,7 @@ function stockViewPedido(st){
     return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
         ${plateHTML(s.id)}
-        <div class="nm" style="flex:1;min-width:0">${esc(s.nombre)}<div class="meta">Tenés ${st[s.id]} hoy · vendiste ${vendido} esta semana</div></div>
+        <div class="nm" style="flex:1;min-width:0">${esc(s.nombre)}<div class="meta">Tenés ${st[s.id]} hoy · retiraste ${vendido} esta semana</div></div>
       </div>
       <div style="height:1px;background:var(--line)"></div>
       ${tendenciaHTML(s)}
@@ -1041,7 +1041,7 @@ function stockViewPedido(st){
   <p class="sec" style="margin-top:6px">Pedido sugerido</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">La app calcula esto sola con tu stock de hoy y lo que se vendió esta semana. Podés cambiar cualquier número antes de mandarlo.</p>
   <div style="background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-bottom:14px">
-    <b>¿Cómo se calcula?</b> Lo que vendiste por día × los días hasta que llegue el próximo pedido, menos lo que ya te queda. Elegí primero en cuántos días llega:
+    <b>¿Cómo se calcula?</b> Lo que retiraste por día × los días hasta que llegue el próximo pedido, menos lo que ya te queda. Elegí primero en cuántos días llega:
   </div>
   <div class="kpis">
     <div class="kpi"><span class="lbl">Próxima entrega en</span><div class="diasChips">${dias.map(d=>`<button type="button" class="chip" data-dias="${d}" aria-pressed="${S.diasEntrega===d}">${d} días</button>`).join("")}</div><span class="sub">+ 1 día de stock de seguridad</span></div>
