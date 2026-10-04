@@ -243,7 +243,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.9";
+const FRONTEND_VERSION = "1.25.10";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -251,6 +251,7 @@ const INACTIVIDAD_PC_MS = 3 * 60 * 1000;
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const normalizar=s=>String(s??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const uuid=()=>(crypto.randomUUID?crypto.randomUUID():"c"+Date.now()+"-"+Math.random().toString(36).slice(2));
 const ls={
   get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},
@@ -823,8 +824,8 @@ function chipFiltros(){
   </div>`;
 }
 function listaFiltrada(st){
-  const q=S.q.trim().toLowerCase();
-  return S.sabores.filter(s=>(!q||s.nombre.toLowerCase().includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
+  const q=normalizar(S.q.trim());
+  return S.sabores.filter(s=>(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
 }
 
 function gridSalida(st){
