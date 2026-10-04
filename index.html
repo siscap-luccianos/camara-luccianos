@@ -148,6 +148,8 @@ select{max-width:220px}
 table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums}
 th,td{padding:7px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface)}
+.totalFila td{border-top:2px solid var(--ink);border-bottom:none;background:var(--bg)}
+.totalFila td:first-child{background:var(--bg)}
 th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
@@ -241,7 +243,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.3";
+const FRONTEND_VERSION = "1.25.4";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1090,8 +1092,13 @@ function histView(){
   const ids=S.sabores.filter(s=>sem[s.id]);
   const rangoSem=`${new Date(inicioSem).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${new Date(finSem-864e5).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})}`;
   const semanaChips=["Esta semana","Semana pasada","Hace 2 semanas"].map((l,i)=>`<button type="button" class="chip" data-semana-hist="${i}" aria-pressed="${S.semanaHist===i}">${l}</button>`).join("");
+  const totalesDia=[0,0,0,0,0,0,0];
+  ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
+  const totalGeneral=totalesDia.reduce((a,b)=>a+b,0);
   const tabla=ids.length?`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
-    ${ids.map(s=>`<tr><td>${esc(s.nombre)}</td>${sem[s.id].map(x=>`<td>${x||"·"}</td>`).join("")}<td><b>${sem[s.id].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}</tbody></table></div>`
+    ${ids.map(s=>`<tr><td>${esc(s.nombre)}</td>${sem[s.id].map(x=>`<td>${x||"·"}</td>`).join("")}<td><b>${sem[s.id].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}
+    <tr class="totalFila"><td><b>Total vasquetas</b></td>${totalesDia.map(x=>`<td><b>${x||"·"}</b></td>`).join("")}<td><b>${totalGeneral}</b></td></tr>
+    </tbody></table></div>`
     :`<div class="empty">Sin salidas esa semana.</div>`;
   const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>r.tipo==="conteo"?`${esc(nombre(id))}: ${q}`:`${esc(nombre(id))} ×${q}`).join(" · ");
   const claseTipo=r=>r.subtipo==="devolucion"?"devolucion":r.tipo;
