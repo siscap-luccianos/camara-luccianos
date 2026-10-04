@@ -243,7 +243,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.7";
+const FRONTEND_VERSION = "1.25.8";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -755,7 +755,7 @@ function renderHeader(){
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
-      <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">Editar</button><button type="button" id="salir">Salir</button></div>
+      <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
     </div>
   </header>`;
 }
