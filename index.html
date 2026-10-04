@@ -241,7 +241,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.2";
+const FRONTEND_VERSION = "1.25.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1715,6 +1715,10 @@ async function chequearVersionNueva(){
   if(publicada && publicada!==FRONTEND_VERSION) mostrarAvisoVersion(publicada);
 }
 function iniciarChequeoDeVersion(){
+  // También al toque, no solo más adelante — si no, recién instalada (o
+  // reabierta después de días con una copia vieja en caché) podía tardar
+  // hasta 5 minutos en darse cuenta de que había una versión nueva.
+  chequearVersionNueva();
   setInterval(chequearVersionNueva, CHEQUEO_VERSION_MS);
   // Volver a la app después de un rato es el momento más probable de estar
   // corriendo algo viejo — sobre todo en la tablet/celular, que queda
