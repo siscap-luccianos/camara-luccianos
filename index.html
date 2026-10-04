@@ -243,7 +243,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.4";
+const FRONTEND_VERSION = "1.25.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -708,14 +708,14 @@ function renderAuth(){
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
   } else if(a.paso==="clave"){
-    cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
+    cuerpo=`<button class="authBack" data-authback="1">Volver</button>
       <h1>Contraseña de ${esc(a.local||"")}</h1>
       <p>Pedísela a quien te haya dado de alta.</p>
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       <input type="password" id="authClave" placeholder="Contraseña" autocomplete="off" style="width:100%" ${a.cargando?"disabled":""}>
       <button class="btn" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>`;
   } else if(a.paso==="quien"){
-    cuerpo=`${S.deviceLocal?`<button class="authBack" type="button" data-cambiar-dispositivo="1">¿No es tu local? Cambiar</button>`:`<button class="authBack" data-authback="1">← Volver</button>`}
+    cuerpo=`${S.deviceLocal?`<button class="authBack" type="button" data-cambiar-dispositivo="1">¿No es tu local? Cambiar</button>`:`<button class="authBack" data-authback="1">Volver</button>`}
       <h1>Elegí tu perfil</h1>
       <p>${a.esGestion?"Tocá tu tarjeta para continuar.":"Local: "+esc(a.local||"")+". Tocá tu tarjeta para continuar."}</p>
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
@@ -726,7 +726,7 @@ function renderAuth(){
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
-    cuerpo=`<button class="authBack" data-authback="1">← Volver</button>
+    cuerpo=`<button class="authBack" data-authback="1">Volver</button>
       <h1>${confirmando?"Repetí tu PIN":"Hola, "+esc(a.elegido.nombre.split(" ")[0])}</h1>
       <p>${confirmando?"Escribilo de nuevo para confirmarlo.":"Ingresá tu PIN de 4 números."}</p>
       <div class="dots">${[0,1,2,3].map(i=>`<span class="${i<val.length?"on":""}"></span>`).join("")}</div>
@@ -755,7 +755,7 @@ function renderHeader(){
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
-      <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
+      <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">Editar</button><button type="button" id="salir">Salir</button></div>
     </div>
   </header>`;
 }
@@ -908,11 +908,11 @@ function gridIngreso(st){
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">↩ ¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
+  ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
   ${chipFiltros()}
   ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
-    <button class="btn ghost" type="button" id="btnLeerRemitoCamara">📷 Sacar foto</button>
-    <button class="btn ghost" type="button" id="btnLeerRemitoGaleria">🖼️ Subir foto</button>
+    <button class="btn ghost" type="button" id="btnLeerRemitoCamara">Sacar foto</button>
+    <button class="btn ghost" type="button" id="btnLeerRemitoGaleria">Subir foto</button>
     <input type="file" accept="image/*" capture="environment" id="inputRemitoFotoCamara" style="display:none">
     <input type="file" accept="image/*" id="inputRemitoFotoGaleria" style="display:none">
   </div>`:""}
@@ -930,7 +930,7 @@ function gridDevolucion(st){
       <div class="nm">${esc(s.nombre)}<div class="meta">Pendiente de devolver: ${max} ${unidad(s.id,max)}</div></div>
       <div class="stepper"><button type="button" data-ddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-dinc="${s.id}" data-max="${max}" aria-label="Sumar">+</button></div>
     </div>`};
-  return `${S.tab==="ingreso"?`<button class="authBack" type="button" id="volverIngreso">← Volver a Ingreso</button>`:""}
+  return `${S.tab==="ingreso"?`<button class="authBack" type="button" id="volverIngreso">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste.</p>
   ${ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">No tenés nada pendiente de devolver hoy.</div>`}`;
@@ -976,7 +976,7 @@ function stockView(st){
   <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
   ${puedePedido?`<div class="tools" style="margin-top:16px">
     <div class="grow" style="font-size:.85rem;color:var(--muted)">La app arma un pedido sugerido para <b style="color:var(--ink)">${al.length}</b> ${al.length===1?"sabor que está bajo":"sabores que están bajos"}</div>
-    <button class="btn" id="verPedidoBtn" style="white-space:nowrap">Ver pedido sugerido →</button>
+    <button class="btn" id="verPedidoBtn" style="white-space:nowrap">Ver pedido sugerido</button>
   </div>`:""}`;
 }
 
@@ -990,7 +990,7 @@ function stockViewPedido(st){
   });
   const dias=[2,3,4,7];
   const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
-  const lineas=filas.filter(f=>f.ped>0).map(f=>`• ${f.s.nombre}: ${f.ped}`);
+  const lineas=filas.filter(f=>f.ped>0).map(f=>`- ${f.s.nombre}: ${f.ped}`);
   const waText = `*Pedido de helado – ${S.local}*\n${fecha}\n\n${lineas.length?lineas.join("\n"):"Sin sabores para pedir"}\n\n*Total: ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}*`;
   const waHref = "https://wa.me/?text="+encodeURIComponent(waText);
   const listaVisible = listaFiltrada(st);
@@ -999,23 +999,22 @@ function stockViewPedido(st){
     const sem=tendencia[s.id]||[{total:0,agotado:false},{total:0,agotado:false},{total:0,agotado:false}];
     const max=Math.max(1,...sem.map(x=>x.total));
     const tieneAgotado=sem.some(x=>x.agotado);
-    const icono = sem[2].total>sem[0].total*1.15?"↑":sem[2].total<sem[0].total*0.85?"↓":"→";
+    const icono = sem[2].total>sem[0].total*1.15?"Subiendo":sem[2].total<sem[0].total*0.85?"Bajando":"Estable";
     return `<div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
         <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">Últimas 3 semanas</div>
-        <div style="font-size:.8rem;font-weight:800">${icono}</div>
+        <div style="font-size:.72rem;font-weight:800">${icono}</div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:10px;height:52px">
         ${sem.map(x=>{
           const alto=Math.max(10,Math.round((x.total/max)*40));
           return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
-            ${x.agotado?`<div style="font-size:.62rem;color:var(--warn);font-weight:800">⚠</div>`:""}
             <div style="height:${alto}px;width:100%;max-width:34px;border-radius:5px 5px 2px 2px;background:${x.agotado?"var(--warn-soft)":colorCategoria(s.categoria)};${x.agotado?"border:1.5px dashed var(--warn)":""}"></div>
             <div style="font-size:.72rem;font-weight:700;color:${x.agotado?"var(--warn)":"var(--ink)"}">${x.total}</div>
           </div>`;
         }).join("")}
       </div>
-      ${tieneAgotado?`<div style="margin-top:6px;font-size:.72rem;color:var(--warn);line-height:1.4">⚠ una de esas semanas se agotó antes de terminar — el consumo real pudo ser mayor.</div>`:""}
+      ${tieneAgotado?`<div style="margin-top:6px;font-size:.72rem;color:var(--warn);line-height:1.4">Una de esas semanas se agotó antes de terminar — el consumo real pudo ser mayor.</div>`:""}
     </div>`;
   };
 
@@ -1038,7 +1037,7 @@ function stockViewPedido(st){
       </div>
     </div>`};
 
-  return `<button class="authBack" type="button" id="volverPedido">← Volver a Stock</button>
+  return `<button class="authBack" type="button" id="volverPedido">Volver a Stock</button>
   <p class="sec" style="margin-top:6px">Pedido sugerido</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">La app calcula esto sola con tu stock de hoy y lo que se vendió esta semana. Podés cambiar cualquier número antes de mandarlo.</p>
   <div style="background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-bottom:14px">
@@ -1238,7 +1237,7 @@ function saboresView(){
     return `<div class="saborRow${s.activo?"":" baja"}">
       ${plateHTML(s.id)}
       <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(s.tipo==="b"?"Balde":"Vasqueta")} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.activo?"":" · inactivo"}</div></div>
-      <button type="button" class="chip" data-editar-sabor-btn="${s.id}">✎ Editar</button>
+      <button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
       <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
     </div>`;
   };
