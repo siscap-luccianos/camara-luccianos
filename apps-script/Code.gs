@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.19.1";
+const BACKEND_VERSION = "1.20.0";
 
 function doPost(e) {
   let resultado;
@@ -382,14 +382,18 @@ function _puedeVerLocal(empleado, local) {
 
 const DATOS_CACHE_SEGUNDOS = 45; // más que POLL_MS (30s) del cliente, para que la mayoría de los sondeos reutilicen el cache en vez de releer toda la hoja de Registros
 
-/** Ida a Sheets real (3 lecturas de hoja completa) — es lo que hace
- *  lenta a datos(), no el tamaño de la respuesta. Se cachea el
- *  resultado por local (ver datos()) para que cambiar de local varias
- *  veces seguidas, o el polling cada 30s, no vuelvan a pagar ese costo
- *  si nada cambió en el medio. */
+/** Antes esto hacía 3 lecturas de hoja COMPLETA (incluyendo años de
+ *  historial de los 35 locales juntos en Registros, que nunca se borra)
+ *  — ahora Registros se lee acotado a los últimos DIAS_HISTORIAL días
+ *  con _leerDesdeTs() (búsqueda binaria por fecha, no por cantidad de
+ *  filas). Stock y Sabores siguen siendo lecturas completas porque son
+ *  chicas (una fila por local / por sabor, no por movimiento). Se
+ *  cachea el resultado por local (ver datos()) para que cambiar de
+ *  local varias veces seguidas, o el polling cada 30s, no vuelvan a
+ *  pagar ese costo si nada cambió en el medio. */
 function _datosSinCache(local, empleado) {
   const limite = Date.now() - DIAS_HISTORIAL * 864e5;
-  const registros = _leerCrudo("Registros")
+  const registros = _leerDesdeTs("Registros", limite)
     .filter((r) => String(r.local || "").trim() === String(local).trim() && Number(r.ts) >= limite)
     .map(_registroPublico);
 
@@ -1066,6 +1070,53 @@ function _leerUltimasFilas(hoja, maxFilas) {
   if (ultimaFila < 2) return [];
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const desde = Math.max(2, ultimaFila - maxFilas + 1);
+  const datos = sheet.getRange(desde, 1, ultimaFila - desde + 1, sheet.getLastColumn()).getValues();
+  return datos
+    .filter((fila) => fila.some((c) => c !== ""))
+    .map((fila) => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = _celdaComoTexto(fila[i]); });
+      return obj;
+    });
+}
+
+/** Busca con búsqueda binaria la primera fila cuya columna `ts` sea >=
+ *  `limite` — asume que `ts` no decrece a medida que se baja en la hoja,
+ *  lo cual vale siempre para Registros porque _escribirCrudo() siempre
+ *  agrega al final con Date.now() y LockService serializa las escrituras.
+ *  Son ~log2(filas) lecturas de UNA celda cada una, en vez de traerse la
+ *  hoja entera — es lo que usa _leerDesdeTs() para acotar la lectura de
+ *  Registros a los últimos DIAS_HISTORIAL días sin importar cuánto haya
+ *  crecido la hoja con historial viejo que ya no le sirve a nadie. */
+function _filaDesdeTs(hoja, limite) {
+  const sheet = _sheet(hoja);
+  const ultimaFila = sheet.getLastRow();
+  if (ultimaFila < 2) return 2;
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const colTs = headers.indexOf("ts") + 1;
+  if (colTs < 1) return 2; // la hoja no tiene columna ts, no se puede acotar así
+  let lo = 2, hi = ultimaFila, resultado = ultimaFila + 1; // si nada llega a `limite`, no hay nada que leer
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const val = Number(sheet.getRange(mid, colTs, 1, 1).getValue()) || 0;
+    if (val >= limite) { resultado = mid; hi = mid - 1; }
+    else { lo = mid + 1; }
+  }
+  return resultado;
+}
+
+/** Como _leerCrudo, pero solo desde la fila donde `ts` empieza a ser
+ *  >= `limite` (ver _filaDesdeTs) — acota correctamente por FECHA, a
+ *  diferencia de _leerUltimasFilas() que acota por cantidad de filas
+ *  (eso sirve para "lo más reciente", no para "los últimos N días": si
+ *  la actividad de los 35 locales juntos crece, un número fijo de filas
+ *  cubre cada vez menos días). */
+function _leerDesdeTs(hoja, limite) {
+  const sheet = _sheet(hoja);
+  const ultimaFila = sheet.getLastRow();
+  const desde = _filaDesdeTs(hoja, limite);
+  if (desde > ultimaFila) return [];
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
   const datos = sheet.getRange(desde, 1, ultimaFila - desde + 1, sheet.getLastColumn()).getValues();
   return datos
     .filter((fila) => fila.some((c) => c !== ""))
