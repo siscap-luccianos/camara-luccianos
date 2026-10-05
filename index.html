@@ -430,7 +430,7 @@ function pendienteDevolucionHoy(){
   const desde=inicioDeHoy(), sacado={}, devuelto={};
   for(const r of regsActivos()){
     if(r.ts<desde || String(r.empleadoId)!==String(S.empleado.id)) continue;
-    if(r.tipo==="salida") for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
+    if(r.tipo==="salida" && r.subtipo!=="desperdicio") for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
     else if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,q] of Object.entries(r.items||{})) devuelto[id]=(devuelto[id]||0)+(+q||0);
   }
   const pendiente={};

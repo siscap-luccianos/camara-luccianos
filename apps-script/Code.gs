@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.21.0";
+const BACKEND_VERSION = "1.22.0";
 
 function doPost(e) {
   let resultado;
@@ -80,7 +80,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
@@ -467,12 +467,14 @@ function _totalItems(items) {
   return t;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!items || !Object.keys(items).length) return { ok: false, error: "No hay sabores cargados." };
-  if (subtipo && subtipo !== "devolucion") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo && subtipo !== "devolucion" && subtipo !== "desperdicio") return { ok: false, error: "Subtipo de movimiento inválido." };
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -488,7 +490,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: tipo, local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
-      anulado_por: "", anulado_ts: "", motivo: "", foto_remito: fotoRemito || "", subtipo: subtipo || "",
+      anulado_por: "", anulado_ts: "", motivo: motivo || "", foto_remito: fotoRemito || "", subtipo: subtipo || "",
     });
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
