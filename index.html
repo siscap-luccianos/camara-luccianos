@@ -243,7 +243,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.25.11";
+const FRONTEND_VERSION = "1.26.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -369,7 +369,9 @@ window.addEventListener("online", colaFlush);
 function nombre(id){ return (S.saboresPorId[id]||{}).nombre || ("Sabor "+id) }
 function minimoDe(id){ return (S.saboresPorId[id]||{}).minimo ?? 6 }
 function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
-function unidad(id,n){ return tipoDe(id)==="b" ? (n===1?"balde":"baldes") : (n===1?"vasqueta":"vasquetas") }
+const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], v:["vasqueta","vasquetas"] };
+function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
+const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)" };
 
 function regsActivos(){ return S.regs.filter(r=>!r.anulado) }
 
@@ -906,6 +908,7 @@ function gridIngreso(st){
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
+      ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
       <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
@@ -956,11 +959,17 @@ function stockView(st){
   const last=S.stock?new Date(S.stock.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}):null;
   const listaVisible = listaFiltrada(st);
 
+  const desgloseCajas=s=>{
+    if(!s.cantidad_maestra) return "";
+    const total=st[s.id]||0, cajas=Math.floor(total/s.cantidad_maestra), sueltas=total%s.cantidad_maestra;
+    if(!cajas) return ` · ${sueltas} suelta${sueltas===1?"":"s"}`;
+    return ` · ${cajas} caja${cajas===1?"":"s"}${sueltas?" + "+sueltas+" suelta"+(sueltas===1?"":"s"):""}`;
+  };
   const row=f=>{
     const {s,cov,ed}=f;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${ed?` · <span style="color:var(--${ed.cls})">${ed.label}</span>`:""}${s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${ed?` · <span style="color:var(--${ed.cls})">${ed.label}</span>`:""}${s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}</div></div>
       <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>
     </div>`};
 
@@ -1220,7 +1229,8 @@ function saboresView(){
     if(S.editandoSaborId===s.id){
       return `<form class="saborRow saborForm" data-editar-sabor="${s.id}">
         <input type="text" name="nombre" value="${esc(s.nombre)}" required style="flex:2 1 200px">
-        <select name="tipo" style="flex:0 0 110px"><option value="v" ${s.tipo==="v"?"selected":""}>Vasqueta</option><option value="b" ${s.tipo==="b"?"selected":""}>Balde</option></select>
+        <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}" ${s.tipo===v?"selected":""}>${l}</option>`).join("")}</select>
+        <select name="familia" style="flex:0 0 110px"><option value="vasquetas" ${s.familia!=="icepops"?"selected":""}>Vasquetas</option><option value="icepops" ${s.familia==="icepops"?"selected":""}>Icepops</option></select>
         <select name="categoria" style="flex:1 1 140px">${opcionesCategoria(s.categoria)}</select>
         <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
           <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
@@ -1230,6 +1240,10 @@ function saboresView(){
           <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Peso promedio (kg)</span>
           <input type="number" name="peso" value="${s.peso||""}" min="0" step="0.1" style="width:100%">
         </div>
+        <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
+          <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Unidades por caja</span>
+          <input type="number" name="cantidad_maestra" value="${s.cantidad_maestra||""}" min="0" style="width:100%">
+        </div>
         <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" name="activo" ${s.activo?"checked":""}> Activo</label>
         <button class="btn" type="submit">Guardar</button>
         <button class="btn ghost" type="button" data-cancelar-sabor="1">Cancelar</button>
@@ -1237,7 +1251,7 @@ function saboresView(){
     }
     return `<div class="saborRow${s.activo?"":" baja"}">
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(s.tipo==="b"?"Balde":"Vasqueta")} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.activo?"":" · inactivo"}</div></div>
+      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(s.familia==="icepops"?"Icepops":"Vasquetas")} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div></div>
       <button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
       <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
     </div>`;
@@ -1247,7 +1261,8 @@ function saboresView(){
   <p class="sec">Dar de alta un sabor nuevo</p>
   <form class="saborRow saborForm" id="altaSaborForm">
     <input type="text" name="nombre" placeholder="Nombre del sabor" required style="flex:2 1 200px">
-    <select name="tipo" style="flex:0 0 110px"><option value="v">Vasqueta</option><option value="b">Balde</option></select>
+    <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
+    <select name="familia" style="flex:0 0 110px"><option value="vasquetas">Vasquetas</option><option value="icepops">Icepops</option></select>
     <select name="categoria" style="flex:1 1 140px">${opcionesCategoria("")}</select>
     <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
       <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
@@ -1256,6 +1271,10 @@ function saboresView(){
     <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
       <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Peso promedio (kg)</span>
       <input type="number" name="peso" min="0" step="0.1" style="width:100%">
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
+      <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Unidades por caja</span>
+      <input type="number" name="cantidad_maestra" min="0" style="width:100%">
     </div>
     <button class="btn" type="submit">Agregar</button>
   </form>`;
@@ -1532,6 +1551,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; renderApp(); return }
   if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; renderApp(); return }
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; renderApp(); return }
+  if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; renderApp(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; renderApp(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; renderApp(); return }
@@ -1661,8 +1681,9 @@ document.addEventListener("submit", async e=>{
       const actual=(S.saboresAdmin||[]).find(x=>x.id===id);
       const fd=new FormData(e.target);
       await guardarSabor({
-        id, nombre:fd.get("nombre"), tipo:fd.get("tipo"), categoria:fd.get("categoria"),
-        minimo:fd.get("minimo"), peso:fd.get("peso"), orden: actual?actual.orden:0, activo: fd.get("activo")==="on",
+        id, nombre:fd.get("nombre"), tipo:fd.get("tipo"), familia:fd.get("familia"), categoria:fd.get("categoria"),
+        minimo:fd.get("minimo"), peso:fd.get("peso"), cantidad_maestra:fd.get("cantidad_maestra"),
+        orden: actual?actual.orden:0, activo: fd.get("activo")==="on",
       });
     });
   }
@@ -1670,7 +1691,7 @@ document.addEventListener("submit", async e=>{
     e.preventDefault();
     await conBotonCargando(e.target, async ()=>{
       const fd=new FormData(e.target);
-      await guardarSabor({ nombre:fd.get("nombre"), tipo:fd.get("tipo"), categoria:fd.get("categoria"), minimo:fd.get("minimo"), peso:fd.get("peso") });
+      await guardarSabor({ nombre:fd.get("nombre"), tipo:fd.get("tipo"), familia:fd.get("familia"), categoria:fd.get("categoria"), minimo:fd.get("minimo"), peso:fd.get("peso"), cantidad_maestra:fd.get("cantidad_maestra") });
       e.target.reset();
     });
   }
