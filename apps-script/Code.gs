@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.23.3";
+const BACKEND_VERSION = "1.23.4";
 
 function doPost(e) {
   let resultado;
@@ -607,7 +607,11 @@ function _leerRemitoConIA(fotoBase64, mimeType) {
     throw new Error("La IA no pudo leer el remito (código " + resp.getResponseCode() + "). Probá de nuevo en un rato.");
   }
   const data = JSON.parse(resp.getContentText());
-  const texto = (data.content && data.content[0] && data.content[0].text) || "";
+  // El modelo a veces antepone un bloque "thinking" antes del "text" —
+  // no asumir que la respuesta está en content[0], hay que buscar el
+  // bloque de tipo "text" donde esté.
+  const bloqueTexto = (data.content || []).filter((b) => b.type === "text")[0];
+  const texto = (bloqueTexto && bloqueTexto.text) || "";
   const match = texto.match(/\{[\s\S]*\}/);
   if (!match) {
     // Mostramos lo que realmente contestó la IA (y por qué cortó) para poder
