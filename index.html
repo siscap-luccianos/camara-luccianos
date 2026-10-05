@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.28.0";
+const FRONTEND_VERSION = "1.28.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -449,10 +449,18 @@ function estadoSabor(id, st){
 }
 function alertas(st){ return S.sabores.filter(s=>estadoSabor(s.id,st)) }
 
+// Vasquetas van de a 2 (pedido de fábrica, no se puede pedir una unidad
+// suelta). Un icepop con caja maestra cargada redondea a esa cantidad —
+// la fábrica se lo manda por caja cerrada, no por unidad individual.
+function multiploPedido(id){
+  const s=S.saboresPorId[id];
+  return (s && s.cantidad_maestra) ? s.cantidad_maestra : 2;
+}
 function pedidoSugerido(id, st){
   const s7=salidasDias(7), promedioDiario=(s7[id]||0)/7;
   let sug=Math.max(0, Math.ceil(promedioDiario*(S.diasEntrega+1) - st[id]));
-  sug = Math.ceil(sug/2)*2; // los pedidos a fábrica van de a 2 — no se puede pedir una unidad suelta
+  const multiplo=multiploPedido(id);
+  sug = Math.ceil(sug/multiplo)*multiplo;
   return Math.max(0, sug + (S.pedidoAdj[id]||0));
 }
 
@@ -1034,15 +1042,20 @@ function stockView(st){
 function stockViewPedido(st){
   const s7=salidasDias(7);
   const tendencia=tendenciaSemanas();
+  const familiaActiva=S.filtroFamilia||"vasquetas";
   let pedidoTotal=0;
-  const filas=S.sabores.map(s=>{
+  // El pedido (y el mensaje de WhatsApp) va por familia activa — mezclar
+  // vasquetas e Icepops en un solo pedido no tiene sentido, son pedidos
+  // separados a proveedores distintos.
+  const filas=S.sabores.filter(s=>familiaDe(s)===familiaActiva).map(s=>{
     const ped=pedidoSugerido(s.id,st); pedidoTotal+=ped;
     return {s, ped, vendido:s7[s.id]||0};
   });
   const dias=[2,3,4,7];
   const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
   const lineas=filas.filter(f=>f.ped>0).map(f=>`- ${f.s.nombre}: ${f.ped}`);
-  const waText = `*Pedido de helado – ${S.local}*\n${fecha}\n\n${lineas.length?lineas.join("\n"):"Sin sabores para pedir"}\n\n*Total: ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}*`;
+  const tituloPedido=FAMILIA_LABEL[familiaActiva]||"helado";
+  const waText = `*Pedido de ${tituloPedido} – ${S.local}*\n${fecha}\n\n${lineas.length?lineas.join("\n"):"Sin sabores para pedir"}\n\n*Total: ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}*`;
   const waHref = "https://wa.me/?text="+encodeURIComponent(waText);
   const listaVisible = listaFiltrada(st);
 
@@ -1084,7 +1097,7 @@ function stockViewPedido(st){
           <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Calculado automáticamente</div>
           <div style="font-size:.75rem;color:var(--muted)">Podés ajustarlo con − y +</div>
         </div>
-        <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar 2 del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar 2 al pedido">+</button></div>
+        <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>
       </div>
     </div>`};
 
@@ -1603,8 +1616,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; renderApp(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; renderApp(); return }
   if(t.dataset.ddec){ const c=S.cart.devolucion; c[t.dataset.ddec]=Math.max(0,(c[t.dataset.ddec]||0)-1); if(!c[t.dataset.ddec]) delete c[t.dataset.ddec]; S.confirm=false; renderApp(); return }
-  if(t.dataset.pinc){ S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+2; renderApp(); return }
-  if(t.dataset.pdec){ S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-2; renderApp(); return }
+  if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; renderApp(); return }
+  if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; renderApp(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
   if(t.dataset.semanaHist!==undefined){ S.semanaHist=Number(t.dataset.semanaHist); renderApp(); return }
