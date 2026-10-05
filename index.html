@@ -135,6 +135,7 @@ select{max-width:220px}
 .pill.ingreso{background:var(--ok-soft);color:var(--ok)}
 .pill.conteo{background:var(--line);color:var(--ink)}
 .pill.devolucion{background:var(--warn-soft);color:var(--warn)}
+.pill.desperdicio{background:var(--alert-soft);color:var(--alert)}
 .hist{display:flex;flex-direction:column;gap:8px}
 .h{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .h.anulado{opacity:.55}
@@ -243,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.26.0";
+const FRONTEND_VERSION = "1.27.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -276,8 +277,10 @@ const S = {
   sabores: [], saboresPorId: {},
   regs: [], stock: null,
   tab: "salida",
-  cart: { salida:{}, ingreso:{}, devolucion:{} },
+  cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{} },
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
+  modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
+  motivoDesperdicio: "",
   confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroCategoria: "todas", soloAlerta: false, needEmp:false,
   conteo: null,
   lectorRemito: null,
@@ -833,6 +836,7 @@ function listaFiltrada(st){
 }
 
 function gridSalida(st){
+  if(S.modoDesperdicio) return gridDesperdicio(st);
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   const card=s=>{
@@ -846,6 +850,28 @@ function gridSalida(st){
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
+  <button type="button" class="btn ghost" id="irDesperdicio" style="margin-bottom:12px">¿Se rompió o se tiró algo? Tocá acá</button>
+  ${chipFiltros()}
+  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
+  ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
+}
+function gridDesperdicio(st){
+  const cart=S.cart.desperdicio;
+  const list=listaFiltrada(st);
+  const card=s=>{
+    const c=cart[s.id]||0, ed=estadoSabor(s.id,st);
+    return `<div class="card${c?" sel":""}">
+      <button class="pick" data-wadd="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
+        <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
+        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
+        ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
+        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+      </button>
+      ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
+  return `<button class="authBack" type="button" id="volverSalida">Volver a Salida</button>
+  <p class="sec" style="margin-top:6px">Desperdicio</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Sabores que se rompieron, se cayeron o no se pueden vender. Se descuentan del stock igual que una salida, pero quedan marcados aparte — no se cuentan como venta.</p>
+  <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -1110,10 +1136,10 @@ function histView(){
     </tbody></table></div>`
     :`<div class="empty">Sin salidas esa semana.</div>`;
   const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>r.tipo==="conteo"?`${esc(nombre(id))}: ${q}`:`${esc(nombre(id))} ×${q}`).join(" · ");
-  const claseTipo=r=>r.subtipo==="devolucion"?"devolucion":r.tipo;
-  const labelTipo=r=>r.subtipo==="devolucion"?"devolución":r.tipo;
+  const claseTipo=r=>r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.tipo;
+  const labelTipo=r=>r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.tipo;
   const lista=regs.slice(0,150).map(r=>`<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo(r)}">${labelTipo(r)}</span>
-    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}</span>
+    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div>`:`<div class="items">${it(r)}</div>`}
     ${r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
@@ -1293,7 +1319,9 @@ async function toggleSabor(s){
  *  helper resuelve en cuál carrito (S.cart) hay que mirar/guardar según
  *  cómo se llegó, para no duplicar esa lógica en cada lugar que la usa. */
 function cartKeyActual(){
-  return (S.tab==="devolucion" || (S.tab==="ingreso" && S.modoDevolucion)) ? "devolucion" : S.tab;
+  if(S.tab==="devolucion" || (S.tab==="ingreso" && S.modoDevolucion)) return "devolucion";
+  if(S.tab==="salida" && S.modoDesperdicio) return "desperdicio";
+  return S.tab;
 }
 function renderBar(){
   const bar=$("#bar"); if(!bar) return; const inn=$("#barIn");
@@ -1304,20 +1332,21 @@ function renderBar(){
       ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
       : `<div class="sum">Revisá los números y guardá.</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go">Guardar conteo</button>`;
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion";
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio";
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
     if(tot){
       visible=true;
-      const verbo=S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
+      const verbo=enDesperdicio?"desperdicio":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
+      const faltaMotivo=enDesperdicio && !S.motivoDesperdicio.trim();
       const st=stockMap();
       if(S.confirm){
-        const neg=S.tab==="salida"?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
+        const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}</div>
-          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go">Registrar ${verbo}</button>`;
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}</div>
+          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${faltaMotivo?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
   }
@@ -1360,7 +1389,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{}}; S.modoDevolucion=false; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{}}; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1381,7 +1410,7 @@ function setLocal(local){
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion";
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio";
     const tipo = enDevolucion ? "ingreso" : S.tab; // una devolución es un ingreso con subtipo, el backend no tiene un tercer tipo de movimiento
     const cart=S.cart[cartKey];
     const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
@@ -1390,16 +1419,17 @@ async function guardarMovimiento(){
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion ? (S.fotoRemitoUrl||undefined) : undefined,
-      subtipo: enDevolucion ? "devolucion" : undefined};
+      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : undefined,
+      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
-      toast((S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false;
+      toast((enDesperdicio?"Desperdicio registrado: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
+      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false;
+      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -1548,9 +1578,11 @@ document.addEventListener("click", async e=>{
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
-  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; renderApp(); return }
   if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; renderApp(); return }
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; renderApp(); return }
+  if(t.dataset.wadd){ const c=S.cart.desperdicio; c[t.dataset.wadd]=(c[t.dataset.wadd]||0)+1; S.confirm=false; renderApp(); return }
+  if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; S.confirm=false; renderApp(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; renderApp(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; renderApp(); return }
@@ -1580,6 +1612,8 @@ document.addEventListener("click", async e=>{
   if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.confirm=false; renderApp(); return }
+  if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
+  if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
   if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
   if(t.id==="remitoCargar"){
@@ -1617,6 +1651,7 @@ document.addEventListener("focusin", e=>{
 document.addEventListener("input", e=>{
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
   if(e.target.id==="remito"){ S.remito=e.target.value }
+  if(e.target.id==="motivoDesperdicio"){ S.motivoDesperdicio=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
   if(e.target.dataset.c){ S.conteo[e.target.dataset.c]=Math.max(0,parseInt(e.target.value,10)||0) }
