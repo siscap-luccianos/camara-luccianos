@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.27.0";
+const FRONTEND_VERSION = "1.28.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -281,7 +281,7 @@ const S = {
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
   motivoDesperdicio: "",
-  confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroCategoria: "todas", soloAlerta: false, needEmp:false,
+  confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroFamilia: null, filtroCategoria: "todas", soloAlerta: false, needEmp:false,
   conteo: null,
   lectorRemito: null,
   verPedido: false,
@@ -813,26 +813,41 @@ function renderMain(){
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
 const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche"];
+const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", glutenfree:"Gluten Free" };
+const FAMILIA_ORDEN = ["vasquetas","icepops","glutenfree"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
+function familiaDe(s){ return s.familia||"vasquetas" }
+/** Familias con al menos un sabor cargado — si solo hay vasquetas (todavía
+ *  no se cargó ningún Icepop/Gluten Free), no tiene sentido mostrar las
+ *  pills de familia, total hay una sola. */
+function familiasPresentes(){
+  const set=new Set(S.sabores.map(familiaDe));
+  return FAMILIA_ORDEN.filter(f=>set.has(f)).concat([...set].filter(f=>!FAMILIA_ORDEN.includes(f)));
+}
 function categoriasPresentes(){
-  const set=new Set(S.sabores.map(s=>s.categoria||"Cremas"));
+  const familia=S.filtroFamilia||"vasquetas";
+  const set=new Set(S.sabores.filter(s=>familiaDe(s)===familia).map(s=>s.categoria||"Cremas"));
   return CATEGORIAS_ORDEN.filter(c=>set.has(c)).concat([...set].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
 }
 
 function chipFiltros(){
+  const familias=familiasPresentes(), familiaActiva=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
   return `<div class="tools">
     <div class="grow"><input type="search" id="q" placeholder="Buscar sabor" value="${esc(S.q)}"></div>
     <button class="chip" id="soloAlerta" aria-pressed="${S.soloAlerta}">Debajo del mínimo</button>
   </div>
+  ${familias.length>1?`<div class="tools catChips">
+    ${familias.map(f=>`<button class="chip" data-familia="${f}" aria-pressed="${familiaActiva===f}">${esc(FAMILIA_LABEL[f]||f)}</button>`).join("")}
+  </div>`:""}
   <div class="tools catChips">
     <button class="chip" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todos</button>
     ${cats.map(c=>`<button class="chip" data-cat="${esc(c)}" aria-pressed="${S.filtroCategoria===c}" style="${S.filtroCategoria===c?`background:${colorCategoria(c)};border-color:${colorCategoria(c)};color:#fff`:""}">${esc(c)}</button>`).join("")}
   </div>`;
 }
 function listaFiltrada(st){
-  const q=normalizar(S.q.trim());
-  return S.sabores.filter(s=>(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
+  const q=normalizar(S.q.trim()), familiaActiva=S.filtroFamilia||"vasquetas";
+  return S.sabores.filter(s=>familiaDe(s)===familiaActiva&&(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
 }
 
 function gridSalida(st){
@@ -1256,7 +1271,7 @@ function saboresView(){
       return `<form class="saborRow saborForm" data-editar-sabor="${s.id}">
         <input type="text" name="nombre" value="${esc(s.nombre)}" required style="flex:2 1 200px">
         <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}" ${s.tipo===v?"selected":""}>${l}</option>`).join("")}</select>
-        <select name="familia" style="flex:0 0 110px"><option value="vasquetas" ${s.familia!=="icepops"?"selected":""}>Vasquetas</option><option value="icepops" ${s.familia==="icepops"?"selected":""}>Icepops</option></select>
+        <select name="familia" style="flex:0 0 110px">${FAMILIA_ORDEN.map(f=>`<option value="${f}" ${(s.familia||"vasquetas")===f?"selected":""}>${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select>
         <select name="categoria" style="flex:1 1 140px">${opcionesCategoria(s.categoria)}</select>
         <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
           <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
@@ -1277,7 +1292,7 @@ function saboresView(){
     }
     return `<div class="saborRow${s.activo?"":" baja"}">
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(s.familia==="icepops"?"Icepops":"Vasquetas")} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div></div>
+      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div></div>
       <button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
       <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
     </div>`;
@@ -1288,7 +1303,7 @@ function saboresView(){
   <form class="saborRow saborForm" id="altaSaborForm">
     <input type="text" name="nombre" placeholder="Nombre del sabor" required style="flex:2 1 200px">
     <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
-    <select name="familia" style="flex:0 0 110px"><option value="vasquetas">Vasquetas</option><option value="icepops">Icepops</option></select>
+    <select name="familia" style="flex:0 0 110px">${FAMILIA_ORDEN.map(f=>`<option value="${f}">${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select>
     <select name="categoria" style="flex:1 1 140px">${opcionesCategoria("")}</select>
     <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
       <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
@@ -1607,6 +1622,7 @@ document.addEventListener("click", async e=>{
     return;
   }
 
+  if(t.dataset.familia){ S.filtroFamilia = t.dataset.familia; S.filtroCategoria = "todas"; renderApp(); return }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; renderApp(); return }
