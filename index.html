@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.29.0";
+const FRONTEND_VERSION = "1.29.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -913,6 +913,11 @@ function lectorRemitoView(){
   if(lr.paso==="error"){
     return `<p class="sec">Leer remito</p>
     <div class="empty">${esc(lr.error)}</div>
+    <button class="btn ghost" type="button" id="remitoCancelar" style="margin-top:10px">Volver</button>`;
+  }
+  if(lr.items.length===0){
+    return `<p class="sec">Leer remito</p>
+    <div class="empty">No encontramos renglones de Vasquetas, Icepops, Sin Gluten o Cannolis en esta foto${lr.remitoDetectado?` (remito N° ${esc(lr.remitoDetectado)})`:""}. Si esos productos están en otra página del remito, sacale una foto a esa página.</div>
     <button class="btn ghost" type="button" id="remitoCancelar" style="margin-top:10px">Volver</button>`;
   }
   const total=lr.items.reduce((a,it)=>a+(it.ignorar?0:(it.cantidad||0)),0);

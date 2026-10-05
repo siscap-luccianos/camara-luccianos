@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.23.1";
+const BACKEND_VERSION = "1.23.2";
 
 function doPost(e) {
   let resultado;
@@ -609,7 +609,14 @@ function _leerRemitoConIA(fotoBase64, mimeType) {
   const data = JSON.parse(resp.getContentText());
   const texto = (data.content && data.content[0] && data.content[0].text) || "";
   const match = texto.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("La IA contestó algo que no se pudo entender. Probá con otra foto, más clara.");
+  if (!match) {
+    // Mostramos lo que realmente contestó la IA (y por qué cortó) para poder
+    // diagnosticar sin tener que reproducir la llamada — acá no hay forma de
+    // probar contra la API real, así que el mensaje de error ES el diagnóstico.
+    const motivo = data.stop_reason ? " Motivo: " + data.stop_reason + "." : "";
+    const muestra = texto ? " Contestó: «" + texto.slice(0, 500) + "»" : " No contestó texto.";
+    throw new Error("La IA contestó algo que no se pudo entender." + motivo + muestra);
+  }
   return JSON.parse(match[0]);
 }
 
