@@ -73,6 +73,16 @@ Esto sí hace falta para que funcione (no es opcional como el lector de remitos)
 1. Agregá la columna `subtipo` al final de la hoja `Registros` (encabezado en la fila 1, igual que `foto_remito`).
 2. Redesplegá el backend (`Implementar → Administrar implementaciones → ✎ → Nueva versión → Implementar`) con el `Code.gs` actualizado.
 
+## 9. Catálogo de Icepops — agregar columnas `familia` y `cantidad_maestra`
+
+Primer paso para cargar los Icepops (Fase 2, ver CLAUDE.md). Sin esto el resto de la app sigue andando igual — pero hace falta antes de pegar el catálogo de Icepops en `Sabores`.
+
+1. Agregá dos columnas al final de la hoja `Sabores` (encabezado en la fila 1): `familia` y `cantidad_maestra`.
+   - `familia`: `vasquetas` o `icepops` — separa los helados de siempre de los Icepops (para cuando se arme la navegación por categorías propia de Icepops). Si la dejás vacía en una fila vieja de helado, el backend la trata como `vasquetas` igual.
+   - `cantidad_maestra`: cuántas unidades trae la caja cerrada de ese sabor (solo aplica a Icepops — cada sabor viene en una cantidad distinta). Vacío o 0 = no se usa el botón de "+1 caja" para ese sabor.
+2. Redesplegá el backend con el `Code.gs` actualizado (mismo paso de siempre: Nueva versión → Implementar).
+3. Pegá el catálogo de 48 sabores que te pasamos (archivo aparte) debajo de las filas que ya tenés en `Sabores` — ya vienen con `familia=icepops` y el `tipo` correcto (`i` = icepop suelto, `m` = mini icepops por caja). Completá `cantidad_maestra` sabor por sabor vos, porque varía según el sabor.
+
 ## Cómo probar que quedó bien conectado
 
 1. Abrí la URL del deploy (`.../exec`) directo en el navegador — debería devolver `{"ok":true,"mensaje":"LogiStock Lucciano's backend activo","version":"1.0.0"}`.
