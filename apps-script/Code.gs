@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.22.0";
+const BACKEND_VERSION = "1.23.0";
 
 function doPost(e) {
   let resultado;
@@ -581,7 +581,7 @@ function _leerRemitoConIA(fotoBase64, mimeType) {
   const clave = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
   if (!clave) throw new Error("Falta configurar ANTHROPIC_API_KEY en Propiedades del script (ver apps-script/README.md).");
 
-  const prompt = "Esta es la foto de un remito de helados Lucciano's. Quiero SOLO los renglones que están bajo el encabezado de productos \"SABORES\" (ignorá Chocolates, Tabletas, Sin Gluten, Palitos y cualquier otra sección). Para cada uno de esos renglones, tomá el nombre del sabor tal cual está escrito y la cantidad de bultos/vasquetas (la primera columna numérica, \"Cantidad/Bultos\", NO los kilos). También fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<como figura impreso>\",\"cantidad\":<número entero>}]}";
+  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier sección que no sea una de las listadas arriba.\n\nPara cada renglón de esas secciones:\n- Nombre: la parte descriptiva del producto (sacá el prefijo de sección repetido, números de catálogo tipo \"N°02\", y palabras que son solo presentación como \"LIBRE DE GLUTEN\", \"100% VEGETAL\", \"X4\" — dejá el nombre del sabor limpio, como lo reconocerías en una carta).\n- Cantidad: mirá las dos columnas numéricas de la izquierda, \"Cantidad/Bultos\" (bultos cerrados) y \"Kg/Unidad\". Si \"Kg/Unidad\" es un solo número (sin barra \"/\"), como en SABORES, la cantidad final es directamente el valor de \"Cantidad/Bultos\". Si \"Kg/Unidad\" tiene formato \"X/Y\" (ej. \"0.8/6\" o \"2.3/12\"), como en SIN GLUTEN/ICE POPS/CANNOLIS, esos bultos vienen cerrados y la cantidad final es \"Cantidad/Bultos\" × Y (el número después de la barra, que son las unidades sueltas dentro de cada bulto) — nunca devuelvas la cantidad de bultos sola para estas secciones, siempre el total de unidades ya multiplicado.\n\nTambién fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<nombre limpio del sabor>\",\"cantidad\":<número entero, ya calculado>}]}";
 
   const payload = {
     model: "claude-sonnet-5-5",
