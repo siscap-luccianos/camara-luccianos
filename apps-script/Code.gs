@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.23.0";
+const BACKEND_VERSION = "1.23.1";
 
 function doPost(e) {
   let resultado;
@@ -585,7 +585,7 @@ function _leerRemitoConIA(fotoBase64, mimeType) {
 
   const payload = {
     model: "claude-sonnet-5-5",
-    max_tokens: 2048,
+    max_tokens: 8192, // un remito real ahora puede traer Sabores + Icepops + Sin Gluten + Cannolis todos juntos, son muchos más renglones que antes (solo Sabores) — con 2048 la respuesta se cortaba a mitad del JSON
     messages: [{
       role: "user",
       content: [
