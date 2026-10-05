@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.28.2";
+const FRONTEND_VERSION = "1.29.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -372,9 +372,9 @@ window.addEventListener("online", colaFlush);
 function nombre(id){ return (S.saboresPorId[id]||{}).nombre || ("Sabor "+id) }
 function minimoDe(id){ return (S.saboresPorId[id]||{}).minimo ?? 6 }
 function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
-const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], v:["vasqueta","vasquetas"] };
+const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"] };
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
-const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)" };
+const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual" };
 
 function regsActivos(){ return S.regs.filter(r=>!r.anulado) }
 
@@ -820,7 +820,7 @@ function renderMain(){
 }
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
-const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops"];
+const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Gluten Free"];
 const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", glutenfree:"Gluten Free" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","glutenfree"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
