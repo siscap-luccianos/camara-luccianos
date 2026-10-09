@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.24.0";
+const BACKEND_VERSION = "1.24.1";
 
 function doPost(e) {
   let resultado;
@@ -662,6 +662,7 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
     return {
       nombreDetectado: it.nombre,
       cantidad: cantidad,
+      bultos: bultos, // el frontend la necesita para recalcular si el empleado corrige el sabor a mano
       saborId: m ? m.sabor.id : null,
       nombreSabor: m ? m.sabor.nombre : null,
       confianza: m ? m.confianza : "sin_match",

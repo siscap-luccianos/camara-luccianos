@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.29.1";
+const FRONTEND_VERSION = "1.29.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -924,11 +924,12 @@ function lectorRemitoView(){
   const sinResolver=lr.items.filter(it=>!it.saborId && !it.ignorar).length;
   const fila=(it,i)=>{
     const flag=!it.saborId && !it.ignorar;
+    const dudoso=it.saborId && it.confianza==="media" && !it.ignorar;
     return `<div class="row${flag?" flag":""}">
       ${it.saborId?plateHTML(it.saborId):`<span class="plate" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--warn);font-weight:800">?</span>`}
-      <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:""}</div>
+      <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo. ${it.bultos} bulto${it.bultos===1?"":"s"} en el remito — elegí el sabor para calcular la cantidad real, o cargala a mano.</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:dudoso?`<div class="meta">Lo matcheamos por parecido con "${esc(it.nombreDetectado)}" — revisá que sea el sabor correcto.</div>`:""}</div>
       <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
-      ${flag||it.ignorar?`<div class="flagPick"><select data-remito-elegir="${i}">
+      ${flag||it.ignorar||dudoso?`<div class="flagPick"><select data-remito-elegir="${i}">
         <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>
         ${S.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}
         <option value="ignorar" ${it.ignorar?"selected":""}>Ignorar este renglón</option>
@@ -1710,7 +1711,14 @@ document.addEventListener("change", e=>{
   if(e.target.dataset.remitoElegir!==undefined){
     const it=S.lectorRemito.items[+e.target.dataset.remitoElegir], v=e.target.value;
     if(v==="ignorar"){ it.ignorar=true; it.saborId=null; it.nombreSabor=null; }
-    else if(v){ it.saborId=v; it.nombreSabor=(S.saboresPorId[v]||{}).nombre||""; it.ignorar=false; }
+    else if(v){
+      it.saborId=v; it.nombreSabor=(S.saboresPorId[v]||{}).nombre||""; it.ignorar=false;
+      // Recalculamos la cantidad con el tamaño de caja del sabor recién elegido
+      // (antes se quedaba con los bultos sin multiplicar, porque la IA no
+      // conoce la caja maestra de un sabor que no supo reconocer solo).
+      const s=S.saboresPorId[v];
+      if(s && it.bultos!==undefined) it.cantidad = s.tipo==="m" ? it.bultos : it.bultos*(s.cantidad_maestra||1);
+    }
     else { it.saborId=null; it.nombreSabor=null; it.ignorar=false; }
     renderApp();
     return;
