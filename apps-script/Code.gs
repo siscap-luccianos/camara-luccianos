@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.24.1";
+const BACKEND_VERSION = "1.25.0";
 
 function doPost(e) {
   let resultado;
@@ -525,16 +525,41 @@ function _normalizar(s) {
 
 /** Busca, para un nombre detectado en el remito, el sabor del catálogo
  *  que mejor matchea. Devuelve null si ninguno se parece lo suficiente
- *  (el frontend lo marca para que el empleado elija a mano). */
-function _matchearSabor(nombreDetectado, sabores) {
-  const norm = _normalizar(nombreDetectado);
+ *  (el frontend lo marca para que el empleado elija a mano).
+ *
+ *  Si se pasa familiaEsperada, solo busca entre los sabores de esa
+ *  familia — hay nombres repetidos entre familias (ej. "Pistacchio"
+ *  existe como vasqueta, como Icepop Luxury y como Cannoli, son
+ *  productos distintos con cajas distintas) y sin este filtro el
+ *  primer "Pistacchio" del catálogo (la vasqueta) le ganaba por orden
+ *  al que realmente correspondía, dando cantidades mal calculadas. */
+function _matchearSabor(nombreDetectado, sabores, familiaEsperada) {
+  // Los sabores Sin Gluten se llaman "<nombre> (Gluten Free)" en el catálogo,
+  // pero en el remito ya llegan limpios de esa marca (nosotros le pedimos a
+  // la IA que saque "LIBRE DE GLUTEN" del nombre) — comparar tal cual hacía
+  // que "gluten"/"free" infumdieran las palabras del catálogo y no las del
+  // remito, bajando el puntaje de parecido por debajo del mínimo aunque el
+  // nombre fuera el mismo. Para la familia Sin Gluten sacamos esas palabras
+  // de los dos lados antes de comparar.
+  const limpiar = (s) => {
+    let n = _normalizar(s);
+    if (familiaEsperada === "glutenfree") n = n.replace(/\b(gluten|free|libre)\b/g, " ").replace(/\s+/g, " ").trim();
+    return n;
+  };
+  const norm = limpiar(nombreDetectado);
   if (!norm) return null;
+  const candidatos = familiaEsperada
+    ? sabores.filter((s) => (s.familia || "vasquetas") === familiaEsperada)
+    : sabores;
+  // Si el filtro por familia se queda sin candidatos (ej. la IA no reconoció
+  // bien la familia), mejor buscar en todo el catálogo que no encontrar nada.
+  const lista = candidatos.length ? candidatos : sabores;
   // 1) match exacto
-  let mejor = sabores.find((s) => _normalizar(s.nombre) === norm);
+  let mejor = lista.find((s) => limpiar(s.nombre) === norm);
   if (mejor) return { sabor: mejor, confianza: "alta" };
   // 2) uno contiene al otro (ej. "pistacchio" vs "pistacchio 100% vegetal")
-  mejor = sabores.find((s) => {
-    const ns = _normalizar(s.nombre);
+  mejor = lista.find((s) => {
+    const ns = limpiar(s.nombre);
     return ns.length > 3 && (norm.indexOf(ns) !== -1 || ns.indexOf(norm) !== -1);
   });
   if (mejor) return { sabor: mejor, confianza: "media" };
@@ -542,8 +567,8 @@ function _matchearSabor(nombreDetectado, sabores) {
   const palabrasDet = norm.split(" ").filter((w) => w.length > 2);
   if (palabrasDet.length) {
     let mejorScore = 0;
-    sabores.forEach((s) => {
-      const palabrasS = _normalizar(s.nombre).split(" ").filter((w) => w.length > 2);
+    lista.forEach((s) => {
+      const palabrasS = limpiar(s.nombre).split(" ").filter((w) => w.length > 2);
       if (!palabrasS.length) return;
       const comunes = palabrasDet.filter((w) => palabrasS.indexOf(w) !== -1).length;
       const score = comunes / Math.max(palabrasDet.length, palabrasS.length);
@@ -581,7 +606,7 @@ function _leerRemitoConIA(fotoBase64, mimeType) {
   const clave = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
   if (!clave) throw new Error("Falta configurar ANTHROPIC_API_KEY en Propiedades del script (ver apps-script/README.md).");
 
-  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier sección que no sea una de las listadas arriba.\n\nPara cada renglón de esas secciones:\n- Nombre: la parte descriptiva del producto (sacá el prefijo de sección repetido, números de catálogo tipo \"N°02\", y palabras que son solo presentación como \"LIBRE DE GLUTEN\", \"100% VEGETAL\", \"X4\" — dejá el nombre del sabor limpio, como lo reconocerías en una carta).\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nTambién fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<nombre limpio del sabor>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}";
+  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nPara cada renglón de esas secciones:\n- Nombre: la parte descriptiva del producto (sacá el prefijo de sección repetido, números de catálogo tipo \"N°02\", \"LIBRE DE GLUTEN\" y sufijos de presentación como \"X4\" — dejá el nombre del sabor limpio, como lo reconocerías en una carta). IMPORTANTE: NO saques palabras que distingan una variante real de otra (ej. \"Vegano\", \"100% Vegetal\", \"Mini\", un año como \"2024\", o un número de sabor como \"1 Ojo\"/\"2 Ojos\") — esas hay que dejarlas, porque son sabores distintos aunque compartan el resto del nombre.\n- Familia: \"vasquetas\" si el renglón está bajo \"SABORES\", \"glutenfree\" si está bajo \"SIN GLUTEN\", o \"icepops\" si está bajo cualquier sección de ICE POPS o CANNOLIS (incluidas las de nombre promocional). Esto es importante porque hay sabores con el mismo nombre en más de una familia (ej. \"Pistacchio\" existe como vasqueta Y como Icepop Luxury Y como Cannoli, son productos distintos) — sin la familia correcta podríamos cargar el que no es.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nTambién fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<nombre limpio del sabor>\",\"familia\":\"<vasquetas|glutenfree|icepops>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}";
 
   const payload = {
     model: "claude-sonnet-5-5",
@@ -644,10 +669,10 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
 
   const sabores = _leerCrudo("Sabores")
     .filter((s) => _esVerdadero(s.activo) !== false)
-    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, cantidad_maestra: Number(s.cantidad_maestra) || 0 }));
+    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0 }));
 
   const items = (leido.items || []).map((it) => {
-    const m = _matchearSabor(it.nombre, sabores);
+    const m = _matchearSabor(it.nombre, sabores, it.familia);
     const bultos = Math.max(0, Number(it.bultos) || 0);
     // La IA solo transcribe los bultos (columna "Cantidad/Bultos") — la
     // multiplicación por el tamaño de la caja la hacemos acá con el dato
