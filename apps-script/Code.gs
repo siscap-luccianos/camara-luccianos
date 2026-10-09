@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.26.1";
+const BACKEND_VERSION = "1.27.0";
 
 function doPost(e) {
   let resultado;
@@ -562,10 +562,19 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEspe
   const catNorm = categoriaEsperada ? _normalizar(categoriaEsperada) : "";
   const porCategoria = catNorm ? porFamilia.filter((s) => _normalizar(s.categoria || "") === catNorm) : [];
 
-  // Prueba las tres reglas de match (exacto → uno contiene al otro →
-  // comparten la mayoría de las palabras) dentro de una lista de candidatos.
-  // Devuelve null si ninguna encuentra nada en ESA lista puntual.
-  const intentar = (lista) => {
+  // Prueba las reglas de match (exacto → uno contiene al otro → comparten
+  // la mayoría de las palabras) dentro de una lista de candidatos. Devuelve
+  // null si ninguna encuentra nada en ESA lista puntual.
+  //
+  // `relajado` suma una cuarta regla, solo para cuando la lista ya viene
+  // acotada por categoría (no para familia entera ni todo el catálogo): si
+  // el remito ya nos dice "esto es Bañados" y dentro de Bañados hay un
+  // único sabor que comparte aunque sea una palabra con lo detectado (ej.
+  // "Chantilly & Crocante" vs el único "Crema Chantilly" de esa categoría),
+  // alcanza — la categoría ya hizo la mayor parte de la desambiguación, no
+  // hace falta que el resto del nombre matchee tanto. Si dos o más
+  // comparten esa palabra, sigue siendo ambiguo y no adivina.
+  const intentar = (lista, relajado) => {
     if (!lista.length) return null;
     // 1) match exacto
     let mejor = lista.find((s) => limpiar(s.nombre) === norm);
@@ -593,18 +602,28 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEspe
       const score = comunes / union;
       if (score > mejorScore) { mejorScore = score; mejor = s; }
     });
-    return (mejor && mejorScore >= 0.6) ? { sabor: mejor, confianza: "media" } : null;
+    if (mejor && mejorScore >= 0.6) return { sabor: mejor, confianza: "media" };
+    // 4) (solo con categoría ya acotada) único candidato que comparte
+    // alguna palabra con lo detectado.
+    if (relajado) {
+      const conAlgunaPalabra = lista.filter((s) => {
+        const palabrasS = limpiar(s.nombre).split(" ").filter((w) => w.length > 2);
+        return palabrasDet.some((w) => palabrasS.indexOf(w) !== -1);
+      });
+      if (conAlgunaPalabra.length === 1) return { sabor: conAlgunaPalabra[0], confianza: "media" };
+    }
+    return null;
   };
 
   // Ensancha la búsqueda en cascada — categoría → familia → todo el
-  // catálogo — probando las tres reglas en cada paso antes de pasar al
+  // catálogo — probando las reglas en cada paso antes de pasar al
   // siguiente. Antes, si la categoría detectada tenía ALGÚN candidato
   // (aunque ninguno matcheara), se quedaba ahí sin probar más ancho — por
   // eso "Minion 1 Ojo" (que categorizamos como Luxury por su caja real)
   // nunca aparecía: la IA etiqueta esa sección como "Mini Icepops", que sí
   // tiene candidatos (los Mini de siempre), así que nunca se ensanchaba a
   // buscar en el resto de Icepops donde Minion sí está.
-  return intentar(porCategoria) || intentar(porFamilia) || intentar(sabores);
+  return intentar(porCategoria, true) || intentar(porFamilia, false) || intentar(sabores, false);
 }
 
 /** Carpeta Remitos/<Local>/<AAAA-MM>/ en el Drive de la cuenta dueña
