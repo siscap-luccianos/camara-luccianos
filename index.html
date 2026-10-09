@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.29.2";
+const FRONTEND_VERSION = "1.30.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -675,9 +675,14 @@ function cerrarSesion(silencioso){
   if(!silencioso) toast("Sesión cerrada");
   iniciarAuth();
 }
+function hayTrabajoSinGuardar(){
+  if(S.conteo) return true; // conteo físico en curso
+  return Object.values(S.cart).some(c=>Object.values(c).some(cant=>cant>0));
+}
 function reiniciarInactividad(){
   clearTimeout(S.inactTimer);
   if(S.lectorRemito) return; // leyendo/revisando un remito: no se cierra ni se bloquea solo
+  if(hayTrabajoSinGuardar()) return; // carrito cargado o conteo en curso: no se cierra ni se bloquea solo, para no perder lo que ya cargaron
   if(S.deviceLocal){
     // Tablet: se cierra la sesión entera (vuelve a elegir quién sos).
     S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
