@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.25.0";
+const BACKEND_VERSION = "1.25.1";
 
 function doPost(e) {
   let resultado;
@@ -563,7 +563,12 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada) {
     return ns.length > 3 && (norm.indexOf(ns) !== -1 || ns.indexOf(norm) !== -1);
   });
   if (mejor) return { sabor: mejor, confianza: "media" };
-  // 3) comparten la mayoría de las palabras
+  // 3) comparten la mayoría de las palabras (similitud de Jaccard: comunes
+  // sobre el total de palabras distintas entre los dos, no sobre el más
+  // largo de los dos — así un catálogo con una palabra de más, tipo
+  // "Tonio (Cookies & Cream)", no empata con el "Cookies & Cream" real
+  // nomás por compartir "cookies"/"cream"; el que tiene menos palabras
+  // de sobra gana, que es el match más preciso.
   const palabrasDet = norm.split(" ").filter((w) => w.length > 2);
   if (palabrasDet.length) {
     let mejorScore = 0;
@@ -571,7 +576,8 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada) {
       const palabrasS = limpiar(s.nombre).split(" ").filter((w) => w.length > 2);
       if (!palabrasS.length) return;
       const comunes = palabrasDet.filter((w) => palabrasS.indexOf(w) !== -1).length;
-      const score = comunes / Math.max(palabrasDet.length, palabrasS.length);
+      const union = palabrasDet.length + palabrasS.length - comunes;
+      const score = comunes / union;
       if (score > mejorScore) { mejorScore = score; mejor = s; }
     });
     if (mejor && mejorScore >= 0.6) return { sabor: mejor, confianza: "media" };
