@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.26.0";
+const BACKEND_VERSION = "1.26.1";
 
 function doPost(e) {
   let resultado;
@@ -561,25 +561,29 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEspe
     : sabores;
   const catNorm = categoriaEsperada ? _normalizar(categoriaEsperada) : "";
   const porCategoria = catNorm ? porFamilia.filter((s) => _normalizar(s.categoria || "") === catNorm) : [];
-  // Cadena de fallback: familia+categoría → solo familia → todo el catálogo.
-  const lista = porCategoria.length ? porCategoria : (porFamilia.length ? porFamilia : sabores);
-  // 1) match exacto
-  let mejor = lista.find((s) => limpiar(s.nombre) === norm);
-  if (mejor) return { sabor: mejor, confianza: "alta" };
-  // 2) uno contiene al otro (ej. "pistacchio" vs "pistacchio 100% vegetal")
-  mejor = lista.find((s) => {
-    const ns = limpiar(s.nombre);
-    return ns.length > 3 && (norm.indexOf(ns) !== -1 || ns.indexOf(norm) !== -1);
-  });
-  if (mejor) return { sabor: mejor, confianza: "media" };
-  // 3) comparten la mayoría de las palabras (similitud de Jaccard: comunes
-  // sobre el total de palabras distintas entre los dos, no sobre el más
-  // largo de los dos — así un catálogo con una palabra de más, tipo
-  // "Tonio (Cookies & Cream)", no empata con el "Cookies & Cream" real
-  // nomás por compartir "cookies"/"cream"; el que tiene menos palabras
-  // de sobra gana, que es el match más preciso.
-  const palabrasDet = norm.split(" ").filter((w) => w.length > 2);
-  if (palabrasDet.length) {
+
+  // Prueba las tres reglas de match (exacto → uno contiene al otro →
+  // comparten la mayoría de las palabras) dentro de una lista de candidatos.
+  // Devuelve null si ninguna encuentra nada en ESA lista puntual.
+  const intentar = (lista) => {
+    if (!lista.length) return null;
+    // 1) match exacto
+    let mejor = lista.find((s) => limpiar(s.nombre) === norm);
+    if (mejor) return { sabor: mejor, confianza: "alta" };
+    // 2) uno contiene al otro (ej. "pistacchio" vs "pistacchio 100% vegetal")
+    mejor = lista.find((s) => {
+      const ns = limpiar(s.nombre);
+      return ns.length > 3 && (norm.indexOf(ns) !== -1 || ns.indexOf(norm) !== -1);
+    });
+    if (mejor) return { sabor: mejor, confianza: "media" };
+    // 3) comparten la mayoría de las palabras (similitud de Jaccard: comunes
+    // sobre el total de palabras distintas entre los dos, no sobre el más
+    // largo de los dos — así un catálogo con una palabra de más, tipo
+    // "Tonio (Cookies & Cream)", no empata con el "Cookies & Cream" real
+    // nomás por compartir "cookies"/"cream"; el que tiene menos palabras
+    // de sobra gana, que es el match más preciso.
+    const palabrasDet = norm.split(" ").filter((w) => w.length > 2);
+    if (!palabrasDet.length) return null;
     let mejorScore = 0;
     lista.forEach((s) => {
       const palabrasS = limpiar(s.nombre).split(" ").filter((w) => w.length > 2);
@@ -589,9 +593,18 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEspe
       const score = comunes / union;
       if (score > mejorScore) { mejorScore = score; mejor = s; }
     });
-    if (mejor && mejorScore >= 0.6) return { sabor: mejor, confianza: "media" };
-  }
-  return null;
+    return (mejor && mejorScore >= 0.6) ? { sabor: mejor, confianza: "media" } : null;
+  };
+
+  // Ensancha la búsqueda en cascada — categoría → familia → todo el
+  // catálogo — probando las tres reglas en cada paso antes de pasar al
+  // siguiente. Antes, si la categoría detectada tenía ALGÚN candidato
+  // (aunque ninguno matcheara), se quedaba ahí sin probar más ancho — por
+  // eso "Minion 1 Ojo" (que categorizamos como Luxury por su caja real)
+  // nunca aparecía: la IA etiqueta esa sección como "Mini Icepops", que sí
+  // tiene candidatos (los Mini de siempre), así que nunca se ensanchaba a
+  // buscar en el resto de Icepops donde Minion sí está.
+  return intentar(porCategoria) || intentar(porFamilia) || intentar(sabores);
 }
 
 /** Carpeta Remitos/<Local>/<AAAA-MM>/ en el Drive de la cuenta dueña
