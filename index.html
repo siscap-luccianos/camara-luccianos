@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.30.0";
+const FRONTEND_VERSION = "1.30.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1658,7 +1658,12 @@ document.addEventListener("click", async e=>{
   if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
   if(t.id==="remitoCargar"){
     const lr=S.lectorRemito;
-    lr.items.forEach(it=>{ if(it.saborId && !it.ignorar && it.cantidad>0) S.cart.ingreso[it.saborId]=(S.cart.ingreso[it.saborId]||0)+it.cantidad; });
+    let sumados=0;
+    lr.items.forEach(it=>{ if(it.saborId && !it.ignorar && it.cantidad>0){ S.cart.ingreso[it.saborId]=(S.cart.ingreso[it.saborId]||0)+it.cantidad; sumados++ } });
+    // Si ningún renglón tenía cantidad > 0 (ej. la IA no pudo leer el número
+    // de bultos de ninguno), antes se cerraba el lector igual y el carrito
+    // quedaba vacío sin ningún aviso — parecía que el botón "no hacía nada".
+    if(!sumados){ toast("Ningún renglón tiene cantidad — revisá los números antes de cargar"); return }
     if(lr.remitoDetectado) S.remito=lr.remitoDetectado;
     S.fotoRemitoUrl=lr.fotoUrl||"";
     S.lectorRemito=null;
