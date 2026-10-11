@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.37.0";
+const FRONTEND_VERSION = "1.38.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -955,30 +955,25 @@ function lectorRemitoView(){
       </select></div>`:""}
     </div>`;
   };
-  // Un remito real nos enseñó que el recuadro "Bultos:" de la fábrica a
-  // veces no cierra con la suma de los renglones aunque la lectura esté
-  // perfecta (puede ser que cuenten las cajas distinto para ese resumen) —
-  // en ese caso puntual los kilos declarados arriba de la tabla sí cerraban
-  // exacto. Por eso, cuando los bultos leídos son MENOS que los declarados
-  // (nunca cuando son de más, eso sigue siendo alerta) chequeamos el peso
-  // como segunda opinión antes de decidir si hace falta revisar.
-  const cmpFila=(label,leido,decl,leidoKg,declKg)=>{
+  // Vasquetas: el recuadro "Bultos:" de la fábrica siempre cerró bien
+  // contra esta familia, así que acá sí vale la pena comparar y avisar.
+  const cmpFila=(label,leido,decl)=>{
     if(decl===null||decl===undefined) return "";
     if(leido===decl) return `<div style="color:var(--ok);font-weight:700">${label}: ${leido} leídos ✓ (declarado ${decl})</div>`;
     if(leido>decl) return `<div style="color:var(--alert);font-weight:700">${label}: ${leido} leídos — más que los ${decl} declarados, revisá si repetiste una página</div>`;
-    // Si el peso cierra, lo tratamos como confirmado — nada de un mensaje a
-    // medias con el número que "no coincide" todavía ahí, eso solo siembra
-    // dudas en quien está mirando la pantalla. El peso ya demostró que la
-    // lectura está bien, así que el cartel queda igual de tranquilizador
-    // que un match exacto de bultos.
-    const tolerancia = declKg!=null ? Math.max(1, declKg*0.03) : null;
-    const pesoCierra = tolerancia!=null && leidoKg!=null && Math.abs(leidoKg-declKg)<=tolerancia;
-    if(pesoCierra) return `<div style="color:var(--ok);font-weight:700">${label}: ✓ coincide (el peso cierra: ${leidoKg} de ${declKg} kg)</div>`;
     return `<div style="color:var(--muted);font-weight:700">${label}: ${leido} leídos de ${decl} declarados</div>`;
   };
-  const bultosCmp = (lr.bultosDeclaradosSabores!=null||lr.bultosDeclaradosPalitos!=null)
-    ? `<div class="note">${cmpFila("Vasquetas",lr.bultosLeidosSabores,lr.bultosDeclaradosSabores,lr.kgLeidosSabores,lr.kgDeclaradosSabores)}${cmpFila("Palitos",lr.bultosLeidosPalitos,lr.bultosDeclaradosPalitos,lr.kgLeidosPalitos,lr.kgDeclaradosPalitos)}</div>`
-    : "";
+  // Palitos (Icepops/Sin Gluten/Cannolis): un remito real nos enseñó que
+  // ahí el recuadro "Bultos:" de la fábrica no siempre cierra con la suma
+  // real de los renglones (parece contar las cajas distinto para ese
+  // resumen), aunque la lectura esté perfecta — comparar contra ese
+  // declarado generaba falsas alarmas. Acá mostramos solo lo detectado,
+  // sin compararlo contra nada; el control real de un renglón puntual mal
+  // leído sigue siendo el amarillo "?" / "revisá que sea el sabor
+  // correcto" de cada fila, más abajo.
+  const vasquetasLinea = lr.bultosDeclaradosSabores!=null ? cmpFila("Vasquetas",lr.bultosLeidosSabores,lr.bultosDeclaradosSabores) : "";
+  const palitosLinea = lr.bultosLeidosPalitos>0 ? `<div style="color:var(--muted);font-weight:700">Palitos: ${lr.bultosLeidosPalitos} cajas detectadas</div>` : "";
+  const bultosCmp = (vasquetasLinea||palitosLinea) ? `<div class="note">${vasquetasLinea}${palitosLinea}</div>` : "";
   const paginasTxt = lr.paginasLeidas===1?"1 página cargada":`${lr.paginasLeidas} páginas cargadas`;
   return `<p class="sec">Detectado en el remito</p>
   <div class="remitoResumen">${paginasTxt} · ${lr.items.length} renglones, ${total} unidades en total.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
@@ -1000,12 +995,7 @@ async function leerRemitoFoto(base64, mime){
     lr.paginasLeidas += 1;
     lr.bultosLeidosSabores += (r.bultosLeidosSabores||0);
     lr.bultosLeidosPalitos += (r.bultosLeidosPalitos||0);
-    lr.kgLeidosSabores += (r.kgLeidosSabores||0);
-    lr.kgLeidosPalitos += (r.kgLeidosPalitos||0);
     if(lr.bultosDeclaradosSabores==null && r.bultosDeclaradosSabores!=null) lr.bultosDeclaradosSabores=r.bultosDeclaradosSabores;
-    if(lr.bultosDeclaradosPalitos==null && r.bultosDeclaradosPalitos!=null) lr.bultosDeclaradosPalitos=r.bultosDeclaradosPalitos;
-    if(lr.kgDeclaradosSabores==null && r.kgDeclaradosSabores!=null) lr.kgDeclaradosSabores=r.kgDeclaradosSabores;
-    if(lr.kgDeclaradosPalitos==null && r.kgDeclaradosPalitos!=null) lr.kgDeclaradosPalitos=r.kgDeclaradosPalitos;
     if(r.remitoDetectado && lr.remitos.indexOf(r.remitoDetectado)===-1) lr.remitos.push(r.remitoDetectado);
     if(r.fotoUrl) lr.fotoUrls.push(r.fotoUrl);
     lr.paso="revision";
@@ -1800,9 +1790,7 @@ document.addEventListener("change", e=>{
       if(!S.lectorRemito || S.lectorRemito.paso!=="revision"){
         S.lectorRemito = { items:[], remitos:[], fotoUrls:[], paginasLeidas:0,
           bultosLeidosSabores:0, bultosLeidosPalitos:0,
-          bultosDeclaradosSabores:null, bultosDeclaradosPalitos:null,
-          kgLeidosSabores:0, kgLeidosPalitos:0,
-          kgDeclaradosSabores:null, kgDeclaradosPalitos:null };
+          bultosDeclaradosSabores:null };
       }
       S.lectorRemito.paso="leyendo";
       S.lectorRemito.fotoDataUrl=dataUrl;
