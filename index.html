@@ -1729,6 +1729,9 @@ document.addEventListener("change", e=>{
       // Recalculamos la cantidad con el tamaño de caja del sabor recién elegido
       // (antes se quedaba con los bultos sin multiplicar, porque la IA no
       // conoce la caja maestra de un sabor que no supo reconocer solo).
+      // OJO: esta misma cuenta vive también en leerRemito() de Code.gs —
+      // si cambia la regla (tipo "m" sin multiplicar, el resto × cantidad_maestra),
+      // hay que tocar los dos lados, acá no hay forma de compartir el código.
       const s=S.saboresPorId[v];
       if(s && it.bultos!==undefined) it.cantidad = s.tipo==="m" ? it.bultos : it.bultos*(s.cantidad_maestra||1);
     }
