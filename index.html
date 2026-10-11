@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.33.0";
+const FRONTEND_VERSION = "1.34.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -377,6 +377,14 @@ function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return 
 const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual" };
 
 function regsActivos(){ return S.regs.filter(r=>!r.anulado) }
+/** Busca si este N° de remito ya tiene un ingreso cargado (no anulado) en
+ *  este local — para avisar antes de confirmar, no para bloquear (puede
+ *  ser una coincidencia real, o el proveedor reusó el número). */
+function remitoDuplicado(remito, local){
+  const v=String(remito||"").trim().toLowerCase();
+  if(!v) return null;
+  return regsActivos().find(r=>r.tipo==="ingreso" && !r.subtipo && r.local===local && String(r.remito||"").trim().toLowerCase()===v) || null;
+}
 
 function stockMapHasta(hasta){
   const base=(S.stock&&S.stock.base)||{}, bts=(S.stock&&S.stock.ts)||0, m={};
@@ -1411,8 +1419,10 @@ function renderBar(){
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
+        const dup=cartKey==="ingreso" ? remitoDuplicado(S.remito, S.local) : null;
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>`${esc(nombre(id))} ×${q}`).join(" · ")}
-          ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}</div>
+          ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}
+          ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
         inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}</div>
