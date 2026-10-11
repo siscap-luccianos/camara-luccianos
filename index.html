@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.31.1";
+const FRONTEND_VERSION = "1.32.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -944,9 +944,18 @@ function lectorRemitoView(){
       </select></div>`:""}
     </div>`;
   };
+  const cmpFila=(label,decl,leido)=>{
+    if(decl===null||decl===undefined) return "";
+    const ok=decl===leido;
+    return `<div style="${ok?"":"color:var(--alert);font-weight:700"}">${label}: el remito dice <b>${decl}</b> bultos, nosotros leímos <b>${leido}</b>${ok?" ✓ coincide":" — no coincide, revisá que no falte ningún renglón"}</div>`;
+  };
+  const bultosCmp = (lr.bultosDeclaradosSabores!=null||lr.bultosDeclaradosPalitos!=null)
+    ? `<div class="note">${cmpFila("Sabores (vasquetas)",lr.bultosDeclaradosSabores,lr.bultosLeidosSabores)}${cmpFila("Palitos (Icepops/Sin Gluten/Cannolis)",lr.bultosDeclaradosPalitos,lr.bultosLeidosPalitos)}</div>`
+    : "";
   return `<p class="sec">Detectado en el remito</p>
   <div class="remitoResumen">${lr.items.length} renglones, ${total} unidades en total.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
   ${lr.remitoDetectado?`<p class="lede" style="margin:8px 0 0;color:var(--muted)">N° de remito detectado: <b style="color:var(--ink)">${esc(lr.remitoDetectado)}</b></p>`:""}
+  ${bultosCmp}
   <div class="rows" style="margin-top:14px">${lr.items.map(fila).join("")}</div>
   <div style="display:flex;gap:10px;margin-top:16px">
     <button class="btn ghost" type="button" id="remitoCancelar">Cancelar</button>
@@ -956,7 +965,9 @@ function lectorRemitoView(){
 async function leerRemitoFoto(base64, mime){
   const r = await api("leerRemito", {foto:base64, mime, local:S.local}, 60000);
   if(r && r.ok){
-    S.lectorRemito = { paso:"revision", items:r.items, remitoDetectado:r.remitoDetectado, fotoUrl:r.fotoUrl, fotoDataUrl:S.lectorRemito.fotoDataUrl };
+    S.lectorRemito = { paso:"revision", items:r.items, remitoDetectado:r.remitoDetectado, fotoUrl:r.fotoUrl, fotoDataUrl:S.lectorRemito.fotoDataUrl,
+      bultosDeclaradosSabores:r.bultosDeclaradosSabores, bultosDeclaradosPalitos:r.bultosDeclaradosPalitos,
+      bultosLeidosSabores:r.bultosLeidosSabores, bultosLeidosPalitos:r.bultosLeidosPalitos };
   } else {
     S.lectorRemito = { paso:"error", error:(r&&r.error)||"No se pudo leer el remito. Probá de nuevo.", fotoDataUrl:S.lectorRemito.fotoDataUrl };
   }

@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.28.0";
+const BACKEND_VERSION = "1.29.0";
 
 function doPost(e) {
   let resultado;
@@ -677,7 +677,7 @@ function _leerRemitoConIA(fotoBase64, mimeType, sabores) {
   const clave = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
   if (!clave) throw new Error("Falta configurar ANTHROPIC_API_KEY en Propiedades del script (ver apps-script/README.md).");
 
-  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nMás abajo te paso el catálogo completo de sabores que tenemos cargados, con su ID. Para cada renglón de esas secciones:\n- Id: elegí, del catálogo de abajo, el sabor que corresponda a ese renglón, y poné su ID tal cual. Usá criterio: el nombre en el remito puede venir abreviado, con errores de tipeo, en otro orden, con palabras de más o de menos, o nombrado distinto a como está en el catálogo (ej. el remito puede decir \"Sorbete Dark 72%\" para lo que el catálogo tiene como \"Vegan 72%\", o \"Luxury Jameson Negro\" para \"Jameson Icepop\") — el objetivo es identificar el PRODUCTO real, no encontrar coincidencia exacta de texto. Prestá mucha atención a en qué sección del remito está el renglón: varios sabores se llaman igual en categorías distintas del catálogo (ej. \"Pistacchio\" existe como vasqueta, como Icepop Luxury y como Cannoli — son cajas y productos distintos) y el catálogo te muestra la categoría de cada uno para que elijas el que corresponde a la sección donde estás leyendo. Si de verdad no hay ningún sabor del catálogo que corresponda (por ejemplo un producto nuevo o de edición limitada que todavía no cargamos), dejá el id vacío — no inventes ni fuerces un match que no corresponde.\n- Nombre: igual escribí el nombre del renglón tal cual lo ves en la foto (incluso si encontraste el id) — lo necesitamos para poder revisar a mano los que no matcheen.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nTambién fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"id\":\"<id del catálogo, o vacío si ninguno corresponde>\",\"nombre\":\"<nombre tal cual aparece en el remito>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}\n\nCATÁLOGO:\n" + _catalogoParaPrompt(sabores);
+  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nMás abajo te paso el catálogo completo de sabores que tenemos cargados, con su ID. Para cada renglón de esas secciones:\n- Id: elegí, del catálogo de abajo, el sabor que corresponda a ese renglón, y poné su ID tal cual. Usá criterio: el nombre en el remito puede venir abreviado, con errores de tipeo, en otro orden, con palabras de más o de menos, o nombrado distinto a como está en el catálogo (ej. el remito puede decir \"Sorbete Dark 72%\" para lo que el catálogo tiene como \"Vegan 72%\", o \"Luxury Jameson Negro\" para \"Jameson Icepop\") — el objetivo es identificar el PRODUCTO real, no encontrar coincidencia exacta de texto. Prestá mucha atención a en qué sección del remito está el renglón: varios sabores se llaman igual en categorías distintas del catálogo (ej. \"Pistacchio\" existe como vasqueta, como Icepop Luxury y como Cannoli — son cajas y productos distintos) y el catálogo te muestra la categoría de cada uno para que elijas el que corresponde a la sección donde estás leyendo. Si de verdad no hay ningún sabor del catálogo que corresponda (por ejemplo un producto nuevo o de edición limitada que todavía no cargamos), dejá el id vacío — no inventes ni fuerces un match que no corresponde.\n- Nombre: igual escribí el nombre del renglón tal cual lo ves en la foto (incluso si encontraste el id) — lo necesitamos para poder revisar a mano los que no matcheen.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nTambién fijate si se ve el número de remito y la fecha. Al pie del remito, en el recuadro \"Bultos:\", suele haber un resumen tipo \"Palitos=80 Sabores=397 Baldes=0 Pastelería=103 Chocolates=...\" — ese es el total de bultos que declaró la fábrica, por categoría, para controlar que no se perdió ningún renglón. Buscá ese recuadro y decime los números de \"Sabores\" (vasquetas) y \"Palitos\" (todo lo que es Icepops/Sin Gluten/Cannolis, van en palito) tal cual figuran ahí — si no se ve ese recuadro o no tiene esos campos, dejalos vacíos, no inventes un número.\n\nContestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"bultosDeclaradosSabores\":<número entero del recuadro \\\"Bultos:\\\" junto a \\\"Sabores\\\", o vacío>,\"bultosDeclaradosPalitos\":<número entero del recuadro \\\"Bultos:\\\" junto a \\\"Palitos\\\", o vacío>,\"items\":[{\"id\":\"<id del catálogo, o vacío si ninguno corresponde>\",\"nombre\":\"<nombre tal cual aparece en el remito>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}\n\nCATÁLOGO:\n" + _catalogoParaPrompt(sabores);
 
   const payload = {
     model: "claude-sonnet-5-5",
@@ -744,6 +744,14 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
     return { ok: false, error: String((err && err.message) || err) };
   }
 
+  // Para comparar contra el recuadro "Bultos:" que imprime la fábrica al
+  // pie del remito (control de que no se perdió ningún renglón): sumamos
+  // los bultos de cada renglón leído, separados en el mismo criterio que
+  // usa ese recuadro — "Sabores" son las vasquetas, "Palitos" es todo lo
+  // demás (Icepops, Sin Gluten, Cannolis, todo en palito). Un renglón que
+  // no matcheó ningún sabor no sabemos de qué familia es, así que no entra
+  // en ninguna de las dos sumas (quedaría contado de más en cualquiera).
+  let bultosLeidosSabores = 0, bultosLeidosPalitos = 0;
   const items = (leido.items || []).map((it) => {
     const bultos = Math.max(0, Number(it.bultos) || 0);
     // La IA ya matchea cada renglón contra el catálogo que le pasamos
@@ -766,6 +774,8 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
     if (sabor && sabor.tipo === "m") cantidad = bultos;
     else if (sabor && sabor.cantidad_maestra > 0) cantidad = bultos * sabor.cantidad_maestra;
     else cantidad = bultos;
+    if (sabor && sabor.familia === "vasquetas") bultosLeidosSabores += bultos;
+    else if (sabor) bultosLeidosPalitos += bultos;
     return {
       nombreDetectado: it.nombre,
       cantidad: cantidad,
@@ -795,7 +805,13 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
     // simplemente no va a quedar el link a la foto en ese registro.
   }
 
-  return { ok: true, remitoDetectado: leido.remito || "", fechaDetectada: leido.fecha || "", items: items, fotoUrl: fotoUrl };
+  return {
+    ok: true, remitoDetectado: leido.remito || "", fechaDetectada: leido.fecha || "", items: items, fotoUrl: fotoUrl,
+    bultosDeclaradosSabores: (leido.bultosDeclaradosSabores !== undefined && leido.bultosDeclaradosSabores !== "") ? Number(leido.bultosDeclaradosSabores) : null,
+    bultosDeclaradosPalitos: (leido.bultosDeclaradosPalitos !== undefined && leido.bultosDeclaradosPalitos !== "") ? Number(leido.bultosDeclaradosPalitos) : null,
+    bultosLeidosSabores: bultosLeidosSabores,
+    bultosLeidosPalitos: bultosLeidosPalitos,
+  };
 }
 
 function conteo(clienteId, local, items, empleado) {
