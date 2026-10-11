@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.34.0";
+const FRONTEND_VERSION = "1.35.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1659,17 +1659,17 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; renderApp(); return }
-  if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; renderApp(); return }
-  if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; renderApp(); return }
-  if(t.dataset.wadd){ const c=S.cart.desperdicio; c[t.dataset.wadd]=(c[t.dataset.wadd]||0)+1; S.confirm=false; renderApp(); return }
-  if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; S.confirm=false; renderApp(); return }
-  if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
-  if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; renderApp(); return }
-  if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; renderApp(); return }
-  if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; renderApp(); return }
-  if(t.dataset.ddec){ const c=S.cart.devolucion; c[t.dataset.ddec]=Math.max(0,(c[t.dataset.ddec]||0)-1); if(!c[t.dataset.ddec]) delete c[t.dataset.ddec]; S.confirm=false; renderApp(); return }
-  if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; renderApp(); return }
-  if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; renderApp(); return }
+  if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.wadd){ const c=S.cart.desperdicio; c[t.dataset.wadd]=(c[t.dataset.wadd]||0)+1; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
+  if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; scheduleRender(); return }
+  if(t.dataset.ddec){ const c=S.cart.devolucion; c[t.dataset.ddec]=Math.max(0,(c[t.dataset.ddec]||0)-1); if(!c[t.dataset.ddec]) delete c[t.dataset.ddec]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
+  if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
   if(t.dataset.semanaHist!==undefined){ S.semanaHist=Number(t.dataset.semanaHist); renderApp(); return }
@@ -1945,6 +1945,19 @@ function renderBloqueo(){
       <button type="button" class="op" data-tecla-bloqueo="borrar" ${S.bloqueoCargando?"disabled":""}>Borrar</button>
     </div>
   </div></div>`;
+}
+// Tocar +1/-1 muchas veces seguidas (cargando un remito grande a mano, por
+// ejemplo) antes disparaba un renderApp() — que reconstruye TODA la grilla
+// de sabores, ahora ~100+ tarjetas — por cada toque. En una tablet eso tarda
+// lo suficiente como para que los toques se acumulen en la cola de eventos
+// del navegador y después salten todos juntos de golpe ("se bugea"). Acá
+// agrupamos varios toques seguidos en un solo render, justo antes del
+// próximo repintado — cada toque individual vuelve a ser instantáneo.
+let _renderProgramado=false;
+function scheduleRender(){
+  if(_renderProgramado) return;
+  _renderProgramado=true;
+  requestAnimationFrame(()=>{ _renderProgramado=false; renderApp(); });
 }
 function renderApp(){
   const m=$("#app");
