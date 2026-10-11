@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.29.0";
+const BACKEND_VERSION = "1.29.1";
 
 function doPost(e) {
   let resultado;
@@ -681,7 +681,12 @@ function _leerRemitoConIA(fotoBase64, mimeType, sabores) {
 
   const payload = {
     model: "claude-sonnet-5-5",
-    max_tokens: 8192, // un remito real ahora puede traer Sabores + Icepops + Sin Gluten + Cannolis todos juntos, son muchos más renglones que antes (solo Sabores) — con 2048 la respuesta se cortaba a mitad del JSON
+    max_tokens: 10000, // un remito real ahora puede traer Sabores + Icepops + Sin Gluten + Cannolis todos juntos, son muchos más renglones que antes (solo Sabores) — con 2048 la respuesta se cortaba a mitad del JSON
+    // Sin esto, Sonnet 5.5 piensa de forma adaptativa por defecto y a veces
+    // gasta TODO max_tokens pensando, sin dejar nada para el JSON de
+    // respuesta (quedaba un bloque "thinking" vacío y sin texto). Esta tarea
+    // es transcribir/matchear contra el catálogo, no hace falta que delibere.
+    thinking: { type: "between_tools" },
     messages: [{
       role: "user",
       content: [
