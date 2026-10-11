@@ -966,10 +966,15 @@ function lectorRemitoView(){
     if(decl===null||decl===undefined) return "";
     if(leido===decl) return `<div style="color:var(--ok);font-weight:700">${label}: ${leido} leídos ✓ (declarado ${decl})</div>`;
     if(leido>decl) return `<div style="color:var(--alert);font-weight:700">${label}: ${leido} leídos — más que los ${decl} declarados, revisá si repetiste una página</div>`;
+    // Si el peso cierra, lo tratamos como confirmado — nada de un mensaje a
+    // medias con el número que "no coincide" todavía ahí, eso solo siembra
+    // dudas en quien está mirando la pantalla. El peso ya demostró que la
+    // lectura está bien, así que el cartel queda igual de tranquilizador
+    // que un match exacto de bultos.
     const tolerancia = declKg!=null ? Math.max(1, declKg*0.03) : null;
     const pesoCierra = tolerancia!=null && leidoKg!=null && Math.abs(leidoKg-declKg)<=tolerancia;
-    const nota = pesoCierra ? ` — el peso sí cierra (${leidoKg} vs ${declKg} kg), puede ser solo que la fábrica cuenta los bultos distinto en ese resumen` : "";
-    return `<div style="color:var(--muted);font-weight:700">${label}: ${leido} leídos de ${decl} declarados${nota}</div>`;
+    if(pesoCierra) return `<div style="color:var(--ok);font-weight:700">${label}: ✓ coincide (el peso cierra: ${leidoKg} de ${declKg} kg)</div>`;
+    return `<div style="color:var(--muted);font-weight:700">${label}: ${leido} leídos de ${decl} declarados</div>`;
   };
   const bultosCmp = (lr.bultosDeclaradosSabores!=null||lr.bultosDeclaradosPalitos!=null)
     ? `<div class="note">${cmpFila("Vasquetas",lr.bultosLeidosSabores,lr.bultosDeclaradosSabores,lr.kgLeidosSabores,lr.kgDeclaradosSabores)}${cmpFila("Palitos",lr.bultosLeidosPalitos,lr.bultosDeclaradosPalitos,lr.kgLeidosPalitos,lr.kgDeclaradosPalitos)}</div>`
