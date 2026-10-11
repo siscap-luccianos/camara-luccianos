@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.27.0";
+const BACKEND_VERSION = "1.28.0";
 
 function doPost(e) {
   let resultado;
@@ -643,17 +643,41 @@ function _carpetaDriveRemito(local, fechaMs) {
   return carpetasMes.hasNext() ? carpetasMes.next() : carpetaLocal.createFolder(mes);
 }
 
-/** Le manda la foto a Claude (API de Anthropic, con visión) y le pide
- *  que transcriba SOLO los renglones de la sección "SABORES" del
- *  remito (sabor + cantidad de bultos), más el número y fecha del
- *  remito si se ven. Devuelve el JSON ya parseado — tira error si la
- *  clave falta o la IA no contesta algo parseable, y quien llama
- *  decide qué hacer con eso. */
-function _leerRemitoConIA(fotoBase64, mimeType) {
+/** Arma el catálogo en texto (agrupado por familia, y por categoría
+ *  dentro de Icepops) para pegarlo en el prompt — así la IA matchea
+ *  cada renglón contra el catálogo real mientras lee la foto, en vez
+ *  de que nosotros tengamos que adivinar después con reglas de texto
+ *  (substring, palabras en común) que nunca cubren todos los casos
+ *  reales (sinónimos, errores de tipeo, nombres abreviados). */
+function _catalogoParaPrompt(sabores) {
+  const vasquetas = sabores.filter((s) => s.familia === "vasquetas");
+  const glutenfree = sabores.filter((s) => s.familia === "glutenfree");
+  const icepops = sabores.filter((s) => s.familia === "icepops");
+  const linea = (s) => s.id + ": " + s.nombre;
+  let txt = "SABORES (vasquetas):\n" + vasquetas.map(linea).join("\n");
+  txt += "\n\nSIN GLUTEN:\n" + glutenfree.map(linea).join("\n");
+  txt += "\n\nICEPOPS Y CANNOLIS (agrupado por categoría — hay nombres repetidos en categorías distintas, son productos distintos, fijate en qué sección del remito está el renglón):\n";
+  const categorias = {};
+  icepops.forEach((s) => { const c = s.categoria || "Otros"; (categorias[c] = categorias[c] || []).push(s); });
+  Object.keys(categorias).forEach((c) => { txt += "\n" + c + ":\n" + categorias[c].map(linea).join("\n"); });
+  return txt;
+}
+
+/** Le manda la foto a Claude (API de Anthropic, con visión) junto con
+ *  el catálogo completo de sabores activos, y le pide que transcriba
+ *  SOLO los renglones de las secciones de cámara del remito (sabor +
+ *  cantidad de bultos) y que, para cada uno, elija directamente el
+ *  sabor del catálogo que corresponde (en vez de devolvernos un
+ *  nombre suelto para que nosotros adivinemos el match después — la
+ *  IA tiene mucho mejor criterio semántico, con la foto Y el catálogo
+ *  juntos, que cualquier fórmula de parecido de texto). Devuelve el
+ *  JSON ya parseado — tira error si la clave falta o la IA no
+ *  contesta algo parseable, y quien llama decide qué hacer con eso. */
+function _leerRemitoConIA(fotoBase64, mimeType, sabores) {
   const clave = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
   if (!clave) throw new Error("Falta configurar ANTHROPIC_API_KEY en Propiedades del script (ver apps-script/README.md).");
 
-  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nPara cada renglón de esas secciones:\n- Nombre: la parte descriptiva del producto (sacá el prefijo de sección repetido, números de catálogo tipo \"N°02\", \"LIBRE DE GLUTEN\" y sufijos de presentación como \"X4\" — dejá el nombre del sabor limpio, como lo reconocerías en una carta). IMPORTANTE: NO saques palabras que distingan una variante real de otra (ej. \"Vegano\", \"100% Vegetal\", \"Mini\", un año como \"2024\", o un número de sabor como \"1 Ojo\"/\"2 Ojos\") — esas hay que dejarlas, porque son sabores distintos aunque compartan el resto del nombre.\n- Familia: \"vasquetas\" si el renglón está bajo \"SABORES\", \"glutenfree\" si está bajo \"SIN GLUTEN\", o \"icepops\" si está bajo cualquier sección de ICE POPS o CANNOLIS (incluidas las de nombre promocional). Esto es importante porque hay sabores con el mismo nombre en más de una familia (ej. \"Pistacchio\" existe como vasqueta Y como Icepop Luxury Y como Cannoli, son productos distintos) — sin la familia correcta podríamos cargar el que no es.\n- Categoria: solo para familia \"icepops\", decime de cuál sección exacta salió, una de: \"Fruta\" (ICE POPS FRUTALES), \"Bañados\" (ICE POPS BAÑADOS), \"Crema\" (ICE POPS SIN BAÑAR), \"Luxury\" (ICE POPS LUXURY), \"Mini Icepops\" (ICE POPS MINI o su nombre promocional) o \"Cannoli\" (CANNOLIS). Es igual de importante que la familia: \"Pistacchio\" existe como Luxury Y como Cannoli, son cajas distintas, y la categoría es lo único que los distingue. Para \"vasquetas\" o \"glutenfree\" dejá este campo vacío.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nTambién fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"nombre\":\"<nombre limpio del sabor>\",\"familia\":\"<vasquetas|glutenfree|icepops>\",\"categoria\":\"<Fruta|Bañados|Crema|Luxury|Mini Icepops|Cannoli|vacío>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}";
+  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Chocolates, Tabletas, Geladot's, Pastelería, Envases y Packaging, Utensillos, Varios, Alfajores, Envasado en Frasco, Conitos, Cafés, Salsas y Variegatos, Insumos, Baldes y Vasquetas, Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nMás abajo te paso el catálogo completo de sabores que tenemos cargados, con su ID. Para cada renglón de esas secciones:\n- Id: elegí, del catálogo de abajo, el sabor que corresponda a ese renglón, y poné su ID tal cual. Usá criterio: el nombre en el remito puede venir abreviado, con errores de tipeo, en otro orden, con palabras de más o de menos, o nombrado distinto a como está en el catálogo (ej. el remito puede decir \"Sorbete Dark 72%\" para lo que el catálogo tiene como \"Vegan 72%\", o \"Luxury Jameson Negro\" para \"Jameson Icepop\") — el objetivo es identificar el PRODUCTO real, no encontrar coincidencia exacta de texto. Prestá mucha atención a en qué sección del remito está el renglón: varios sabores se llaman igual en categorías distintas del catálogo (ej. \"Pistacchio\" existe como vasqueta, como Icepop Luxury y como Cannoli — son cajas y productos distintos) y el catálogo te muestra la categoría de cada uno para que elijas el que corresponde a la sección donde estás leyendo. Si de verdad no hay ningún sabor del catálogo que corresponda (por ejemplo un producto nuevo o de edición limitada que todavía no cargamos), dejá el id vacío — no inventes ni fuerces un match que no corresponde.\n- Nombre: igual escribí el nombre del renglón tal cual lo ves en la foto (incluso si encontraste el id) — lo necesitamos para poder revisar a mano los que no matcheen.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nTambién fijate si se ve el número de remito y la fecha. Contestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"items\":[{\"id\":\"<id del catálogo, o vacío si ninguno corresponde>\",\"nombre\":\"<nombre tal cual aparece en el remito>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}\n\nCATÁLOGO:\n" + _catalogoParaPrompt(sabores);
 
   const payload = {
     model: "claude-sonnet-5-5",
@@ -707,37 +731,48 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!fotoBase64) return { ok: false, error: "Falta la foto." };
 
+  const sabores = _leerCrudo("Sabores")
+    .filter((s) => _esVerdadero(s.activo) !== false)
+    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, familia: s.familia || "vasquetas", categoria: s.categoria || "", cantidad_maestra: Number(s.cantidad_maestra) || 0 }));
+  const saboresPorId = {};
+  sabores.forEach((s) => { saboresPorId[s.id] = s; });
+
   let leido;
   try {
-    leido = _leerRemitoConIA(fotoBase64, mimeType);
+    leido = _leerRemitoConIA(fotoBase64, mimeType, sabores);
   } catch (err) {
     return { ok: false, error: String((err && err.message) || err) };
   }
 
-  const sabores = _leerCrudo("Sabores")
-    .filter((s) => _esVerdadero(s.activo) !== false)
-    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, familia: s.familia || "vasquetas", categoria: s.categoria || "", cantidad_maestra: Number(s.cantidad_maestra) || 0 }));
-
   const items = (leido.items || []).map((it) => {
-    const m = _matchearSabor(it.nombre, sabores, it.familia, it.categoria);
     const bultos = Math.max(0, Number(it.bultos) || 0);
-    // La IA solo transcribe los bultos (columna "Cantidad/Bultos") — la
-    // multiplicación por el tamaño de la caja la hacemos acá con el dato
-    // ya cargado en Sabores (cantidad_maestra), que es confiable; dejar que
-    // la IA lea y multiplique la otra columna daba cuentas mal hechas.
-    // Mini Icepops es la excepción: ahí el stock se cuenta por caja, así
-    // que el bulto del remito YA es la unidad de stock, sin multiplicar.
+    // La IA ya matchea cada renglón contra el catálogo que le pasamos
+    // (tiene la foto Y el catálogo juntos, mucho mejor criterio que
+    // cualquier fórmula de parecido de texto). Si por algún motivo no
+    // encontró nada, probamos igual con el matching por texto como red
+    // de contención — no cuesta nada intentarlo.
+    let sabor = it.id ? saboresPorId[String(it.id)] : null;
+    let confianza = sabor ? "alta" : "sin_match";
+    if (!sabor) {
+      const m = _matchearSabor(it.nombre, sabores);
+      if (m) { sabor = m.sabor; confianza = m.confianza; }
+    }
+    // La multiplicación por el tamaño de la caja la hacemos acá con el
+    // dato ya cargado en Sabores (cantidad_maestra), que es confiable;
+    // dejar que la IA lea y multiplique la otra columna daba cuentas mal
+    // hechas. Mini Icepops es la excepción: ahí el stock se cuenta por
+    // caja, así que el bulto del remito YA es la unidad de stock.
     let cantidad;
-    if (m && m.sabor.tipo === "m") cantidad = bultos;
-    else if (m && m.sabor.cantidad_maestra > 0) cantidad = bultos * m.sabor.cantidad_maestra;
+    if (sabor && sabor.tipo === "m") cantidad = bultos;
+    else if (sabor && sabor.cantidad_maestra > 0) cantidad = bultos * sabor.cantidad_maestra;
     else cantidad = bultos;
     return {
       nombreDetectado: it.nombre,
       cantidad: cantidad,
       bultos: bultos, // el frontend la necesita para recalcular si el empleado corrige el sabor a mano
-      saborId: m ? m.sabor.id : null,
-      nombreSabor: m ? m.sabor.nombre : null,
-      confianza: m ? m.confianza : "sin_match",
+      saborId: sabor ? sabor.id : null,
+      nombreSabor: sabor ? sabor.nombre : null,
+      confianza: confianza,
     };
   });
 
