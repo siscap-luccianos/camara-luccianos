@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.31.0";
+const FRONTEND_VERSION = "1.31.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -682,13 +682,16 @@ function hayTrabajoSinGuardar(){
 function reiniciarInactividad(){
   clearTimeout(S.inactTimer);
   if(S.lectorRemito) return; // leyendo/revisando un remito: no se cierra ni se bloquea solo
-  if(hayTrabajoSinGuardar()) return; // carrito cargado o conteo en curso: no se cierra ni se bloquea solo, para no perder lo que ya cargaron
   if(S.deviceLocal){
-    // Tablet: se cierra la sesión entera (vuelve a elegir quién sos).
+    // Tablet: se cierra la sesión entera (vuelve a elegir quién sos) — pero
+    // no si hay un carrito o un conteo sin guardar, ahí sí se perdería.
+    if(hayTrabajoSinGuardar()) return;
     S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
   } else if(!S.esGestion){
-    // PC, local real: no cierra sesión, solo bloquea la pantalla — así si
-    // alguien deja la PC abierta, nadie puede tocar nada sin el PIN.
+    // PC, local real: no cierra sesión, solo bloquea la pantalla — nunca
+    // pierde el carrito/conteo (sigue ahí al desbloquear), así que acá SÍ
+    // bloquea igual aunque haya algo sin guardar — es lo que evita que
+    // alguien toque la PC sin el PIN si la dejaron abierta.
     S.inactTimer = setTimeout(()=>bloquearPC(), INACTIVIDAD_PC_MS);
   }
   // PC + Operaciones (admin/supervisor): sin timer — la sesión queda
