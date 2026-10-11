@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.35.0";
+const FRONTEND_VERSION = "1.36.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1232,13 +1232,15 @@ function histView(){
   <p class="sec">Movimientos</p>${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}`;
 }
 
-function _teamFila(e){
+function _teamFila(e, rolesQuePuedoCrear){
   const puedeEliminar = S.empleado.rol==="admin" && !e.activo;
+  const puedeCambiarRol = (e.rol==="colaborador"||e.rol==="turno") && rolesQuePuedoCrear.length>0;
   return `<div class="teamRow${e.activo?"":" baja"}">
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
     <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
     ${e.activo?`<div class="acciones">
       ${(e.rol==="colaborador"||e.rol==="turno")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
+      ${puedeCambiarRol?`<select data-cambiar-rol="${e.id}" data-rol-actual="${e.rol}" aria-label="Cambiar rol de ${esc(e.nombre)}" style="font-size:.75rem;padding:6px 8px">${rolesQuePuedoCrear.map(r=>`<option value="${r}" ${r===e.rol?"selected":""}>${esc(ROL_LABEL[r])}</option>`).join("")}</select>`:""}
       ${(e.rol!=="admin"&&e.rol!=="supervisor")?`<button type="button" data-resetpin="${e.id}">Resetear PIN</button>`:""}
       <button type="button" data-baja="${e.id}">Dar de baja</button>
     </div>`:puedeEliminar?`<div class="acciones">
@@ -1257,7 +1259,7 @@ function teamView(){
   let h="";
   if(rol==="admin"){
     h+=`<p class="sec">Administración general</p>
-    <div class="rows">${S.gestion===null?`<div class="empty">Cargando…</div>`:S.errorGestion?bloqueError(S.errorGestion,"reintentarGestion"):(S.gestion.length?S.gestion.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
+    <div class="rows">${S.gestion===null?`<div class="empty">Cargando…</div>`:S.errorGestion?bloqueError(S.errorGestion,"reintentarGestion"):(S.gestion.length?S.gestion.map(e=>_teamFila(e,rolesQuePuedoCrear)).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
     <p class="sec">Dar de alta un admin o supervisor</p>
     <form class="altaForm" id="altaFormGestion">
       <input type="text" name="nombre" placeholder="Nombre y apellido" required>
@@ -1266,7 +1268,7 @@ function teamView(){
     </form>`;
   }
   h+=`<p class="sec">Equipo de ${esc(S.local)}</p>
-  <div class="rows">${S.errorEquipo?bloqueError(S.errorEquipo,"reintentarEquipo"):((S.equipo||[]).length?S.equipo.map(_teamFila).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
+  <div class="rows">${S.errorEquipo?bloqueError(S.errorEquipo,"reintentarEquipo"):((S.equipo||[]).length?S.equipo.map(e=>_teamFila(e,rolesQuePuedoCrear)).join(""):`<div class="empty">Todavía no hay nadie cargado.</div>`)}</div>
   ${rolesQuePuedoCrear.length?`<p class="sec">Dar de alta en ${esc(S.local)}</p>
   <form class="altaForm" id="altaFormEquipo">
     <input type="text" name="nombre" placeholder="Nombre y apellido" required>
@@ -1612,6 +1614,27 @@ async function editarNombreEmpleado(id, actual, btn){
     if(r && r.ok){ toast("Nombre actualizado"); _refrescarEquipos() } else toast((r&&r.error)||"No se pudo editar el nombre.");
   });
 }
+/** Antes, para cambiarle el rol a alguien (ej. de colaborador a turno) había
+ *  que darlo de baja, eliminarlo y volver a cargarlo de cero. El <select>
+ *  que dispara esto ya solo muestra los roles que el que está mirando
+ *  puede asignar (mismo criterio que "Dar de alta" — rolesQuePuedoCrear en
+ *  teamView()); el backend vuelve a validar todo igual, nunca confía en
+ *  eso solo. No usamos conBoton acá porque pisa el textContent, y en un
+ *  <select> eso borraría las opciones.
+ */
+async function cambiarRolEmpleado(id, nuevoRol, selectEl){
+  const anterior = selectEl.dataset.rolActual;
+  if(nuevoRol===anterior) return;
+  if(!confirm(`¿Cambiar el rol a "${ROL_LABEL[nuevoRol]||nuevoRol}"?`)){ selectEl.value = anterior; return }
+  selectEl.disabled = true;
+  try{
+    const r = await api("cambiarRolEmpleado", {empleadoId:id, rol:nuevoRol});
+    if(r && r.ok){ toast("Rol actualizado"); _refrescarEquipos() }
+    else { toast((r&&r.error)||"No se pudo cambiar el rol."); selectEl.value = anterior; }
+  } finally {
+    selectEl.disabled = false;
+  }
+}
 
 /* ============================================================
    EVENTOS
@@ -1794,6 +1817,10 @@ document.addEventListener("change", e=>{
     const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
     if(match && match.nombre!==S.local) setLocal(match.nombre);
     else e.target.value=S.local||"";
+  }
+  if(e.target.dataset.cambiarRol!==undefined){
+    cambiarRolEmpleado(e.target.dataset.cambiarRol, e.target.value, e.target);
+    return;
   }
 });
 async function conBotonCargando(form, fn){

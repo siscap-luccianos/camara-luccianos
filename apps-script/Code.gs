@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.29.1";
+const BACKEND_VERSION = "1.30.0";
 
 function doPost(e) {
   let resultado;
@@ -90,6 +90,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "eliminarEmpleado": return eliminarEmpleado(body.empleadoId, empleado);
     case "resetPin": return resetPin(body.empleadoId, empleado);
     case "editarNombreEmpleado": return editarNombreEmpleado(body.empleadoId, body.nombre, empleado);
+    case "cambiarRolEmpleado": return cambiarRolEmpleado(body.empleadoId, body.rol, empleado);
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
     case "adminSabor": return adminSabor(body.sabor, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
@@ -1080,6 +1081,42 @@ function editarNombreEmpleado(empleadoId, nombre, empleado) {
   try {
     const r = _actualizarCrudo("Empleados", empleadoId, { nombre: nombre });
     if (r.ok) _auditar("editar_nombre_empleado", empleado.id, empleado.nombre, "Nombre de \"" + objetivo.nombre + "\" -> \"" + nombre + "\"");
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Antes, para pasar a alguien de colaborador a turno (o viceversa) había
+ *  que darlo de baja, eliminarlo y volver a darlo de alta — una encargada
+ *  lo reportó como un trámite innecesario. Esto solo cambia Empleados.rol,
+ *  nunca el local ni el PIN. Mismo criterio de "quién puede asignar qué
+ *  rol" que altaEmpleado(): a propósito NO deja pasar a nadie a admin o
+ *  supervisor desde acá (esos dos locales quedan sin `local`, y promover
+ *  a alguien a gestión general es una decisión más grande que merece el
+ *  alta normal, no un <select> de la fila). */
+function cambiarRolEmpleado(empleadoId, nuevoRol, empleado) {
+  const objetivo = _empleadoPorId(empleadoId);
+  if (!objetivo) return { ok: false, error: "No se encontró ese empleado." };
+  if (objetivo.rol !== "colaborador" && objetivo.rol !== "turno") {
+    return { ok: false, error: "Ese rol no se puede cambiar desde acá." };
+  }
+  if (["encargado", "turno", "colaborador"].indexOf(nuevoRol) === -1) {
+    return { ok: false, error: "Rol inválido." };
+  }
+
+  let permitido = false;
+  if (empleado.rol === "admin" || empleado.rol === "supervisor") permitido = true;
+  else if (empleado.rol === "encargado" && nuevoRol !== "encargado" && String(objetivo.local) === String(empleado.local)) permitido = true;
+  if (!permitido) return { ok: false, error: "No tenés permiso para cambiar el rol de ese empleado." };
+
+  if (nuevoRol === objetivo.rol) return { ok: true };
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const r = _actualizarCrudo("Empleados", empleadoId, { rol: nuevoRol });
+    if (r.ok) _auditar("cambiar_rol_empleado", empleado.id, empleado.nombre, "Rol de \"" + objetivo.nombre + "\": \"" + objetivo.rol + "\" -> \"" + nuevoRol + "\"");
     return r;
   } finally {
     lock.releaseLock();
