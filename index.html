@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.40.0";
+const FRONTEND_VERSION = "1.41.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -852,29 +852,31 @@ const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fr
 const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", glutenfree:"Gluten Free" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","glutenfree"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
-function familiaDe(s){ return s.familia||"vasquetas" }
-/** Familias con al menos un sabor cargado — si solo hay vasquetas (todavía
- *  no se cargó ningún Icepop/Gluten Free), no tiene sentido mostrar las
- *  pills de familia, total hay una sola. */
+/** Grupos con al menos un sabor cargado en este local — si solo hay
+ *  Vasquetas (todavía no se cargó ningún Balde/Icepop/Gluten Free), no
+ *  tiene sentido mostrar las pills, total hay una sola. Usa
+ *  grupoProductoDe() (Vasquetas/Baldes/Icepops/Gluten Free, ver sección
+ *  SABORES más abajo) en vez de la familia cruda, así Baldes tiene su
+ *  propia pill aunque en los datos sea tipo "b" dentro de "vasquetas". */
 function familiasPresentes(){
-  const set=new Set(saboresDelLocal().map(familiaDe));
-  return FAMILIA_ORDEN.filter(f=>set.has(f)).concat([...set].filter(f=>!FAMILIA_ORDEN.includes(f)));
+  const set=new Set(saboresDelLocal().map(grupoProductoDe));
+  return GRUPO_PRODUCTO_ORDEN.filter(g=>set.has(g));
 }
 function categoriasPresentes(){
-  const familia=S.filtroFamilia||"vasquetas";
-  const set=new Set(saboresDelLocal().filter(s=>familiaDe(s)===familia).map(s=>s.categoria||"Cremas"));
+  const grupo=S.filtroFamilia||"vasquetas";
+  const set=new Set(saboresDelLocal().filter(s=>grupoProductoDe(s)===grupo).map(s=>s.categoria||"Cremas"));
   return CATEGORIAS_ORDEN.filter(c=>set.has(c)).concat([...set].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
 }
 
 function chipFiltros(){
-  const familias=familiasPresentes(), familiaActiva=S.filtroFamilia||"vasquetas";
+  const grupos=familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
   return `<div class="tools">
     <div class="grow"><input type="search" id="q" placeholder="Buscar sabor" value="${esc(S.q)}"></div>
     <button class="chip" id="soloAlerta" aria-pressed="${S.soloAlerta}">Debajo del mínimo</button>
   </div>
-  ${familias.length>1?`<div class="tools catChips">
-    ${familias.map(f=>`<button class="chip" data-familia="${f}" aria-pressed="${familiaActiva===f}">${esc(FAMILIA_LABEL[f]||f)}</button>`).join("")}
+  ${grupos.length>1?`<div class="tools catChips">
+    ${grupos.map(g=>`<button class="chip" data-familia="${g}" aria-pressed="${grupoActivo===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}
   </div>`:""}
   <div class="tools catChips">
     <button class="chip" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todos</button>
@@ -882,8 +884,8 @@ function chipFiltros(){
   </div>`;
 }
 function listaFiltrada(st){
-  const q=normalizar(S.q.trim()), familiaActiva=S.filtroFamilia||"vasquetas";
-  return saboresDelLocal().filter(s=>familiaDe(s)===familiaActiva&&(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
+  const q=normalizar(S.q.trim()), grupoActivo=S.filtroFamilia||"vasquetas";
+  return saboresDelLocal().filter(s=>grupoProductoDe(s)===grupoActivo&&(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
 }
 
 function gridSalida(st){
@@ -1111,19 +1113,19 @@ function stockView(st){
 function stockViewPedido(st){
   const s7=salidasDias(7);
   const tendencia=tendenciaSemanas();
-  const familiaActiva=S.filtroFamilia||"vasquetas";
+  const grupoActivo=S.filtroFamilia||"vasquetas";
   let pedidoTotal=0;
-  // El pedido (y el mensaje de WhatsApp) va por familia activa — mezclar
-  // vasquetas e Icepops en un solo pedido no tiene sentido, son pedidos
-  // separados a proveedores distintos.
-  const filas=S.sabores.filter(s=>familiaDe(s)===familiaActiva).map(s=>{
+  // El pedido (y el mensaje de WhatsApp) va por grupo activo — mezclar
+  // vasquetas, Baldes e Icepops en un solo pedido no tiene sentido, son
+  // pedidos separados a proveedores/líneas distintas.
+  const filas=S.sabores.filter(s=>grupoProductoDe(s)===grupoActivo).map(s=>{
     const ped=pedidoSugerido(s.id,st); pedidoTotal+=ped;
     return {s, ped, vendido:s7[s.id]||0};
   });
   const dias=[2,3,4,7];
   const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
   const lineas=filas.filter(f=>f.ped>0).map(f=>`- ${f.s.nombre}: ${f.ped}`);
-  const tituloPedido=FAMILIA_LABEL[familiaActiva]||"helado";
+  const tituloPedido=GRUPO_PRODUCTO_LABEL[grupoActivo]||"helado";
   const waText = `*Pedido de ${tituloPedido} – ${S.local}*\n${fecha}\n\n${lineas.length?lineas.join("\n"):"Sin sabores para pedir"}\n\n*Total: ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}*`;
   const waHref = "https://wa.me/?text="+encodeURIComponent(waText);
   const listaVisible = listaFiltrada(st);
@@ -1339,22 +1341,29 @@ async function cargarGestion(){
    SABORES — pestaña "Sabores": alta/edición/baja del catálogo
    (solo admin) o, para el Resp. de local, qué sabores tiene SU local
 ============================================================ */
-/** Separación por tipo de producto que Gabi quiere ver en esta pestaña
- *  (antes mostraba todo en una sola lista mezclada) — Baldes es su
- *  propio grupo aunque en los datos sea tipo "b" dentro de la familia
- *  "vasquetas", porque así los distingue Gabi en la práctica. */
-const GRUPO_PRODUCTO_ORDEN = ["Vasquetas","Baldes","Icepops","Gluten Free"];
+/** Separación por tipo de producto — se usa tanto en la pestaña
+ *  Sabores (antes mostraba todo en una sola lista/categoría mezclada)
+ *  como en las pills de Salida/Ingreso/Stock/Pedido (antes Baldes
+ *  quedaba mezclado adentro de la pill "Vasquetas", sin poder
+ *  segmentarlo aparte). Baldes es su propio grupo aunque en los datos
+ *  sea tipo "b" dentro de la familia "vasquetas", porque así los
+ *  distingue Gabi en la práctica. Los ids quedan en minúscula (como ya
+ *  venían `vasquetas`/`icepops`/`glutenfree`) para no romper nada que
+ *  dependa de esos valores; `GRUPO_PRODUCTO_LABEL` tiene el texto para
+ *  mostrar. */
+const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","glutenfree"];
+const GRUPO_PRODUCTO_LABEL = { vasquetas:"Vasquetas", baldes:"Baldes", icepops:"Icepops", glutenfree:"Gluten Free" };
 function grupoProductoDe(s){
-  if(s.tipo==="b") return "Baldes";
+  if(s.tipo==="b") return "baldes";
   const familia=s.familia||"vasquetas";
-  if(familia==="icepops") return "Icepops";
-  if(familia==="glutenfree") return "Gluten Free";
-  return "Vasquetas";
+  if(familia==="icepops") return "icepops";
+  if(familia==="glutenfree") return "glutenfree";
+  return "vasquetas";
 }
 function agruparPorProducto(lista){
   const porGrupo={};
   lista.forEach(s=>{ const g=grupoProductoDe(s); (porGrupo[g]=porGrupo[g]||[]).push(s) });
-  return GRUPO_PRODUCTO_ORDEN.filter(g=>porGrupo[g]).map(g=>({grupo:g, sabores:porGrupo[g]}));
+  return GRUPO_PRODUCTO_ORDEN.filter(g=>porGrupo[g]).map(g=>({grupo:GRUPO_PRODUCTO_LABEL[g], sabores:porGrupo[g]}));
 }
 function saboresView(){
   if(S.empleado.rol==="encargado") return saboresLocalView();
