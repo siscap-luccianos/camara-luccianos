@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.32.0";
+const BACKEND_VERSION = "1.33.0";
 
 function doPost(e) {
   let resultado;
@@ -95,6 +95,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "adminSabor": return adminSabor(body.sabor, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
+    case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
 }
@@ -406,7 +407,16 @@ function _datosSinCache(local, empleado) {
     .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0 }))
     .sort((a, b) => a.orden - b.orden);
 
-  return { registros: registros, stock: stock, sabores: sabores };
+  // Sabores que ESTE local marcó que no tiene (ej. Baldes en un local que
+  // no vende baldes) — columna Locales.sabores_excluidos, ids separados
+  // por coma. No se sacan del catálogo global (sabores arriba), solo se
+  // le avisa al cliente cuáles ocultar en las grillas de este local; así
+  // nombre(id) sigue funcionando para movimientos viejos de un sabor que
+  // se excluyó después.
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const excluidos = filaLocal ? String(filaLocal.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos };
 }
 
 function _cacheKeyDatos(local) {
@@ -438,7 +448,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, rol: empleado.rol };
 }
 
 function _registroPublico(r) {
@@ -1200,6 +1210,47 @@ function adminLocal(local, empleado) {
     }
     _auditar("admin_local", empleado.id, empleado.nombre, "Local " + local.nombre);
     return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** El Resp. de local prende/apaga qué sabores del catálogo tiene SU
+ *  local (ej. Baldes, en un local que no los vende) — a diferencia de
+ *  adminSabor/adminLocal, esto NO es solo-admin: el que puede ajustarlo
+ *  es justamente el responsable de ese local, nadie más (ni siquiera
+ *  supervisor por ahora, así lo pidió Gabi). Guarda en Locales.sabores_excluidos
+ *  (ids separados por coma); si esa columna todavía no existe en la
+ *  hoja, avisa en vez de fallar silencioso. */
+function toggleSaborLocal(saborId, local, empleado) {
+  if (!saborId) return { ok: false, error: "Falta el sabor." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (empleado.rol !== "encargado" || String(empleado.local || "").trim() !== String(local).trim()) {
+    return { ok: false, error: "Solo el responsable de ese local puede ajustar esto." };
+  }
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const sheet = _sheet("Locales");
+    const filas = sheet.getDataRange().getValues();
+    const headers = filas[0];
+    const colNombre = headers.indexOf("nombre");
+    const colExcluidos = headers.indexOf("sabores_excluidos");
+    if (colExcluidos === -1) {
+      return { ok: false, error: "Falta la columna 'sabores_excluidos' en la hoja Locales — hay que agregarla (ver apps-script/README.md)." };
+    }
+    let idx = -1;
+    for (let i = 1; i < filas.length; i++) if (String(filas[i][colNombre]) === String(local)) { idx = i; break; }
+    if (idx === -1) return { ok: false, error: "No se encontró ese local." };
+    const actuales = String(filas[idx][colExcluidos] || "").split(",").map((x) => x.trim()).filter(Boolean);
+    const pos = actuales.indexOf(String(saborId));
+    let excluido;
+    if (pos === -1) { actuales.push(String(saborId)); excluido = true; }
+    else { actuales.splice(pos, 1); excluido = false; }
+    _escribirCeldaSinAdivinar(sheet.getRange(idx + 1, colExcluidos + 1), actuales.join(","));
+    _invalidarCacheDatos(local);
+    _auditar("toggle_sabor_local", empleado.id, empleado.nombre, (excluido ? "Desactivó" : "Reactivó") + " el sabor " + saborId + " en " + local);
+    return { ok: true, excluido: excluido };
   } finally {
     lock.releaseLock();
   }

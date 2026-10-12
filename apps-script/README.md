@@ -108,7 +108,7 @@ Pegar código nuevo en el editor de Apps Script **no alcanza** — el Web App si
 | `Registros` | `id`, `clienteId`, `tipo`, `local`, `empleadoId`, `empleado`, `items`, `total`, `remito`, `ts`, `anulado_por`, `anulado_ts`, `motivo`, `foto_remito`, `subtipo` |
 | `Stock` | `local`, `base`, `ts`, `empleado` |
 | `Sabores` | `id`, `nombre`, `tipo`, `minimo`, `activo`, `orden`, `categoria`, `peso` |
-| `Locales` | `nombre`, `grupo`, `activo`, `clave`, `operaciones` |
+| `Locales` | `nombre`, `grupo`, `activo`, `clave`, `operaciones`, `sabores_excluidos` |
 | `Empleados` | `id`, `nombre`, `rol`, `local`, `pin_hash`, `salt`, `activo`, `creado_por`, `creado_ts`, `intentos`, `bloqueado_hasta` |
 | `Config` | `key`, `value` (reservada para más adelante, no la usa el código todavía) |
 | `Auditoria` | `id`, `ts`, `accion`, `actorId`, `actor`, `detalle` |
@@ -143,6 +143,12 @@ Ya están cargados los pesos reales de 40 sabores (de los 47), sacados de la tab
 Un candado extra para el login: al buscar y elegir un local (en una PC, o la primera vez que se configura una tablet), si ese local tiene algo cargado en la columna `clave`, la app pide esa contraseña antes de mostrar la nómina de gente para elegir quién sos. Si `clave` está vacío, no pide nada (como hasta ahora).
 
 No es el PIN de nadie — es una clave compartida por local, para que no cualquiera que abra la app vea de entrada los nombres del equipo. Se guarda en texto plano en la hoja (no hasheada, a diferencia de los PIN) porque admin/supervisor tienen que poder verla ahí para pasársela al responsable de local. Una vez que alguien ya inició sesión, no la vuelve a pedir mientras la sesión esté activa — solo se pide al elegir el local de cero.
+
+## Qué sabores tiene cada local (columna `sabores_excluidos` en Locales)
+
+Algunos locales no tienen ciertos productos (ej. Baldes). En la pestaña **Sabores** de la app, el Resp. de local ve el catálogo completo con un interruptor por sabor — lo apaga para los que su local no tiene. Eso escribe los ids separados por coma en `Locales.sabores_excluidos` (vacío = el local lleva todo, como siempre). Un sabor apagado desaparece de Salida/Ingreso/Devolución/Desperdicio/Conteo/Stock/Pedido sugerido **solo en ese local**, pero el Historial no se filtra: lo que ya se cargó antes de apagarlo sigue mostrándose con su nombre real.
+
+Solo el Resp. de local puede ajustarlo (no admin/supervisor desde ahí — si hace falta tocarlo por otra vía, se edita directo la celda). En una planilla que ya tenía `Locales` poblada, correr `agregarColumnaSaboresExcluidos()` una vez desde Setup.gs para agregar la columna (si no existe, el botón de la app devuelve un error pidiendo que se agregue).
 
 ## Cómo entran admin y supervisor (local "Operaciones")
 

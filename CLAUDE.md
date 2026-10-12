@@ -61,6 +61,8 @@ Roles: **Admin** (Gabi, crea todo) · **Supervisor** (ve y gestiona todos los lo
 | Conteo físico | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Ver stock / pedido / enviar WhatsApp | ✅ | ✅ todos (selector de local) | ✅ | ✅ | ❌ (decidido por Gabi 02/10/2026: colaborador solo tiene Salida, Ingreso e Historial, para que no toque nada por error) |
 | Ver/gestionar pestaña Equipo | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Crear/editar el catálogo de sabores (pestaña Sabores) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Marcar qué sabores tiene su local (misma pestaña Sabores, solo prender/apagar) | ❌ | ❌ | ✅ solo su local | ❌ | ❌ |
 
 Reglas:
 - **Soft delete**: bajas y anulaciones nunca borran; guardan `anulado_por`, `anulado_ts`, `motivo`. Borrado real solo Admin.
@@ -82,10 +84,20 @@ Reglas:
 - ~~Mover `<title>` y fuentes al `<head>`~~ hecho. Unidad correcta en baldes (`unidad()` según `tipo` del sabor). Historial con filtro real (Hoy/7 días/30 días/Todo).
 
 ### Recortes de alcance de esta vuelta (a valorar en Fase 2)
-- Alta/edición de **sabores y locales** (mínimo, activo, nombre) no tiene pantalla propia todavía — se edita directo en las hojas `Sabores`/`Locales` (ver `apps-script/README.md`). El backend ya tiene las acciones (`adminSabor`, `adminLocal`) por si se arma la UI después.
+- Alta/edición de **sabores** (nombre, tipo, familia, categoría, mínimo, peso, unidades por caja, activo) sí tiene pantalla: pestaña "Sabores", solo admin. Alta/edición de **locales** (nombre, grupo, activo) todavía no — se edita directo en la hoja `Locales` (ver `apps-script/README.md`). El backend ya tiene la acción (`adminLocal`) por si se arma la UI después.
 - El panel **Equipo** administra encargados/colaboradores del local seleccionado; para dar de alta un segundo admin o supervisor hay que hacerlo desde la cuenta de un admin existente (la app permite crearlos, pero la lista de "Equipo" no lista admins/supervisores sueltos — son gente de gestión general, no de "un local").
 - Borrado real de un movimiento (`eliminarRegistro`, solo-admin) existe en el backend pero no tiene botón en la interfaz todavía — hoy la vía normal es "Anular" (soft delete).
 - No se migró el diseño a un layout apaisado de dos paneles (grilla + carrito lateral) como el mockup de Gabi — se mantuvo la columna única responsive con la barra inferior de carrito, para no arriesgar el uso en celular/tablet angosta. Si en Fase 2 se confirma que todas las tablets son apaisadas, vale la pena revisarlo.
+
+### ~~Sabores por local~~ implementado 12/10/2026
+
+Pedido de Gabi: algunos locales no tienen ciertos productos (ej. Baldes) y hacía falta poder sacarlos de las grillas de ese local sin tocar el catálogo global. Mock aprobado en el canvas de siempre (artboard "Sabores — vista Resp. de local") antes de tocar código.
+
+- Se cuelga de la misma pestaña **Sabores** que ya tenía Admin (ahí sigue creando/editando el catálogo entero, sin cambios) — ahora también la ve el **Resp. de local** (`encargado`), pero en vez de crear/editar ve el catálogo completo con un botón "Lo tenemos"/"No lo tenemos" por sabor, agrupado por categoría. Nadie más la ve (ni supervisor, ni turno/colaborador) — así lo pidió Gabi explícitamente.
+- Dato nuevo: columna `Locales.sabores_excluidos` (ids separados por coma). Vacío = el local lleva todo el catálogo, como siempre.
+- `datos()` ahora también devuelve `excluidos` (los ids que ese local apagó) además de `sabores` (el catálogo global activo, sin tocar — a propósito, para que `nombre(id)` siga resolviendo bien en Historial aunque el sabor se haya excluido después de tener movimientos viejos). El filtrado pasa por una función nueva en el cliente, `saboresDelLocal()`, usada en las grillas de Salida/Ingreso/Desperdicio/Stock/Conteo/Pedido sugerido/alertas de mínimo — Historial y el selector manual del lector de remitos siguen viendo el catálogo completo a propósito.
+- Backend: acción nueva `toggleSaborLocal(saborId, local)` — solo el Resp. de local de ESE local puede llamarla (se vuelve a validar en el servidor, no se confía en lo que mostró el cliente). Si la hoja `Locales` todavía no tiene la columna `sabores_excluidos`, devuelve un error pidiendo que se agregue en vez de fallar en silencio.
+- **Pendiente de Gabi**: correr `agregarColumnaSaboresExcluidos()` desde Setup.gs (agrega la columna a `Locales` si no existe) y repegar `Code.gs` + "Nueva implementación" para que tome la acción nueva.
 
 ### Fase 2
 - Vista PC para encargado/supervisor (varios locales, consumo semanal), con PIN.

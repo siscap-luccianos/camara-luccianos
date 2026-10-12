@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.38.0";
+const FRONTEND_VERSION = "1.39.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -274,7 +274,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {},
+  sabores: [], saboresPorId: {}, saboresExcluidos: [],
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{} },
@@ -455,7 +455,18 @@ function estadoSabor(id, st){
   if(n<min) return {tier:"bajo", label:"Stock bajo", cls:"warn"};
   return null;
 }
-function alertas(st){ return S.sabores.filter(s=>estadoSabor(s.id,st)) }
+/** Sabores del catálogo global que ESTE local sí tiene — se usa para
+ *  armar las grillas de Salida/Ingreso/Stock/Conteo/Pedido y las
+ *  alertas de mínimo. A propósito NO se toca S.sabores/S.saboresPorId
+ *  (nombre(), Historial y la lectura de remitos siguen viendo el
+ *  catálogo completo), así un sabor que el local excluyó después de
+ *  haber tenido movimientos viejos sigue mostrando su nombre real ahí. */
+function saboresDelLocal(){
+  if(!S.saboresExcluidos || !S.saboresExcluidos.length) return S.sabores;
+  const ex=new Set(S.saboresExcluidos);
+  return S.sabores.filter(s=>!ex.has(s.id));
+}
+function alertas(st){ return saboresDelLocal().filter(s=>estadoSabor(s.id,st)) }
 
 // Vasquetas van de a 2 (pedido de fábrica, no se puede pedir una unidad
 // suelta). Un icepop con caja maestra cargada redondea a esa cantidad —
@@ -665,6 +676,7 @@ function aplicarLogin(r){
   if(r.datos && r.datos.ok){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
+    S.saboresExcluidos = r.datos.excluidos || [];
     S.regs = r.datos.registros; S.stock = r.datos.stock;
   } else {
     cargarDatos();
@@ -809,7 +821,7 @@ function renderNav(){
   if(!esColaborador) tabs.push(["stock","Stock"]);
   tabs.push(["historial","Historial"]);
   if(S.empleado.rol==="admin"||S.empleado.rol==="supervisor"||S.empleado.rol==="encargado") tabs.push(["equipo","Equipo"]);
-  if(S.empleado.rol==="admin") tabs.push(["sabores","Sabores"]);
+  if(S.empleado.rol==="admin"||S.empleado.rol==="encargado") tabs.push(["sabores","Sabores"]);
   return `<nav role="tablist" id="tabs" class="bottomNav">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
 }
 
@@ -845,12 +857,12 @@ function familiaDe(s){ return s.familia||"vasquetas" }
  *  no se cargó ningún Icepop/Gluten Free), no tiene sentido mostrar las
  *  pills de familia, total hay una sola. */
 function familiasPresentes(){
-  const set=new Set(S.sabores.map(familiaDe));
+  const set=new Set(saboresDelLocal().map(familiaDe));
   return FAMILIA_ORDEN.filter(f=>set.has(f)).concat([...set].filter(f=>!FAMILIA_ORDEN.includes(f)));
 }
 function categoriasPresentes(){
   const familia=S.filtroFamilia||"vasquetas";
-  const set=new Set(S.sabores.filter(s=>familiaDe(s)===familia).map(s=>s.categoria||"Cremas"));
+  const set=new Set(saboresDelLocal().filter(s=>familiaDe(s)===familia).map(s=>s.categoria||"Cremas"));
   return CATEGORIAS_ORDEN.filter(c=>set.has(c)).concat([...set].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
 }
 
@@ -871,7 +883,7 @@ function chipFiltros(){
 }
 function listaFiltrada(st){
   const q=normalizar(S.q.trim()), familiaActiva=S.filtroFamilia||"vasquetas";
-  return S.sabores.filter(s=>familiaDe(s)===familiaActiva&&(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
+  return saboresDelLocal().filter(s=>familiaDe(s)===familiaActiva&&(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
 }
 
 function gridSalida(st){
@@ -1324,15 +1336,51 @@ async function cargarGestion(){
 }
 
 /* ============================================================
-   SABORES — alta, edición y baja del catálogo (solo admin)
+   SABORES — pestaña "Sabores": alta/edición/baja del catálogo
+   (solo admin) o, para el Resp. de local, qué sabores tiene SU local
 ============================================================ */
+function saboresView(){
+  if(S.empleado.rol==="encargado") return saboresLocalView();
+  return saboresAdminView();
+}
+/** Lo que ve el Resp. de local: el catálogo completo (ya cargado por
+ *  datos(), no hace falta pedir nada aparte) con un interruptor por
+ *  sabor para prender/apagar si SU local lo tiene — nada de crear,
+ *  editar nombre/mínimo/etc, eso sigue siendo solo-admin. */
+function saboresLocalView(){
+  const ex=new Set(S.saboresExcluidos||[]);
+  const porCategoria={};
+  S.sabores.forEach(s=>{ (porCategoria[s.categoria||"Cremas"]=porCategoria[s.categoria||"Cremas"]||[]).push(s) });
+  const categorias=CATEGORIAS_ORDEN.filter(c=>porCategoria[c]);
+  const fila=s=>{
+    const off=ex.has(s.id);
+    return `<div class="saborRow${off?" baja":""}">
+      ${plateHTML(s.id)}
+      <div class="nm" style="flex:1">${esc(s.nombre)}</div>
+      <button type="button" class="chip" data-toggle-sabor-local="${s.id}" aria-pressed="${!off}">${off?"No lo tenemos":"Lo tenemos"}</button>
+    </div>`;
+  };
+  return `<p class="sec">¿Qué tiene ${esc(S.local)}?</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca.</p>
+  ${categorias.map(c=>`<p class="sec" style="margin-top:14px">${esc(c)}</p><div class="rows">${porCategoria[c].map(fila).join("")}</div>`).join("")}`;
+}
+async function toggleSaborLocal(saborId){
+  const r = await api("toggleSaborLocal", {saborId, local:S.local});
+  if(r && r.ok){
+    S.saboresExcluidos = r.excluido
+      ? [...new Set([...(S.saboresExcluidos||[]), saborId])]
+      : (S.saboresExcluidos||[]).filter(id=>id!==saborId);
+    toast(r.excluido?"Desactivado":"Activado");
+    renderApp();
+  } else toast((r&&r.error)||"No se pudo ajustar.");
+}
 async function cargarSaboresAdmin(){
   const r = await api("saboresAdmin", {});
   if(r && r.ok){ S.saboresAdmin = r.sabores; S.errorSaboresAdmin = null; }
   else { S.saboresAdmin = []; S.errorSaboresAdmin = (r&&r.error) || "No se pudo conectar. Probá de nuevo."; }
   if(S.tab==="sabores") renderApp();
 }
-function saboresView(){
+function saboresAdminView(){
   if(S.saboresAdmin===undefined){ S.saboresAdmin=null; cargarSaboresAdmin(); }
   if(S.saboresAdmin===null) return `<div class="note">Cargando sabores…</div>`;
   if(S.errorSaboresAdmin) return `<div class="note">${esc(S.errorSaboresAdmin)}</div>
@@ -1460,9 +1508,10 @@ async function cargarDatos(){
   S.errorCarga = null;
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
+  S.saboresExcluidos = r.excluidos || [];
   S.regs = r.registros;
   S.stock = r.stock;
-  try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, registros:r.registros, stock:r.stock})); }catch(e){}
+  try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, excluidos:r.excluidos||[], registros:r.registros, stock:r.stock})); }catch(e){}
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -1476,7 +1525,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.regs=[]; S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{}}; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -1487,6 +1536,7 @@ function setLocal(local){
     if(cache){
       const d = JSON.parse(cache);
       S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
+      S.saboresExcluidos = d.excluidos || [];
       S.regs = d.registros; S.stock = d.stock;
     }
   }catch(e){}
@@ -1716,6 +1766,7 @@ document.addEventListener("click", async e=>{
     if(s) await conBoton(t, ()=>toggleSabor(s));
     return;
   }
+  if(t.dataset.toggleSaborLocal){ await conBoton(t, ()=>toggleSaborLocal(t.dataset.toggleSaborLocal)); return }
 
   if(t.dataset.familia){ S.filtroFamilia = t.dataset.familia; S.filtroCategoria = "todas"; renderApp(); return }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }

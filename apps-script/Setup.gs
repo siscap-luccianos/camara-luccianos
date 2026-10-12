@@ -197,6 +197,23 @@ function agregarColumnaOperaciones() {
   Logger.log("Columna operaciones agregada.");
 }
 
+/** Agrega la columna `sabores_excluidos` a Locales si todavía no
+ *  existe (queda vacía para todas las filas — vacío significa "este
+ *  local lleva todo el catálogo", como hasta ahora). Ahí se guardan,
+ *  separados por coma, los ids de sabores que ESE local no tiene (lo
+ *  prende/apaga el Resp. de local desde la pestaña "Sabores" de la
+ *  app). Segura de re-correr. */
+function agregarColumnaSaboresExcluidos() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hoja = ss.getSheetByName("Locales");
+  if (!hoja) throw new Error("No existe la hoja Locales — corré crearHojas() primero.");
+
+  const headers = hoja.getDataRange().getValues()[0];
+  if (headers.indexOf("sabores_excluidos") !== -1) { Logger.log("Ya existe la columna sabores_excluidos."); return; }
+  hoja.getRange(1, headers.length + 1).setValue("sabores_excluidos").setFontWeight("bold");
+  Logger.log("Columna sabores_excluidos agregada.");
+}
+
 /** Crea el local trucho "Operaciones" — la puerta de entrada de
  *  admin/supervisor. Se ve en el buscador de local del login igual
  *  que cualquier local real, así que nadie que no sepa que existe la
