@@ -3,6 +3,7 @@
 App para registrar **salidas de cámara**, **ingresos** de vasquetas/baldes y **stock** de sabores de helado por local de Lucciano's. Se usa en una **tablet junto a la cámara** (empleados) y en **PC** (encargado/supervisor).
 
 - Dueño: Gabi (Jefe de Capacitación, Lucciano's). Responder siempre en español rioplatense, concreto.
+- Gabi suele trabajar **desde el celular**, no solo PC. Pegar `Code.gs` en el editor de Apps Script y hacer "Nueva implementación" es tedioso desde ahí (sin teclado físico, scroll largo) — así que conviene: (1) agrupar varios cambios de backend en un solo pedido de redeploy en vez de uno por cada fix chiquito, cuando se pueda esperar; (2) si hay algo que se puede resolver directo en la planilla (Google Sheets MCP: agregar una columna, poblar datos) en vez de necesitar un redeploy de Apps Script, hacerlo así y avisarle que ese paso ya no hace falta. El redeploy en sí (pegar código + Nueva implementación) siempre lo tiene que hacer él — no hay acceso de este lado al editor de Apps Script (requiere su login de Google).
 - Publicada en GitHub Pages: https://siscap-luccianos.github.io/camara-luccianos/ (rama `main`, raíz).
 - Stack objetivo: **HTML/JS estático en GitHub Pages + Google Apps Script + Google Sheets** (mismo patrón que SisCap y Lucciano's Academy, repos hermanos en la org `siscap-luccianos`).
 
