@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.42.0";
+const FRONTEND_VERSION = "1.44.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -903,7 +903,7 @@ function gridSalida(st){
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
-  <button type="button" class="btn ghost" id="irDesperdicio" style="margin-bottom:12px">¿Se rompió o se tiró algo? Tocá acá</button>
+  <button type="button" class="btn ghost" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -923,7 +923,7 @@ function gridDesperdicio(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<button class="authBack" type="button" id="volverSalida">Volver a Salida</button>
   <p class="sec" style="margin-top:6px">Desperdicio</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Sabores que se rompieron, se cayeron o no se pueden vender. Se descuentan del stock igual que una salida, pero quedan marcados aparte — no se cuentan como venta.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
@@ -987,6 +987,23 @@ function lectorRemitoView(){
       </select></div>`:""}
     </div>`;
   };
+  // Agrupa los renglones por tipo de producto para la revisión — Gabi
+  // pidió esto porque Baldes reusa el mismo nombre y la misma foto que
+  // la vasqueta equivalente (ej. "Limón" existe como las dos cosas), así
+  // que en una lista plana no hay forma de distinguir cuál es cuál de
+  // un vistazo. El orden de lectura del remito NO se pierde: dentro de
+  // cada grupo los renglones quedan en el mismo orden en que la IA los
+  // detectó (se agrupa por índice, no se reordena el array).
+  const grupoDeItem=(it)=>{
+    const sabor=it.saborId?S.saboresPorId[it.saborId]:null;
+    if(!sabor) return "Sin identificar";
+    const g=grupoProductoDe(sabor);
+    return g==="icepops" ? (sabor.categoria||"Icepops") : GRUPO_PRODUCTO_LABEL[g];
+  };
+  const ORDEN_GRUPOS_REMITO=["Sin identificar","Vasquetas","Baldes",...ICEPOP_CATEGORIAS,"Gluten Free"];
+  const porGrupoItems={};
+  lr.items.forEach((it,i)=>{ const g=grupoDeItem(it); (porGrupoItems[g]=porGrupoItems[g]||[]).push(i) });
+  const gruposItems=ORDEN_GRUPOS_REMITO.filter(g=>porGrupoItems[g]).map(g=>({label:g, indices:porGrupoItems[g]}));
   // Vasquetas y Baldes: el recuadro "Bultos:" de la fábrica siempre
   // cerró bien contra estas dos familias, así que acá sí vale la pena
   // comparar y avisar.
@@ -1013,7 +1030,7 @@ function lectorRemitoView(){
   <div class="remitoResumen">${paginasTxt} · ${lr.items.length} renglones, ${total} unidades en total.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
   ${lr.remitos.length?`<p class="lede" style="margin:8px 0 0;color:var(--muted)">N° de remito detectado: <b style="color:var(--ink)">${esc(lr.remitos.join(" + "))}</b></p>`:""}
   ${bultosCmp}
-  <div class="rows" style="margin-top:14px">${lr.items.map(fila).join("")}</div>
+  ${gruposItems.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.label)}${g.label==="Sin identificar"?` (${g.indices.length})`:""}</p><div class="rows">${g.indices.map(i=>fila(lr.items[i],i)).join("")}</div>`).join("")}
   <input type="file" accept="image/*" id="inputRemitoFoto" style="display:none">
   <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
     <button class="btn ghost" type="button" id="remitoCancelar">Cancelar</button>
