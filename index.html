@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.41.0";
+const FRONTEND_VERSION = "1.42.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -930,6 +930,24 @@ function gridDesperdicio(st){
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
+/** Agrupa el catálogo para el <select> de "elegí a qué sabor
+ *  corresponde" del lector de remitos — antes era una lista plana de
+ *  100+ sabores sin ningún orden visual, costaba encontrar el que
+ *  corresponde a mano. Vasquetas y Baldes quedan como un grupo cada
+ *  uno; Icepops se abre por su propia categoría (Fruta/Luxury/
+ *  Cannoli/Crema/Bañados/Mini Icepops) porque ahí solo sí son
+ *  demasiados sabores como para dejarlos juntos. */
+const ICEPOP_CATEGORIAS = ["Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops"];
+function gruposParaSelectSabor(){
+  const porClave={};
+  S.sabores.forEach(s=>{
+    const g=grupoProductoDe(s);
+    const clave = g==="icepops" ? (s.categoria||"Icepops") : GRUPO_PRODUCTO_LABEL[g];
+    (porClave[clave]=porClave[clave]||[]).push(s);
+  });
+  const orden=["Vasquetas","Baldes",...ICEPOP_CATEGORIAS,"Gluten Free"];
+  return orden.filter(k=>porClave[k]).map(k=>({label:k, sabores:porClave[k]}));
+}
 function lectorRemitoView(){
   const lr=S.lectorRemito;
   if(lr.paso==="leyendo"){
@@ -964,13 +982,14 @@ function lectorRemitoView(){
       <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
       ${flag||it.ignorar||dudoso?`<div class="flagPick"><select data-remito-elegir="${i}">
         <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>
-        ${S.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}
+        ${gruposParaSelectSabor().map(g=>`<optgroup label="${esc(g.label)}">${g.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("")}
         <option value="ignorar" ${it.ignorar?"selected":""}>Ignorar este renglón</option>
       </select></div>`:""}
     </div>`;
   };
-  // Vasquetas: el recuadro "Bultos:" de la fábrica siempre cerró bien
-  // contra esta familia, así que acá sí vale la pena comparar y avisar.
+  // Vasquetas y Baldes: el recuadro "Bultos:" de la fábrica siempre
+  // cerró bien contra estas dos familias, así que acá sí vale la pena
+  // comparar y avisar.
   const cmpFila=(label,leido,decl)=>{
     if(decl===null||decl===undefined) return "";
     if(leido===decl) return `<div style="color:var(--ok);font-weight:700">${label}: ${leido} leídos ✓ (declarado ${decl})</div>`;
@@ -986,8 +1005,9 @@ function lectorRemitoView(){
   // leído sigue siendo el amarillo "?" / "revisá que sea el sabor
   // correcto" de cada fila, más abajo.
   const vasquetasLinea = lr.bultosDeclaradosSabores!=null ? cmpFila("Vasquetas",lr.bultosLeidosSabores,lr.bultosDeclaradosSabores) : "";
+  const baldesLinea = lr.bultosDeclaradosBaldes!=null ? cmpFila("Baldes",lr.bultosLeidosBaldes,lr.bultosDeclaradosBaldes) : "";
   const palitosLinea = lr.bultosLeidosPalitos>0 ? `<div style="color:var(--muted);font-weight:700">Palitos: ${lr.bultosLeidosPalitos} cajas detectadas</div>` : "";
-  const bultosCmp = (vasquetasLinea||palitosLinea) ? `<div class="note">${vasquetasLinea}${palitosLinea}</div>` : "";
+  const bultosCmp = (vasquetasLinea||baldesLinea||palitosLinea) ? `<div class="note">${vasquetasLinea}${baldesLinea}${palitosLinea}</div>` : "";
   const paginasTxt = lr.paginasLeidas===1?"1 página cargada":`${lr.paginasLeidas} páginas cargadas`;
   return `<p class="sec">Detectado en el remito</p>
   <div class="remitoResumen">${paginasTxt} · ${lr.items.length} renglones, ${total} unidades en total.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
@@ -1008,8 +1028,10 @@ async function leerRemitoFoto(base64, mime){
     lr.items = lr.items.concat(r.items);
     lr.paginasLeidas += 1;
     lr.bultosLeidosSabores += (r.bultosLeidosSabores||0);
+    lr.bultosLeidosBaldes += (r.bultosLeidosBaldes||0);
     lr.bultosLeidosPalitos += (r.bultosLeidosPalitos||0);
     if(lr.bultosDeclaradosSabores==null && r.bultosDeclaradosSabores!=null) lr.bultosDeclaradosSabores=r.bultosDeclaradosSabores;
+    if(lr.bultosDeclaradosBaldes==null && r.bultosDeclaradosBaldes!=null) lr.bultosDeclaradosBaldes=r.bultosDeclaradosBaldes;
     if(r.remitoDetectado && lr.remitos.indexOf(r.remitoDetectado)===-1) lr.remitos.push(r.remitoDetectado);
     if(r.fotoUrl) lr.fotoUrls.push(r.fotoUrl);
     lr.paso="revision";
@@ -1865,8 +1887,8 @@ document.addEventListener("change", e=>{
       // página por página sin perder lo ya leído.
       if(!S.lectorRemito || S.lectorRemito.paso!=="revision"){
         S.lectorRemito = { items:[], remitos:[], fotoUrls:[], paginasLeidas:0,
-          bultosLeidosSabores:0, bultosLeidosPalitos:0,
-          bultosDeclaradosSabores:null };
+          bultosLeidosSabores:0, bultosLeidosBaldes:0, bultosLeidosPalitos:0,
+          bultosDeclaradosSabores:null, bultosDeclaradosBaldes:null };
       }
       S.lectorRemito.paso="leyendo";
       S.lectorRemito.fotoDataUrl=dataUrl;
