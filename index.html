@@ -244,7 +244,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.39.0";
+const FRONTEND_VERSION = "1.40.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1339,6 +1339,23 @@ async function cargarGestion(){
    SABORES — pestaña "Sabores": alta/edición/baja del catálogo
    (solo admin) o, para el Resp. de local, qué sabores tiene SU local
 ============================================================ */
+/** Separación por tipo de producto que Gabi quiere ver en esta pestaña
+ *  (antes mostraba todo en una sola lista mezclada) — Baldes es su
+ *  propio grupo aunque en los datos sea tipo "b" dentro de la familia
+ *  "vasquetas", porque así los distingue Gabi en la práctica. */
+const GRUPO_PRODUCTO_ORDEN = ["Vasquetas","Baldes","Icepops","Gluten Free"];
+function grupoProductoDe(s){
+  if(s.tipo==="b") return "Baldes";
+  const familia=s.familia||"vasquetas";
+  if(familia==="icepops") return "Icepops";
+  if(familia==="glutenfree") return "Gluten Free";
+  return "Vasquetas";
+}
+function agruparPorProducto(lista){
+  const porGrupo={};
+  lista.forEach(s=>{ const g=grupoProductoDe(s); (porGrupo[g]=porGrupo[g]||[]).push(s) });
+  return GRUPO_PRODUCTO_ORDEN.filter(g=>porGrupo[g]).map(g=>({grupo:g, sabores:porGrupo[g]}));
+}
 function saboresView(){
   if(S.empleado.rol==="encargado") return saboresLocalView();
   return saboresAdminView();
@@ -1349,9 +1366,7 @@ function saboresView(){
  *  editar nombre/mínimo/etc, eso sigue siendo solo-admin. */
 function saboresLocalView(){
   const ex=new Set(S.saboresExcluidos||[]);
-  const porCategoria={};
-  S.sabores.forEach(s=>{ (porCategoria[s.categoria||"Cremas"]=porCategoria[s.categoria||"Cremas"]||[]).push(s) });
-  const categorias=CATEGORIAS_ORDEN.filter(c=>porCategoria[c]);
+  const grupos=agruparPorProducto(S.sabores);
   const fila=s=>{
     const off=ex.has(s.id);
     return `<div class="saborRow${off?" baja":""}">
@@ -1362,7 +1377,7 @@ function saboresLocalView(){
   };
   return `<p class="sec">¿Qué tiene ${esc(S.local)}?</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca.</p>
-  ${categorias.map(c=>`<p class="sec" style="margin-top:14px">${esc(c)}</p><div class="rows">${porCategoria[c].map(fila).join("")}</div>`).join("")}`;
+  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)}</p><div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}`;
 }
 async function toggleSaborLocal(saborId){
   const r = await api("toggleSaborLocal", {saborId, local:S.local});
@@ -1417,9 +1432,10 @@ function saboresAdminView(){
       <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
     </div>`;
   };
+  const grupos=agruparPorProducto(S.saboresAdmin);
   return `<p class="sec">Sabores (${S.saboresAdmin.length})</p>
-  <div class="rows">${S.saboresAdmin.map(fila).join("")}</div>
-  <p class="sec">Dar de alta un sabor nuevo</p>
+  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p><div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}
+  <p class="sec" style="margin-top:14px">Dar de alta un sabor nuevo</p>
   <form class="saborRow saborForm" id="altaSaborForm">
     <input type="text" name="nombre" placeholder="Nombre del sabor" required style="flex:2 1 200px">
     <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
