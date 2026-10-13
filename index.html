@@ -108,6 +108,7 @@ select{max-width:220px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.wa{background:var(--wa);color:#fff;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
 .btn.desperdicio{background:var(--warn-soft);color:var(--warn);border:1.5px solid var(--warn);box-shadow:0 2px 12px rgba(224,178,102,.4)}
+.btn.produccion{background:var(--accent);color:var(--accent-ink);border:0;box-shadow:0 2px 12px rgba(122,62,29,.4)}
 /* Contraseñas compartidas (local/Operaciones): se ven enmascaradas
    igual que un input type="password", pero SON type="text" — así el
    navegador no las reconoce como campo de contraseña y no ofrece
@@ -252,7 +253,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.47.0";
+const FRONTEND_VERSION = "1.48.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1078,13 +1079,15 @@ function gridIngreso(st){
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
-      ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
-      <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
+        <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
+      </div>
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${S.produccionLocal?`<button type="button" class="btn ghost" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
+  ${S.produccionLocal?`<button type="button" class="btn produccion" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
   ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
   ${chipFiltros()}
   ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
@@ -1123,13 +1126,13 @@ function gridProduccion(st){
     const q=cart[s.id]||0, k=kilos[s.id]||"";
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}</div>
+      <div class="nm">${esc(s.nombre)}${s.peso?`<div class="meta">Peso promedio: ${s.peso.toLocaleString("es-AR")} kg / unidad</div>`:""}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <input type="text" inputmode="decimal" data-kilos="${s.id}" placeholder="kg" value="${esc(k)}" style="width:56px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:var(--surface);color:var(--ink)">
         <div class="stepper"><button type="button" data-proddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-prodinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>
     </div>`};
-  return `<button class="authBack" type="button" id="volverIngreso">Volver a Ingreso</button>
+  return `<button class="btn produccion" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>
   <p class="sec" style="margin-top:6px">Producción</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Por sabor, cargá los kilos que se fabricaron y cuántas vasquetas resultaron de ese lote — son dos datos sueltos, no se calcula uno a partir del otro.</p>
   ${chipFiltros()}
@@ -1311,6 +1314,23 @@ function histView(){
     <tr class="totalFila"><td><b>Total vasquetas</b></td>${totalesDia.map(x=>`<td><b>${x||"·"}</b></td>`).join("")}<td><b>${totalGeneral}</b></td></tr>
     </tbody></table></div>`
     :`<div class="empty">Sin salidas esa semana.</div>`;
+  // Kilos producidos por semana — misma mecánica/semana que la tabla de
+  // arriba, pero sumando r.kilos (Registros.kilos, subtipo "produccion")
+  // en vez de r.items. Solo tiene sentido en locales con producción
+  // activada (Unicenter y los que sumen después).
+  const semKg={};
+  if(S.produccionLocal) for(const r of regsActivos()) if(r.subtipo==="produccion"&&r.ts>=inicioSem&&r.ts<finSem){const d=(new Date(r.ts).getDay()+6)%7;
+    for(const [id,kg] of Object.entries(r.kilos||{})){(semKg[id]=semKg[id]||[0,0,0,0,0,0,0])[d]+=+kg||0}}
+  const idsKg=S.sabores.filter(s=>semKg[s.id]);
+  const totalesDiaKg=[0,0,0,0,0,0,0];
+  idsKg.forEach(s=>semKg[s.id].forEach((x,i)=>totalesDiaKg[i]+=x));
+  const totalGeneralKg=totalesDiaKg.reduce((a,b)=>a+b,0);
+  const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
+  const tablaKg=!S.produccionLocal?"":`<p class="sec" style="margin-top:20px;margin-bottom:8px">Kilos producidos — ${esc(rangoSem)}</p>
+    ${idsKg.length?`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
+    ${idsKg.map(s=>`<tr><td>${esc(s.nombre)}</td>${semKg[s.id].map(x=>`<td>${kgLabel(x)}</td>`).join("")}<td><b>${kgLabel(semKg[s.id].reduce((a,b)=>a+b,0))}</b></td></tr>`).join("")}
+    <tr class="totalFila"><td><b>Total kg</b></td>${totalesDiaKg.map(x=>`<td><b>${kgLabel(x)}</b></td>`).join("")}<td><b>${kgLabel(totalGeneralKg)}</b></td></tr>
+    </tbody></table></div>`:`<div class="empty">Sin producción esa semana.</div>`}`;
   const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
@@ -1331,7 +1351,8 @@ function histView(){
   <p class="sec" style="margin-bottom:8px">Salidas por sabor — ${esc(rangoSem)}</p>
   <div class="tools" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${semanaChips}</div>
   ${tabla}
-  <p class="sec">Movimientos</p>${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}`;
+  ${tablaKg}
+  <p class="sec" style="margin-top:20px">Movimientos</p>${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}`;
 }
 
 function _teamFila(e, rolesQuePuedoCrear){
