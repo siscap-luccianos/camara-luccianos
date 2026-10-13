@@ -253,7 +253,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.48.0";
+const FRONTEND_VERSION = "1.49.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1326,7 +1326,8 @@ function histView(){
   idsKg.forEach(s=>semKg[s.id].forEach((x,i)=>totalesDiaKg[i]+=x));
   const totalGeneralKg=totalesDiaKg.reduce((a,b)=>a+b,0);
   const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
-  const tablaKg=!S.produccionLocal?"":`<p class="sec" style="margin-top:20px;margin-bottom:8px">Kilos producidos — ${esc(rangoSem)}</p>
+  const tablaKg=!S.produccionLocal?"":`<hr style="border:none;border-top:1px solid var(--line);margin:28px 0 0">
+    <p class="sec" style="margin-top:18px;margin-bottom:8px">Kilos producidos — ${esc(rangoSem)}</p>
     ${idsKg.length?`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
     ${idsKg.map(s=>`<tr><td>${esc(s.nombre)}</td>${semKg[s.id].map(x=>`<td>${kgLabel(x)}</td>`).join("")}<td><b>${kgLabel(semKg[s.id].reduce((a,b)=>a+b,0))}</b></td></tr>`).join("")}
     <tr class="totalFila"><td><b>Total kg</b></td>${totalesDiaKg.map(x=>`<td><b>${kgLabel(x)}</b></td>`).join("")}<td><b>${kgLabel(totalGeneralKg)}</b></td></tr>
