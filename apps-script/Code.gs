@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.35.0";
+const BACKEND_VERSION = "1.36.0";
 
 function doPost(e) {
   let resultado;
@@ -80,7 +80,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
@@ -227,7 +227,7 @@ function empleadosLocal(local) {
   if (!local) return { ok: false, error: "Falta el local." };
   const filas = _leerCrudo("Empleados").filter((e) =>
     _esVerdadero(e.activo) !== false &&
-    (e.rol === "colaborador" || e.rol === "encargado" || e.rol === "turno") &&
+    (e.rol === "colaborador" || e.rol === "encargado" || e.rol === "turno" || e.rol === "produccion") &&
     String(e.local || "").trim() === String(local).trim());
   return { ok: true, empleados: filas.map((e) => ({ id: e.id, nombre: e.nombre, rol: e.rol })) };
 }
@@ -419,8 +419,11 @@ function _datosSinCache(local, empleado) {
   // se excluyó después.
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const excluidos = filaLocal ? String(filaLocal.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+  // Locales.produccion=SI habilita el link "Producción" dentro de Ingreso
+  // (hoy solo Unicenter) — ver registrar(), subtipo "produccion".
+  const produccion = filaLocal ? _esVerdadero(filaLocal.produccion) === true : false;
 
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion };
 }
 
 function _cacheKeyDatos(local) {
@@ -452,17 +455,19 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, rol: empleado.rol };
 }
 
 function _registroPublico(r) {
   let items = {};
   try { items = JSON.parse(r.items || "{}"); } catch (e) { items = {}; }
+  let kilos = {};
+  try { kilos = JSON.parse(r.kilos || "{}"); } catch (e) { kilos = {}; }
   return {
     id: String(r.id), tipo: r.tipo, local: r.local, empleadoId: String(r.empleadoId || ""), empleado: r.empleado, items: items,
     total: Number(r.total) || 0, remito: r.remito || "", ts: Number(r.ts),
     anulado: !!r.anulado_ts, anulado_por: r.anulado_por || "", motivo: r.motivo || "",
-    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "",
+    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos,
   };
 }
 
@@ -482,14 +487,21 @@ function _totalItems(items) {
   return t;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!items || !Object.keys(items).length) return { ok: false, error: "No hay sabores cargados." };
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
-  if (subtipo && subtipo !== "devolucion" && subtipo !== "desperdicio") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo && ["devolucion", "desperdicio", "produccion"].indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo === "produccion") {
+    const filaLocalProd = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
+    if (!filaLocalProd || _esVerdadero(filaLocalProd.produccion) !== true) {
+      return { ok: false, error: "Este local no tiene Producción activada." };
+    }
+  }
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -501,11 +513,14 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const items2 = {};
     Object.keys(items).forEach((id) => { const q = Number(items[id]) || 0; if (q > 0) items2[id] = q; });
     const total = _totalItems(items2);
+    const kilos2 = {};
+    Object.keys(kilos || {}).forEach((id) => { const k = Number(kilos[id]) || 0; if (k > 0) kilos2[id] = k; });
     const ts = Date.now();
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: tipo, local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
       anulado_por: "", anulado_ts: "", motivo: motivo || "", foto_remito: fotoRemito || "", subtipo: subtipo || "",
+      kilos: Object.keys(kilos2).length ? JSON.stringify(kilos2) : "",
     });
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
@@ -923,7 +938,7 @@ function anular(registroId, motivo, empleado) {
 
     let permitido = false;
     if (empleado.rol === "admin" || empleado.rol === "supervisor") permitido = true;
-    else if ((empleado.rol === "encargado" || empleado.rol === "turno") && String(empleado.local) === String(local) && edad <= VENTANA_ANULAR_ENCARGADO_MS) permitido = true;
+    else if ((empleado.rol === "encargado" || empleado.rol === "turno" || empleado.rol === "produccion") && String(empleado.local) === String(local) && edad <= VENTANA_ANULAR_ENCARGADO_MS) permitido = true;
     else if (empleado.rol === "colaborador" && empleadoIdDueño === String(empleado.id) && edad <= VENTANA_ANULAR_COLABORADOR_MS) permitido = true;
 
     if (!permitido) return { ok: false, error: "No tenés permiso para anular ese movimiento (o ya pasó el tiempo permitido)." };
@@ -964,7 +979,7 @@ function eliminarRegistro(registroId, empleado) {
    EMPLEADOS — alta, baja, reset de PIN (matriz de roles)
 ============================================================ */
 
-const ROLES = ["admin", "supervisor", "encargado", "turno", "colaborador"];
+const ROLES = ["admin", "supervisor", "encargado", "turno", "colaborador", "produccion"];
 
 function empleadosAdmin(local, empleado) {
   let filas = _leerCrudo("Empleados");
@@ -992,16 +1007,22 @@ function altaEmpleado(nombre, rol, local, empleado) {
   nombre = String(nombre || "").trim();
   if (!nombre) return { ok: false, error: "Falta el nombre y apellido." };
   if (ROLES.indexOf(rol) === -1) return { ok: false, error: "Rol inválido." };
-  if ((rol === "encargado" || rol === "turno" || rol === "colaborador") && !local) return { ok: false, error: "Falta el local." };
+  if ((rol === "encargado" || rol === "turno" || rol === "colaborador" || rol === "produccion") && !local) return { ok: false, error: "Falta el local." };
 
   if (rol === "admin" || rol === "supervisor") {
     if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede crear admins o supervisores." };
   } else if (rol === "encargado") {
     if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No tenés permiso para crear encargados." };
-  } else if (rol === "turno" || rol === "colaborador") {
-    if (empleado.rol === "turno" || empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para dar de alta empleados." };
+  } else if (rol === "turno" || rol === "colaborador" || rol === "produccion") {
+    if (empleado.rol === "turno" || empleado.rol === "colaborador" || empleado.rol === "produccion") return { ok: false, error: "No tenés permiso para dar de alta empleados." };
     if (empleado.rol === "encargado" && String(empleado.local) !== String(local)) {
       return { ok: false, error: "Un encargado solo puede dar de alta empleados de su propio local." };
+    }
+    if (rol === "produccion") {
+      const filaLocalProd = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
+      if (!filaLocalProd || _esVerdadero(filaLocalProd.produccion) !== true) {
+        return { ok: false, error: "Ese local no tiene Producción activada." };
+      }
     }
   }
 
@@ -1032,7 +1053,7 @@ function bajaEmpleado(empleadoId, empleado) {
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
   else if (empleado.rol === "supervisor" && objetivo.rol !== "admin") permitido = true;
-  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno") && String(objetivo.local) === String(empleado.local)) permitido = true;
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno" || objetivo.rol === "produccion") && String(objetivo.local) === String(empleado.local)) permitido = true;
   if (!permitido) return { ok: false, error: "No tenés permiso para dar de baja a ese empleado." };
 
   const lock = LockService.getScriptLock();
@@ -1074,7 +1095,7 @@ function resetPin(empleadoId, empleado) {
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
   else if (empleado.rol === "supervisor") permitido = true;
-  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno") && String(objetivo.local) === String(empleado.local)) permitido = true;
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno" || objetivo.rol === "produccion") && String(objetivo.local) === String(empleado.local)) permitido = true;
   if (!permitido) return { ok: false, error: "No tenés permiso para resetear el PIN de ese empleado." };
 
   const lock = LockService.getScriptLock();
@@ -1101,7 +1122,7 @@ function editarNombreEmpleado(empleadoId, nombre, empleado) {
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
   else if (empleado.rol === "supervisor" && objetivo.rol !== "admin") permitido = true;
-  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno") && String(objetivo.local) === String(empleado.local)) permitido = true;
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno" || objetivo.rol === "produccion") && String(objetivo.local) === String(empleado.local)) permitido = true;
   if (!permitido) return { ok: false, error: "No tenés permiso para editar el nombre de ese empleado." };
 
   const lock = LockService.getScriptLock();
@@ -1126,10 +1147,10 @@ function editarNombreEmpleado(empleadoId, nombre, empleado) {
 function cambiarRolEmpleado(empleadoId, nuevoRol, empleado) {
   const objetivo = _empleadoPorId(empleadoId);
   if (!objetivo) return { ok: false, error: "No se encontró ese empleado." };
-  if (objetivo.rol !== "colaborador" && objetivo.rol !== "turno") {
+  if (objetivo.rol !== "colaborador" && objetivo.rol !== "turno" && objetivo.rol !== "produccion") {
     return { ok: false, error: "Ese rol no se puede cambiar desde acá." };
   }
-  if (["encargado", "turno", "colaborador"].indexOf(nuevoRol) === -1) {
+  if (["encargado", "turno", "colaborador", "produccion"].indexOf(nuevoRol) === -1) {
     return { ok: false, error: "Rol inválido." };
   }
 
@@ -1137,6 +1158,13 @@ function cambiarRolEmpleado(empleadoId, nuevoRol, empleado) {
   if (empleado.rol === "admin" || empleado.rol === "supervisor") permitido = true;
   else if (empleado.rol === "encargado" && nuevoRol !== "encargado" && String(objetivo.local) === String(empleado.local)) permitido = true;
   if (!permitido) return { ok: false, error: "No tenés permiso para cambiar el rol de ese empleado." };
+
+  if (nuevoRol === "produccion") {
+    const filaLocalProd = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(objetivo.local))[0];
+    if (!filaLocalProd || _esVerdadero(filaLocalProd.produccion) !== true) {
+      return { ok: false, error: "Ese local no tiene Producción activada." };
+    }
+  }
 
   if (nuevoRol === objetivo.rol) return { ok: true };
 

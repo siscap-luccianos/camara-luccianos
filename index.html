@@ -143,6 +143,7 @@ select{max-width:220px}
 .pill.conteo{background:var(--line);color:var(--ink)}
 .pill.devolucion{background:var(--warn-soft);color:var(--warn)}
 .pill.desperdicio{background:var(--alert-soft);color:var(--alert)}
+.pill.produccion{background:var(--accent);color:var(--accent-ink)}
 .hist{display:flex;flex-direction:column;gap:8px}
 .h{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .h.anulado{opacity:.55}
@@ -251,7 +252,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.46.0";
+const FRONTEND_VERSION = "1.47.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -281,12 +282,14 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [],
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false,
   regs: [], stock: null,
   tab: "salida",
-  cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{} },
+  cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
+  kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
+  modoProduccion: false, // viendo Producción desde adentro de Ingreso (local con Locales.produccion=SI)
   motivoDesperdicio: "",
   confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroFamilia: null, filtroCategoria: "todas", soloAlerta: false, needEmp:false,
   conteo: null,
@@ -571,7 +574,7 @@ async function cargarEmpleadosDeAuth(){
 function iniPersona(nombre){
   return nombre.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 }
-const ROL_LABEL = { admin:"Administrador", supervisor:"Supervisor", encargado:"Responsable de local", turno:"Responsable de turno", colaborador:"Colaborador" };
+const ROL_LABEL = { admin:"Administrador", supervisor:"Supervisor", encargado:"Responsable de local", turno:"Responsable de turno", colaborador:"Colaborador", produccion:"Producción" };
 
 function authElegirLocal(local){
   S.auth.local=local; S.auth.error="";
@@ -658,7 +661,7 @@ function aplicarLogin(r){
   const yaFijado = !!S.deviceLocal;
   const esGestion = S.auth ? S.auth.esGestion : false;
   const localElegido = (S.auth && !esGestion) ? S.auth.local : null;
-  const puedeFijar = ["encargado","turno","colaborador"].indexOf(r.empleado.rol) !== -1;
+  const puedeFijar = ["encargado","turno","colaborador","produccion"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
   S.esGestion = esGestion; S.gestionLocal = esGestion ? S.auth.local : null;
   // Admin/supervisor: un login NUEVO (recién entrando, o después de haber
@@ -667,7 +670,7 @@ function aplicarLogin(r){
   // último local solo tiene sentido si la sesión seguía abierta (ver
   // start(), que sí usa "ultimoLocal" para sobrevivir a un refresco de
   // página sin haber cerrado sesión).
-  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador" ? r.empleado.local : localElegido);
+  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador"||r.empleado.rol==="produccion" ? r.empleado.local : localElegido);
   // Siempre arranca en "Salida" — si no, a quien entra por primera vez le
   // puede quedar pegada la pestaña en la que estaba el usuario anterior en
   // este mismo dispositivo (por ejemplo "Equipo", que ni siquiera tendría
@@ -684,6 +687,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || [];
+    S.produccionLocal = !!r.datos.produccion;
     S.regs = r.datos.registros; S.stock = r.datos.stock;
   } else {
     cargarDatos();
@@ -845,7 +849,7 @@ function renderMain(){
   const st=stockMap();
   let h="";
   if(S.tab==="salida") h=gridSalida(st);
-  else if(S.tab==="ingreso") h = S.modoDevolucion ? gridDevolucion(st) : gridIngreso(st);
+  else if(S.tab==="ingreso") h = S.modoProduccion ? gridProduccion(st) : S.modoDevolucion ? gridDevolucion(st) : gridIngreso(st);
   else if(S.tab==="devolucion") h=gridDevolucion(st);
   else if(S.tab==="stock") h=stockView(st);
   else if(S.tab==="historial") h=histView();
@@ -1080,6 +1084,7 @@ function gridIngreso(st){
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
+  ${S.produccionLocal?`<button type="button" class="btn ghost" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
   ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
   ${chipFiltros()}
   ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito</label><input type="text" id="remito" placeholder="Opcional" value="${esc(S.remito)}">
@@ -1104,6 +1109,32 @@ function gridDevolucion(st){
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste.</p>
   ${ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">No tenés nada pendiente de devolver hoy.</div>`}`;
+}
+/** Carga de producción propia (hoy solo Unicenter, Locales.produccion=SI)
+ *  — por sabor, dos datos sueltos sin fórmula entre ellos: los kilos que
+ *  se fabricaron (S.kilosProduccion, texto libre) y las vasquetas que
+ *  resultaron de ese lote (S.cart.produccion, el stepper de siempre, es
+ *  lo que efectivamente suma al stock). El rinde varía por lote y no se
+ *  conoce de antemano, así que no se calcula un número a partir del otro. */
+function gridProduccion(st){
+  const cart=S.cart.produccion, kilos=S.kilosProduccion;
+  const list=listaFiltrada(st);
+  const row=s=>{
+    const q=cart[s.id]||0, k=kilos[s.id]||"";
+    return `<div class="row">
+      ${plateHTML(s.id)}
+      <div class="nm">${esc(s.nombre)}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="text" inputmode="decimal" data-kilos="${s.id}" placeholder="kg" value="${esc(k)}" style="width:56px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:8px;padding:6px 7px;background:var(--surface);color:var(--ink)">
+        <div class="stepper"><button type="button" data-proddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-prodinc="${s.id}" aria-label="Sumar">+</button></div>
+      </div>
+    </div>`};
+  return `<button class="authBack" type="button" id="volverIngreso">Volver a Ingreso</button>
+  <p class="sec" style="margin-top:6px">Producción</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Por sabor, cargá los kilos que se fabricaron y cuántas vasquetas resultaron de ese lote — son dos datos sueltos, no se calcula uno a partir del otro.</p>
+  ${chipFiltros()}
+  <p class="sec" style="margin-top:16px">Kilos fabricados y vasquetas resultantes</p>
+  ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
 function stockView(st){
@@ -1254,7 +1285,7 @@ function puedeAnular(r){
   if(r.anulado) return false;
   const rol=S.empleado.rol, edad=Date.now()-r.ts;
   if(rol==="admin"||rol==="supervisor") return true;
-  if(rol==="encargado"||rol==="turno") return edad<=24*3600*1000;
+  if(rol==="encargado"||rol==="turno"||rol==="produccion") return edad<=24*3600*1000;
   if(rol==="colaborador") return String(r.empleadoId)===String(S.empleado.id) && edad<=10*60*1000;
   return false;
 }
@@ -1280,9 +1311,13 @@ function histView(){
     <tr class="totalFila"><td><b>Total vasquetas</b></td>${totalesDia.map(x=>`<td><b>${x||"·"}</b></td>`).join("")}<td><b>${totalGeneral}</b></td></tr>
     </tbody></table></div>`
     :`<div class="empty">Sin salidas esa semana.</div>`;
-  const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>r.tipo==="conteo"?`${esc(nombre(id))}: ${q}`:`${esc(nombre(id))} ×${q}`).join(" · ");
-  const claseTipo=r=>r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.tipo;
-  const labelTipo=r=>r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.tipo;
+  const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
+    if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
+    const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
+    return `${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}`;
+  }).join(" · ");
+  const claseTipo=r=>r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.tipo;
+  const labelTipo=r=>r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":r.tipo;
   const lista=regs.slice(0,150).map(r=>`<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo(r)}">${labelTipo(r)}</span>
     <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</time></div>
@@ -1301,12 +1336,12 @@ function histView(){
 
 function _teamFila(e, rolesQuePuedoCrear){
   const puedeEliminar = S.empleado.rol==="admin" && !e.activo;
-  const puedeCambiarRol = (e.rol==="colaborador"||e.rol==="turno") && rolesQuePuedoCrear.length>0;
+  const puedeCambiarRol = (e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion") && rolesQuePuedoCrear.length>0;
   return `<div class="teamRow${e.activo?"":" baja"}">
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
     <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
     ${e.activo?`<div class="acciones">
-      ${(e.rol==="colaborador"||e.rol==="turno")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
+      ${(e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
       ${puedeCambiarRol?`<select data-cambiar-rol="${e.id}" data-rol-actual="${e.rol}" aria-label="Cambiar rol de ${esc(e.nombre)}" style="font-size:.75rem;padding:6px 8px">${rolesQuePuedoCrear.map(r=>`<option value="${r}" ${r===e.rol?"selected":""}>${esc(ROL_LABEL[r])}</option>`).join("")}</select>`:""}
       ${(e.rol!=="admin"&&e.rol!=="supervisor")?`<button type="button" data-resetpin="${e.id}">Resetear PIN</button>`:""}
       <button type="button" data-baja="${e.id}">Dar de baja</button>
@@ -1320,7 +1355,8 @@ function teamView(){
   if(S.empleado.rol==="admin" && S.gestion===undefined){ S.gestion=null; S.errorGestion=null; cargarGestion(); }
   if(S.equipo===null){ return `<div class="note">Cargando equipo…</div>`; }
   const rol=S.empleado.rol;
-  const rolesQuePuedoCrear = rol==="admin"?["encargado","turno","colaborador"]:rol==="supervisor"?["encargado","turno","colaborador"]:rol==="encargado"?["turno","colaborador"]:[];
+  const rolesOperativos = S.produccionLocal ? ["turno","colaborador","produccion"] : ["turno","colaborador"];
+  const rolesQuePuedoCrear = rol==="admin"?["encargado",...rolesOperativos]:rol==="supervisor"?["encargado",...rolesOperativos]:rol==="encargado"?rolesOperativos:[];
 
   const bloqueError = (msg,idBtn)=>`<div class="empty">${esc(msg)}</div><button class="btn ghost" type="button" id="${idBtn}" style="margin-top:10px">Reintentar</button>`;
   let h="";
@@ -1526,6 +1562,7 @@ async function toggleSabor(s){
  *  cómo se llegó, para no duplicar esa lógica en cada lugar que la usa. */
 function cartKeyActual(){
   if(S.tab==="devolucion" || (S.tab==="ingreso" && S.modoDevolucion)) return "devolucion";
+  if(S.tab==="ingreso" && S.modoProduccion) return "produccion";
   if(S.tab==="salida" && S.modoDesperdicio) return "desperdicio";
   return S.tab;
 }
@@ -1538,22 +1575,24 @@ function renderBar(){
       ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
       : `<div class="sum">Revisá los números y guardá.</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go">Guardar conteo</button>`;
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio";
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion";
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
     if(tot){
       visible=true;
-      const verbo=enDesperdicio?"desperdicio":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
+      const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
       const faltaMotivo=enDesperdicio && !S.motivoDesperdicio.trim();
+      const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
+      const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" ? remitoDuplicado(S.remito, S.local) : null;
-        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>`${esc(nombre(id))} ×${q}`).join(" · ")}
+        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}</div>
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${faltaMotivo?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
@@ -1580,9 +1619,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || [];
+  S.produccionLocal = !!r.produccion;
   S.regs = r.registros;
   S.stock = r.stock;
-  try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, excluidos:r.excluidos||[], registros:r.registros, stock:r.stock})); }catch(e){}
+  try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, registros:r.registros, stock:r.stock})); }catch(e){}
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -1596,9 +1636,9 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.regs=[]; S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{}}; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1608,6 +1648,7 @@ function setLocal(local){
       const d = JSON.parse(cache);
       S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
       S.saboresExcluidos = d.excluidos || [];
+      S.produccionLocal = !!d.produccion;
       S.regs = d.registros; S.stock = d.stock;
     }
   }catch(e){}
@@ -1620,26 +1661,28 @@ function setLocal(local){
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio";
-    const tipo = enDevolucion ? "ingreso" : S.tab; // una devolución es un ingreso con subtipo, el backend no tiene un tercer tipo de movimiento
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion";
+    const tipo = (enDevolucion||enProduccion) ? "ingreso" : S.tab; // devolución y producción son un ingreso con subtipo, el backend no tiene un tercer/cuarto tipo de movimiento
     const cart=S.cart[cartKey];
     const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
     const total=Object.values(items).reduce((a,b)=>a+b,0);
+    const kilos={}; if(enProduccion) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const payload={clienteId, tipo, local:S.local, items,
-      remito: tipo==="ingreso"&&!enDevolucion ? S.remito.trim() : undefined,
-      fotoRemito: tipo==="ingreso"&&!enDevolucion ? (S.fotoRemitoUrl||undefined) : undefined,
-      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : undefined,
-      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : undefined};
+      remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? S.remito.trim() : undefined,
+      fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? (S.fotoRemitoUrl||undefined) : undefined,
+      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : undefined,
+      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : undefined,
+      kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
-      toast((enDesperdicio?"Desperdicio registrado: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio="";
+      toast((enDesperdicio?"Desperdicio registrado: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -1809,7 +1852,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
-  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; renderApp(); return }
   if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.wadd){ const c=S.cart.desperdicio; c[t.dataset.wadd]=(c[t.dataset.wadd]||0)+1; S.confirm=false; scheduleRender(); return }
@@ -1844,7 +1887,10 @@ document.addEventListener("click", async e=>{
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
-  if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.confirm=false; renderApp(); return }
+  if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
+  if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
@@ -1896,6 +1942,7 @@ document.addEventListener("input", e=>{
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
   if(e.target.dataset.c){ S.conteo[e.target.dataset.c]=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
+  if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="inputRemitoFoto"){
