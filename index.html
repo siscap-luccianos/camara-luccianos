@@ -235,6 +235,12 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .alertPill{font-size:.76rem;padding:6px 11px}
   .authList{grid-template-columns:1fr}
 }
+.tagHist{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:999px;background:var(--line);color:var(--muted);font-size:.62rem;font-weight:700;vertical-align:middle}
+@media print{
+  .noPrint,header,.bottomNav,.bar{display:none!important}
+  body,.wrap,main{background:#fff!important}
+  table{font-size:.74rem}
+}
 </style>
 </head>
 <body>
@@ -253,7 +259,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.51.0";
+const FRONTEND_VERSION = "1.52.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -298,7 +304,8 @@ const S = {
   verPedido: false,
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
   periodoHist: ls.get("periodoHist","7"),
-  semanaHist: 0, // 0=semana actual, 1=semana pasada, 2=hace 2 semanas — tabla "Salidas por sabor" de Historial
+  categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
+  rangoHist: "s0", // s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado — tabla de Historial
   pedidoAdj: {},
   cola: JSON.parse(ls.get("cola","[]")),
   busy: false, offline: false,
@@ -1292,46 +1299,98 @@ function puedeAnular(r){
   if(rol==="colaborador") return String(r.empleadoId)===String(S.empleado.id) && edad<=10*60*1000;
   return false;
 }
+const CATEGORIAS_HIST = [["todas","Todas"],["vasquetas","Vasquetas"],["icepops","Ice Pop"],["desperdicio","Desperdicio"],["produccion","Producción"]];
+const RANGOS_HIST = [["s0","Esta semana"],["s1","Semana pasada"],["s2","Hace 2 semanas"],["s3","Hace 3 semanas"],["m0","Este mes"],["m1","Mes pasado"]];
+/** Info del rango elegido en Historial: una semana calendario (lunes a
+ *  domingo, igual que antes) o — nuevo — un mes calendario completo. Los
+ *  60 días que trae el backend (DIAS_HISTORIAL) alcanzan siempre para
+ *  "semana" y casi siempre para "mes": el único borde conocido es mirar
+ *  "Mes pasado" el día 29-31 de enero o agosto (los únicos meses de 31
+ *  días precedidos por otro de 31) — ahí pueden faltar los primeros 1-2
+ *  días de diciembre/julio. Caso raro, no bloquea, se documenta en
+ *  CLAUDE.md. */
+function rangoHistInfo(id){
+  if(id.charAt(0)==="s"){
+    const n=+id.slice(1), inicio=lunesDe()-n*7*864e5, fin=inicio+7*864e5;
+    return { tipo:"semana", inicio, fin,
+      label:`${new Date(inicio).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${new Date(fin-864e5).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})}` };
+  }
+  const n=+id.slice(1), ahora=new Date(), anio=ahora.getFullYear(), mes=ahora.getMonth()-n;
+  const inicio=new Date(anio,mes,1).getTime(), fin=new Date(anio,mes+1,1).getTime();
+  const label=new Date(inicio).toLocaleDateString("es-AR",{month:"long",year:"numeric"});
+  return { tipo:"mes", inicio, fin, label: label.charAt(0).toUpperCase()+label.slice(1) };
+}
+/** La pill "Vasquetas" agrupa también Baldes y Gluten Free: esas familias
+ *  no se pisan nombres entre sí en la práctica — la confusión real que
+ *  reportó Gabi era solo contra Icepops (ej. "Frutilla" existe en vasqueta
+ *  Y en Icepop). Si algún día hace falta separarlas más fino, se agrega
+ *  otra pill — por ahora, menos pills es mejor (pedido explícito de Gabi). */
+function grupoHistDe(id){ const s=S.saboresPorId[id]; return s && grupoProductoDe(s)==="icepops" ? "icepops" : "vasquetas"; }
 function histView(){
   const dias = S.periodoHist==="60" ? 60 : Number(S.periodoHist);
   const desde = Date.now() - dias*864e5;
   const regs=[...S.regs].filter(r=>r.ts>=desde).sort((a,b)=>b.ts-a.ts);
-  // Ciclo de 3 semanas: la actual (S.semanaHist=0) + las 2 anteriores. Rota
-  // sola cada lunes porque lunesDe() siempre se calcula contra "ahora" — no
-  // hay nada guardado que haya que "pasar" de una semana a la otra.
-  const inicioSem=lunesDe()-S.semanaHist*7*864e5, finSem=inicioSem+7*864e5;
-  const diasSem=["Lu","Ma","Mi","Ju","Vi","Sá","Do"], sem={};
-  for(const r of regsActivos()) if(r.tipo==="salida"&&r.ts>=inicioSem&&r.ts<finSem){const d=(new Date(r.ts).getDay()+6)%7;
-    for(const [id,q] of Object.entries(r.items||{})){(sem[id]=sem[id]||[0,0,0,0,0,0,0])[d]+=+q||0}}
-  const ids=S.sabores.filter(s=>sem[s.id]);
-  const rangoSem=`${new Date(inicioSem).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${new Date(finSem-864e5).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})}`;
-  const semanaChips=["Esta semana","Semana pasada","Hace 2 semanas"].map((l,i)=>`<button type="button" class="chip" data-semana-hist="${i}" aria-pressed="${S.semanaHist===i}">${l}</button>`).join("");
-  const totalesDia=[0,0,0,0,0,0,0];
-  ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
-  const totalGeneral=totalesDia.reduce((a,b)=>a+b,0);
-  const tabla=ids.length?`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
-    ${ids.map(s=>`<tr><td>${esc(s.nombre)}</td>${sem[s.id].map(x=>`<td>${x||"·"}</td>`).join("")}<td><b>${sem[s.id].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}
-    <tr class="totalFila"><td><b>Total vasquetas</b></td>${totalesDia.map(x=>`<td><b>${x||"·"}</b></td>`).join("")}<td><b>${totalGeneral}</b></td></tr>
-    </tbody></table></div>`
-    :`<div class="empty">Sin salidas esa semana.</div>`;
-  // Kilos producidos por semana — misma mecánica/semana que la tabla de
-  // arriba, pero sumando r.kilos (Registros.kilos, subtipo "produccion")
-  // en vez de r.items. Solo tiene sentido en locales con producción
-  // activada (Unicenter y los que sumen después).
-  const semKg={};
-  if(S.produccionLocal) for(const r of regsActivos()) if(r.subtipo==="produccion"&&r.ts>=inicioSem&&r.ts<finSem){const d=(new Date(r.ts).getDay()+6)%7;
-    for(const [id,kg] of Object.entries(r.kilos||{})){(semKg[id]=semKg[id]||[0,0,0,0,0,0,0])[d]+=+kg||0}}
-  const idsKg=S.sabores.filter(s=>semKg[s.id]);
-  const totalesDiaKg=[0,0,0,0,0,0,0];
-  idsKg.forEach(s=>semKg[s.id].forEach((x,i)=>totalesDiaKg[i]+=x));
-  const totalGeneralKg=totalesDiaKg.reduce((a,b)=>a+b,0);
+  const rango = rangoHistInfo(S.rangoHist), esSemana = rango.tipo==="semana";
+  const diasSem=["Lu","Ma","Mi","Ju","Vi","Sá","Do"];
   const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
-  const tablaKg=!S.produccionLocal?"":`<hr style="border:none;border-top:1px solid var(--line);margin:28px 0 0">
-    <p class="sec" style="margin-top:18px;margin-bottom:8px">Kilos producidos — ${esc(rangoSem)}</p>
-    ${idsKg.length?`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
-    ${idsKg.map(s=>`<tr><td>${esc(s.nombre)}</td>${semKg[s.id].map(x=>`<td>${kgLabel(x)}</td>`).join("")}<td><b>${kgLabel(semKg[s.id].reduce((a,b)=>a+b,0))}</b></td></tr>`).join("")}
-    <tr class="totalFila"><td><b>Total kg</b></td>${totalesDiaKg.map(x=>`<td><b>${kgLabel(x)}</b></td>`).join("")}<td><b>${kgLabel(totalGeneralKg)}</b></td></tr>
-    </tbody></table></div>`:`<div class="empty">Sin producción esa semana.</div>`}`;
+
+  const categoriaChips = CATEGORIAS_HIST.filter(([v])=>v!=="produccion"||S.produccionLocal)
+    .map(([v,l])=>`<button type="button" class="chip" data-categoria-hist="${v}" aria-pressed="${S.categoriaHist===v}">${l}</button>`).join("");
+  const rangoChips = RANGOS_HIST.map(([v,l])=>`<button type="button" class="chip" data-rango-hist="${v}" aria-pressed="${S.rangoHist===v}">${l}</button>`).join("");
+
+  let tituloTabla="", tabla="";
+  if(S.categoriaHist==="desperdicio"){
+    tituloTabla="Desperdicio";
+    const filas=[];
+    for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo==="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin)
+      for(const [id,q] of Object.entries(r.items||{})) if(+q) filas.push({nombre:nombre(id), motivo:r.motivo||"—", cantidad:+q});
+    tabla = filas.length ? `<div class="tbl"><table><thead><tr><th>Sabor</th><th>Motivo</th><th>Cant.</th></tr></thead><tbody>
+      ${filas.map(f=>`<tr><td>${esc(f.nombre)}</td><td>${esc(f.motivo)}</td><td>${f.cantidad}</td></tr>`).join("")}
+      <tr class="totalFila"><td><b>Total</b></td><td></td><td><b>${filas.reduce((a,f)=>a+f.cantidad,0)}</b></td></tr>
+      </tbody></table></div>` : `<div class="empty">Sin desperdicio en este período.</div>`;
+  } else if(S.categoriaHist==="produccion"){
+    tituloTabla="Producción (kilos)";
+    const porSabor={};
+    for(const r of regsActivos()) if(r.subtipo==="produccion"&&r.ts>=rango.inicio&&r.ts<rango.fin)
+      for(const [id,kg] of Object.entries(r.kilos||{})) porSabor[id]=(porSabor[id]||0)+(+kg||0);
+    const idsKg=Object.keys(porSabor).filter(id=>porSabor[id]);
+    const grupos=GRUPO_PRODUCTO_ORDEN.map(g=>{
+      const ids=idsKg.filter(id=>grupoProductoDe(S.saboresPorId[id]||{tipo:"v"})===g);
+      if(!ids.length) return "";
+      const totalGrupo=ids.reduce((a,id)=>a+porSabor[id],0);
+      return `<p class="sec" style="margin:16px 0 6px;font-size:.88rem">${esc(GRUPO_PRODUCTO_LABEL[g])} <span style="color:var(--muted);font-weight:500">— ${kgLabel(totalGrupo)} kg</span></p>
+      <div class="tbl"><table><thead><tr><th>Sabor</th><th>Total kg</th></tr></thead><tbody>
+        ${ids.map(id=>`<tr><td>${esc(nombre(id))}</td><td><b>${kgLabel(porSabor[id])}</b></td></tr>`).join("")}
+      </tbody></table></div>`;
+    }).join("");
+    tabla = grupos || `<div class="empty">Sin producción en este período.</div>`;
+  } else {
+    tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Ice Pop" : "Salidas por sabor (todas las categorías)";
+    const sem={};
+    for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin){
+      const d=esSemana?(new Date(r.ts).getDay()+6)%7:0;
+      for(const [id,q] of Object.entries(r.items||{})){
+        if(S.categoriaHist!=="todas" && grupoHistDe(id)!==S.categoriaHist) continue;
+        (sem[id]=sem[id]||[0,0,0,0,0,0,0])[d]+=+q||0;
+      }
+    }
+    const ids=S.sabores.filter(s=>sem[s.id]);
+    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${grupoHistDe(s.id)==="icepops"?"Ice Pop":"Vasqueta"}</span>`:"";
+    if(!ids.length) tabla=`<div class="empty">Sin salidas en este período.</div>`;
+    else if(esSemana){
+      const totalesDia=[0,0,0,0,0,0,0]; ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
+      tabla=`<div class="tbl"><table><thead><tr><th>Sabor</th>${diasSem.map(d=>`<th>${d}</th>`).join("")}<th>Total</th></tr></thead><tbody>
+        ${ids.map(s=>`<tr><td>${esc(s.nombre)}${tagHtml(s)}</td>${sem[s.id].map(x=>`<td>${x||"·"}</td>`).join("")}<td><b>${sem[s.id].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}
+        <tr class="totalFila"><td><b>Total</b></td>${totalesDia.map(x=>`<td><b>${x||"·"}</b></td>`).join("")}<td><b>${totalesDia.reduce((a,b)=>a+b,0)}</b></td></tr>
+        </tbody></table></div>`;
+    } else {
+      tabla=`<div class="tbl"><table><thead><tr><th>Sabor</th><th>Total</th></tr></thead><tbody>
+        ${ids.map(s=>`<tr><td>${esc(s.nombre)}${tagHtml(s)}</td><td><b>${sem[s.id].reduce((a,b)=>a+b,0)}</b></td></tr>`).join("")}
+        <tr class="totalFila"><td><b>Total</b></td><td><b>${ids.reduce((a,s)=>a+sem[s.id].reduce((x,y)=>x+y,0),0)}</b></td></tr>
+        </tbody></table></div>`;
+    }
+  }
+
   const it=r=>Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
@@ -1346,14 +1405,18 @@ function histView(){
     ${r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
     ${S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`).join("");
-  return `<div class="tools"><div style="display:flex;gap:6px">
-      ${[["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="chip" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("")}
-    </div></div>
-  <p class="sec" style="margin-bottom:8px">Salidas por sabor — ${esc(rangoSem)}</p>
-  <div class="tools" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${semanaChips}</div>
+  return `<div class="tools noPrint" style="justify-content:space-between">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${[["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="chip" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("")}
+      </div>
+      <button type="button" class="btn ghost" id="exportarHist">🖨 Exportar</button>
+    </div>
+  <div class="tools noPrint" style="flex-wrap:wrap;margin-top:10px">${categoriaChips}</div>
+  <div class="tools noPrint" style="flex-wrap:wrap;margin:8px 0 2px">${rangoChips}</div>
+  <p class="sec" style="margin:14px 0 8px">${esc(tituloTabla)} — ${esc(rango.label)}</p>
   ${tabla}
-  ${tablaKg}
-  <p class="sec" style="margin-top:20px">Movimientos</p>${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}`;
+  <p class="sec noPrint" style="margin-top:20px">Movimientos</p>
+  <div class="noPrint">${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}</div>`;
 }
 
 function _teamFila(e, rolesQuePuedoCrear){
@@ -1660,7 +1723,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.semanaHist=0;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0";
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1888,7 +1951,9 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
-  if(t.dataset.semanaHist!==undefined){ S.semanaHist=Number(t.dataset.semanaHist); renderApp(); return }
+  if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
+  if(t.dataset.rangoHist){ S.rangoHist=t.dataset.rangoHist; renderApp(); return }
+  if(t.id==="exportarHist"){ window.print(); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
   if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t.dataset.tipoReg, t); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
