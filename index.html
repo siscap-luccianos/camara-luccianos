@@ -259,7 +259,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.53.0";
+const FRONTEND_VERSION = "1.54.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1340,7 +1340,7 @@ function filaMovimiento(r){
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
     <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</time></div>
-    ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div>`:`<div class="items">${it}</div>`}
+    ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${it}</div>`}
     ${r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
     ${S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`;
