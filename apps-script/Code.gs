@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.36.0";
+const BACKEND_VERSION = "1.37.0";
 
 function doPost(e) {
   let resultado;
@@ -942,6 +942,29 @@ function anular(registroId, motivo, empleado) {
     else if (empleado.rol === "colaborador" && empleadoIdDueño === String(empleado.id) && edad <= VENTANA_ANULAR_COLABORADOR_MS) permitido = true;
 
     if (!permitido) return { ok: false, error: "No tenés permiso para anular ese movimiento (o ya pasó el tiempo permitido)." };
+
+    // Si esto es una Salida (no Desperdicio, que nunca tiene devolución
+    // asociada) y la misma persona ya cargó una Devolución vigente
+    // DESPUÉS de esta Salida en el mismo local, anular la Salida dejaría
+    // esa Devolución "huérfana" — el stock quedaría de más, sin ninguna
+    // salida real que la justifique. Se bloquea y se pide anular primero
+    // la Devolución (orden inverso al que se cargaron).
+    const tipoReg = filas[idx][col.tipo];
+    const subtipoReg = filas[idx][col.subtipo];
+    if (tipoReg === "salida" && subtipoReg !== "desperdicio") {
+      const hayDevolucionPosterior = filas.some((fila, i) => {
+        if (i === 0) return false;
+        return fila[col.tipo] === "ingreso" &&
+          fila[col.subtipo] === "devolucion" &&
+          String(fila[col.empleadoId]) === empleadoIdDueño &&
+          String(fila[col.local]) === String(local) &&
+          Number(fila[col.ts]) > ts &&
+          !fila[col.anulado_ts];
+      });
+      if (hayDevolucionPosterior) {
+        return { ok: false, error: "No se puede anular: ya hay una devolución cargada después de esta salida. Anulá primero esa devolución y después esta salida." };
+      }
+    }
 
     sheet.getRange(idx + 1, col.anulado_por + 1).setValue(empleado.nombre);
     sheet.getRange(idx + 1, col.anulado_ts + 1).setValue(Date.now());
