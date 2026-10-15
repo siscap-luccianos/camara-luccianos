@@ -223,6 +223,8 @@ Pedido de Gabi: algunos locales no tienen ciertos productos (ej. Baldes) y hací
   - **Importante para Gabi**: este fix recién se aplica la PRÓXIMA vez que el dispositivo tenga señal y abra la app (el navegador necesita conexión para notar que `sw.js` cambió y bajar la versión corregida) — así que para volver a probar hace falta abrir la app una vez más con wifi/datos antes de poner el avión de nuevo.
   - **Recomendación aparte, no implementada porque no la pidió**: en iOS, Safari borra datos de sitios comunes con más agresividad que de una app "agregada a la pantalla de inicio" (que ya tiene todo lo necesario — `manifest.json` con `display:standalone`, íconos) — para una tablet que va a vivir offline la mayor parte del día, instalarla así (compartir → "Agregar a inicio") en vez de dejarla como pestaña de Safari común va a sufrir muchas menos de estas pérdidas de caché silenciosas.
 
+- ~~Ejemplo del placeholder de "N° de remito o motivo"~~ cambiado 15/10/2026 a pedido de Gabi ("me molesta que diga Belgrano") — el ejemplo de texto libre (`Ej: 00079-00031081, o "Transferencia desde Belgrano"`) pasó a `Ej: 00079-00031081, o "Traspaso de mercadería"`, genérico, sin nombrar ningún local puntual. Es solo el placeholder del campo `#remito` en Ingreso — el campo en sí no cambió (sigue aceptando cualquier texto libre, ver el punto de arriba del 15/10/2026). `FRONTEND_VERSION` pasa a `1.64.1`, sin cambios en `Code.gs`.
+
 ## Convenciones
 - Todo en español. Commits en español, descriptivos.
 - Probar en Playwright (Chromium preinstalado) antes de pushear: sin errores de consola, flujo salida → stock → historial.
