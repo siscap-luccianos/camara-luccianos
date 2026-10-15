@@ -261,7 +261,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.58.0";
+const FRONTEND_VERSION = "1.59.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2066,7 +2066,12 @@ document.addEventListener("keydown", e=>{
   if(document.querySelector("[data-tecla-bloqueo]")){ e.preventDefault(); teclaBloqueo(tecla); return }
 });
 document.addEventListener("focusin", e=>{
-  if(e.target.id==="local"||e.target.id==="authLocal") e.target.select();
+  // Seleccionar todo el contenido al entrar a un campo numérico (Conteo
+  // físico, cantidad en el lector de remitos, mínimo/peso/caja en
+  // Sabores, etc.) — como una celda de Excel: el primer dígito que
+  // escribís reemplaza el "0" de siempre en vez de agregarse al lado
+  // (pedido de Gabi: "siempre aparece cero y me obliga a borrarlo").
+  if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number") e.target.select();
 });
 document.addEventListener("input", e=>{
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
