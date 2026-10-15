@@ -261,7 +261,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.60.0";
+const FRONTEND_VERSION = "1.61.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -700,6 +700,10 @@ function aplicarLogin(r){
     S.saboresExcluidos = r.datos.excluidos || [];
     S.produccionLocal = !!r.datos.produccion;
     S.regs = r.datos.registros; S.stock = r.datos.stock;
+    // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
+    // si el dispositivo se queda sin señal antes del primer polling (30 s),
+    // que no se pierda este primer dato ya recibido.
+    guardarDatosCache(S.local, {sabores:r.datos.sabores, excluidos:r.datos.excluidos||[], produccion:!!r.datos.produccion, registros:r.datos.registros, stock:r.datos.stock});
   } else {
     cargarDatos();
   }
@@ -1720,6 +1724,24 @@ function renderBar(){
    CARGA DE DATOS + POLLING (reemplaza los onSnapshot)
 ============================================================ */
 function _datosCacheKey(local){ return "datosCache_"+local }
+function guardarDatosCache(local, d){
+  try{ ls.set(_datosCacheKey(local), JSON.stringify(d)); }catch(e){}
+}
+/** Trae a S lo último que se guardó de este local (si lo hay) — para no
+ *  arrancar con las grillas vacías mientras se espera la respuesta real del
+ *  servidor, y para que la app siga mostrando algo si no hay señal. */
+function precargarDatosCache(local){
+  try{
+    const cache = ls.get(_datosCacheKey(local),"");
+    if(!cache) return false;
+    const d = JSON.parse(cache);
+    S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
+    S.saboresExcluidos = d.excluidos || [];
+    S.produccionLocal = !!d.produccion;
+    S.regs = d.registros; S.stock = d.stock;
+    return true;
+  }catch(e){ return false; }
+}
 async function cargarDatos(){
   if(!S.local || !S.token) return;
   const local=S.local; // por si cambia de local mientras esta llamada está en vuelo
@@ -1737,7 +1759,7 @@ async function cargarDatos(){
   S.produccionLocal = !!r.produccion;
   S.regs = r.registros;
   S.stock = r.stock;
-  try{ ls.set(_datosCacheKey(local), JSON.stringify({sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, registros:r.registros, stock:r.stock})); }catch(e){}
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -1757,16 +1779,7 @@ function setLocal(local){
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
-  try{
-    const cache = ls.get(_datosCacheKey(local),"");
-    if(cache){
-      const d = JSON.parse(cache);
-      S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
-      S.saboresExcluidos = d.excluidos || [];
-      S.produccionLocal = !!d.produccion;
-      S.regs = d.registros; S.stock = d.stock;
-    }
-  }catch(e){}
+  precargarDatosCache(local);
   cargarDatos(); renderApp();
 }
 
@@ -2255,6 +2268,11 @@ async function start(){
       const ultimo = ls.get("ultimoLocal","");
       if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
     }
+    // Si la página se recarga sin señal (se cerró sola, se reinició el
+    // dispositivo), acá no veníamos de un login con datos frescos ni de
+    // setLocal() — sin esto, S.sabores arrancaba vacío y la app no tenía
+    // nada para mostrar hasta que volviera la conexión.
+    if(S.local) precargarDatosCache(S.local);
     renderApp();
     reiniciarInactividad();
     await cargarDatos();
@@ -2264,6 +2282,15 @@ async function start(){
     iniciarAuth();
   }
   iniciarChequeoDeVersion();
+}
+// Guarda el cascarón de la app (este HTML + manifest + íconos) en el
+// dispositivo la primera vez que hay señal, para que después se pueda
+// seguir abriendo sin internet (tablets de cámara lejos del salón, que a
+// veces solo tienen wifi una vez al día). Los datos de sabores/stock/
+// registros ya se cacheaban solos en localStorage; esto solo cubre que la
+// propia app pueda arrancar sin red.
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
 }
 start();
 
