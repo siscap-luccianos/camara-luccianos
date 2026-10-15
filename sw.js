@@ -9,7 +9,7 @@
 // Subir una versión nueva: cambiar CACHE_VERSION junto con FRONTEND_VERSION
 // en index.html (no hace falta que sea el mismo número, alcanza con que
 // cambie) — así el navegador descarta la caché vieja sola.
-const CACHE_VERSION = "logistock-shell-v1.61.0";
+const CACHE_VERSION = "logistock-shell-v1.64.0";
 const SHELL_KEY = "./";
 const PRECACHE = [
   "./",
@@ -64,7 +64,22 @@ self.addEventListener("fetch", (e) => {
           caches.open(CACHE_VERSION).then((c) => c.put(clave, res.clone()));
           return res;
         })
-        .catch(() => caches.match(clave))
+        .catch(async () => {
+          // Si no hay red Y tampoco hay nada guardado todavía (primera vez
+          // que se abre sin señal, antes de que la app se haya podido
+          // guardar alguna vez), respondWith() TIENE que devolver una
+          // Response igual — dejarlo en undefined funciona en Chrome, pero
+          // en Safari/iOS tira "FetchEvent.respondWith received an error:
+          // Returned response is null" y corta la página entera (el error
+          // que reportó Gabi).
+          const cacheado = await caches.match(clave);
+          return cacheado || new Response(
+            "<!doctype html><meta charset=utf-8><body style=\"font-family:system-ui;padding:32px;color:#333\">" +
+            "No hay señal y esta app todavía no se guardó una copia en este dispositivo para usarla sin conexión. " +
+            "Abrila una vez con wifi o datos y volvé a intentar.</body>",
+            { status: 503, headers: { "Content-Type": "text/html;charset=utf-8" } }
+          );
+        })
     );
     return;
   }
@@ -80,7 +95,7 @@ self.addEventListener("fetch", (e) => {
           if (res && res.ok) caches.open(CACHE_VERSION).then((c) => c.put(req, res.clone()));
           return res;
         })
-        .catch(() => cacheado);
+        .catch(() => new Response("", { status: 504 })); // nunca undefined, mismo motivo que arriba
     })
   );
 });
