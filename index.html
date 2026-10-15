@@ -109,6 +109,7 @@ select{max-width:220px}
 .btn.wa{background:var(--wa);color:#fff;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
 .btn.desperdicio{background:var(--warn-soft);color:var(--warn);border:1.5px solid var(--warn);box-shadow:0 2px 12px rgba(224,178,102,.4)}
 .btn.produccion{background:var(--accent);color:var(--accent-ink);border:0;box-shadow:0 2px 12px rgba(122,62,29,.4)}
+.btn.volver{background:var(--ink);color:var(--bg);border:0;box-shadow:0 2px 12px rgba(42,30,23,.35)}
 /* Contraseñas compartidas (local/Operaciones): se ven enmascaradas
    igual que un input type="password", pero SON type="text" — así el
    navegador no las reconoce como campo de contraseña y no ofrece
@@ -259,7 +260,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.55.0";
+const FRONTEND_VERSION = "1.56.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -940,7 +941,7 @@ function gridDesperdicio(st){
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
-  return `<button class="authBack" type="button" id="volverSalida">Volver a Salida</button>
+  return `<button class="btn volver" type="button" id="volverSalida" style="margin-bottom:12px">Volver a Salida</button>
   <p class="sec" style="margin-top:6px">Desperdicio</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
@@ -1115,7 +1116,7 @@ function gridDevolucion(st){
       <div class="nm">${esc(s.nombre)}<div class="meta">Pendiente de devolver: ${max} ${unidad(s.id,max)}</div></div>
       <div class="stepper"><button type="button" data-ddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-dinc="${s.id}" data-max="${max}" aria-label="Sumar">+</button></div>
     </div>`};
-  return `${S.tab==="ingreso"?`<button class="authBack" type="button" id="volverIngreso">Volver a Ingreso</button>`:""}
+  return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste.</p>
   ${ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">No tenés nada pendiente de devolver hoy.</div>`}`;
@@ -1259,7 +1260,7 @@ function stockViewPedido(st){
       </div>
     </div>`};
 
-  return `<button class="authBack" type="button" id="volverPedido">Volver a Stock</button>
+  return `<button class="btn volver" type="button" id="volverPedido" style="margin-bottom:12px">Volver a Stock</button>
   <p class="sec" style="margin-top:6px">Pedido sugerido</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">La app calcula esto sola con tu stock de hoy y lo que se vendió esta semana. Podés cambiar cualquier número antes de mandarlo.</p>
   <div style="background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-bottom:14px">
