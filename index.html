@@ -261,7 +261,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.59.0";
+const FRONTEND_VERSION = "1.60.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1663,7 +1663,12 @@ async function guardarSabor(payload){
   else toast((r&&r.error)||"No se pudo guardar el sabor.");
 }
 async function toggleSabor(s){
-  await guardarSabor({id:s.id, nombre:s.nombre, tipo:s.tipo, categoria:s.categoria, minimo:s.minimo, peso:s.peso, orden:s.orden, activo:!s.activo});
+  // adminSabor() en Code.gs reemplaza el sabor ENTERO, no hace un update
+  // parcial — así que hay que mandar todos los campos, aunque este botón
+  // solo cambie "activo". Antes faltaban familia/cantidad_maestra acá, y
+  // cada Desactivar/Reactivar los pisaba en silencio a vasquetas/0 (causa
+  // real de que "Multifruta" volviera a perder su caja de 30 varias veces).
+  await guardarSabor({id:s.id, nombre:s.nombre, tipo:s.tipo, familia:s.familia, categoria:s.categoria, minimo:s.minimo, peso:s.peso, cantidad_maestra:s.cantidad_maestra, orden:s.orden, activo:!s.activo});
 }
 
 /** "devolucion" es su propia pestaña (colaborador) o un modo adentro de
