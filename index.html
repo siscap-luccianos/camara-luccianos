@@ -20,6 +20,7 @@
   --ok:#24461A; --ok-soft:#E3EEDC; --plate:#ffffff;
   --header-bg:#2A1E17; --header-bg-rgb:42,30,23; --header-ink:#F5F0E8; --header-muted:#D9CBB8; --header-chip:#3D2C22;
   --surface-rgb:255,255,255; --glass-line:rgba(255,255,255,.14);
+  --accent-rgb:122,62,29; --warn-rgb:107,63,0; --alert-rgb:138,31,17;
   --wa:#1E6B45; --wa-bubble:#DCF3D0; --wa-bubble-ink:#1F2A1A; --wa-panel:#ECE5DD;
   --display:"Fraunces","Georgia",serif; --body:"Manrope",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
@@ -33,7 +34,8 @@
   --alert:#F0968A; --alert-soft:#3D211C; --warn:#E0B266; --warn-soft:#3A2C15;
   --ok:#8FCB9E; --ok-soft:#1B3220; --plate:#F2EAE1;
   --wa-bubble:#204030; --wa-bubble-ink:#DCF3D0; --wa-panel:#182721;
-  --surface-rgb:36,29,23; --glass-line:rgba(255,255,255,.08); color-scheme:dark}
+  --surface-rgb:36,29,23; --glass-line:rgba(255,255,255,.08);
+  --accent-rgb:217,146,90; --warn-rgb:224,178,102; --alert-rgb:240,150,138; color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4}
 button,input,select{font:inherit;color:inherit}
@@ -73,8 +75,18 @@ select{max-width:220px}
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
 .tools .grow{flex:1 1 180px}
 .tools input{width:100%}
-.chip{min-height:40px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 14px;font-weight:700;font-size:.85rem}
-.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.glass{background:rgba(var(--surface-rgb),.6);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.78);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18)}
+.chip{min-height:40px;border:1px solid rgba(var(--header-bg-rgb),.12);background:rgba(var(--surface-rgb),.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:999px;padding:0 14px;font-weight:700;font-size:.85rem}
+.chip[aria-pressed=true]{background:rgba(var(--accent-rgb),.16);color:var(--accent-hover);border-color:rgba(var(--accent-rgb),.38)}
+/* Tarjeta con ícono + texto para un CTA destacado (Pedido sugerido / Volver
+   a Stock, Leer remito con una foto) — se combina con .glass para la
+   superficie translúcida. */
+.ctaCard{border:0;margin:0;font:inherit;color:inherit;text-align:left;background:none;box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:14px 16px;border-radius:18px;cursor:pointer}
+.ctaCard:active{transform:scale(.98)}
+.ctaCard .ico{flex:none;width:38px;height:38px;border-radius:999px;background:rgba(var(--accent-rgb),.14);display:flex;align-items:center;justify-content:center}
+.ctaCard .tx{flex:1;text-align:left;min-width:0}
+.ctaCard .tx b{display:block;font-weight:800;font-size:.88rem}
+.ctaCard .tx span{display:block;font-size:.74rem;color:var(--muted);margin-top:1px}
 .emp{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
 .emp label{font-weight:700}
 .emp input{flex:1 1 200px}
@@ -93,9 +105,9 @@ select{max-width:220px}
 .pstock{padding:0 13px;margin-top:auto;display:flex;align-items:baseline;gap:5px}
 .pstock b{font-family:var(--display);font-size:1.5rem;font-weight:700;line-height:1}
 .pstock span{font-size:.72rem;color:var(--muted)}
-.badge{margin:0 13px;padding:2px 9px;border-radius:999px;font-size:.68rem;font-weight:800;align-self:flex-start}
-.badge.warn{background:var(--warn-soft);color:var(--warn)}
-.badge.alert{background:var(--alert-soft);color:var(--alert)}
+.badge{margin:0 13px;padding:2px 9px;border-radius:999px;font-size:.68rem;font-weight:800;align-self:flex-start;border:1px solid transparent}
+.badge.warn{background:rgba(var(--warn-rgb),.12);color:var(--warn);border-color:rgba(var(--warn-rgb),.22)}
+.badge.alert{background:rgba(var(--alert-rgb),.12);color:var(--alert);border-color:rgba(var(--alert-rgb),.22)}
 .qty{position:absolute;top:10px;right:8px;min-width:34px;height:34px;border-radius:17px;background:var(--accent);color:var(--accent-ink);font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums;padding:0 8px;pointer-events:none}
 .minus{position:absolute;top:10px;left:8px;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-weight:800;font-size:1.1rem;line-height:1}
 .card.sel .strip{filter:brightness(0.85)}
@@ -108,7 +120,7 @@ select{max-width:220px}
 .btn.ghost{background:none;border:1.5px solid var(--line);color:var(--ink)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.wa{background:var(--wa);color:#fff;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
-.btn.desperdicio{background:var(--warn-soft);color:var(--warn);border:1.5px solid var(--warn);box-shadow:0 2px 12px rgba(224,178,102,.4)}
+.btn.desperdicio{background:rgba(var(--warn-rgb),.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--warn);border:1px solid rgba(var(--warn-rgb),.25);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 4px 10px -6px rgba(var(--warn-rgb),.3)}
 .btn.produccion{background:var(--accent);color:var(--accent-ink);border:0;box-shadow:0 2px 12px rgba(122,62,29,.4)}
 .btn.volver{background:var(--ink);color:var(--bg);border:0;box-shadow:0 2px 12px rgba(42,30,23,.35)}
 /* Contraseñas compartidas (local/Operaciones): se ven enmascaradas
@@ -167,7 +179,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.kpi{background:rgba(var(--surface-rgb),.62);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.8);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
 .kpi .lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .kpi .val{font-family:var(--display);font-size:1.9rem;font-weight:700;line-height:1}
 .kpi .val.crit{color:var(--alert)}
@@ -262,7 +274,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.64.1";
+const FRONTEND_VERSION = "1.65.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1105,11 +1117,13 @@ function gridIngreso(st){
   ${S.produccionLocal?`<button type="button" class="btn produccion" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
   ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
   ${chipFiltros()}
-  ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}">
-    <button class="btn ghost" type="button" id="btnLeerRemitoFoto">Leer remito con una foto</button>
-    <input type="file" accept="image/*" id="inputRemitoFoto" style="display:none">
-  </div>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">Si no es un remito de proveedor (ej. llegó de otro local, de un foodtruck o de un evento), escribí ahí mismo de dónde viene en vez de un número.</p>`:""}
+  ${puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}"></div>
+  <button type="button" class="ctaCard glass" id="btnLeerRemitoFoto" style="margin-top:10px;background:rgba(var(--accent-rgb),.12)">
+    <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h3l1-2h8l1 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="#7A3E1D" stroke-width="2"/></svg></span>
+    <span class="tx"><b>Leer remito con una foto</b><span>Carga automática desde la cámara</span></span>
+  </button>
+  <input type="file" accept="image/*" id="inputRemitoFoto" style="display:none">
+  <p style="margin:8px 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">Si no es un remito de proveedor (ej. llegó de otro local, de un foodtruck o de un evento), escribí ahí mismo de dónde viene en vez de un número.</p>`:""}
   <p class="sec">Cantidad que entra de cada sabor</p>
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
@@ -1185,7 +1199,7 @@ function stockView(st){
     const {s,cov,ed}=f;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${ed?` · <span style="color:var(--${ed.cls})">${ed.label}</span>`:""}${s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}${ed?` <span class="badge ${ed.cls}" style="margin:0 0 0 2px">${ed.label}</span>`:""}</div></div>
       <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>
     </div>`};
 
@@ -1194,16 +1208,17 @@ function stockView(st){
     <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
     ${kgTotal>0?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
+  ${puedePedido?`<button type="button" class="ctaCard glass" id="verPedidoBtn" style="margin-top:12px" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
+    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="#7A3E1D" stroke-width="2.2" stroke-linecap="round"/></svg></span>
+    <span class="tx"><b>Pedido sugerido</b><span>${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`:""}
   <div class="tools" style="margin-top:16px">
     <span class="grow" style="color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</span>
     ${puedeGestionar?`<button class="chip" id="conteoBtn">Conteo físico</button>`:""}
   </div>
   ${chipFiltros()}
-  <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
-  ${puedePedido?`<div class="tools" style="margin-top:16px">
-    <div class="grow" style="font-size:.85rem;color:var(--muted)">La app arma un pedido sugerido para <b style="color:var(--ink)">${al.length}</b> ${al.length===1?"sabor que está bajo":"sabores que están bajos"}</div>
-    <button class="btn" id="verPedidoBtn" style="white-space:nowrap">Ver pedido sugerido</button>
-  </div>`:""}`;
+  <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
 }
 
 function stockViewPedido(st){
@@ -1268,7 +1283,10 @@ function stockViewPedido(st){
       </div>
     </div>`};
 
-  return `<button class="btn volver" type="button" id="volverPedido" style="margin-bottom:12px">Volver a Stock</button>
+  return `<button type="button" class="ctaCard glass" id="volverPedido" style="margin-bottom:14px" aria-label="Volver a Stock">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="tx"><b>Volver a Stock</b><span>Pedido sugerido para ${filas.length} ${filas.length===1?"sabor":"sabores"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
+  </button>
   <p class="sec" style="margin-top:6px">Pedido sugerido</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">La app calcula esto sola con tu stock de hoy y lo que se vendió esta semana. Podés cambiar cualquier número antes de mandarlo.</p>
   <div style="background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-bottom:14px">
