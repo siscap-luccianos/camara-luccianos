@@ -99,6 +99,7 @@ select{max-width:220px}
 .qty{position:absolute;top:10px;right:8px;min-width:34px;height:34px;border-radius:17px;background:var(--accent);color:var(--accent-ink);font-weight:800;display:grid;place-items:center;font-variant-numeric:tabular-nums;padding:0 8px;pointer-events:none}
 .minus{position:absolute;top:10px;left:8px;width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);font-weight:800;font-size:1.1rem;line-height:1}
 .card.sel .strip{filter:brightness(0.85)}
+.card.agotado>.pick{opacity:.45;pointer-events:none}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:linear-gradient(345deg,rgba(255,255,255,.12),rgba(255,255,255,.02) 40%),rgba(var(--surface-rgb),.6);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -1px 0 rgba(255,255,255,.3),0 -8px 32px rgba(0,0,0,.28)}
 .bar .in{max-width:980px;margin:0 auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .bar .sum{flex:1 1 200px;min-width:0;font-size:.88rem;color:var(--muted)}
@@ -260,7 +261,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.56.0";
+const FRONTEND_VERSION = "1.57.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -377,6 +378,7 @@ async function colaFlush(){
       // el backend contestó pero rechazó el movimiento (no es un problema de red): lo sacamos de la cola para no reintentar algo que nunca va a andar
       S.cola = S.cola.filter(x=>x.id!==item.id);
       colaGuardar();
+      toast("No se pudo registrar un movimiento pendiente: "+((r&&r.error)||"motivo desconocido")+". Avisá a tu encargado.");
     } else {
       break; // seguimos sin conexión, reintentamos en el próximo ciclo
     }
@@ -913,8 +915,8 @@ function gridSalida(st){
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   const card=s=>{
-    const c=cart[s.id]||0, ed=estadoSabor(s.id,st);
-    return `<div class="card${c?" sel":""}">
+    const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=st[s.id]||0, agotado=c>=disponible;
+    return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
       <button class="pick" data-add="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
@@ -932,8 +934,8 @@ function gridDesperdicio(st){
   const cart=S.cart.desperdicio;
   const list=listaFiltrada(st);
   const card=s=>{
-    const c=cart[s.id]||0, ed=estadoSabor(s.id,st);
-    return `<div class="card${c?" sel":""}">
+    const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=st[s.id]||0, agotado=c>=disponible;
+    return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
       <button class="pick" data-wadd="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
@@ -1695,9 +1697,9 @@ function renderBar(){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" ? remitoDuplicado(S.remito, S.local) : null;
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
-          ${neg.length?`<div class="warn">Queda en negativo: ${neg.map(esc).join(", ")}.</div>`:""}
+          ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
-          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
+          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
         inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${faltaMotivo?"disabled":""}>Registrar ${verbo}</button>`;
@@ -1960,9 +1962,17 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; renderApp(); return }
-  if(t.dataset.add){ const c=S.cart.salida; c[t.dataset.add]=(c[t.dataset.add]||0)+1; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.add){
+    const id=t.dataset.add, c=S.cart.salida, disponible=stockMap()[id]||0;
+    if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
+    c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
+  }
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; scheduleRender(); return }
-  if(t.dataset.wadd){ const c=S.cart.desperdicio; c[t.dataset.wadd]=(c[t.dataset.wadd]||0)+1; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.wadd){
+    const id=t.dataset.wadd, c=S.cart.desperdicio, disponible=stockMap()[id]||0;
+    if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para marcar como desperdicio."); return }
+    c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
+  }
   if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }

@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.37.0";
+const BACKEND_VERSION = "1.38.0";
 
 function doPost(e) {
   let resultado;
@@ -512,6 +512,39 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     }
     const items2 = {};
     Object.keys(items).forEach((id) => { const q = Number(items[id]) || 0; if (q > 0) items2[id] = q; });
+
+    // No dejar que una Salida (o Desperdicio, que es tipo "salida" con
+    // subtipo propio) deje un sabor en negativo — un producto que no
+    // existe no se puede sacar de la cámara. Se valida ACÁ (adentro del
+    // lock, con datos frescos — nunca con lo que mandó el cliente) para
+    // cubrir el caso en que dos dispositivos descuenten el mismo sabor
+    // casi al mismo tiempo, o que la cola offline sincronice contra un
+    // stock que ya cambió. El cliente también lo valida antes (no deja
+    // ni cargar el carrito), esto es la red de seguridad real.
+    if (tipo === "salida") {
+      const infoLocal = _datosSinCache(local);
+      const stockBase = infoLocal.stock ? infoLocal.stock.base : {};
+      const bts = infoLocal.stock ? infoLocal.stock.ts : 0;
+      const stockActual = Object.assign({}, stockBase);
+      infoLocal.registros.forEach((rg) => {
+        if (rg.anulado || rg.ts <= bts) return;
+        const signo = rg.tipo === "ingreso" ? 1 : rg.tipo === "salida" ? -1 : 0;
+        if (!signo) return;
+        Object.keys(rg.items || {}).forEach((id) => {
+          stockActual[id] = (Number(stockActual[id]) || 0) + signo * (Number(rg.items[id]) || 0);
+        });
+      });
+      const nombreDe = {};
+      infoLocal.sabores.forEach((s) => { nombreDe[s.id] = s.nombre; });
+      const faltantes = [];
+      Object.keys(items2).forEach((id) => {
+        if (items2[id] > (Number(stockActual[id]) || 0)) faltantes.push(nombreDe[id] || ("Sabor " + id));
+      });
+      if (faltantes.length) {
+        return { ok: false, error: "No hay stock suficiente de: " + faltantes.join(", ") + ". Actualizá la pantalla e intentá de nuevo." };
+      }
+    }
+
     const total = _totalItems(items2);
     const kilos2 = {};
     Object.keys(kilos || {}).forEach((id) => { const k = Number(kilos[id]) || 0; if (k > 0) kilos2[id] = k; });
