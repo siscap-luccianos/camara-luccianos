@@ -261,7 +261,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.61.0";
+const FRONTEND_VERSION = "1.62.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1786,6 +1786,25 @@ function setLocal(local){
 /* ============================================================
    GUARDAR — registrar (salida/ingreso), conteo, con cola offline
 ============================================================ */
+/** Cuando un movimiento queda en la cola offline (todavía no lo confirmó el
+ *  servidor), lo sumamos igual a S.regs para que el stock en pantalla ya lo
+ *  descuente/sume — si no, la tablet seguía mostrando el stock de ANTES del
+ *  retiro hasta que volviera la señal (reportado por Gabi: "sigue marcando
+ *  lo mismo con lo que yo empecé"). Cuando el movimiento se sincroniza de
+ *  verdad, el próximo cargarDatos() reemplaza TODO S.regs con la respuesta
+ *  real del servidor, así que este registro provisorio desaparece solo —
+ *  no hace falta sacarlo a mano ni arriesgarse a contarlo dos veces.
+ */
+function agregarRegistroOptimista(payload){
+  S.regs.push({
+    id: "pendiente-"+payload.clienteId, tipo: payload.tipo, local: payload.local,
+    empleadoId: String(S.empleado.id), empleado: S.empleado.nombre, items: payload.items||{},
+    total: Object.values(payload.items||{}).reduce((a,b)=>a+(+b||0),0),
+    remito: payload.remito||"", ts: Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
+    foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{},
+  });
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, registros:S.regs, stock:S.stock});
+}
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
@@ -1809,6 +1828,7 @@ async function guardarMovimiento(){
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
+      agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
       S.cart[cartKey]={}; S.kilosProduccion={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
@@ -1834,6 +1854,11 @@ async function guardarConteo(){
     await cargarDatos();
   } else if(r && r.offline){
     colaAgregar("conteo", payload);
+    // Un conteo fija el stock directo (no es un delta como salida/ingreso) —
+    // acá actualizamos S.stock con lo recién contado para que la pantalla
+    // ya lo refleje, por la misma razón que agregarRegistroOptimista().
+    S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
