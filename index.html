@@ -274,7 +274,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.65.0";
+const FRONTEND_VERSION = "1.65.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1310,7 +1310,8 @@ function stockViewConteo(){
   const list=listaFiltrada(stockMap());
   const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div></div>
     <div class="right"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
-  return `<div class="tools"><span class="grow"><b>Conteo físico:</b> escribí cuántas hay de cada sabor.</span></div>
+  return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
     <input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0">
     <button class="btn ghost" id="aplicarTodos" type="button">Aplicar a todos</button></div>
