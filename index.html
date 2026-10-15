@@ -274,7 +274,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.65.1";
+const FRONTEND_VERSION = "1.65.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1327,7 +1327,7 @@ function puedeAnular(r){
   if(rol==="colaborador") return String(r.empleadoId)===String(S.empleado.id) && edad<=10*60*1000;
   return false;
 }
-const CATEGORIAS_HIST = [["todas","Todas"],["vasquetas","Vasquetas"],["icepops","Ice Pop"],["desperdicio","Desperdicio"],["produccion","Producción"]];
+const CATEGORIAS_HIST = [["todas","Todas"],["vasquetas","Vasquetas"],["icepops","Icepops"],["desperdicio","Desperdicio"],["produccion","Producción"]];
 const RANGOS_HIST = [["s0","Esta semana"],["s1","Semana pasada"],["s2","Hace 2 semanas"],["s3","Hace 3 semanas"],["m0","Este mes"],["m1","Mes pasado"]];
 /** Info del rango elegido en Historial: una semana calendario (lunes a
  *  domingo, igual que antes) o — nuevo — un mes calendario completo. Los
@@ -1432,7 +1432,7 @@ function histView(){
     }).join("");
     tabla = grupos || `<div class="empty">Sin producción en este período.</div>`;
   } else {
-    tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Ice Pop" : "Salidas por sabor (todas las categorías)";
+    tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Icepops" : "Salidas por sabor (todas las categorías)";
     const sem={};
     for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin){
       const d=esSemana?(new Date(r.ts).getDay()+6)%7:0;
@@ -1442,7 +1442,7 @@ function histView(){
       }
     }
     const ids=S.sabores.filter(s=>sem[s.id]);
-    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${grupoHistDe(s.id)==="icepops"?"Ice Pop":"Vasqueta"}</span>`:"";
+    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${grupoHistDe(s.id)==="icepops"?"Icepops":"Vasqueta"}</span>`:"";
     if(!ids.length) tabla=`<div class="empty">Sin salidas en este período.</div>`;
     else if(esSemana){
       const totalesDia=[0,0,0,0,0,0,0]; ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
