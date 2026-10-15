@@ -155,6 +155,7 @@ select{max-width:220px}
 .h .top time{color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
 .h .items{margin-top:4px;font-size:.85rem;color:var(--muted)}
 .h .anulTag{margin-top:4px;font-size:.78rem;color:var(--alert);font-weight:700}
+.h .pendienteTag{margin-top:4px;font-size:.78rem;color:var(--warn);font-weight:700}
 .h .anularBtn{margin-top:6px;background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:.75rem;font-weight:700;color:var(--muted)}
 .tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
 table{border-collapse:collapse;width:100%;font-size:.82rem;font-variant-numeric:tabular-nums;table-layout:fixed}
@@ -261,7 +262,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.62.0";
+const FRONTEND_VERSION = "1.63.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1337,6 +1338,11 @@ function grupoHistDe(id){ const s=S.saboresPorId[id]; return s && grupoProductoD
 /** Una fila de la lista de "Movimientos" — compartida entre el Historial
  *  completo (Encargado/Turno/Supervisor/Admin/Producción) y el Historial
  *  simplificado de Colaborador. */
+/** Un registro "pendiente-<clienteId>" es el que agregarRegistroOptimista()
+ *  empujó mientras no había señal — todavía no lo confirmó el servidor, así
+ *  que no tiene un id real para anular/eliminar (y desaparece solo, sin
+ *  avisar, apenas se sincronice de verdad). */
+function esPendienteSync(r){ return String(r.id||"").indexOf("pendiente-")===0 }
 function filaMovimiento(r){
   const it=Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
@@ -1349,8 +1355,8 @@ function filaMovimiento(r){
     <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${it}</div>`}
-    ${r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
-    ${S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
+    ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
+    ${!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`;
 }
 /** Historial del Colaborador (decidido por Gabi 14/10/2026: "que no estén
