@@ -240,9 +240,9 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .altaForm input,.altaForm select{flex:1 1 160px}
 @media (prefers-reduced-motion:reduce){.card>.pick{transition:none}}
 @media (max-width:640px){.authList{grid-template-columns:1fr 1fr}}
-.authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
-.authPremium .authWrap{margin:0 auto;width:100%;max-width:420px;padding:0}
-.authPremium .authLogo{width:280px;max-width:78%;height:auto;margin:0 auto 12px;filter:drop-shadow(0 6px 22px rgba(217,185,105,.28))}
+.authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
+.authPremium .authWrap{margin:auto;width:100%;max-width:420px;padding:0}
+.authPremium .authLogo{width:280px;max-width:78%;height:auto;margin:auto auto 12px;filter:drop-shadow(0 6px 22px rgba(217,185,105,.28))}
 .authPremium .authCard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:28px 22px;box-sizing:border-box;color:#F5F0E8;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .authPremium h1{font-family:'Fraunces',Georgia,serif;font-weight:700;color:#F5F0E8}
 .authPremium p{color:#B3A395}
@@ -298,7 +298,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.2";
+const FRONTEND_VERSION = "1.66.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
