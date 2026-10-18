@@ -298,7 +298,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.3";
+const FRONTEND_VERSION = "1.66.4";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -807,7 +807,13 @@ async function desbloquearPC(){
     S.bloqueoPin = ""; S.bloqueoClave = ""; renderApp();
   }
 }
-["click","input","touchstart"].forEach(ev=>document.addEventListener(ev, ()=>{ if(S.empleado && !S.bloqueado) reiniciarInactividad() }, {passive:true}));
+// Cualquier uso de la pantalla cuenta como actividad: en PC se lee y se carga
+// mucho con la rueda del mouse y el teclado, sin tocar un botón. Antes solo
+// contaban click/input/touch y la PC se bloqueaba mientras la estaban usando.
+// El scroll no burbujea desde los contenedores, por eso va con captura.
+function registrarActividad(){ if(S.empleado && !S.bloqueado) reiniciarInactividad() }
+["click","input","touchstart","keydown","wheel","pointermove"].forEach(ev=>document.addEventListener(ev, registrarActividad, {passive:true}));
+document.addEventListener("scroll", registrarActividad, {passive:true, capture:true});
 
 function localesRecientes(){
   try{ const v=JSON.parse(ls.get("localesRecientes","[]")); return Array.isArray(v)?v:[] }catch(e){ return [] }
