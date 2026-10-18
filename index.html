@@ -298,7 +298,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.1";
+const FRONTEND_VERSION = "1.66.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -769,6 +769,9 @@ function reiniciarInactividad(){
   if(S.deviceLocal){
     // Tablet: se cierra la sesión entera (vuelve a elegir quién sos) — pero
     // no si hay un carrito o un conteo sin guardar, ahí sí se perdería.
+    // Encargado y turno no se desconectan solos: pasan el día cargando stock
+    // e ingresos, y cortarles la sesión por una pausa es tedioso. Salen con "Salir".
+    if(S.empleado && (S.empleado.rol==="encargado" || S.empleado.rol==="turno")) return;
     if(hayTrabajoSinGuardar()) return;
     S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
   } else if(!S.esGestion){
