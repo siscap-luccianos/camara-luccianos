@@ -57,6 +57,8 @@ select{max-width:220px}
 .userChip button{min-height:32px;padding:0 14px;border-radius:999px;border:0;background:var(--bg);color:var(--ink);font-weight:700;font-size:.78rem}
 .userChip #editarNombre{padding:0;width:32px;font-size:.95rem;background:transparent;color:var(--header-ink)}
 .alertPill{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;background:rgba(251,231,198,.16);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(251,231,198,.28);color:#F2C879;font-size:.82rem;font-weight:700}
+.timerInact{font-size:.72rem;font-weight:700;font-variant-numeric:tabular-nums;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:var(--muted);white-space:nowrap}
+.timerInact.urgente{color:#F2C879;border-color:rgba(251,231,198,.4)}
 .bottomNav{position:fixed;left:10px;right:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:9;
   display:flex;gap:2px;padding:6px;max-width:820px;margin-inline:auto;border-radius:26px;
   background:linear-gradient(165deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 40%),rgba(var(--header-bg-rgb),.78);
@@ -298,11 +300,11 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.4";
+const FRONTEND_VERSION = "1.66.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
-const INACTIVIDAD_PC_MS = 3 * 60 * 1000;
+const INACTIVIDAD_PC_MS = 10 * 60 * 1000;
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -765,6 +767,7 @@ function hayTrabajoSinGuardar(){
 }
 function reiniciarInactividad(){
   clearTimeout(S.inactTimer);
+  S.inactHasta = null; // lo vuelve a fijar abajo solo en PC (el contador visible de la cabecera lo lee de acá)
   if(S.lectorRemito) return; // leyendo/revisando un remito: no se cierra ni se bloquea solo
   if(S.deviceLocal){
     // Tablet: se cierra la sesión entera (vuelve a elegir quién sos) — pero
@@ -779,10 +782,28 @@ function reiniciarInactividad(){
     // pierde el carrito/conteo (sigue ahí al desbloquear), así que acá SÍ
     // bloquea igual aunque haya algo sin guardar — es lo que evita que
     // alguien toque la PC sin el PIN si la dejaron abierta.
+    S.inactHasta = Date.now() + INACTIVIDAD_PC_MS;
     S.inactTimer = setTimeout(()=>bloquearPC(), INACTIVIDAD_PC_MS);
   }
   // PC + Operaciones (admin/supervisor): sin timer — la sesión queda
   // abierta hasta que toquen "Salir" (decidido por Gabi).
+}
+// Contador chiquito en la cabecera de la PC: muestra cuánto falta para que
+// se bloquee la sesión por inactividad. Solo PC con login de local real
+// (no tablet, no Operaciones, que no tiene bloqueo por inactividad).
+function segundosInact(){
+  if(!S.inactHasta || S.bloqueado) return null;
+  return Math.max(0, Math.ceil((S.inactHasta - Date.now()) / 1000));
+}
+function textoTimerInact(seg){
+  return seg===null ? "" : `${Math.floor(seg/60)}:${String(seg%60).padStart(2,"0")}`;
+}
+function actualizarTimerInact(){
+  const el = document.getElementById("timerInact");
+  if(!el) return;
+  const seg = segundosInact();
+  el.textContent = textoTimerInact(seg);
+  el.classList.toggle("urgente", seg!==null && seg<=60);
 }
 function bloquearPC(){
   if(S.bloqueado) return;
@@ -882,6 +903,7 @@ function renderHeader(){
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
+      ${!S.deviceLocal && !S.esGestion ? (()=>{ const seg=segundosInact(); return `<span class="timerInact${seg!==null&&seg<=60?" urgente":""}" id="timerInact" title="Si no tocás nada, la sesión se bloquea al llegar a cero">${textoTimerInact(seg)}</span>` })() : ""}
       <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
     </div>
   </header>`;
@@ -2364,6 +2386,7 @@ function iniciarChequeoDeVersion(){
 }
 
 async function start(){
+  setInterval(actualizarTimerInact, 1000);
   if(!S.locales.length){
     const cache = ls.get("localesCache","");
     if(cache){ try{ S.locales = JSON.parse(cache); }catch(e){} }
