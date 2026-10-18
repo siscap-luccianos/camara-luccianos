@@ -240,6 +240,30 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .altaForm input,.altaForm select{flex:1 1 160px}
 @media (prefers-reduced-motion:reduce){.card>.pick{transition:none}}
 @media (max-width:640px){.authList{grid-template-columns:1fr 1fr}}
+.authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
+.authPremium .authWrap{margin:0 auto;width:100%;max-width:420px;padding:0}
+.authPremium .authLogo{width:280px;max-width:78%;height:auto;margin:0 auto 12px;filter:drop-shadow(0 6px 22px rgba(217,185,105,.28))}
+.authPremium .authCard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:28px 22px;box-sizing:border-box;color:#F5F0E8;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.authPremium h1{font-family:'Fraunces',Georgia,serif;font-weight:700;color:#F5F0E8}
+.authPremium p{color:#B3A395}
+.authPremium .authBack{color:#B3A395}
+.authPremium input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#F5F0E8;border-radius:16px;height:56px;padding:0 16px;font-size:15px;box-sizing:border-box}
+.authPremium input::placeholder{color:#8F8074}
+.authPremium .btn{background:linear-gradient(135deg,#E3A46F 0%,#C77D45 100%);color:#1B1611;border:0;border-radius:16px;min-height:52px;font-weight:800;box-shadow:0 10px 24px -10px rgba(217,146,90,.6)}
+.authPremium .btn:disabled{opacity:.5}
+.authPremium .recientes{width:100%;display:flex;flex-direction:column;gap:8px;text-align:left}
+.authPremium .recientesTit{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8F8074}
+.authPremium .recienteBtn{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#F5F0E8;font-weight:700;font-size:15px}
+.authPremium .recienteBtn .chev{color:#B3A395;font-size:20px}
+.authPremium .authList button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#F5F0E8;flex-direction:column;justify-content:center;text-align:center;min-height:150px;border-radius:24px;gap:12px}
+.authPremium .authList .nm{color:#F5F0E8;font-size:14px}
+.authPremium .authList .rol{color:#D9B869;text-transform:uppercase;letter-spacing:.06em;font-size:11px;font-weight:700}
+.authPremium .ini{width:64px;height:64px;font-family:'Fraunces',Georgia,serif;font-size:1.3rem;background:linear-gradient(135deg,#E3A46F,#9C5A2E);color:#1B1611}
+.authPremium .dots span{border-color:rgba(217,185,105,.55);width:14px;height:14px}
+.authPremium .dots span.on{background:#D9B869;border-color:#D9B869;box-shadow:0 0 14px rgba(217,185,105,.6)}
+.authPremium .keypad{max-width:300px;justify-items:center}
+.authPremium .keypad button{width:78px;height:78px;min-height:0;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#F5F0E8;font-family:'Fraunces',Georgia,serif;font-size:1.7rem;font-weight:600;padding:0}
+.authPremium .keypad button.op{color:#B3A395;font-family:'Manrope',system-ui,sans-serif;font-size:.85rem;font-weight:700}
 @media (max-width:480px){
   header{padding-block:10px 0}
   .brand{gap:8px}
@@ -274,7 +298,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.65.3";
+const FRONTEND_VERSION = "1.66.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -701,6 +725,7 @@ function aplicarLogin(r){
   // permiso de ver).
   S.tab = "salida";
   if(!S.deviceLocal) guardarSesionPC();
+  if(localElegido) recordarLocalReciente(localElegido);
   S.auth=null;
   if(!yaFijado && puedeFijar && localElegido && confirm(`¿Fijar "${localElegido}" como local de este dispositivo? La próxima vez arranca directo, sin volver a elegir local.`)){
     S.deviceLocal = localElegido; ls.set("deviceLocal", localElegido);
@@ -781,14 +806,23 @@ async function desbloquearPC(){
 }
 ["click","input","touchstart"].forEach(ev=>document.addEventListener(ev, ()=>{ if(S.empleado && !S.bloqueado) reiniciarInactividad() }, {passive:true}));
 
+function localesRecientes(){
+  try{ const v=JSON.parse(ls.get("localesRecientes","[]")); return Array.isArray(v)?v:[] }catch(e){ return [] }
+}
+function recordarLocalReciente(nombre){
+  const lista=[nombre, ...localesRecientes().filter(n=>n!==nombre)].slice(0,5);
+  ls.set("localesRecientes", JSON.stringify(lista));
+}
 function renderAuth(){
   const a=S.auth;
   let cuerpo="";
   if(a.paso==="local"){
-    cuerpo=`<img src="icons/wordmark-dorado.png" alt="Lucciano's" style="width:300px;max-width:86%;height:auto">
-      <h1 style="margin-top:10px">Bienvenido</h1>
-      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Escribí para buscar el local…" autocomplete="off">
+    const recientes=localesRecientes().filter(n=>S.locales.some(l=>l.nombre===n && !l.esGestion));
+    cuerpo=`<h1 style="margin-top:6px">Bienvenido</h1>
+      <p>Elegí tu local para empezar.</p>
+      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Buscá tu local…" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
+      ${recientes.length?`<div class="recientes"><div class="recientesTit">Recientes en este equipo</div>${recientes.map(n=>`<button type="button" class="recienteBtn" data-local-reciente="${esc(n)}"><span>${esc(n)}</span><span class="chev">›</span></button>`).join("")}</div>`:""}
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
   } else if(a.paso==="clave"){
     cuerpo=`<button class="authBack" data-authback="1">Volver</button>
@@ -821,7 +855,8 @@ function renderAuth(){
         <button type="button" class="op" data-tecla="borrar" ${a.cargando?"disabled":""}>Borrar</button>
       </div>`;
   }
-  return `<div class="authWrap"><div class="authCard">${cuerpo}</div></div>`;
+  const logo = a.paso==="local" ? `<img class="authLogo" src="icons/wordmark-dorado.png" alt="Lucciano's">` : "";
+  return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard">${cuerpo}</div></div></div>`;
 }
 
 function renderHeader(){
@@ -2021,6 +2056,7 @@ document.addEventListener("click", async e=>{
     authElegirLocal(match.nombre);
     return;
   }
+  if(t.dataset.localReciente){ authElegirLocal(t.dataset.localReciente); return }
   if(t.id==="authClaveOk"){ await authEnviarClave(); return }
   if(t.id==="authReintentar"){ await cargarEmpleadosDeAuth(); return }
   if(t.id==="salir"){ cerrarSesion(false); return }
