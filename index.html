@@ -298,7 +298,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.0";
+const FRONTEND_VERSION = "1.66.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2167,6 +2167,11 @@ document.addEventListener("keydown", e=>{
     const siguiente=campos[campos.indexOf(e.target)+1];
     if(siguiente) siguiente.focus(); else e.target.blur();
     return;
+  }
+  if(e.key==="Enter"){
+    const botonEnter={authLocal:"authLocalOk", authClave:"authClaveOk", bloqueoClaveInput:"bloqueoDesbloquear"}[e.target.id];
+    const btn=botonEnter && document.getElementById(botonEnter);
+    if(btn && !btn.disabled){ e.preventDefault(); btn.click(); return }
   }
   if(e.target.tagName==="INPUT" || e.target.tagName==="TEXTAREA") return;
   const esDigito = /^[0-9]$/.test(e.key);
