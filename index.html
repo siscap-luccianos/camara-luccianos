@@ -301,7 +301,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.7";
+const FRONTEND_VERSION = "1.66.8";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1523,7 +1523,9 @@ function histView(){
     }
   }
 
-  const lista=regs.slice(0,150).map(filaMovimiento).join("");
+  // La lista de abajo sigue a la pill de categoría igual que la tabla de arriba
+  const regsCategoria=regs.filter(r=>movimientoEnCategoria(r, S.categoriaHist));
+  const lista=regsCategoria.slice(0,150).map(filaMovimiento).join("");
   return `<div class="tools noPrint" style="justify-content:space-between">
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${[["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="chip" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("")}
@@ -1535,7 +1537,17 @@ function histView(){
   <p class="sec" style="margin:14px 0 8px">${esc(tituloTabla)} — ${esc(rango.label)}</p>
   ${tabla}
   <p class="sec noPrint" style="margin-top:20px">Movimientos</p>
-  <div class="noPrint">${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Sin movimientos en este período.</div>`}</div>`;
+  <div class="noPrint">${lista?`<div class="hist">${lista}</div>`:`<div class="empty">${S.categoriaHist==="todas"?"Sin movimientos en este período.":"Sin movimientos de esta categoría en este período."}</div>`}</div>`;
+}
+/** Qué movimientos muestra cada pill de categoría en la lista de abajo.
+ *  Mismo criterio que la tabla de arriba: Vasquetas/Icepops son salidas
+ *  (sin desperdicio) con algún sabor de ese grupo; si una salida mezcla
+ *  los dos, aparece entera en ambos filtros. */
+function movimientoEnCategoria(r, cat){
+  if(cat==="todas") return true;
+  if(cat==="desperdicio") return r.tipo==="salida" && r.subtipo==="desperdicio";
+  if(cat==="produccion") return r.subtipo==="produccion";
+  return r.tipo==="salida" && r.subtipo!=="desperdicio" && Object.keys(r.items||{}).some(id=>grupoHistDe(id)===cat);
 }
 
 function _teamFila(e, rolesQuePuedoCrear){
