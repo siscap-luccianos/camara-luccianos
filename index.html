@@ -79,8 +79,10 @@ select{max-width:220px}
 .tools .grow{flex:1 1 180px}
 .tools input{width:100%}
 .glass{background:rgba(var(--surface-rgb),.6);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.78);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18)}
-.chip{min-height:40px;border:1px solid rgba(var(--header-bg-rgb),.12);background:rgba(var(--surface-rgb),.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:999px;padding:0 14px;font-weight:700;font-size:.85rem}
-.chip[aria-pressed=true]{background:rgba(var(--accent-rgb),.16);color:var(--accent-hover);border-color:rgba(var(--accent-rgb),.38)}
+/* Pills de filtro, formato premium (mock Chocolatería 19/10/2026): superficie sólida y
+   legible; activa = bloque oscuro con texto claro, para que se vea de un vistazo cuál está prendido. */
+.chip{min-height:42px;border:1px solid rgba(var(--header-bg-rgb),.22);background:var(--surface);color:var(--ink);border-radius:999px;padding:0 16px;font-weight:700;font-size:.9rem;white-space:nowrap}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 /* Tarjeta con ícono + texto para un CTA destacado (Pedido sugerido / Volver
    a Stock, Leer remito con una foto) — se combina con .glass para la
    superficie translúcida. */
@@ -301,7 +303,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.8";
+const FRONTEND_VERSION = "1.66.9";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
