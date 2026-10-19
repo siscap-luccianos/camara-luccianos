@@ -301,7 +301,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.6";
+const FRONTEND_VERSION = "1.66.7";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -770,16 +770,16 @@ function reiniciarInactividad(){
   clearTimeout(S.inactTimer);
   S.inactHasta = null; // lo fija abajo cuando hay un cierre o bloqueo real; el contador de la cabecera lo lee de acá
   if(S.lectorRemito || !S.empleado || S.esGestion) return; // remito en curso o Operaciones (admin/supervisor): sin timer
-  if(S.deviceLocal && (S.empleado.rol==="colaborador" || S.empleado.rol==="produccion")){
-    // Tablet de colaborador/producción: se cierra la sesión entera a los 60 s
-    // (vuelve a elegir quién sos) — pero no si hay un carrito o un conteo sin
-    // guardar, ahí sí se perdería.
+  if(S.empleado.rol==="colaborador" || S.empleado.rol==="produccion"){
+    // Colaborador/producción (tablet y PC, misma regla): se cierra la sesión
+    // entera a los 60 s (vuelve a elegir quién sos) — pero no si hay un carrito
+    // o un conteo sin guardar, ahí sí se perdería.
     if(hayTrabajoSinGuardar()) return;
     S.inactHasta = Date.now() + INACTIVIDAD_TABLET_MS;
     S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_TABLET_MS);
     return;
   }
-  // PC y tablet de encargado/turno: no cierra sesión, solo bloquea la pantalla
+  // Encargado/turno/supervisor (tablet y PC): no cierra sesión, solo bloquea la pantalla
   // a los 10 min y pide el PIN de quien está logueado. Nunca pierde el carrito
   // ni el conteo (siguen ahí al desbloquear), así que bloquea igual aunque haya
   // algo sin guardar — es lo que evita que alguien use el equipo sin PIN si lo
