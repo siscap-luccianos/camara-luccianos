@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.38.0";
+const BACKEND_VERSION = "1.39.0";
 
 function doPost(e) {
   let resultado;
@@ -80,7 +80,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
@@ -463,11 +463,13 @@ function _registroPublico(r) {
   try { items = JSON.parse(r.items || "{}"); } catch (e) { items = {}; }
   let kilos = {};
   try { kilos = JSON.parse(r.kilos || "{}"); } catch (e) { kilos = {}; }
+  let vencimientos = {};
+  try { vencimientos = JSON.parse(r.vencimientos || "{}"); } catch (e) { vencimientos = {}; }
   return {
     id: String(r.id), tipo: r.tipo, local: r.local, empleadoId: String(r.empleadoId || ""), empleado: r.empleado, items: items,
     total: Number(r.total) || 0, remito: r.remito || "", ts: Number(r.ts),
     anulado: !!r.anulado_ts, anulado_por: r.anulado_por || "", motivo: r.motivo || "",
-    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos,
+    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos, vencimientos: vencimientos,
   };
 }
 
@@ -487,11 +489,28 @@ function _totalItems(items) {
   return t;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!items || !Object.keys(items).length) return { ok: false, error: "No hay sabores cargados." };
+  // Chocolatería (familia "chocolateria"): en un ingreso normal (no devolución
+  // ni producción) cada producto trae su vencimiento. Se valida acá, no solo en
+  // el cliente.
+  const catalogoVenc = _leerCrudo("Sabores");
+  const nombreVenc = {}, familiaVenc = {};
+  catalogoVenc.forEach((sab) => { nombreVenc[String(sab.id)] = sab.nombre; familiaVenc[String(sab.id)] = sab.familia || "vasquetas"; });
+  const vencimientos2 = {};
+  if (tipo === "ingreso") {
+    Object.keys(vencimientos || {}).forEach((id) => {
+      const v = String((vencimientos || {})[id] || "");
+      if (items[id] && /^\d{4}-\d{2}-\d{2}$/.test(v)) vencimientos2[id] = v;
+    });
+  }
+  if (tipo === "ingreso" && !subtipo) {
+    const sinVenc = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria" && !vencimientos2[id]);
+    if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreVenc[String(id)] || ("Sabor " + id)).join(", ") + "." };
+  }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
@@ -554,6 +573,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
       anulado_por: "", anulado_ts: "", motivo: motivo || "", foto_remito: fotoRemito || "", subtipo: subtipo || "",
       kilos: Object.keys(kilos2).length ? JSON.stringify(kilos2) : "",
+      vencimientos: Object.keys(vencimientos2).length ? JSON.stringify(vencimientos2) : "",
     });
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };

@@ -83,6 +83,9 @@ select{max-width:220px}
    legible; activa = bloque oscuro con texto claro, para que se vea de un vistazo cuál está prendido. */
 .chip{min-height:42px;border:1px solid rgba(var(--header-bg-rgb),.22);background:var(--surface);color:var(--ink);border-radius:999px;padding:0 16px;font-weight:700;font-size:.9rem;white-space:nowrap}
 .chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.vencCampo{display:flex;flex-direction:column;gap:4px;margin-top:6px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.vencCampo input{height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 10px;font-size:.9rem;font-weight:700;text-transform:none;letter-spacing:0}
+.vencCampo.falta input{border:1.5px dashed var(--alert)}
 /* Tarjeta con ícono + texto para un CTA destacado (Pedido sugerido / Volver
    a Stock, Leer remito con una foto) — se combina con .glass para la
    superficie translúcida. */
@@ -305,7 +308,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.67.2";
+const FRONTEND_VERSION = "1.68.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -339,6 +342,7 @@ const S = {
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
+  vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
@@ -437,9 +441,9 @@ window.addEventListener("online", colaFlush);
 function nombre(id){ return (S.saboresPorId[id]||{}).nombre || ("Sabor "+id) }
 function minimoDe(id){ return (S.saboresPorId[id]||{}).minimo ?? 6 }
 function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
-const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"] };
+const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"] };
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
-const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual" };
+const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Chocolatería (unidad)" };
 
 function regsActivos(){ return S.regs.filter(r=>!r.anulado) }
 /** Busca si este N° de remito ya tiene un ingreso cargado (no anulado) en
@@ -835,6 +839,17 @@ async function desbloquearPC(){
 // mucho con la rueda del mouse y el teclado, sin tocar un botón. Antes solo
 // contaban click/input/touch y la PC se bloqueaba mientras la estaban usando.
 // El scroll no burbujea desde los contenedores, por eso va con captura.
+/* Chocolatería: cada producto del carrito de Ingreso pide su vencimiento antes de confirmar. */
+function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
+function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
+document.addEventListener("change", (e)=>{
+  const id=e.target && e.target.dataset && e.target.dataset.venc;
+  if(!id) return;
+  if(e.target.value) S.vencimientos[id]=e.target.value; else delete S.vencimientos[id];
+  const campo=e.target.closest(".vencCampo");
+  if(campo) campo.classList.toggle("falta", !e.target.value);
+  renderBar();
+});
 function registrarActividad(){ if(S.empleado && !S.bloqueado) reiniciarInactividad() }
 ["click","input","touchstart","keydown","wheel","pointermove"].forEach(ev=>document.addEventListener(ev, registrarActividad, {passive:true}));
 document.addEventListener("scroll", registrarActividad, {passive:true, capture:true});
@@ -956,7 +971,7 @@ function renderMain(){
 }
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
-const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Gluten Free"];
+const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas"];
 const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", glutenfree:"Gluten Free" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","glutenfree"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
@@ -1174,7 +1189,7 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?`<label class="vencCampo${S.vencimientos[s.id]?"":" falta"}">Vencimiento<input type="date" data-venc="${s.id}" value="${esc(S.vencimientos[s.id]||"")}"></label>`:""}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
@@ -1396,7 +1411,7 @@ function puedeAnular(r){
   if(rol==="colaborador") return String(r.empleadoId)===String(S.empleado.id) && edad<=10*60*1000;
   return false;
 }
-const CATEGORIAS_HIST = [["todas","Todas"],["vasquetas","Vasquetas"],["icepops","Icepops"],["desperdicio","Desperdicio"],["produccion","Producción"]];
+const CATEGORIAS_HIST = [["todas","Todas"],["vasquetas","Vasquetas"],["icepops","Icepops"],["chocolateria","Chocolatería"],["desperdicio","Desperdicio"],["produccion","Producción"]];
 const RANGOS_HIST = [["s0","Esta semana"],["s1","Semana pasada"],["s2","Hace 2 semanas"],["s3","Hace 3 semanas"],["m0","Este mes"],["m1","Mes pasado"]];
 /** Info del rango elegido en Historial: una semana calendario (lunes a
  *  domingo, igual que antes) o — nuevo — un mes calendario completo. Los
@@ -1422,7 +1437,7 @@ function rangoHistInfo(id){
  *  reportó Gabi era solo contra Icepops (ej. "Frutilla" existe en vasqueta
  *  Y en Icepop). Si algún día hace falta separarlas más fino, se agrega
  *  otra pill — por ahora, menos pills es mejor (pedido explícito de Gabi). */
-function grupoHistDe(id){ const s=S.saboresPorId[id]; return s && grupoProductoDe(s)==="icepops" ? "icepops" : "vasquetas"; }
+function grupoHistDe(id){ const s=S.saboresPorId[id]; const g=s?grupoProductoDe(s):"vasquetas"; return g==="icepops"||g==="chocolateria" ? g : "vasquetas"; }
 /** Una fila de la lista de "Movimientos" — compartida entre el Historial
  *  completo (Encargado/Turno/Supervisor/Admin/Producción) y el Historial
  *  simplificado de Colaborador. */
@@ -1435,7 +1450,8 @@ function filaMovimiento(r){
   const it=Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
-    return `${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}`;
+    const vto=r.vencimientos&&r.vencimientos[id]?` · vence ${fechaVencCorta(r.vencimientos[id])}`:"";
+    return `${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${vto}`;
   }).join(" · ");
   const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.tipo;
   const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":r.tipo;
@@ -1507,7 +1523,7 @@ function histView(){
     }).join("");
     tabla = grupos || `<div class="empty">Sin producción en este período.</div>`;
   } else {
-    tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Icepops" : "Salidas por sabor (todas las categorías)";
+    tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Icepops" : S.categoriaHist==="chocolateria" ? "Salidas — Chocolatería" : "Salidas por sabor (todas las categorías)";
     const sem={};
     for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin){
       const d=esSemana?(new Date(r.ts).getDay()+6)%7:0;
@@ -1517,7 +1533,7 @@ function histView(){
       }
     }
     const ids=S.sabores.filter(s=>sem[s.id]);
-    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${grupoHistDe(s.id)==="icepops"?"Icepops":"Vasqueta"}</span>`:"";
+    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${grupoHistDe(s.id)==="icepops"?"Icepops":grupoHistDe(s.id)==="chocolateria"?"Chocolatería":"Vasqueta"}</span>`:"";
     if(!ids.length) tabla=`<div class="empty">Sin salidas en este período.</div>`;
     else if(esSemana){
       const totalesDia=[0,0,0,0,0,0,0]; ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
@@ -1552,11 +1568,13 @@ function histView(){
 /** Qué movimientos muestra cada pill de categoría en la lista de abajo.
  *  Mismo criterio que la tabla de arriba: Vasquetas/Icepops son salidas
  *  (sin desperdicio) con algún sabor de ese grupo; si una salida mezcla
- *  los dos, aparece entera en ambos filtros. */
+ *  los dos, aparece entera en ambos filtros. Chocolatería suma ingresos. */
 function movimientoEnCategoria(r, cat){
   if(cat==="todas") return true;
   if(cat==="desperdicio") return r.tipo==="salida" && r.subtipo==="desperdicio";
   if(cat==="produccion") return r.subtipo==="produccion";
+  // Chocolatería: también los ingresos, porque ahí es donde se carga el vencimiento
+  if(cat==="chocolateria") return (r.tipo==="ingreso" && !r.subtipo || r.tipo==="salida" && r.subtipo!=="desperdicio") && Object.keys(r.items||{}).some(id=>grupoHistDe(id)===cat);
   return r.tipo==="salida" && r.subtipo!=="desperdicio" && Object.keys(r.items||{}).some(id=>grupoHistDe(id)===cat);
 }
 
@@ -1659,12 +1677,13 @@ async function cargarGestion(){
  *  venían `vasquetas`/`icepops`/`glutenfree`) para no romper nada que
  *  dependa de esos valores; `GRUPO_PRODUCTO_LABEL` tiene el texto para
  *  mostrar. */
-const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","glutenfree"];
-const GRUPO_PRODUCTO_LABEL = { vasquetas:"Vasquetas", baldes:"Baldes", icepops:"Icepops", glutenfree:"Gluten Free" };
+const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","chocolateria","glutenfree"];
+const GRUPO_PRODUCTO_LABEL = { vasquetas:"Vasquetas", baldes:"Baldes", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free" };
 function grupoProductoDe(s){
   if(s.tipo==="b") return "baldes";
   const familia=s.familia||"vasquetas";
   if(familia==="icepops") return "icepops";
+  if(familia==="chocolateria") return "chocolateria";
   if(familia==="glutenfree") return "glutenfree";
   return "vasquetas";
 }
@@ -1812,6 +1831,7 @@ function renderBar(){
       visible=true;
       const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
       const faltaMotivo=enDesperdicio && !S.motivoDesperdicio.trim();
+      const faltaVenc=cartKey==="ingreso" ? ent.filter(([id])=>esChocolateria(id)&&!S.vencimientos[id]) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
       const st=stockMap();
@@ -1821,10 +1841,10 @@ function renderBar(){
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
-          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
+          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}</div>
-          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${faltaMotivo?"disabled":""}>Registrar ${verbo}</button>`;
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Falta el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
   }
@@ -1887,7 +1907,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0";
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0";
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1913,7 +1933,7 @@ function agregarRegistroOptimista(payload){
     empleadoId: String(S.empleado.id), empleado: S.empleado.nombre, items: payload.items||{},
     total: Object.values(payload.items||{}).reduce((a,b)=>a+(+b||0),0),
     remito: payload.remito||"", ts: Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
-    foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{},
+    foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{},
   });
   guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, registros:S.regs, stock:S.stock});
 }
@@ -1925,6 +1945,7 @@ async function guardarMovimiento(){
     const cart=S.cart[cartKey];
     const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
     const total=Object.values(items).reduce((a,b)=>a+b,0);
+    const venc={}; for(const id of Object.keys(items)) if(S.vencimientos[id]) venc[id]=S.vencimientos[id];
     const kilos={}; if(enProduccion) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const payload={clienteId, tipo, local:S.local, items,
@@ -1932,17 +1953,18 @@ async function guardarMovimiento(){
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? (S.fotoRemitoUrl||undefined) : undefined,
       subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : undefined,
       motivo: enDesperdicio ? S.motivoDesperdicio.trim() : undefined,
-      kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined};
+      kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined,
+      vencimientos: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&Object.keys(venc).length ? venc : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -2161,7 +2183,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.familia){ S.filtroFamilia = t.dataset.familia; S.filtroCategoria = "todas"; renderApp(); return }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
