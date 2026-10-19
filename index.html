@@ -303,7 +303,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.66.9";
+const FRONTEND_VERSION = "1.67.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1483,18 +1483,24 @@ function histView(){
       <tr class="totalFila"><td><b>Total</b></td><td></td><td><b>${filas.reduce((a,f)=>a+f.cantidad,0)}</b></td></tr>
       </tbody></table></div>` : `<div class="empty">Sin desperdicio en este período.</div>`;
   } else if(S.categoriaHist==="produccion"){
-    tituloTabla="Producción (kilos)";
-    const porSabor={};
+    tituloTabla="Producción";
+    // Una fila por sabor de cada carga de producción: así al exportar se ve qué se hizo cada día
+    const filas=[];
     for(const r of regsActivos()) if(r.subtipo==="produccion"&&r.ts>=rango.inicio&&r.ts<rango.fin)
-      for(const [id,kg] of Object.entries(r.kilos||{})) porSabor[id]=(porSabor[id]||0)+(+kg||0);
-    const idsKg=Object.keys(porSabor).filter(id=>porSabor[id]);
+      for(const id of new Set([...Object.keys(r.kilos||{}),...Object.keys(r.items||{})])){
+        const kg=+(r.kilos||{})[id]||0, und=+(r.items||{})[id]||0;
+        if(kg||und) filas.push({ts:r.ts, id, kg, und});
+      }
+    filas.sort((a,b)=>a.ts-b.ts);
+    const dia=ts=>new Date(ts).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit"});
     const grupos=GRUPO_PRODUCTO_ORDEN.map(g=>{
-      const ids=idsKg.filter(id=>grupoProductoDe(S.saboresPorId[id]||{tipo:"v"})===g);
-      if(!ids.length) return "";
-      const totalGrupo=ids.reduce((a,id)=>a+porSabor[id],0);
-      return `<p class="sec" style="margin:16px 0 6px;font-size:.88rem">${esc(GRUPO_PRODUCTO_LABEL[g])} <span style="color:var(--muted);font-weight:500">— ${kgLabel(totalGrupo)} kg</span></p>
-      <div class="tbl"><table><thead><tr><th>Sabor</th><th>Total kg</th></tr></thead><tbody>
-        ${ids.map(id=>`<tr><td>${esc(nombre(id))}</td><td><b>${kgLabel(porSabor[id])}</b></td></tr>`).join("")}
+      const gf=filas.filter(f=>grupoProductoDe(S.saboresPorId[f.id]||{tipo:"v"})===g);
+      if(!gf.length) return "";
+      const totalKg=gf.reduce((a,f)=>a+f.kg,0), totalUnd=gf.reduce((a,f)=>a+f.und,0);
+      return `<p class="sec" style="margin:16px 0 6px;font-size:.88rem">${esc(GRUPO_PRODUCTO_LABEL[g])}</p>
+      <div class="tbl"><table><thead><tr><th>Sabor</th><th>Día</th><th>Kilos</th><th>Unidades</th></tr></thead><tbody>
+        ${gf.map(f=>`<tr><td>${esc(nombre(f.id))}</td><td>${esc(dia(f.ts))}</td><td>${kgLabel(f.kg)}</td><td>${f.und||"·"}</td></tr>`).join("")}
+        <tr class="totalFila"><td><b>Total</b></td><td></td><td><b>${kgLabel(totalKg)}</b></td><td><b>${totalUnd}</b></td></tr>
       </tbody></table></div>`;
     }).join("");
     tabla = grupos || `<div class="empty">Sin producción en este período.</div>`;
