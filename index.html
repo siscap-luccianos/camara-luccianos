@@ -279,6 +279,29 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .mantAcc{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
 .mantAcc .btn{min-height:50px}
 .mantAcc .btn:disabled{opacity:.4}
+.loteInfo{display:block;margin-top:2px;font-size:.72rem;font-weight:800;color:var(--muted)}
+.loteInfo.warn{color:var(--warn)}
+.loteInfo.alert{color:var(--alert)}
+.linkLote{border:0;background:none;padding:4px 0 0;font:inherit;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;cursor:pointer;justify-self:start}
+.lotesBox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.loteP{margin:0;font-size:.75rem;color:var(--muted)}
+.loteFila{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.loteFila input[type=date]{flex:1 1 130px;min-width:0}
+.loteFila input[type=number]{width:72px}
+.loteOpts{display:flex;flex-direction:column;gap:8px}
+.loteOpt{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px;font:inherit;color:var(--ink);cursor:pointer}
+.loteOpt span{font-size:.8rem;color:var(--muted)}
+.loteOpt.on{border:2px solid var(--accent)}
+.porVencer{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.vencItem{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.vencItem.alert{border:2px solid var(--alert)}
+.vencItem.warn{border-left:4px solid var(--warn)}
+.vencTop{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
+.vencTop span{font-size:.8rem;color:var(--muted)}
+.vencEstado{font-size:.8rem;font-weight:800;color:var(--alert)}
+.vencItem.warn .vencEstado{color:var(--warn)}
+.vencAcc{display:flex;gap:8px;flex-wrap:wrap}
+.vencAcc .btn{flex:1 1 120px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
 .kpi{background:rgba(var(--surface-rgb),.62);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.8);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
 .kpi .lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -399,7 +422,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.75.2";
+const FRONTEND_VERSION = "1.76.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -435,6 +458,9 @@ const S = {
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
+  lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
+  lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
+  elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
@@ -967,11 +993,213 @@ function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
   if(!esChocolateria(id)) return;
   const nm=input.closest(".row").querySelector(".nm");
   const visible=nm.querySelector(".vencCampo");
-  if(cantidad>0 && !visible) nm.insertAdjacentHTML("beforeend", vencCampoHTML(id, prefijo==="ing:"?S.vencimientos[id]:S.vencConteo[id], prefijo, attr));
-  else if(cantidad<=0 && visible) visible.remove();
+  if(cantidad>0 && !visible) nm.insertAdjacentHTML("beforeend", vencCampoHTML(id, prefijo==="ing:"?S.vencimientos[id]:S.vencConteo[id], prefijo, attr)+lotesExtraHTML(prefijo+id, id, cantidad));
+  else if(cantidad<=0 && visible){ visible.remove(); nm.querySelectorAll(".lotesBox").forEach(x=>x.remove()); delete S.lotesExtra[prefijo+id] }
 }
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
+
+/* ============================================================
+   VENCIMIENTOS POR LOTE (chocolatería)
+   Un lote = un vencimiento con sus unidades. El stock total no cambia: los
+   lotes se reconstruyen desde los movimientos (ingresos con fecha; salidas
+   que consumen primero el lote elegido a mano y después el que vence antes)
+   y se reconcilian contra stockMap(), así nunca difieren de lo que muestra
+   la pantalla. Lo vencido no se vende; el desperdicio sí puede sacarlo.
+============================================================ */
+const LOTE_RE = /^\d{4}-\d{2}-\d{2}$/;
+let _lotesMemo = null; // se borra en cada renderApp()
+/** Días calendario desde hoy hasta la fecha ISO (negativo = ya venció). */
+function diasHasta(iso){
+  const [y,m,d]=String(iso).split("-").map(Number), h=new Date();
+  return Math.round((new Date(y,m-1,d)-new Date(h.getFullYear(),h.getMonth(),h.getDate()))/86400000);
+}
+function ordenarFEFO(lotes){
+  const k=l=>l.f||"~";
+  return lotes.slice().sort((a,b)=>k(a)<k(b)?-1:k(a)>k(b)?1:0);
+}
+function sumaLotes(lotes){ return lotes.reduce((a,l)=>a+l.c,0) }
+function sumarLote(lotes, f, c){
+  if(c<=0) return;
+  const ex=lotes.find(l=>l.f===f);
+  if(ex) ex.c+=c; else lotes.push({f:f, c:c});
+}
+/** Saca `q` unidades: primero del lote elegido (si hay), después en orden de vencimiento. */
+function consumirLotes(lotes, q, elegido){
+  if(elegido){ const l=lotes.find(x=>x.f===elegido); if(l){ const k=Math.min(q,l.c); l.c-=k; q-=k } }
+  for(const l of ordenarFEFO(lotes)){ if(q<=0) break; const k=Math.min(q,l.c); if(k>0){ l.c-=k; q-=k } }
+}
+/** Valor de Registros.vencimientos → lotes [{f,c}] (f null = sin fecha). */
+function lotesDeVenc(v, cantidad){
+  if(Array.isArray(v)) return v.map(l=>({f:l.f||null, c:Number(l.c)||0})).filter(l=>l.c>0);
+  if(typeof v==="string" && LOTE_RE.test(v)) return [{f:v, c:cantidad}];
+  return [{f:null, c:cantidad}];
+}
+/** Lotes de cada sabor del local, en orden de vencimiento (sin fecha al final). */
+function lotesPorSabor(){
+  if(_lotesMemo) return _lotesMemo;
+  const st=stockMap(), base=(S.stock&&S.stock.base)||{}, bts=(S.stock&&S.stock.ts)||0, lotes={};
+  const conteoBase=regsActivos().find(r=>r.tipo==="conteo" && r.ts===bts);
+  S.sabores.forEach(s=>{
+    const b=+base[s.id]||0, v=conteoBase&&conteoBase.vencimientos ? conteoBase.vencimientos[s.id] : undefined;
+    lotes[s.id]=b>0 ? lotesDeVenc(v,b) : [];
+  });
+  regsActivos().filter(r=>r.ts>bts).sort((a,b)=>a.ts-b.ts).forEach(r=>{
+    const venc=r.vencimientos||{};
+    Object.entries(r.items||{}).forEach(([id,q])=>{
+      const L=lotes[id], n=+q||0;
+      if(!L||n<=0) return;
+      if(r.tipo==="ingreso") lotesDeVenc(venc[id], n).forEach(l=>sumarLote(L,l.f,l.c));
+      else if(r.tipo==="salida") consumirLotes(L, n, typeof venc[id]==="string" ? venc[id] : null);
+    });
+  });
+  // Reconciliación: la suma de cada lista tiene que dar el stock que muestra la app.
+  S.sabores.forEach(s=>{
+    const L=lotes[s.id], diff=(st[s.id]||0)-sumaLotes(L);
+    if(diff>0) sumarLote(L,null,diff); else if(diff<0) consumirLotes(L,-diff,null);
+    lotes[s.id]=ordenarFEFO(L.filter(l=>l.c>0));
+  });
+  return _lotesMemo=lotes;
+}
+/** Lotes que se pueden vender: los que todavía no vencieron (sin fecha también se vende). */
+function lotesVendibles(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f || diasHasta(l.f)>=0) }
+function vendibleDe(id){ return sumaLotes(lotesVendibles(id)) }
+/** Lote del que sale la próxima unidad: el elegido a mano o, si no, el que vence antes. */
+function loteSalida(id){
+  const v=lotesVendibles(id), elegido=S.lotePick[id];
+  return (elegido && v.find(l=>l.f===elegido)) || v[0] || null;
+}
+/** Texto de lote dentro de la tarjeta: fecha que sale primero, cuántos lotes y vencidas. */
+function loteInfoSpan(id, conVencidos){
+  if(!esChocolateria(id)) return "";
+  const lotes=(lotesPorSabor()[id]||[]).filter(l=>l.f);
+  if(!lotes.length) return "";
+  const vend=conVencidos ? lotes : lotes.filter(l=>diasHasta(l.f)>=0);
+  const fechas=new Set(vend.map(l=>l.f)).size;
+  const vencidas=lotes.filter(l=>diasHasta(l.f)<0).reduce((a,l)=>a+l.c,0);
+  const primero=conVencidos ? ((S.lotePick[id] && vend.find(l=>l.f===S.lotePick[id])) || vend[0]) : loteSalida(id);
+  let html="";
+  if(primero){ const d=diasHasta(primero.f); html+=`<span class="loteInfo ${d<=1?"alert":d<=7?"warn":""}">${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)}${fechas>1?` · ${fechas} lotes`:""}</span>` }
+  if(!conVencidos && vencidas>0) html+=`<span class="loteInfo alert">${vencidas} vencidas, no se venden</span>`;
+  return html;
+}
+/** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
+function loteElegirBtn(id, conVencidos){
+  if(!esChocolateria(id)) return "";
+  const fechas=new Set((lotesPorSabor()[id]||[]).filter(l=>l.f && (conVencidos || diasHasta(l.f)>=0)).map(l=>l.f)).size;
+  return fechas>1 ? `<span class="linkLote" role="button" tabindex="0" data-elegir-lote="${id}">Elegir lote</span>` : "";
+}
+function renderElegirLote(){
+  let ov=document.getElementById("loteOv");
+  const id=S.elegirLote, s=id&&S.saboresPorId[id];
+  if(!s){ S.elegirLote=null; if(ov) ov.remove(); return }
+  if(!ov){ ov=document.createElement("div"); ov.id="loteOv"; ov.className="mantenerOv"; ov.addEventListener("click", loteClick); document.body.appendChild(ov) }
+  const elegido=S.lotePick[id]||"", auto=loteSalida(id), fechas=lotesVendibles(id).filter(l=>l.f);
+  ov.innerHTML = `<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="loteTit">
+    <p class="mantTit" id="loteTit">¿De qué lote sale?</p>
+    <p class="mantSub">${esc(s.nombre)} · ${vendibleDe(id)} ${unidad(id,vendibleDe(id))} para vender</p>
+    <div class="loteOpts">
+      <button type="button" class="loteOpt${elegido?"":" on"}" data-lote-pick="">
+        <b>Automático</b><span>Sale primero el que vence antes${auto&&auto.f?` (${fechaVencCorta(auto.f)})`:""}</span></button>
+      ${fechas.map(l=>`<button type="button" class="loteOpt${elegido===l.f?" on":""}" data-lote-pick="${esc(l.f)}">
+        <b>Vence ${fechaVencCorta(l.f)}</b><span>${l.c} ${unidad(id,l.c)}${diasHasta(l.f)<=1?" · vence pronto":""}</span></button>`).join("")}
+    </div>
+    <p class="mantAyuda">Si ese lote tiene menos unidades que las que sacás, el resto sale del siguiente que vence antes.</p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-lote-cancel>Cancelar</button></div>
+  </div>`;
+}
+function loteClick(e){
+  const id=S.elegirLote; if(!id) return;
+  if(e.target===e.currentTarget){ cerrarElegirLote(); return }
+  const t=e.target.closest("button"); if(!t) return;
+  if(t.hasAttribute("data-lote-cancel")){ cerrarElegirLote(); return }
+  if(t.hasAttribute("data-lote-pick")){
+    const f=t.dataset.lotePick;
+    if(f) S.lotePick[id]=f; else delete S.lotePick[id];
+    cerrarElegirLote(); scheduleRender();
+  }
+}
+function cerrarElegirLote(){ S.elegirLote=null; renderElegirLote() }
+/** Texto de vencimiento de un renglón del Historial (lote elegido, fecha única o varios lotes). */
+function textoVencRegistro(r, id){
+  const v=r.vencimientos&&r.vencimientos[id]; if(!v) return "";
+  if(typeof v==="string") return ` · ${r.tipo==="salida"?"lote":"vence"} ${fechaVencCorta(v)}`;
+  return ` · vence ${v.map(l=>`${l.f?fechaVencCorta(l.f):"sin fecha"} (${l.c})`).join(" + ")}`;
+}
+/** Lotes que vencen en 7 días o menos (o ya vencieron), arriba de Stock para no olvidarse de venderlos a tiempo ni de sacar los vencidos. */
+function porVencerHTML(){
+  const lista=[];
+  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=7) lista.push({s, l, d:diasHasta(l.f)}) }));
+  if(!lista.length) return "";
+  lista.sort((a,b)=>a.d-b.d);
+  const estado=d=>d<0?`Vencido hace ${-d} ${-d===1?"día":"días"}`:d===0?"Vence hoy":d===1?"Vence mañana":`Vence en ${d} días`;
+  return `<section class="porVencer"><p class="sec">Por vencer</p>
+    ${lista.map(({s,l,d})=>`<div class="vencItem ${d<=1?"alert":"warn"}">
+      <div class="vencTop"><b>${esc(s.nombre)}</b><span>${l.c} ${unidad(s.id,l.c)} · ${fechaVencCorta(l.f)}</span></div>
+      <div class="vencEstado">${estado(d)}</div>
+      <div class="vencAcc">
+        ${d<=1?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
+        ${d>=0?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
+        ${d<0?`<button type="button" class="btn ghost" data-venc-conteo-ir>Hacer conteo</button>`:""}
+      </div>
+    </div>`).join("")}
+  </section>`;
+}
+/** Desde Stock: pasa un lote a Desperdicio con su cantidad y motivo ya cargados (el empleado confirma). */
+function ventaDesperdicioLote(id, f){
+  const lote=(lotesPorSabor()[id]||[]).find(l=>l.f===f);
+  S.tab="salida"; S.modoDesperdicio=true; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; S.verPedido=false;
+  S.cart.desperdicio={[id]:Math.min(lote?lote.c:0, stockMap()[id]||0)};
+  S.lotePick={[id]:f};
+  S.motivoDesperdicio=(diasHasta(f)<0?"Vencido el ":"Vence el ")+fechaVencCorta(f);
+  renderApp();
+}
+function iniciarConteo(){
+  const st=stockMap();
+  S.conteo={}; S.vencConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+  Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
+  S.confirm=false; renderApp();
+}
+/** Lotes extra de un renglón (además del principal): "+ Otro vencimiento". */
+function sumaExtra(extra){ return extra.reduce((a,l)=>a+(+l.c||0),0) }
+function lotesExtraHTML(clave, id, cantidad){
+  if(!esChocolateria(id) || !(cantidad>0)) return "";
+  const extra=S.lotesExtra[clave]||[], principal=Math.max(0, cantidad-sumaExtra(extra));
+  return `<div class="lotesBox">
+    ${extra.length?`<p class="loteP">Lote principal: ${principal} ${unidad(id,principal)}${sumaExtra(extra)>cantidad?" · los lotes suman más que la cantidad":""}</p>`:""}
+    ${extra.map((l,i)=>`<div class="loteFila">
+      <input type="date" data-lote-f="${clave}|${i}" value="${esc(l.f||"")}" aria-label="Vencimiento del lote extra ${i+1}">
+      <input type="number" min="0" inputmode="numeric" data-lote-c="${clave}|${i}" value="${l.c||""}" aria-label="Unidades del lote extra ${i+1}">
+      <button type="button" class="vencOmitir" data-lote-quitar="${clave}|${i}">Quitar</button>
+    </div>`).join("")}
+    <button type="button" class="vencOmitir" data-lote-agregar="${clave}">+ Otro vencimiento</button>
+  </div>`;
+}
+function setLoteExtra(input){
+  const ds=input.dataset, esFecha=ds.loteF!==undefined, [clave,i]=(esFecha?ds.loteF:ds.loteC).split("|");
+  const lote=(S.lotesExtra[clave]||[])[+i]; if(!lote) return;
+  if(esFecha) lote.f=input.value; else lote.c=Math.max(0,Math.floor(+input.value||0));
+}
+function limpiarLotesExtra(prefijo){ Object.keys(S.lotesExtra).forEach(k=>{ if(!prefijo || k.indexOf(prefijo)===0) delete S.lotesExtra[k] }) }
+/** Valor de Registros.vencimientos para un producto: la fecha principal (string) o, si hay lotes extra, la lista [{f,c}]. */
+function valorVencimiento(clave, principal, cantidad){
+  const extra=(S.lotesExtra[clave]||[]).filter(l=>(+l.c||0)>0);
+  if(!extra.length) return principal||null;
+  const lotes=[], c0=cantidad-sumaExtra(extra);
+  if(c0>0) lotes.push({f:principal||"", c:c0});
+  extra.forEach(l=>lotes.push({f:l.f||"", c:+l.c}));
+  return lotes;
+}
+/** Qué le falta a un renglón de chocolatería: "falta" (fecha obligatoria) o "excede" (los lotes suman más que la cantidad), o null. */
+function loteProblema(clave, id, cantidad, principal){
+  const extra=S.lotesExtra[clave]||[], suma=sumaExtra(extra);
+  if(suma>cantidad) return "excede";
+  if(requiereVencimiento(id) && extra.some(l=>(+l.c||0)>0 && !l.f)) return "falta";
+  if(requiereVencimiento(id) && cantidad-suma>0 && !principal) return "falta";
+  return null;
+}
 document.addEventListener("change", (e)=>{
+  const ld=(e.target && e.target.dataset) || {};
+  if(ld.loteF!==undefined || ld.loteC!==undefined){ setLoteExtra(e.target); renderApp(); return }
   const idConteo=e.target && e.target.dataset && e.target.dataset.vencConteo;
   if(idConteo){
     if(e.target.value) S.vencConteo[idConteo]=e.target.value; else delete S.vencConteo[idConteo];
@@ -1171,13 +1399,14 @@ function gridSalida(st){
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   const card=s=>{
-    const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=st[s.id]||0, agotado=c>=disponible;
+    const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=vendibleDe(s.id), agotado=c>=disponible;
     return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
       <button class="pick" data-add="${s.id}"${esMantenible(s)?` data-mantener="${s.id}"`:""} aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        ${loteInfoSpan(s.id,false)}${loteElegirBtn(s.id,false)}
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
@@ -1198,6 +1427,7 @@ function gridDesperdicio(st){
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        ${loteInfoSpan(s.id,true)}${loteElegirBtn(s.id,true)}
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<button class="btn volver" type="button" id="volverSalida" style="margin-bottom:12px">Volver a Salida</button>
@@ -1364,7 +1594,7 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?vencCampoHTML(s.id,S.vencimientos[s.id],"ing:","data-venc"):""}</div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?vencCampoHTML(s.id,S.vencimientos[s.id],"ing:","data-venc")+lotesExtraHTML("ing:"+s.id,s.id,q):""}</div>
       ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
@@ -1432,6 +1662,9 @@ function gridProduccion(st){
 function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
+  return porVencerHTML()+stockViewGeneral(st);
+}
+function stockViewGeneral(st){
   const al=alertas(st);
   let kgTotal=0;
   const filas=S.sabores.map(s=>{
@@ -1596,7 +1829,7 @@ function stockViewResumen(st){
 function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo"):""}</div>
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo")+lotesExtraHTML("conteo:"+s.id,s.id,cont[s.id]):""}</div>
     <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
@@ -1672,7 +1905,7 @@ function filaMovimiento(r){
   const it=Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
-    const vto=r.vencimientos&&r.vencimientos[id]?` · vence ${fechaVencCorta(r.vencimientos[id])}`:"";
+    const vto=textoVencRegistro(r,id);
     return `${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${vto}`;
   }).join(" · ");
   const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.tipo;
@@ -2078,10 +2311,10 @@ function renderBar(){
   let visible=false;
   if(S.tab==="stock" && S.conteo){
     visible=true;
-    const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && requiereVencimiento(id) && !S.vencConteo[id]);
+    const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id]));
     inn.innerHTML = S.confirm
       ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
-      : `<div class="sum">Revisá los números y guardá.${faltaVencC.length?`<div class="warn">Falta el vencimiento de ${faltaVencC.length} ${faltaVencC.length===1?"producto":"productos"} para guardar el conteo.</div>`:""}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Guardar conteo</button>`;
+      : `<div class="sum">Revisá los números y guardá.${faltaVencC.length?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length} ${faltaVencC.length===1?"producto":"productos"} para guardar el conteo.</div>`:""}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Guardar conteo</button>`;
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
     const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion";
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
@@ -2089,7 +2322,7 @@ function renderBar(){
       visible=true;
       const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
       const faltaMotivo=enDesperdicio && !S.motivoDesperdicio.trim();
-      const faltaVenc=cartKey==="ingreso" ? ent.filter(([id])=>requiereVencimiento(id)&&!S.vencimientos[id]) : [];
+      const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
       const st=stockMap();
@@ -2101,7 +2334,7 @@ function renderBar(){
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Falta el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
@@ -2165,7 +2398,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="d7"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="d7"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -2203,7 +2436,11 @@ async function guardarMovimiento(){
     const cart=S.cart[cartKey];
     const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
     const total=Object.values(items).reduce((a,b)=>a+b,0);
-    const venc={}; for(const id of Object.keys(items)) if(S.vencimientos[id]) venc[id]=S.vencimientos[id];
+    const venc={};
+    for(const id of Object.keys(items)){
+      if(tipo==="ingreso"&&!enDevolucion&&!enProduccion){ const v=valorVencimiento("ing:"+id, S.vencimientos[id], items[id]); if(v) venc[id]=v }
+      else if(tipo==="salida"&&S.lotePick[id]) venc[id]=S.lotePick[id];
+    }
     const kilos={}; if(enProduccion) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const payload={clienteId, tipo, local:S.local, items,
@@ -2212,17 +2449,17 @@ async function guardarMovimiento(){
       subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : undefined,
       motivo: enDesperdicio ? S.motivoDesperdicio.trim() : undefined,
       kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined,
-      vencimientos: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&Object.keys(venc).length ? venc : undefined};
+      vencimientos: Object.keys(venc).length ? venc : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -2238,12 +2475,13 @@ async function guardarConteo(){
   try{
   const items={}; S.sabores.forEach(s=>items[s.id]=S.conteo[s.id]||0);
   const clienteId=uuid();
-  const vencimientos={}; for(const id of Object.keys(items)) if(items[id]>0 && S.vencConteo[id]) vencimientos[id]=S.vencConteo[id];
+  const vencimientos={};
+  for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
   const payload={clienteId, local:S.local, items, vencimientos};
   const r = await api("conteo", payload);
   if(r && r.ok){
     toast("Conteo guardado");
-    S.conteo=null; S.confirm=false; S.vencConteo={}; S.vencOmit={};
+    S.conteo=null; S.confirm=false; S.vencConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     await cargarDatos();
   } else if(r && r.offline){
     colaAgregar("conteo", payload);
@@ -2364,6 +2602,9 @@ function teclaBloqueo(k){
   if(S.bloqueoPin.length===4) setTimeout(desbloquearPC, 150);
 }
 document.addEventListener("click", async e=>{
+  // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
+  const le=e.target.closest("[data-elegir-lote]");
+  if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
   const t=e.target.closest("button,a"); if(!t) return;
 
   if(t.dataset.authback){ authVolver(); return }
@@ -2404,7 +2645,7 @@ document.addEventListener("click", async e=>{
   // Un mantener (pointerdown largo) ya abrió el diálogo de cantidad: su click no suma una unidad.
   if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
   if(t.dataset.add){
-    const id=t.dataset.add, c=S.cart.salida, disponible=stockMap()[id]||0;
+    const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
@@ -2469,7 +2710,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; S.vencOmit={}; renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
@@ -2497,7 +2738,12 @@ document.addEventListener("click", async e=>{
     renderApp();
     return;
   }
-  if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; S.vencConteo={}; S.vencOmit={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
+  if(t.id==="conteoBtn"){ iniciarConteo(); return }
+  if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
+  if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
+  if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
+  if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.modoDesperdicio=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.vencConteoIr!==undefined){ iniciarConteo(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
   if(t.id==="volverPedido"){ S.verPedido=false; S.verResumenPedido=false; renderApp(); return }
   if(t.id==="verResumenBtn"){ S.verResumenPedido=true; renderApp(); return }
@@ -2582,6 +2828,7 @@ document.addEventListener("input", e=>{
   }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.dataset.loteF!==undefined || e.target.dataset.loteC!==undefined){ setLoteExtra(e.target); renderBar() }
 });
 document.addEventListener("change", e=>{
   if(e.target.id==="inputRemitoFoto"){
@@ -2827,7 +3074,7 @@ document.addEventListener("pointerdown", e=>{
 ["pointerup","pointercancel","pointerleave"].forEach(ev=>document.addEventListener(ev, ()=>{ clearTimeout(_mantenerTimer); _mantenerTimer=null }));
 // En Android, mantener apretado abre el menú contextual: lo cancelamos solo sobre los sabores que lo usan.
 document.addEventListener("contextmenu", e=>{ if(e.target.closest("[data-mantener]")) e.preventDefault() });
-function mantenerMax(id){ return Math.max(0,(stockMap()[id]||0)-(S.cart.salida[id]||0)) }
+function mantenerMax(id){ return Math.max(0,vendibleDe(id)-(S.cart.salida[id]||0)) }
 function abrirMantener(id){
   if(mantenerMax(id)<=0){ toast("No queda más stock para sacar."); return }
   S.mantener={id:String(id), n:1}; renderMantener();
@@ -2887,6 +3134,7 @@ function mantenerClick(e){
   renderMantener();
 }
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.mantener){ cerrarMantener() } });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.elegirLote){ cerrarElegirLote() } });
 
 function scheduleRender(){
   if(_renderProgramado) return;
@@ -2894,6 +3142,7 @@ function scheduleRender(){
   requestAnimationFrame(()=>{ _renderProgramado=false; renderApp(); });
 }
 function renderApp(){
+  _lotesMemo=null;
   const m=$("#app");
   if(S.auth){ m.innerHTML = renderAuth(); return }
   if(!S.empleado){ iniciarAuth(); return }

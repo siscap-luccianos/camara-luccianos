@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.5";
+const BACKEND_VERSION = "1.39.6";
 
 function doPost(e) {
   let resultado;
@@ -538,6 +538,37 @@ function _totalItems(items) {
   return t;
 }
 
+/** Vencimientos de Registros.vencimientos (por sabor):
+ *  - string "YYYY-MM-DD" = un lote. En una salida o desperdicio es el lote
+ *    del que se sacó (lo elige la persona; si no lo elige, sale el que vence antes).
+ *  - array [{f, c}] = varios lotes del mismo producto que suman la cantidad
+ *    cargada (ej. un ingreso con una caja de 25/10 y otra de 12/11, o un conteo
+ *    con lotes distintos). f vacío = sin fecha.
+ *  Devuelve {ok, vencimientos} o {ok:false, error}. */
+function _normalizarVencimientos(vencimientos, items, tipo) {
+  const esFecha = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const venc = vencimientos || {};
+  const out = {};
+  for (const id of Object.keys(venc)) {
+    const cantidad = Math.floor(Number(items[id]) || 0);
+    if (cantidad <= 0) continue;
+    const v = venc[id];
+    if (typeof v === "string") { if (esFecha(v)) out[id] = v; continue; }
+    if (!Array.isArray(v) || tipo === "salida") continue;
+    const lotes = v.map((l) => ({ f: String((l && l.f) || ""), c: Math.floor(Number(l && l.c) || 0) })).filter((l) => l.c > 0);
+    if (lotes.some((l) => l.f && !esFecha(l.f))) return { ok: false, error: "Hay un vencimiento con fecha inválida." };
+    if (lotes.reduce((a, l) => a + l.c, 0) !== cantidad) return { ok: false, error: "Los lotes de un producto no suman la cantidad cargada." };
+    if (lotes.length) out[id] = lotes;
+  }
+  return { ok: true, vencimientos: out };
+}
+/** true si a un producto que pide vencimiento le falta la fecha (sin fecha, o algún lote sin fecha). */
+function _vencFaltante(v) {
+  if (!v) return true;
+  if (typeof v === "string") return !/^\d{4}-\d{2}-\d{2}$/.test(v);
+  return v.some((l) => !l.f);
+}
+
 function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
@@ -549,15 +580,11 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const catalogoVenc = _leerCrudo("Sabores");
   const nombreVenc = {}, familiaVenc = {}, categoriaVenc = {};
   catalogoVenc.forEach((sab) => { nombreVenc[String(sab.id)] = sab.nombre; familiaVenc[String(sab.id)] = sab.familia || "vasquetas"; categoriaVenc[String(sab.id)] = sab.categoria || ""; });
-  const vencimientos2 = {};
-  if (tipo === "ingreso") {
-    Object.keys(vencimientos || {}).forEach((id) => {
-      const v = String((vencimientos || {})[id] || "");
-      if (items[id] && /^\d{4}-\d{2}-\d{2}$/.test(v)) vencimientos2[id] = v;
-    });
-  }
+  const norm = _normalizarVencimientos(vencimientos, items, tipo);
+  if (!norm.ok) return norm;
+  const vencimientos2 = norm.vencimientos;
   if (tipo === "ingreso" && !subtipo) {
-    const sinVenc = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria" && categoriaVenc[String(id)] !== "Alfajores" && categoriaVenc[String(id)] !== "Conitos" && !vencimientos2[id]);
+    const sinVenc = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria" && categoriaVenc[String(id)] !== "Alfajores" && categoriaVenc[String(id)] !== "Conitos" && _vencFaltante(vencimientos2[id]));
     if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreVenc[String(id)] || ("Sabor " + id)).join(", ") + "." };
   }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
@@ -989,12 +1016,10 @@ function conteo(clienteId, local, items, empleado, vencimientos) {
     const catalogoConteo = _leerCrudo("Sabores");
     const nombreConteo = {}, familiaConteo = {}, categoriaConteo = {};
     catalogoConteo.forEach((sab) => { nombreConteo[String(sab.id)] = sab.nombre; familiaConteo[String(sab.id)] = sab.familia || ""; categoriaConteo[String(sab.id)] = sab.categoria || ""; });
-    const vencimientos2 = {};
-    Object.keys(vencimientos || {}).forEach((id) => {
-      const v = String((vencimientos || {})[id] || "");
-      if (items2[id] > 0 && /^\d{4}-\d{2}-\d{2}$/.test(v)) vencimientos2[id] = v;
-    });
-    const sinVenc = Object.keys(items2).filter((id) => items2[id] > 0 && familiaConteo[String(id)] === "chocolateria" && categoriaConteo[String(id)] !== "Alfajores" && categoriaConteo[String(id)] !== "Conitos" && !vencimientos2[id]);
+    const norm = _normalizarVencimientos(vencimientos, items2, "conteo");
+    if (!norm.ok) return norm;
+    const vencimientos2 = norm.vencimientos;
+    const sinVenc = Object.keys(items2).filter((id) => items2[id] > 0 && familiaConteo[String(id)] === "chocolateria" && categoriaConteo[String(id)] !== "Alfajores" && categoriaConteo[String(id)] !== "Conitos" && _vencFaltante(vencimientos2[id]));
     if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreConteo[String(id)] || ("Sabor " + id)).join(", ") + "." };
     const total = _totalItems(items2);
     const ts = Date.now();
