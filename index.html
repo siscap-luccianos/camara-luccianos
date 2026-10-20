@@ -348,7 +348,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.71.1";
+const FRONTEND_VERSION = "1.71.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1484,7 +1484,7 @@ function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
   const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo"):""}</div>
-    <div class="right"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
@@ -2293,6 +2293,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
+  if(t.dataset.ccaja){ const id=t.dataset.ccaja; S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; scheduleRender(); return }
