@@ -381,7 +381,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.73.0";
+const FRONTEND_VERSION = "1.73.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1894,8 +1894,15 @@ function agruparPorProducto(lista){
   return GRUPO_PRODUCTO_ORDEN.filter(g=>porGrupo[g]).map(g=>({grupo:GRUPO_PRODUCTO_LABEL[g], sabores:porGrupo[g]}));
 }
 function saboresView(){
-  if(S.empleado.rol==="encargado") return saboresLocalView();
+  if(S.empleado.rol==="encargado" || adminEnLocalReal()) return saboresLocalView();
   return saboresAdminView();
+}
+/** Admin parado DENTRO de un local real (no Operaciones): ajusta qué tiene
+ *  ESE local, igual que el Resp. de local. El catálogo global (activar /
+ *  desactivar para todos) queda solo desde Operaciones, así no se apaga
+ *  nada global por accidente desde un local. */
+function adminEnLocalReal(){
+  return S.empleado.rol==="admin" && !!S.local && (S.locales||[]).some(l=>l.nombre===S.local && !l.esGestion);
 }
 /** Lo que ve el Resp. de local: el catálogo completo (ya cargado por
  *  datos(), no hace falta pedir nada aparte) con un interruptor por

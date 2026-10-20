@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.2";
+const BACKEND_VERSION = "1.39.3";
 
 function doPost(e) {
   let resultado;
@@ -1348,16 +1348,18 @@ function adminLocal(local, empleado) {
 
 /** El Resp. de local prende/apaga qué sabores del catálogo tiene SU
  *  local (ej. Baldes, en un local que no los vende) — a diferencia de
- *  adminSabor/adminLocal, esto NO es solo-admin: el que puede ajustarlo
- *  es justamente el responsable de ese local, nadie más (ni siquiera
- *  supervisor por ahora, así lo pidió Gabi). Guarda en Locales.sabores_excluidos
+ *  adminSabor/adminLocal, esto NO es solo-admin: lo puede ajustar el
+ *  responsable de ese local y un admin parado DENTRO de ese local (pedido
+ *  de Gabi 20/10/2026). Supervisor no. Admin desde Operaciones no (ahí no
+ *  hay local elegido). Guarda en Locales.sabores_excluidos
  *  (ids separados por coma); si esa columna todavía no existe en la
  *  hoja, avisa en vez de fallar silencioso. */
 function toggleSaborLocal(saborId, local, empleado) {
   if (!saborId) return { ok: false, error: "Falta el sabor." };
   if (!local) return { ok: false, error: "Falta el local." };
-  if (empleado.rol !== "encargado" || String(empleado.local || "").trim() !== String(local).trim()) {
-    return { ok: false, error: "Solo el responsable de ese local puede ajustar esto." };
+  const esResponsableDeEse = empleado.rol === "encargado" && String(empleado.local || "").trim() === String(local).trim();
+  if (!esResponsableDeEse && empleado.rol !== "admin") {
+    return { ok: false, error: "Solo el responsable de ese local o un admin dentro de ese local puede ajustar esto." };
   }
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -1373,6 +1375,10 @@ function toggleSaborLocal(saborId, local, empleado) {
     let idx = -1;
     for (let i = 1; i < filas.length; i++) if (String(filas[i][colNombre]) === String(local)) { idx = i; break; }
     if (idx === -1) return { ok: false, error: "No se encontró ese local." };
+    const colOperaciones = headers.indexOf("operaciones");
+    if (colOperaciones !== -1 && _esVerdadero(filas[idx][colOperaciones]) === true) {
+      return { ok: false, error: "Operaciones no tiene sabores por local." };
+    }
     const actuales = String(filas[idx][colExcluidos] || "").split(",").map((x) => x.trim()).filter(Boolean);
     const pos = actuales.indexOf(String(saborId));
     let excluido;

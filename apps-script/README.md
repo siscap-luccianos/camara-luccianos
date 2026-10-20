@@ -148,7 +148,7 @@ No es el PIN de nadie — es una clave compartida por local, para que no cualqui
 
 Algunos locales no tienen ciertos productos (ej. Baldes). En la pestaña **Sabores** de la app, el Resp. de local ve el catálogo completo con un interruptor por sabor — lo apaga para los que su local no tiene. Eso escribe los ids separados por coma en `Locales.sabores_excluidos` (vacío = el local lleva todo, como siempre). Un sabor apagado desaparece de Salida/Ingreso/Devolución/Desperdicio/Conteo/Stock/Pedido sugerido **solo en ese local**, pero el Historial no se filtra: lo que ya se cargó antes de apagarlo sigue mostrándose con su nombre real.
 
-Solo el Resp. de local puede ajustarlo (no admin/supervisor desde ahí — si hace falta tocarlo por otra vía, se edita directo la celda). En una planilla que ya tenía `Locales` poblada, correr `agregarColumnaSaboresExcluidos()` una vez desde Setup.gs para agregar la columna (si no existe, el botón de la app devuelve un error pidiendo que se agregue).
+Lo ajustan el Resp. de local de ese local y un **admin parado dentro de ese local** (entrando por el selector de local, no desde Operaciones). Supervisor no. Desde Operaciones no hay local elegido, así que el catálogo global (activar/desactivar para todos) sigue disponible solo ahí. Si hace falta tocarlo por otra vía, se edita directo la celda. En una planilla que ya tenía `Locales` poblada, correr `agregarColumnaSaboresExcluidos()` una vez desde Setup.gs para agregar la columna (si no existe, el botón de la app devuelve un error pidiendo que se agregue).
 
 ## Cómo entran admin y supervisor (local "Operaciones")
 
