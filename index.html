@@ -261,6 +261,22 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
+/* Mantener apretado en Salida (alfajores y conitos): diálogo "¿Cuántos sacás?" */
+[data-mantener]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
+.mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
+.mantSub{margin:0;color:var(--muted);font-size:.9rem}
+.mantStep{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mantStep input{flex:1;min-width:0;height:64px;border-radius:16px;border:2px solid var(--accent);background:var(--surface);color:var(--ink);text-align:center;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:2.4rem}
+.mantBtn{width:52px;height:52px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.5rem;font-weight:700;flex:none}
+.mantBtn[data-mant-inc]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.mantQuick{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.mantQuick .chip{min-height:40px;font-size:.9rem}
+.mantAyuda{margin:0;font-size:.8rem;color:var(--muted);text-align:center}
+.mantAcc{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
+.mantAcc .btn{min-height:50px}
+.mantAcc .btn:disabled{opacity:.4}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
 .kpi{background:rgba(var(--surface-rgb),.62);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.8);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
 .kpi .lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -381,7 +397,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.73.2";
+const FRONTEND_VERSION = "1.74.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1153,7 +1169,7 @@ function gridSalida(st){
   const card=s=>{
     const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=st[s.id]||0, agotado=c>=disponible;
     return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
-      <button class="pick" data-add="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
+      <button class="pick" data-add="${s.id}"${esMantenible(s)?` data-mantener="${s.id}"`:""} aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
@@ -1163,7 +1179,7 @@ function gridSalida(st){
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
   ${chipFiltros()}
-  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
+  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad${list.some(esMantenible)?". Alfajores y conitos: mantené apretado para elegir cuántos":""}</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 function gridDesperdicio(st){
@@ -2360,6 +2376,8 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
+  // Un mantener (pointerdown largo) ya abrió el diálogo de cantidad: su click no suma una unidad.
+  if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=stockMap()[id]||0;
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
@@ -2768,6 +2786,85 @@ function renderBloqueo(){
 // agrupamos varios toques seguidos en un solo render, justo antes del
 // próximo repintado — cada toque individual vuelve a ser instantáneo.
 let _renderProgramado=false;
+/* ---------- Salida: mantener apretado para elegir cuántos (alfajores y conitos) ----------
+   Tocar sigue sumando de a uno. Mantener ~450 ms abre "¿Cuántos sacás?".
+   Solo Alfajores y Conitos (chocolatería), a pedido de Gabi 20/10/2026. */
+const MANTENER_MS = 450;
+const CATEGORIAS_MANTENER = ["Alfajores","Conitos"];
+function esMantenible(s){
+  return !!s && grupoProductoDe(s)==="chocolateria" && CATEGORIAS_MANTENER.indexOf(s.categoria)!==-1;
+}
+let _mantenerTimer=null;
+document.addEventListener("pointerdown", e=>{
+  S.mantenerSuprimirClick=false;
+  const b=e.target.closest("[data-mantener]"); if(!b) return;
+  clearTimeout(_mantenerTimer);
+  _mantenerTimer=setTimeout(()=>{ _mantenerTimer=null; S.mantenerSuprimirClick=true; abrirMantener(b.dataset.mantener) }, MANTENER_MS);
+});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>document.addEventListener(ev, ()=>{ clearTimeout(_mantenerTimer); _mantenerTimer=null }));
+// En Android, mantener apretado abre el menú contextual: lo cancelamos solo sobre los sabores que lo usan.
+document.addEventListener("contextmenu", e=>{ if(e.target.closest("[data-mantener]")) e.preventDefault() });
+function mantenerMax(id){ return Math.max(0,(stockMap()[id]||0)-(S.cart.salida[id]||0)) }
+function abrirMantener(id){
+  if(mantenerMax(id)<=0){ toast("No queda más stock para sacar."); return }
+  S.mantener={id:String(id), n:1}; renderMantener();
+}
+function cerrarMantener(){ S.mantener=null; renderMantener() }
+function renderMantener(){
+  let ov=document.getElementById("mantenerOv");
+  if(!S.mantener){ if(ov) ov.remove(); return }
+  const m=S.mantener, s=(S.sabores||[]).find(x=>String(x.id)===m.id);
+  if(!s){ cerrarMantener(); return }
+  if(!ov){
+    ov=document.createElement("div"); ov.id="mantenerOv"; ov.className="mantenerOv";
+    ov.addEventListener("click", e=>mantenerClick(e));
+    ov.addEventListener("input", e=>{ if(e.target.id==="mantN"){ m.n=Math.min(Math.max(0,parseInt(e.target.value,10)||0),mantenerMax(m.id)); e.target.value=m.n; actualizarOkMantener(ov) } });
+    document.body.appendChild(ov);
+  }
+  const max=mantenerMax(m.id), stock=stockMap()[m.id]||0, ya=S.cart.salida[m.id]||0, caja=Number(s.cantidad_maestra)||0;
+  m.n=Math.min(m.n,max);
+  const atajos=[1,6,12].filter(q=>q<=max).map(q=>`<button type="button" class="chip" data-mant-q="${q}">+${q}</button>`)
+    .concat(caja&&caja<=max?[`<button type="button" class="chip" data-mant-q="${caja}">+${caja} caja</button>`]:[]).join("");
+  ov.innerHTML = `<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="mantTit">
+    <p class="mantTit" id="mantTit">¿Cuántos sacás?</p>
+    <p class="mantSub">${esc(s.nombre)} · hay ${stock} en stock${ya?` · ya en la salida: ${ya}`:""}</p>
+    <div class="mantStep">
+      <button type="button" class="mantBtn" data-mant-dec aria-label="Restar uno">−</button>
+      <input type="number" id="mantN" min="0" max="${max}" inputmode="numeric" value="${m.n}" aria-label="Cantidad a sacar">
+      <button type="button" class="mantBtn" data-mant-inc aria-label="Sumar uno">+</button>
+    </div>
+    <div class="mantQuick">${atajos}</div>
+    <p class="mantAyuda">Podés escribir el número. Como máximo podés sacar ${max}.</p>
+    <div class="mantAcc">
+      <button type="button" class="btn ghost" data-mant-cancel>Cancelar</button>
+      <button type="button" class="btn" data-mant-ok>Agregar ${m.n}</button>
+    </div>
+  </div>`;
+  actualizarOkMantener(ov);
+}
+function actualizarOkMantener(ov){
+  const btn=ov.querySelector("[data-mant-ok]"); if(!btn||!S.mantener) return;
+  btn.disabled=S.mantener.n<1; btn.textContent="Agregar "+S.mantener.n;
+}
+function mantenerClick(e){
+  const ov=e.currentTarget, m=S.mantener; if(!m) return;
+  if(e.target===ov){ cerrarMantener(); return }
+  const t=e.target.closest("button"); if(!t) return;
+  const max=mantenerMax(m.id);
+  if(t.dataset.mantCancel!==undefined){ cerrarMantener(); return }
+  if(t.dataset.mantOk!==undefined){
+    const n=Math.min(m.n,max);
+    if(n>0){ const c=S.cart.salida; c[m.id]=(c[m.id]||0)+n; S.confirm=false }
+    cerrarMantener(); scheduleRender(); return;
+  }
+  if(t.dataset.mantDec!==undefined) m.n=Math.max(0,m.n-1);
+  else if(t.dataset.mantInc!==undefined) m.n=Math.min(max,m.n+1);
+  else if(t.dataset.mantQ!==undefined) m.n=Math.min(max,m.n+Number(t.dataset.mantQ));
+  else return;
+  renderMantener();
+}
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.mantener){ cerrarMantener() } });
+
 function scheduleRender(){
   if(_renderProgramado) return;
   _renderProgramado=true;
