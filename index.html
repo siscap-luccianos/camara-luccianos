@@ -309,7 +309,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.68.2";
+const FRONTEND_VERSION = "1.68.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -344,6 +344,7 @@ const S = {
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
+  vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
@@ -847,6 +848,14 @@ function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolat
 function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" }
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
 document.addEventListener("change", (e)=>{
+  const idConteo=e.target && e.target.dataset && e.target.dataset.vencConteo;
+  if(idConteo){
+    if(e.target.value) S.vencConteo[idConteo]=e.target.value; else delete S.vencConteo[idConteo];
+    const campo=e.target.closest(".vencCampo");
+    if(campo) campo.classList.toggle("falta", !e.target.value && requiereVencimiento(idConteo));
+    renderBar();
+    return;
+  }
   const idCant=e.target && e.target.dataset && e.target.dataset.cantInput;
   if(idCant){
     const n=Math.max(0, Math.floor(+e.target.value||0));
@@ -1403,7 +1412,7 @@ function stockViewPedido(st){
 function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div></div>
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?`<label class="vencCampo${requiereVencimiento(s.id)&&!S.vencConteo[s.id]?" falta":""}">Vencimiento${requiereVencimiento(s.id)?"":" (opcional)"}<input type="date" data-venc-conteo="${s.id}" value="${esc(S.vencConteo[s.id]||"")}"></label>`:""}</div>
     <div class="right"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
@@ -1832,9 +1841,10 @@ function renderBar(){
   let visible=false;
   if(S.tab==="stock" && S.conteo){
     visible=true;
+    const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && requiereVencimiento(id) && !S.vencConteo[id]);
     inn.innerHTML = S.confirm
-      ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${S.busy?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
-      : `<div class="sum">Revisá los números y guardá.</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go">Guardar conteo</button>`;
+      ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
+      : `<div class="sum">Revisá los números y guardá.${faltaVencC.length?`<div class="warn">Falta el vencimiento de ${faltaVencC.length} ${faltaVencC.length===1?"producto":"productos"} para guardar el conteo.</div>`:""}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Guardar conteo</button>`;
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
     const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion";
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
@@ -1991,11 +2001,12 @@ async function guardarConteo(){
   try{
   const items={}; S.sabores.forEach(s=>items[s.id]=S.conteo[s.id]||0);
   const clienteId=uuid();
-  const payload={clienteId, local:S.local, items};
+  const vencimientos={}; for(const id of Object.keys(items)) if(items[id]>0 && S.vencConteo[id]) vencimientos[id]=S.vencConteo[id];
+  const payload={clienteId, local:S.local, items, vencimientos};
   const r = await api("conteo", payload);
   if(r && r.ok){
     toast("Conteo guardado");
-    S.conteo=null; S.confirm=false;
+    S.conteo=null; S.confirm=false; S.vencConteo={};
     await cargarDatos();
   } else if(r && r.offline){
     colaAgregar("conteo", payload);
@@ -2222,7 +2233,7 @@ document.addEventListener("click", async e=>{
     renderApp();
     return;
   }
-  if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
+  if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; S.vencConteo={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
   if(t.id==="volverPedido"){ S.verPedido=false; renderApp(); return }
   if(t.id==="aplicarTodos"){

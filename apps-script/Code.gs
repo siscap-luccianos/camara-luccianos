@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.1";
+const BACKEND_VERSION = "1.39.2";
 
 function doPost(e) {
   let resultado;
@@ -82,7 +82,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "datos": return datos(body.local, empleado);
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
-    case "conteo": return conteo(body.clienteId, body.local, body.items, empleado);
+    case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
     case "altaEmpleado": return altaEmpleado(body.nombre, body.rol, body.local, empleado);
@@ -916,7 +916,7 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
   };
 }
 
-function conteo(clienteId, local, items, empleado) {
+function conteo(clienteId, local, items, empleado, vencimientos) {
   if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -931,12 +931,24 @@ function conteo(clienteId, local, items, empleado) {
     }
     const items2 = {};
     Object.keys(items).forEach((id) => { items2[id] = Math.max(0, Number(items[id]) || 0); });
+    // Chocolatería: vencimiento según categoría (alfajores y conitos son opcionales, el resto lo pide)
+    const catalogoConteo = _leerCrudo("Sabores");
+    const nombreConteo = {}, familiaConteo = {}, categoriaConteo = {};
+    catalogoConteo.forEach((sab) => { nombreConteo[String(sab.id)] = sab.nombre; familiaConteo[String(sab.id)] = sab.familia || ""; categoriaConteo[String(sab.id)] = sab.categoria || ""; });
+    const vencimientos2 = {};
+    Object.keys(vencimientos || {}).forEach((id) => {
+      const v = String((vencimientos || {})[id] || "");
+      if (items2[id] > 0 && /^\d{4}-\d{2}-\d{2}$/.test(v)) vencimientos2[id] = v;
+    });
+    const sinVenc = Object.keys(items2).filter((id) => items2[id] > 0 && familiaConteo[String(id)] === "chocolateria" && categoriaConteo[String(id)] !== "Alfajores" && categoriaConteo[String(id)] !== "Conitos" && !vencimientos2[id]);
+    if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreConteo[String(id)] || ("Sabor " + id)).join(", ") + "." };
     const total = _totalItems(items2);
     const ts = Date.now();
 
     _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: "conteo", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "",
+      vencimientos: Object.keys(vencimientos2).length ? JSON.stringify(vencimientos2) : "",
     });
 
     const sheet = _sheet("Stock");
