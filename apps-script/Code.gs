@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.3";
+const BACKEND_VERSION = "1.39.4";
 
 function doPost(e) {
   let resultado;
@@ -55,7 +55,7 @@ function doGet() {
 
 // Acciones que no requieren token (login y datos públicos no sensibles:
 // nombres de locales/empleados para armar los selectores de login).
-const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "verificarClaveLocal"];
+const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "loginAdminLocal", "verificarClaveLocal"];
 
 function _despachar(body) {
   const accion = body.accion;
@@ -70,6 +70,7 @@ function _despachar(body) {
     case "empleadosGestion": return empleadosGestion();
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local);
     case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local);
+    case "loginAdminLocal": return loginAdminLocal(body.empleadoId, body.codigo, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
@@ -219,8 +220,56 @@ function verificarClaveLocal(local, clave) {
   if (!fila) return { ok: false, error: "No se encontró el local." };
   const claveGuardada = String(fila.clave || "").trim();
   if (!claveGuardada) return { ok: true }; // este local no tiene clave configurada
-  if (String(clave || "").trim() !== claveGuardada) return { ok: false, error: "Contraseña incorrecta." };
+  const tipeada = String(clave || "").trim();
+  if (tipeada === claveGuardada) return { ok: true };
+  // El código de admin (6 dígitos) también abre cualquier local, en lugar
+  // de su contraseña. Solo se prueba si lo tipeado tiene pinta de código.
+  if (/^\d{6}$/.test(tipeada)) {
+    const adm = _verificarCodigoAdmin(tipeada);
+    if (adm.ok) return { ok: true, modoAdmin: true };
+    if (adm.bloqueado) return { ok: false, error: adm.error };
+  }
+  return { ok: false, error: "Contraseña incorrecta." };
+}
+
+/** Código único de admin (6 dígitos). Vive en Propiedades del script como
+ *  ADMIN_CODE — nunca en la hoja ni en el repo. Como 6 dígitos sin límite
+ *  se pueden probar a fuerza bruta, 5 errores seguidos bloquean los
+ *  intentos 5 minutos (mismo criterio que el PIN personal). */
+const ADMIN_CODE_FALLOS_KEY = "adminCodeFallos";
+const ADMIN_CODE_MAX_FALLOS = 5;
+const ADMIN_CODE_BLOQUEO_SEGUNDOS = 300;
+function _verificarCodigoAdmin(codigo) {
+  const cache = CacheService.getScriptCache();
+  const fallos = Number(cache.get(ADMIN_CODE_FALLOS_KEY) || 0);
+  if (fallos >= ADMIN_CODE_MAX_FALLOS) {
+    return { ok: false, bloqueado: true, error: "Demasiados intentos con el código de admin. Probá de nuevo en 5 minutos." };
+  }
+  const esperado = PropertiesService.getScriptProperties().getProperty("ADMIN_CODE");
+  if (!esperado) return { ok: false, error: "Falta configurar ADMIN_CODE en Propiedades del script." };
+  if (String(codigo || "").trim() !== String(esperado).trim()) {
+    cache.put(ADMIN_CODE_FALLOS_KEY, String(fallos + 1), ADMIN_CODE_BLOQUEO_SEGUNDOS);
+    return { ok: false, error: "Código incorrecto." };
+  }
+  cache.remove(ADMIN_CODE_FALLOS_KEY);
   return { ok: true };
+}
+
+/** Admin entrando a un local real con el código de admin (en vez de la
+ *  contraseña del local). Igual que Operaciones: sin PIN personal, porque
+ *  el código es el factor. Solo admin o supervisor. */
+function loginAdminLocal(empleadoId, codigo, local) {
+  if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
+  if (!filaLocal) return { ok: false, error: "No se encontró el local." };
+  const adm = _verificarCodigoAdmin(codigo);
+  if (!adm.ok) return { ok: false, error: adm.error };
+  const empleado = _empleadoPorId(empleadoId);
+  if (!empleado) return { ok: false, error: "No se encontró ese empleado." };
+  if (_esVerdadero(empleado.activo) === false) return { ok: false, error: "Ese usuario está dado de baja." };
+  if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
+  _auditar("login_admin_codigo", empleado.id, empleado.nombre, "Entró a " + local + " con el código de admin (sin PIN)");
+  return _resultadoLogin(empleado, local, false);
 }
 
 function empleadosLocal(local) {

@@ -381,7 +381,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.73.1";
+const FRONTEND_VERSION = "1.73.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -726,7 +726,14 @@ async function authEnviarClave(){
   S.auth.cargando=true; S.auth.error=""; renderApp();
   const r = await api("verificarClaveLocal", {local:S.auth.local, clave});
   S.auth.cargando=false;
-  if(r && r.ok){ S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
+  if(r && r.ok){
+    // Código de admin (6 dígitos): entra a cualquier local como Operaciones,
+    // con la lista de admin/supervisor en vez de la nómina del local.
+    const info=S.locales.find(l=>l.nombre===S.auth.local);
+    S.auth.codigoAdmin = !!r.modoAdmin;
+    S.auth.esGestion = !!r.modoAdmin || !!(info && info.esGestion);
+    S.auth.paso="quien"; cargarEmpleadosDeAuth();
+  }
   else { S.auth.error=(r&&r.error)||"No se pudo verificar la contraseña."; renderApp(); }
 }
 function authElegirEmpleado(emp){
@@ -738,7 +745,9 @@ function authElegirEmpleado(emp){
 async function authEntrarGestion(emp){
   if(S.auth.cargando) return; // evita disparar varios pedidos si toca de nuevo mientras espera
   S.auth.elegido=emp; S.auth.cargando=true; S.auth.error=""; renderApp();
-  const r = await api("loginGestion", { empleadoId:emp.id, clave:S.auth.clave, local:S.auth.local });
+  const r = S.auth.codigoAdmin
+    ? await api("loginAdminLocal", { empleadoId:emp.id, codigo:S.auth.clave, local:S.auth.local })
+    : await api("loginGestion", { empleadoId:emp.id, clave:S.auth.clave, local:S.auth.local });
   S.auth.cargando=false;
   if(r && r.ok){ aplicarLogin(r); return }
   S.auth.elegido=null; S.auth.error=(r&&r.error)||"No se pudo entrar. Probá de nuevo.";
@@ -797,7 +806,7 @@ async function authSubmit(){
 function aplicarLogin(r){
   const yaFijado = !!S.deviceLocal;
   const esGestion = S.auth ? S.auth.esGestion : false;
-  const localElegido = (S.auth && !esGestion) ? S.auth.local : null;
+  const localElegido = (S.auth && (!esGestion || S.auth.codigoAdmin)) ? S.auth.local : null;
   const puedeFijar = ["encargado","turno","colaborador","produccion"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
   S.esGestion = esGestion; S.gestionLocal = esGestion ? S.auth.local : null;

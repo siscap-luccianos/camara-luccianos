@@ -161,6 +161,16 @@ Para armarlo (una sola vez):
 
 No hace falta crear ningún empleado con `local="Operaciones"` — quien elige ese local y pone la contraseña ve la lista de todos los admins/supervisores ya dados de alta (columna `rol`), no la nómina de un local. Podés cambiarle el nombre a otra cosa editando la celda `nombre` de esa fila; el backend lo reconoce por la columna `operaciones=SI`, no por el nombre.
 
+## Código de admin para entrar a cualquier local (6 dígitos)
+
+Admin puede entrar a un local real sin conocer su contraseña: en el paso de la contraseña del local, en vez de la clave del local tipea un **código de 6 dígitos** que es único para todos los admins. Después elige quién es (admin o supervisor) y entra igual que a Operaciones, sin PIN personal. Para locales sin contraseña no aparece ese paso, así que no hace falta el código.
+
+Para armarlo (una sola vez):
+1. En el editor de Apps Script: Propiedades del script → agregar `ADMIN_CODE` con los 6 dígitos que elijas. No va en la hoja ni en el repo.
+2. Pegar `Code.gs` y hacer "Nueva implementación".
+
+Si alguien falla 5 veces seguidas, los intentos con código quedan bloqueados 5 minutos. Para cambiar el código: editar `ADMIN_CODE` en Propiedades del script (no hace falta redeploy).
+
 ## Dar de alta al segundo admin o supervisor (sin pasar por Setup.gs)
 
 Una vez que hay un admin activo (Gabi) y ya está conectada la app, el resto de los admins/supervisores/encargados/colaboradores se dan de alta **desde la propia app** (pantalla de Empleados, según lo que permite el rol de quien está logueado — ver la matriz de `CLAUDE.md`). `crearPrimerAdmin()` es solo para el arranque, cuando todavía no hay nadie que pueda loguearse para crear al primero.
