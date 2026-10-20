@@ -399,7 +399,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.74.1";
+const FRONTEND_VERSION = "1.75.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -744,6 +744,7 @@ async function authEnviarClave(){
   S.auth.cargando=true; S.auth.error=""; renderApp();
   const r = await api("verificarClaveLocal", {local:S.auth.local, clave});
   S.auth.cargando=false;
+  if(r && r.ok && S.auth.otroLocal && !r.modoAdmin){ S.auth.error="Para entrar a otro local desde acá necesitás el código de admin."; renderApp(); return }
   if(r && r.ok){
     // Código de admin (6 dígitos): entra a cualquier local como Operaciones,
     // con la lista de admin/supervisor en vez de la nómina del local.
@@ -834,7 +835,7 @@ function aplicarLogin(r){
   // último local solo tiene sentido si la sesión seguía abierta (ver
   // start(), que sí usa "ultimoLocal" para sobrevivir a un refresco de
   // página sin haber cerrado sesión).
-  S.local = (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador"||r.empleado.rol==="produccion" ? r.empleado.local : localElegido);
+  S.local = (S.auth && S.auth.codigoAdmin) ? S.auth.local : (S.deviceLocal) || (r.empleado.rol==="encargado"||r.empleado.rol==="turno"||r.empleado.rol==="colaborador"||r.empleado.rol==="produccion" ? r.empleado.local : localElegido);
   // Siempre arranca en "Salida" — si no, a quien entra por primera vez le
   // puede quedar pegada la pestaña en la que estaba el usuario anterior en
   // este mismo dispositivo (por ejemplo "Equipo", que ni siquiera tendría
@@ -1030,7 +1031,8 @@ function renderAuth(){
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
-        :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
+        :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}
+      ${S.deviceLocal&&!a.esGestion?`<button class="btn ghost" type="button" data-otro-local="1" style="width:100%;margin-top:14px">Entrar a otro local con código de admin</button>`:""}`;
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
@@ -2347,6 +2349,7 @@ document.addEventListener("click", async e=>{
 
   if(t.dataset.authback){ authVolver(); return }
   if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
+  if(t.dataset.otroLocal){ S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true}; renderApp(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
   if(t.dataset.teclaBloqueo){ teclaBloqueo(t.dataset.teclaBloqueo); return }
