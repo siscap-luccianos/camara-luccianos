@@ -424,7 +424,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.76.1";
+const FRONTEND_VERSION = "1.76.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -977,7 +977,7 @@ async function desbloquearPC(){
 function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
 /** Alfajores, conitos y minis (categoría Alfajores/Conitos) se rotulan a mano en
  *  el local: el vencimiento es opcional. El resto viene con fecha impresa y la pide. */
-function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" }
+function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" && c!=="Latas" }
 /** Campo de vencimiento de un renglón de chocolatería. Obligatorio (tabletas,
  *  avellas, latas, squares): label con fecha, en alerta si falta. Opcional
  *  (alfajores/conitos): muestra "Omitir" para seguir de largo sin fecha. */
