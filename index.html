@@ -263,6 +263,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
 /* Mantener apretado en Salida (alfajores y conitos): diálogo "¿Cuántos sacás?" */
 [data-mantener]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.mantHint{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:.92rem;font-weight:600;line-height:1.35}
+.mantHint b{font-weight:800;text-decoration:underline;text-underline-offset:3px}
 .mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
@@ -397,7 +399,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.74.0";
+const FRONTEND_VERSION = "1.74.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1179,7 +1181,8 @@ function gridSalida(st){
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
   ${chipFiltros()}
-  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad${list.some(esMantenible)?". Alfajores y conitos: mantené apretado para elegir cuántos":""}</p>
+  <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
+  ${list.some(esMantenible)?`<div class="mantHint">Alfajores y conitos: <b>mantené apretado</b> para elegir cuántos</div>`:""}
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 function gridDesperdicio(st){
