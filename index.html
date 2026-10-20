@@ -345,7 +345,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.70.0";
+const FRONTEND_VERSION = "1.70.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -392,9 +392,8 @@ const S = {
   lectorRemito: null,
   verPedido: false,
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
-  periodoHist: ls.get("periodoHist","7"),
   categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
-  rangoHist: "s0", // s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
+  rangoHist: "d7", // d1/d7/d30/d60 = últimos N días (incluye hoy) — segmento Hoy/7/30/Todo, s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
   calHist: null, // calendario de Historial abierto: {mes, d, h} (d/h = YYYY-MM-DD elegidos), null = cerrado
   rangoMenu: false, // menú de período de Historial (presets + Rango personalizado) abierto
   pedidoAdj: {},
@@ -1496,6 +1495,14 @@ function isoDeFecha(f){ return `${f.getFullYear()}-${String(f.getMonth()+1).padS
 /** El backend trae 60 días contando hoy: el calendario no deja elegir más atrás. */
 const CAL_DIAS_ATRAS = 59;
 function rangoHistInfo(id){
+  if(id.charAt(0)==="d"){
+    // Últimos N días contando hoy: Hoy = d1, 7 días = d7, 30 días = d30, Todo = d60
+    const n=+id.slice(1), hoy=new Date(); hoy.setHours(0,0,0,0);
+    const inicio=hoy.getTime()-(n-1)*864e5, fin=Date.now()+1;
+    const f=ms=>new Date(ms).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});
+    const label = n===1 ? f(inicio) : `${new Date(inicio).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${f(fin-1)}`;
+    return { tipo:"rango", inicio, fin, label };
+  }
   if(id.charAt(0)==="c"){
     const [d,h]=id.slice(1).split("|"), inicio=isoALocal(d), fin=isoALocal(h)+864e5;
     const corto=ms=>new Date(ms).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
@@ -1581,10 +1588,10 @@ function calendarioHist(){
 }
 function histView(){
   if(S.empleado.rol==="colaborador") return histViewColaborador();
-  const dias = S.periodoHist==="60" ? 60 : Number(S.periodoHist);
-  const desde = Date.now() - dias*864e5;
-  const regs=[...S.regs].filter(r=>r.ts>=desde).sort((a,b)=>b.ts-a.ts);
   const rango = rangoHistInfo(S.rangoHist), esSemana = rango.tipo==="semana";
+  // Tabla y Movimientos usan el mismo rango: así el segmento Hoy/7/30/Todo
+  // cambia las dos cosas juntas (antes la tabla quedaba en "Esta semana").
+  const regs=[...S.regs].filter(r=>r.ts>=rango.inicio && r.ts<rango.fin).sort((a,b)=>b.ts-a.ts);
   const diasSem=["Lu","Ma","Mi","Ju","Vi","Sá","Do"];
   const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
 
@@ -1592,7 +1599,7 @@ function histView(){
     .map(([v,l])=>`<button type="button" class="tabCat" role="tab" data-categoria-hist="${v}" aria-selected="${S.categoriaHist===v}">${l}</button>`).join("");
   const iconoCal = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>`;
   const esRangoCal = S.rangoHist.charAt(0)==="c";
-  const segmentoPeriodo = [["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="segBtn" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("");
+  const segmentoPeriodo = [["d1","Hoy"],["d7","7 días"],["d30","30 días"],["d60","Todo"]].map(([v,l])=>`<button type="button" class="segBtn" data-rango-hist="${v}" aria-pressed="${S.rangoHist===v}">${l}</button>`).join("");
   const menuRango = S.rangoMenu ? `<div class="rangoMenu noPrint">${RANGOS_HIST.map(([v,l])=>`<button type="button" class="rangoOpt${S.rangoHist===v?" on":""}" data-rango-hist="${v}">${l}</button>`).join("")}<div class="rangoSep"></div><button type="button" class="rangoOpt rangoCal" data-cal-toggle="1">Rango personalizado…</button></div>` : "";
 
   let tituloTabla="", tabla="";
@@ -2015,7 +2022,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="d7"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -2272,7 +2279,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
-  if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
   if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
   if(t.dataset.rangoMenu){ S.rangoMenu=!S.rangoMenu; renderApp(); return }
   if(t.dataset.rangoHist){ S.rangoHist=t.dataset.rangoHist; S.calHist=null; S.rangoMenu=false; renderApp(); return }
