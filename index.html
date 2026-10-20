@@ -458,7 +458,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.2";
+const FRONTEND_VERSION = "1.77.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1077,12 +1077,12 @@ function diasHasta(iso){
   const [y,m,d]=String(iso).split("-").map(Number), h=new Date();
   return Math.round((new Date(y,m-1,d)-new Date(h.getFullYear(),h.getMonth(),h.getDate()))/86400000);
 }
-/** Semáforo de vencimiento: rojo = vencido, amarillo = vence en 20 días o menos (hoy incluido), verde = más de 20 días. */
+/** Semáforo de vencimiento: rojo = vence mañana o ya venció (1 día o menos), amarillo = de 2 a 20 días, verde = más de 20 días. */
 const VENC_AVISO_DIAS = 20;
 const SEM_CLASE = { rojo:"alert", amarillo:"warn", verde:"ok" };
 function semaforoVenc(iso){
   const d=diasHasta(iso);
-  const k=d<0 ? "rojo" : d<=VENC_AVISO_DIAS ? "amarillo" : "verde";
+  const k=d<=1 ? "rojo" : d<=VENC_AVISO_DIAS ? "amarillo" : "verde";
   const label=d<0 ? (d===-1 ? "Vencido ayer" : `Vencido hace ${-d} días`) : d===0 ? "Vence hoy" : d===1 ? "Vence mañana" : `Vence en ${d} días`;
   return {k, d, label};
 }
@@ -1206,8 +1206,8 @@ function porVencerHTML(){
   lista.sort((a,b)=>a.d-b.d);
   const estado=d=>d<0?`Vencido hace ${-d} ${-d===1?"día":"días"}`:d===0?"Vence hoy":d===1?"Vence mañana":`Vence en ${d} días`;
   return `<section class="porVencer"><p class="sec">Por vencer</p>
-    <p class="porVencerRef"><span class="semDot rojo"></span>Vencido, no se vende · <span class="semDot amarillo"></span>Vence en ${VENC_AVISO_DIAS} días o menos</p>
-    ${lista.map(({s,l,d})=>`<div class="vencItem ${d<0?"alert":"warn"}">
+    <p class="porVencerRef"><span class="semDot rojo"></span>Vence mañana o vencido · <span class="semDot amarillo"></span>Vence en 2 a ${VENC_AVISO_DIAS} días</p>
+    ${lista.map(({s,l,d})=>`<div class="vencItem ${d<=1?"alert":"warn"}">
       <div class="vencTop"><b>${esc(s.nombre)}</b><span>${l.c} ${unidad(s.id,l.c)} · ${fechaVencCorta(l.f)}</span></div>
       <div class="vencEstado">${estado(d)}</div>
       <div class="vencAcc">
@@ -1228,7 +1228,7 @@ function ventaDesperdicioLote(id, f){
   renderApp();
 }
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
-const FILTROS_VENC = [["todos","Todos"],["vencidos","Vencidos"],["pronto","Próximos 20 días"],["verde","Más de 20 días"]];
+const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"]];
 function hayLotesConFecha(){ return S.sabores.some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
 function vencimientosPantallaHTML(){
   const todos=[];
