@@ -106,6 +106,9 @@ select{max-width:220px}
 .rangoSep{height:1px;background:var(--line);margin:4px 6px}
 .tituloTabla{text-align:center}
 .tbl th,.tbl td{text-align:center}
+.subCats{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;background:#EFE6D6;border-radius:14px;padding:10px;margin:8px 0 4px}
+.subCat{font:inherit;font-size:.78rem;font-weight:700;height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.subCat[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .calCard{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;margin:0 0 12px;max-width:420px}
 .calHead{display:flex;align-items:center;justify-content:space-between}
 .calNav{width:34px;height:34px;border-radius:999px;border:none;background:#F0E7D9;color:var(--ink);font-size:18px;font-weight:800;cursor:pointer}
@@ -345,7 +348,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.70.3";
+const FRONTEND_VERSION = "1.71.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -387,7 +390,7 @@ const S = {
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
   modoProduccion: false, // viendo Producción desde adentro de Ingreso (local con Locales.produccion=SI)
   motivoDesperdicio: "",
-  confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroFamilia: null, filtroCategoria: "todas", soloAlerta: false, needEmp:false,
+  confirm: false, remito: "", fotoRemitoUrl: "", q: "", filtroFamilia: null, filtroCategoria: "todas", catAbierta: false, soloAlerta: false, needEmp:false,
   conteo: null,
   lectorRemito: null,
   verPedido: false,
@@ -1069,20 +1072,30 @@ function categoriasPresentes(){
   return CATEGORIAS_ORDEN.filter(c=>set.has(c)).concat([...set].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
 }
 
+/** Filtros de Salida, Ingreso, Stock y Pedido (decidido por Gabi 21/10/2026):
+ *  las familias son pestañas con subrayado; tocar la activa despliega sus
+ *  subcategorías (Todas + las de la familia), y tocar de nuevo las cierra.
+ *  Cerradas, la pestaña muestra la subcategoría elegida ("Vasquetas · Frutales"). */
 function chipFiltros(){
   const grupos=familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
+  const subElegida=S.filtroCategoria!=="todas"?S.filtroCategoria:null;
+  const etiqueta=g=>{
+    if(g!==grupoActivo) return esc(GRUPO_PRODUCTO_LABEL[g]||g);
+    const base=esc(GRUPO_PRODUCTO_LABEL[g]||g)+(subElegida&&!S.catAbierta?` · ${esc(subElegida)}`:"");
+    return `${base} ${S.catAbierta?"▴":"▾"}`;
+  };
   return `<div class="tools">
     <div class="grow"><input type="search" id="q" placeholder="Buscar sabor" value="${esc(S.q)}"></div>
     <button class="chip" id="soloAlerta" aria-pressed="${S.soloAlerta}">Debajo del mínimo</button>
   </div>
-  ${grupos.length>1?`<div class="tools catChips">
-    ${grupos.map(g=>`<button class="chip" data-familia="${g}" aria-pressed="${grupoActivo===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}
-  </div>`:""}
-  <div class="tools catChips">
-    <button class="chip" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todos</button>
-    ${cats.map(c=>`<button class="chip" data-cat="${esc(c)}" aria-pressed="${S.filtroCategoria===c}" style="${S.filtroCategoria===c?`background:${colorCategoria(c)};border-color:${colorCategoria(c)};color:#fff`:""}">${esc(c)}</button>`).join("")}
-  </div>`;
+  <div class="tabsCat" role="tablist">
+    ${grupos.map(g=>`<button type="button" class="tabCat" role="tab" data-familia="${g}" aria-selected="${grupoActivo===g}" aria-expanded="${grupoActivo===g&&S.catAbierta}">${etiqueta(g)}</button>`).join("")}
+  </div>
+  ${S.catAbierta?`<div class="subCats" role="group" aria-label="Subcategorías">
+    <button type="button" class="subCat" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todas</button>
+    ${cats.map(c=>`<button type="button" class="subCat" data-cat="${esc(c)}" aria-pressed="${S.filtroCategoria===c}">${esc(c)}</button>`).join("")}
+  </div>`:""}`;
 }
 function listaFiltrada(st){
   const q=normalizar(S.q.trim()), grupoActivo=S.filtroFamilia||"vasquetas";
@@ -2266,7 +2279,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
-  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=stockMap()[id]||0;
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
@@ -2324,7 +2337,12 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.toggleSaborLocal){ await conBoton(t, ()=>toggleSaborLocal(t.dataset.toggleSaborLocal)); return }
 
-  if(t.dataset.familia){ S.filtroFamilia = t.dataset.familia; S.filtroCategoria = "todas"; renderApp(); return }
+  if(t.dataset.familia){
+    // Tocar la familia activa despliega/cierra sus subcategorías; tocar otra la activa y la despliega
+    if(t.dataset.familia===(S.filtroFamilia||"vasquetas")) S.catAbierta=!S.catAbierta;
+    else { S.filtroFamilia=t.dataset.familia; S.filtroCategoria="todas"; S.catAbierta=true }
+    renderApp(); return
+  }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; S.vencOmit={}; renderApp(); return }
