@@ -166,7 +166,13 @@ No hace falta crear ningún empleado con `local="Operaciones"` — quien elige e
 Admin puede entrar a un local real sin conocer su contraseña: en el paso de la contraseña del local, en vez de la clave del local tipea un **código de 6 dígitos** que es único para todos los admins. Después elige quién es (admin o supervisor) y entra igual que a Operaciones, sin PIN personal. Para locales sin contraseña no aparece ese paso, así que no hace falta el código.
 
 Para armarlo (una sola vez):
-1. En el editor de Apps Script: Propiedades del script → agregar `ADMIN_CODE` con los 6 dígitos que elijas. No va en la hoja ni en el repo.
+1. En el editor de Apps Script (script.google.com, el proyecto de LogiStock):
+   1. Menú de la izquierda: **Configuración del proyecto** (ícono de engranaje).
+   2. Bajá hasta **Propiedades del script** → **Agregar propiedad del script**.
+   3. **Propiedad:** `ADMIN_CODE` (exactamente así, en mayúsculas).
+   4. **Valor:** los 6 dígitos que elijas, sin espacios ni guiones (por ejemplo `482913`).
+   5. Guardá. Listo: no hace falta redeploy para que tome el código.
+   El código no va en la hoja ni en el repo.
 2. Pegar `Code.gs` y hacer "Nueva implementación".
 
 Si alguien falla 5 veces seguidas, los intentos con código quedan bloqueados 5 minutos. Para cambiar el código: editar `ADMIN_CODE` en Propiedades del script (no hace falta redeploy).
