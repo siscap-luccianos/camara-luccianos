@@ -177,6 +177,20 @@ select{max-width:220px}
 .card{position:relative;display:flex;flex-direction:column}
 .card>.pick{flex:1 1 auto}
 .lotesFull{grid-column:1/-1;padding:0 0 10px}
+.lotesPanel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.lpHead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 10px;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.lpEstado{font-size:.8rem;font-weight:800;letter-spacing:0;text-transform:none}
+.lpEstado.ok{color:#2F7D4A}
+.lpEstado.mal{color:var(--alert)}
+.lpFila{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 36px;gap:8px;align-items:end}
+.lpCampo{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lpCampo>span{font-size:.7rem;color:var(--muted);font-weight:700}
+.lpCampo input{height:42px;width:100%;min-width:0;box-sizing:border-box;border-radius:10px;border:1px solid var(--line);padding:0 10px;font:inherit;font-weight:700;background:var(--bg);color:var(--ink)}
+.lpFila.falta .lpCampo input{border:2px solid var(--alert)}
+.lpUds{height:42px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-weight:800}
+.lpSinFecha{height:42px;display:flex;align-items:center;color:var(--muted);font-weight:700;font-size:.85rem}
+.lpQuitar{width:36px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:1.15rem;cursor:pointer}
+.lpAgregar{height:42px;border-radius:10px;border:1px dashed var(--accent);background:transparent;color:var(--accent);font:inherit;font-weight:800;font-size:.85rem;cursor:pointer}
 .card>.pick{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:0 0 12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow:hidden;transition:transform .08s,border-color .15s}
 .card>.pick:active{transform:scale(.97)}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
@@ -444,7 +458,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.76.2";
+const FRONTEND_VERSION = "1.77.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1000,28 +1014,51 @@ function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolat
 /** Alfajores, conitos y minis (categoría Alfajores/Conitos) se rotulan a mano en
  *  el local: el vencimiento es opcional. El resto viene con fecha impresa y la pide. */
 function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" && c!=="Latas" }
-/** Campo de vencimiento de un renglón de chocolatería. Obligatorio (tabletas,
- *  avellas, latas, squares): label con fecha, en alerta si falta. Opcional
- *  (alfajores/conitos): muestra "Omitir" para seguir de largo sin fecha. */
-function vencCampoHTML(id, valor, prefijo, attr){
-  const clave=prefijo+id;
-  if(requiereVencimiento(id)) return `<label class="vencCampo${!valor?" falta":""}">Vencimiento<input type="date" ${attr}="${id}" value="${esc(valor||"")}"></label>`;
-  if(S.vencOmit[clave] && !valor) return `<div class="vencCampo omitido"><span>Sin vencimiento</span><button type="button" class="vencOmitir" data-venc-cargar="${clave}">Cargar fecha</button></div>`;
-  if(valor) return `<div class="vencCampo"><div class="vencHead"><span>Vencimiento: ${fechaVencCorta(valor)}</span><button type="button" class="vencOmitir" data-venc-omitir="${clave}">Quitar fecha</button></div><input type="date" ${attr}="${id}" value="${esc(valor)}"></div>`;
-  return `<div class="vencCampo"><div class="vencHead"><span>Vencimiento · opcional</span><button type="button" class="vencOmitir" data-venc-omitir="${clave}">Omitir</button></div><span class="vencHint">Si no lo sabés, tocá Omitir y seguí con el siguiente.</span><input type="date" ${attr}="${id}"></div>`;
+/** Panel de vencimientos de un renglón de chocolatería (mock "Ingreso con lotes"): una fila por lote con
+ *  fecha y unidades. El lote principal toma lo que sobra del total; los extra se escriben a mano. */
+function lotesPanelHTML(clave, id, cantidad){
+  if(!esChocolateria(id) || !(cantidad>0)) return "";
+  const ing=clave.startsWith("ing:");
+  const principal = ing ? S.vencimientos[id] : S.vencConteo[id];
+  const attrP = ing ? "data-venc" : "data-venc-conteo";
+  const extra = S.lotesExtra[clave]||[];
+  const suma = sumaExtra(extra), c0 = cantidad-suma, uds0 = Math.max(0, c0);
+  const req = requiereVencimiento(id);
+  const omitido = !req && !principal && !!S.vencOmit[clave] && !extra.length;
+  const sinFechaExtra = extra.some(l=>(+l.c||0)>0 && !l.f);
+  const falta = req && ((c0>0 && !principal) || sinFechaExtra);
+  const excede = suma>cantidad;
+  let estado="", clase="ok";
+  if(excede){ estado=`Sobran ${suma-cantidad} ${unidad(id,suma-cantidad)}`; clase="mal" }
+  else if(falta){ estado="Falta una fecha"; clase="mal" }
+  else if(req || principal || extra.length){ estado=`${uds0+suma} de ${cantidad}${cantidad>0?" ✓":""}` }
+  let omitBtn="";
+  if(!omitido && !extra.length){
+    if(principal) omitBtn=`<button type="button" class="vencOmitir" data-venc-omitir="${clave}">Quitar fecha</button>`;
+    else if(!req) omitBtn=`<button type="button" class="vencOmitir" data-venc-omitir="${clave}">Omitir</button>`;
+  }
+  const principalRow = omitido
+    ? `<div class="lpFila"><div class="lpCampo"><span>Vence</span><div class="lpSinFecha">Sin fecha</div></div><div class="lpCampo"><span>Unidades</span><div class="lpUds">${uds0}</div></div><button type="button" class="vencOmitir" data-venc-cargar="${clave}">Cargar fecha</button></div>`
+    : `<div class="lpFila${falta&&!principal&&c0>0?" falta":""}"><div class="lpCampo"><span>Vence</span><input type="date" ${attrP}="${id}" value="${esc(principal||"")}"></div><div class="lpCampo"><span>Unidades</span><div class="lpUds">${uds0}</div></div><span></span></div>`;
+  return `<div class="lotesPanel">
+    <div class="lpHead"><span>${req?"Vencimientos":"Vencimiento · opcional"}</span><span class="lpEstado ${clase}">${estado}</span>${omitBtn}</div>
+    ${principalRow}
+    ${extra.map((l,i)=>`<div class="lpFila${req&&!l.f&&(+l.c||0)>0?" falta":""}">
+      <div class="lpCampo"><span>Vence</span><input type="date" data-lote-f="${clave}|${i}" value="${esc(l.f||"")}"></div>
+      <div class="lpCampo"><span>Unidades</span><input type="number" min="0" inputmode="numeric" data-lote-c="${clave}|${i}" value="${l.c||""}"></div>
+      <button type="button" class="lpQuitar" data-lote-quitar="${clave}|${i}" aria-label="Quitar este lote">×</button>
+    </div>`).join("")}
+    <button type="button" class="lpAgregar" data-lote-agregar="${clave}">+ Agregar otro vencimiento</button>
+  </div>`;
 }
-/** Al tipear la cantidad de chocolatería, el campo de vencimiento aparece (o se
- *  quita) en el momento, sin esperar a Guardar. Se agrega al DOM del renglón en
- *  vez de rehacer la lista, así no se pierde el foco mientras se escribe. */
+/** Al tipear la cantidad de chocolatería, el panel de vencimientos aparece (o se quita) en el momento,
+ *  sin esperar a Guardar. Solo se reemplaza el panel, no el campo de cantidad, así no se pierde el foco. */
 function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
   if(!esChocolateria(id)) return;
-  const nm=input.closest(".row").querySelector(".nm");
-  const visible=nm.querySelector(".vencCampo");
-  const fila=input.closest(".row");
-  if(cantidad>0 && !visible){
-    nm.insertAdjacentHTML("beforeend", vencCampoHTML(id, prefijo==="ing:"?S.vencimientos[id]:S.vencConteo[id], prefijo, attr));
-    fila.insertAdjacentHTML("beforeend", `<div class="lotesFull">${lotesExtraHTML(prefijo+id, id, cantidad)}</div>`);
-  } else if(cantidad<=0 && visible){ visible.remove(); fila.querySelectorAll(".lotesFull").forEach(x=>x.remove()); delete S.lotesExtra[prefijo+id] }
+  const fila=input.closest(".row"), clave=prefijo+id, panel=fila.querySelector(".lotesFull");
+  if(cantidad<=0){ if(panel) panel.remove(); delete S.lotesExtra[clave]; return }
+  const html=`<div class="lotesFull">${lotesPanelHTML(clave,id,cantidad)}</div>`;
+  if(panel) panel.outerHTML=html; else fila.insertAdjacentHTML("beforeend", html);
 }
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
 
@@ -1200,7 +1237,7 @@ function vencimientosPantallaHTML(){
   const pasa=(x,k)=>k==="todos"||(k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde");
   const f=FILTROS_VENC.some(([k])=>k===S.filtroVenc) ? S.filtroVenc : "todos";
   const lista=todos.filter(x=>pasa(x,f));
-  return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">Volver a Stock</button>
+  return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">${S.tab==="salida"?"Volver a Salida":"Volver a Stock"}</button>
   <p class="sec">Vencimientos · de más cerca a más lejos</p>
   <div class="vencFiltros" role="group" aria-label="Filtrar vencimientos">
     ${FILTROS_VENC.map(([k,label])=>`<button type="button" class="chip" data-filtro-venc="${k}" aria-pressed="${f===k}">${label} · ${todos.filter(x=>pasa(x,k)).length}</button>`).join("")}
@@ -1218,19 +1255,6 @@ function iniciarConteo(){
 }
 /** Lotes extra de un renglón (además del principal): "+ Otro vencimiento". */
 function sumaExtra(extra){ return extra.reduce((a,l)=>a+(+l.c||0),0) }
-function lotesExtraHTML(clave, id, cantidad){
-  if(!esChocolateria(id) || !(cantidad>0)) return "";
-  const extra=S.lotesExtra[clave]||[], principal=Math.max(0, cantidad-sumaExtra(extra));
-  return `<div class="lotesBox">
-    ${extra.length?`<p class="loteP">Lote principal: ${principal} ${unidad(id,principal)}${sumaExtra(extra)>cantidad?" · los lotes suman más que la cantidad":""}</p>`:""}
-    ${extra.map((l,i)=>`<div class="loteFila">
-      <input type="date" data-lote-f="${clave}|${i}" value="${esc(l.f||"")}" aria-label="Vencimiento del lote extra ${i+1}">
-      <input type="number" min="0" inputmode="numeric" data-lote-c="${clave}|${i}" value="${l.c||""}" aria-label="Unidades del lote extra ${i+1}">
-      <button type="button" class="vencOmitir" data-lote-quitar="${clave}|${i}">Quitar</button>
-    </div>`).join("")}
-    <button type="button" class="vencOmitir" data-lote-agregar="${clave}">+ Otro vencimiento</button>
-  </div>`;
-}
 function setLoteExtra(input){
   const ds=input.dataset, esFecha=ds.loteF!==undefined, [clave,i]=(esFecha?ds.loteF:ds.loteC).split("|");
   const lote=(S.lotesExtra[clave]||[])[+i]; if(!lote) return;
@@ -1453,6 +1477,7 @@ function listaFiltrada(st){
 
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
+  if(S.verVencimientos) return vencimientosPantallaHTML();
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   const card=s=>{
@@ -1467,6 +1492,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
+  ${hayLotesConFecha()?`<button type="button" class="btn ghost" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.some(esMantenible)?`<div class="mantHint">Alfajores y conitos: <b>mantené apretado</b> para elegir cuántos</div>`:""}
@@ -1649,12 +1675,12 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?vencCampoHTML(s.id,S.vencimientos[s.id],"ing:","data-venc"):""}</div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
       ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
-    ${esChocolateria(s.id)&&q>0?`<div class="lotesFull">${lotesExtraHTML("ing:"+s.id,s.id,q)}</div>`:""}
+    ${esChocolateria(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
@@ -1719,8 +1745,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  const botonVenc=hayLotesConFecha()?`<div class="vencFiltros"><button type="button" class="chip" data-ver-venc>Ver todos los vencimientos</button></div>`:"";
-  return botonVenc+porVencerHTML()+stockViewGeneral(st);
+  return porVencerHTML()+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -1887,8 +1912,8 @@ function stockViewResumen(st){
 function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo"):""}</div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div>${esChocolateria(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesExtraHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div></div>
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div>${esChocolateria(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
