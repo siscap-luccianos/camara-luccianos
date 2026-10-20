@@ -295,10 +295,10 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .mantAcc{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
 .mantAcc .btn{min-height:50px}
 .mantAcc .btn:disabled{opacity:.4}
-.loteInfo{display:block;font-size:.72rem;font-weight:800;line-height:1.3;color:var(--muted);text-align:left;overflow-wrap:anywhere}
-.loteInfo.warn{color:var(--warn)}
-.loteInfo.alert{color:var(--alert)}
-.loteInfo.ok{color:#2F7D4A}
+.loteInfo{display:inline-block;margin-top:4px;padding:4px 9px;border-radius:999px;font-size:.72rem;font-weight:800;line-height:1.3;color:var(--ink);background:var(--surface);border:1px solid var(--line);text-align:left;overflow-wrap:anywhere;max-width:100%}
+.loteInfo.alert{background:#A23B2A;border-color:#A23B2A;color:#fff}
+.loteInfo.warn{background:#F7E7A8;border-color:#C9A227;color:#5C4300}
+.loteInfo.ok{background:#D5EBDB;border-color:#2F7D4A;color:#1F5A34}
 .porVencerRef{margin:0;font-size:.75rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:4px}
 .semDot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:2px}
 .semDot.rojo{background:#A23B2A}
@@ -458,7 +458,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.1";
+const FRONTEND_VERSION = "1.77.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
