@@ -281,10 +281,10 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .mantAcc{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
 .mantAcc .btn{min-height:50px}
 .mantAcc .btn:disabled{opacity:.4}
-.loteInfo{display:block;padding:0 13px;font-size:.72rem;font-weight:800;line-height:1.3;color:var(--muted);text-align:left;overflow-wrap:anywhere}
+.loteInfo{display:block;font-size:.72rem;font-weight:800;line-height:1.3;color:var(--muted);text-align:left;overflow-wrap:anywhere}
 .loteInfo.warn{color:var(--warn)}
 .loteInfo.alert{color:var(--alert)}
-.linkLote{display:block;padding:2px 13px 0;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;text-align:left;cursor:pointer}
+.linkLote{display:block;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;text-align:left;cursor:pointer}
 .lotesBox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .loteP{margin:0;font-size:.75rem;color:var(--muted)}
 .loteFila{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -1408,10 +1408,9 @@ function gridSalida(st){
     return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
       <button class="pick" data-add="${s.id}"${esMantenible(s)?` data-mantener="${s.id}"`:""} aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
-        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
+        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${loteInfoSpan(s.id,false)}${loteElegirBtn(s.id,false)}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
-        ${loteInfoSpan(s.id,false)}${loteElegirBtn(s.id,false)}
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
@@ -1429,10 +1428,9 @@ function gridDesperdicio(st){
     return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
       <button class="pick" data-wadd="${s.id}" aria-label="${esc(s.nombre)}, sumar una">
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
-        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span></span>
+        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${loteInfoSpan(s.id,true)}${loteElegirBtn(s.id,true)}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
         <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
-        ${loteInfoSpan(s.id,true)}${loteElegirBtn(s.id,true)}
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<button class="btn volver" type="button" id="volverSalida" style="margin-bottom:12px">Volver a Salida</button>
