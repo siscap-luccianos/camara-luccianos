@@ -284,6 +284,11 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .loteInfo{display:block;font-size:.72rem;font-weight:800;line-height:1.3;color:var(--muted);text-align:left;overflow-wrap:anywhere}
 .loteInfo.warn{color:var(--warn)}
 .loteInfo.alert{color:var(--alert)}
+.loteInfo.ok{color:#2F7D4A}
+.porVencerRef{margin:0;font-size:.75rem;color:var(--muted);display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.semDot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:2px}
+.semDot.rojo{background:#A23B2A}
+.semDot.amarillo{background:#C9A227}
 .linkLote{display:block;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;text-align:left;cursor:pointer}
 .lotesBox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .loteP{margin:0;font-size:.75rem;color:var(--muted)}
@@ -297,7 +302,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .porVencer{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
 .vencItem{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .vencItem.alert{border:2px solid var(--alert)}
-.vencItem.warn{border-left:4px solid var(--warn)}
+.vencItem.warn{border:2px solid #C9A227}
+.vencItem.warn .vencEstado{color:#5C4300}
 .vencTop{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap}
 .vencTop span{font-size:.8rem;color:var(--muted)}
 .vencEstado{font-size:.8rem;font-weight:800;color:var(--alert)}
@@ -1018,6 +1024,15 @@ function diasHasta(iso){
   const [y,m,d]=String(iso).split("-").map(Number), h=new Date();
   return Math.round((new Date(y,m-1,d)-new Date(h.getFullYear(),h.getMonth(),h.getDate()))/86400000);
 }
+/** Semáforo de vencimiento: rojo = vencido, amarillo = vence en 20 días o menos (hoy incluido), verde = más de 20 días. */
+const VENC_AVISO_DIAS = 20;
+const SEM_CLASE = { rojo:"alert", amarillo:"warn", verde:"ok" };
+function semaforoVenc(iso){
+  const d=diasHasta(iso);
+  const k=d<0 ? "rojo" : d<=VENC_AVISO_DIAS ? "amarillo" : "verde";
+  const label=d<0 ? (d===-1 ? "Vencido ayer" : `Vencido hace ${-d} días`) : d===0 ? "Vence hoy" : d===1 ? "Vence mañana" : `Vence en ${d} días`;
+  return {k, d, label};
+}
 function ordenarFEFO(lotes){
   const k=l=>l.f||"~";
   return lotes.slice().sort((a,b)=>k(a)<k(b)?-1:k(a)>k(b)?1:0);
@@ -1083,7 +1098,7 @@ function loteInfoSpan(id, conVencidos){
   const vencidas=lotes.filter(l=>diasHasta(l.f)<0).reduce((a,l)=>a+l.c,0);
   const primero=conVencidos ? ((S.lotePick[id] && vend.find(l=>l.f===S.lotePick[id])) || vend[0]) : loteSalida(id);
   let html="";
-  if(primero){ const d=diasHasta(primero.f); html+=`<span class="loteInfo ${d<=1?"alert":d<=7?"warn":""}">${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)}${fechas>1?` · ${fechas} lotes`:""}</span>` }
+  if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo ${SEM_CLASE[sem.k]}">${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)}${fechas>1?` · ${fechas} lotes`:""}</span>` }
   if(!conVencidos && vencidas>0) html+=`<span class="loteInfo alert">${vencidas} vencidas, no se venden</span>`;
   return html;
 }
@@ -1106,7 +1121,7 @@ function renderElegirLote(){
       <button type="button" class="loteOpt${elegido?"":" on"}" data-lote-pick="">
         <b>Automático</b><span>Sale primero el que vence antes${auto&&auto.f?` (${fechaVencCorta(auto.f)})`:""}</span></button>
       ${fechas.map(l=>`<button type="button" class="loteOpt${elegido===l.f?" on":""}" data-lote-pick="${esc(l.f)}">
-        <b>Vence ${fechaVencCorta(l.f)}</b><span>${l.c} ${unidad(id,l.c)}${diasHasta(l.f)<=1?" · vence pronto":""}</span></button>`).join("")}
+        <b>Vence ${fechaVencCorta(l.f)}</b><span>${l.c} ${unidad(id,l.c)}${semaforoVenc(l.f).k==="verde"?"":" · "+semaforoVenc(l.f).label}</span></button>`).join("")}
     </div>
     <p class="mantAyuda">Si ese lote tiene menos unidades que las que sacás, el resto sale del siguiente que vence antes.</p>
     <div class="mantAcc"><button type="button" class="btn ghost" data-lote-cancel>Cancelar</button></div>
@@ -1133,16 +1148,17 @@ function textoVencRegistro(r, id){
 /** Lotes que vencen en 7 días o menos (o ya vencieron), arriba de Stock para no olvidarse de venderlos a tiempo ni de sacar los vencidos. */
 function porVencerHTML(){
   const lista=[];
-  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=7) lista.push({s, l, d:diasHasta(l.f)}) }));
+  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=VENC_AVISO_DIAS) lista.push({s, l, d:diasHasta(l.f)}) }));
   if(!lista.length) return "";
   lista.sort((a,b)=>a.d-b.d);
   const estado=d=>d<0?`Vencido hace ${-d} ${-d===1?"día":"días"}`:d===0?"Vence hoy":d===1?"Vence mañana":`Vence en ${d} días`;
   return `<section class="porVencer"><p class="sec">Por vencer</p>
-    ${lista.map(({s,l,d})=>`<div class="vencItem ${d<=1?"alert":"warn"}">
+    <p class="porVencerRef"><span class="semDot rojo"></span>Vencido, no se vende · <span class="semDot amarillo"></span>Vence en ${VENC_AVISO_DIAS} días o menos</p>
+    ${lista.map(({s,l,d})=>`<div class="vencItem ${d<0?"alert":"warn"}">
       <div class="vencTop"><b>${esc(s.nombre)}</b><span>${l.c} ${unidad(s.id,l.c)} · ${fechaVencCorta(l.f)}</span></div>
       <div class="vencEstado">${estado(d)}</div>
       <div class="vencAcc">
-        ${d<=1?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
+        ${d<0?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
         ${d>=0?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
         ${d<0?`<button type="button" class="btn ghost" data-venc-conteo-ir>Hacer conteo</button>`:""}
       </div>
