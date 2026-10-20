@@ -89,6 +89,23 @@ select{max-width:220px}
 .vencCampo.omitido{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
 .vencHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .vencHint{font-size:.72rem;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
+.tabsCat{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;border-bottom:1px solid var(--line);margin:10px 0 12px}
+.tabCat{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;padding:0 0 9px;font:inherit;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabCat[aria-selected=true]{color:var(--ink);font-weight:800;border-bottom-color:var(--ink)}
+.perRow{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px}
+.segPer{display:flex;flex:1;max-width:340px;background:#EADFCD;border-radius:12px;padding:3px}
+.segBtn{flex:1;border:none;background:none;border-radius:9px;padding:7px 0;font:inherit;font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer;text-align:center}
+.segBtn[aria-pressed=true]{background:var(--surface);color:var(--ink);font-weight:800;box-shadow:0 1px 3px rgba(42,30,23,.14)}
+.calWrap{position:relative;flex:none}
+.calBtn{width:36px;height:36px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.calBtn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rangoMenu{position:absolute;right:0;top:42px;width:250px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 28px rgba(42,30,23,.18);padding:6px;display:flex;flex-direction:column;z-index:20}
+.rangoOpt{border:none;background:none;border-radius:10px;padding:9px 10px;font:inherit;font-size:.85rem;font-weight:700;color:var(--ink);cursor:pointer;text-align:center}
+.rangoOpt.on{background:#F0E7D9;font-weight:800}
+.rangoCal{color:var(--accent);font-weight:800}
+.rangoSep{height:1px;background:var(--line);margin:4px 6px}
+.tituloTabla{text-align:center}
+.tbl th,.tbl td{text-align:center}
 .calCard{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;margin:0 0 12px;max-width:420px}
 .calHead{display:flex;align-items:center;justify-content:space-between}
 .calNav{width:34px;height:34px;border-radius:999px;border:none;background:#F0E7D9;color:var(--ink);font-size:18px;font-weight:800;cursor:pointer}
@@ -328,7 +345,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.69.0";
+const FRONTEND_VERSION = "1.70.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -379,6 +396,7 @@ const S = {
   categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
   rangoHist: "s0", // s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
   calHist: null, // calendario de Historial abierto: {mes, d, h} (d/h = YYYY-MM-DD elegidos), null = cerrado
+  rangoMenu: false, // menú de período de Historial (presets + Rango personalizado) abierto
   pedidoAdj: {},
   cola: JSON.parse(ls.get("cola","[]")),
   busy: false, offline: false,
@@ -1570,11 +1588,12 @@ function histView(){
   const diasSem=["Lu","Ma","Mi","Ju","Vi","Sá","Do"];
   const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
 
-  const categoriaChips = CATEGORIAS_HIST.filter(([v])=>v!=="produccion"||S.produccionLocal)
-    .map(([v,l])=>`<button type="button" class="chip" data-categoria-hist="${v}" aria-pressed="${S.categoriaHist===v}">${l}</button>`).join("");
-  const rangoChips = RANGOS_HIST.map(([v,l])=>`<button type="button" class="chip" data-rango-hist="${v}" aria-pressed="${S.rangoHist===v}">${l}</button>`).join("");
+  const tabsCategoria = CATEGORIAS_HIST.filter(([v])=>v!=="produccion"||S.produccionLocal)
+    .map(([v,l])=>`<button type="button" class="tabCat" role="tab" data-categoria-hist="${v}" aria-selected="${S.categoriaHist===v}">${l}</button>`).join("");
+  const iconoCal = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>`;
   const esRangoCal = S.rangoHist.charAt(0)==="c";
-  const calChip = `<button type="button" class="chip" data-cal-toggle="1" aria-pressed="${esRangoCal||!!S.calHist}" style="display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>${esRangoCal?esc(rango.label):"Elegir fechas"}</button>`;
+  const segmentoPeriodo = [["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="segBtn" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("");
+  const menuRango = S.rangoMenu ? `<div class="rangoMenu noPrint">${RANGOS_HIST.map(([v,l])=>`<button type="button" class="rangoOpt${S.rangoHist===v?" on":""}" data-rango-hist="${v}">${l}</button>`).join("")}<div class="rangoSep"></div><button type="button" class="rangoOpt rangoCal" data-cal-toggle="1">Rango personalizado…</button></div>` : "";
 
   let tituloTabla="", tabla="";
   if(S.categoriaHist==="desperdicio"){
@@ -1638,18 +1657,19 @@ function histView(){
   // La lista de abajo sigue a la pill de categoría igual que la tabla de arriba
   const regsCategoria=regs.filter(r=>movimientoEnCategoria(r, S.categoriaHist));
   const lista=regsCategoria.slice(0,150).map(filaMovimiento).join("");
-  return `<div class="tools noPrint" style="justify-content:space-between">
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${[["1","Hoy"],["7","7 días"],["30","30 días"],["60","Todo"]].map(([v,l])=>`<button type="button" class="chip" data-periodo="${v}" aria-pressed="${S.periodoHist===v}">${l}</button>`).join("")}
-      </div>
-      <button type="button" class="btn ghost" id="exportarHist">🖨 Exportar</button>
+  return `<div class="tools noPrint" style="justify-content:center"><button type="button" class="btn ghost" id="exportarHist">🖨 Exportar</button></div>
+  <div class="tabsCat noPrint" role="tablist">${tabsCategoria}</div>
+  <div class="perRow noPrint">
+    <div class="segPer" role="group" aria-label="Período">${segmentoPeriodo}</div>
+    <div class="calWrap">
+      <button type="button" class="calBtn" data-rango-menu="1" aria-label="Elegir período" aria-pressed="${esRangoCal||!!S.rangoMenu}">${iconoCal}</button>
+      ${menuRango}
     </div>
-  <div class="tools noPrint" style="flex-wrap:wrap;margin-top:10px">${categoriaChips}</div>
-  <div class="tools noPrint" style="flex-wrap:wrap;margin:8px 0 2px">${rangoChips}${calChip}</div>
+  </div>
   ${S.calHist?calendarioHist():""}
-  <p class="sec" style="margin:14px 0 8px">${esc(tituloTabla)} — ${esc(rango.label)}</p>
+  <p class="sec tituloTabla" style="margin:14px 0 8px">${esc(tituloTabla)} — ${esc(rango.label)}</p>
   ${tabla}
-  <p class="sec noPrint" style="margin-top:20px">Movimientos</p>
+  <p class="sec noPrint tituloTabla" style="margin-top:20px">Movimientos</p>
   <div class="noPrint">${lista?`<div class="hist">${lista}</div>`:`<div class="empty">${S.categoriaHist==="todas"?"Sin movimientos en este período.":"Sin movimientos de esta categoría en este período."}</div>`}</div>`;
 }
 /** Qué movimientos muestra cada pill de categoría en la lista de abajo.
@@ -1995,7 +2015,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -2254,8 +2274,10 @@ document.addEventListener("click", async e=>{
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.periodo){ S.periodoHist=t.dataset.periodo; ls.set("periodoHist",S.periodoHist); renderApp(); return }
   if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
-  if(t.dataset.rangoHist){ S.rangoHist=t.dataset.rangoHist; S.calHist=null; renderApp(); return }
+  if(t.dataset.rangoMenu){ S.rangoMenu=!S.rangoMenu; renderApp(); return }
+  if(t.dataset.rangoHist){ S.rangoHist=t.dataset.rangoHist; S.calHist=null; S.rangoMenu=false; renderApp(); return }
   if(t.dataset.calToggle){
+    S.rangoMenu=false;
     if(S.calHist){ S.calHist=null; renderApp(); return }
     const elegido=S.rangoHist.charAt(0)==="c"?S.rangoHist.slice(1).split("|"):[];
     const base=new Date(elegido[0]?isoALocal(elegido[0]):Date.now());
