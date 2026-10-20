@@ -86,6 +86,10 @@ select{max-width:220px}
 .vencCampo{display:flex;flex-direction:column;gap:4px;margin-top:6px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .vencCampo input{height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 10px;font-size:.9rem;font-weight:700;text-transform:none;letter-spacing:0}
 .vencCampo.falta input{border:1.5px dashed var(--alert)}
+.vencCampo.omitido{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
+.vencHead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.vencHint{font-size:.72rem;font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted)}
+.vencOmitir{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 12px;font-weight:800;font-size:.75rem;text-transform:none;letter-spacing:0;cursor:pointer}
 .cantInput{width:64px;height:36px;text-align:center;font-weight:800;font-size:1rem;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 6px}
 /* Tarjeta con ícono + texto para un CTA destacado (Pedido sugerido / Volver
    a Stock, Leer remito con una foto) — se combina con .glass para la
@@ -309,7 +313,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.68.4";
+const FRONTEND_VERSION = "1.68.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -345,6 +349,7 @@ const S = {
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
+  vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
@@ -846,6 +851,16 @@ function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolat
 /** Alfajores, conitos y minis (categoría Alfajores/Conitos) se rotulan a mano en
  *  el local: el vencimiento es opcional. El resto viene con fecha impresa y la pide. */
 function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" }
+/** Campo de vencimiento de un renglón de chocolatería. Obligatorio (tabletas,
+ *  avellas, latas, squares): label con fecha, en alerta si falta. Opcional
+ *  (alfajores/conitos): muestra "Omitir" para seguir de largo sin fecha. */
+function vencCampoHTML(id, valor, prefijo, attr){
+  const clave=prefijo+id;
+  if(requiereVencimiento(id)) return `<label class="vencCampo${!valor?" falta":""}">Vencimiento<input type="date" ${attr}="${id}" value="${esc(valor||"")}"></label>`;
+  if(S.vencOmit[clave] && !valor) return `<div class="vencCampo omitido"><span>Sin vencimiento</span><button type="button" class="vencOmitir" data-venc-cargar="${clave}">Cargar fecha</button></div>`;
+  if(valor) return `<div class="vencCampo"><div class="vencHead"><span>Vencimiento: ${fechaVencCorta(valor)}</span><button type="button" class="vencOmitir" data-venc-omitir="${clave}">Quitar fecha</button></div><input type="date" ${attr}="${id}" value="${esc(valor)}"></div>`;
+  return `<div class="vencCampo"><div class="vencHead"><span>Vencimiento · opcional</span><button type="button" class="vencOmitir" data-venc-omitir="${clave}">Omitir</button></div><span class="vencHint">Si no lo sabés, tocá Omitir y seguí con el siguiente.</span><input type="date" ${attr}="${id}"></div>`;
+}
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
 document.addEventListener("change", (e)=>{
   const idConteo=e.target && e.target.dataset && e.target.dataset.vencConteo;
@@ -1209,7 +1224,7 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?`<label class="vencCampo${requiereVencimiento(s.id)&&!S.vencimientos[s.id]?" falta":""}">Vencimiento${requiereVencimiento(s.id)?"":" (opcional)"}<input type="date" data-venc="${s.id}" value="${esc(S.vencimientos[s.id]||"")}"></label>`:""}</div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?vencCampoHTML(s.id,S.vencimientos[s.id],"ing:","data-venc"):""}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button>${esChocolateria(s.id)?`<input type="number" inputmode="numeric" min="0" class="cantInput" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}">`:`<span class="n">${q}</span>`}<button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
@@ -1412,7 +1427,7 @@ function stockViewPedido(st){
 function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?`<label class="vencCampo${requiereVencimiento(s.id)&&!S.vencConteo[s.id]?" falta":""}">Vencimiento${requiereVencimiento(s.id)?"":" (opcional)"}<input type="date" data-venc-conteo="${s.id}" value="${esc(S.vencConteo[s.id]||"")}"></label>`:""}</div>
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo"):""}</div>
     <div class="right"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
@@ -1928,7 +1943,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0";
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0";
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -1979,13 +1994,13 @@ async function guardarMovimiento(){
     const r = await api("registrar", payload);
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -2006,7 +2021,7 @@ async function guardarConteo(){
   const r = await api("conteo", payload);
   if(r && r.ok){
     toast("Conteo guardado");
-    S.conteo=null; S.confirm=false; S.vencConteo={};
+    S.conteo=null; S.confirm=false; S.vencConteo={}; S.vencOmit={};
     await cargarDatos();
   } else if(r && r.offline){
     colaAgregar("conteo", payload);
@@ -2180,6 +2195,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; scheduleRender(); return }
   if(t.dataset.ddec){ const c=S.cart.devolucion; c[t.dataset.ddec]=Math.max(0,(c[t.dataset.ddec]||0)-1); if(!c[t.dataset.ddec]) delete c[t.dataset.ddec]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.vencOmitir){ const clave=t.dataset.vencOmitir, id=clave.split(":")[1]; S.vencOmit[clave]=true; if(clave.startsWith("ing:")) delete S.vencimientos[id]; else delete S.vencConteo[id]; renderApp(); return }
+  if(t.dataset.vencCargar){ delete S.vencOmit[t.dataset.vencCargar]; renderApp(); return }
   if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
@@ -2205,7 +2222,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.familia){ S.filtroFamilia = t.dataset.familia; S.filtroCategoria = "todas"; renderApp(); return }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; S.vencOmit={}; renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
@@ -2233,7 +2250,7 @@ document.addEventListener("click", async e=>{
     renderApp();
     return;
   }
-  if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; S.vencConteo={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
+  if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; S.vencConteo={}; S.vencOmit={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
   if(t.id==="volverPedido"){ S.verPedido=false; renderApp(); return }
   if(t.id==="aplicarTodos"){
