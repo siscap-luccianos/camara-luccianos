@@ -109,6 +109,14 @@ select{max-width:220px}
 .subCats{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;background:#EFE6D6;border-radius:14px;padding:10px;margin:8px 0 4px}
 .subCat{font:inherit;font-size:.78rem;font-weight:700;height:28px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
 .subCat[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rubroCard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.rubroHead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.rubroHead span{font-size:.8rem;color:var(--muted)}
+.rubroLineas{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.rubroLinea{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.rubroLinea:last-child{border-bottom:0}
+.rubroBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rubroTotal{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.88rem}
 .calCard{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;margin:0 0 12px;max-width:420px}
 .calHead{display:flex;align-items:center;justify-content:space-between}
 .calNav{width:34px;height:34px;border-radius:999px;border:none;background:#F0E7D9;color:var(--ink);font-size:18px;font-weight:800;cursor:pointer}
@@ -348,7 +356,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.71.2";
+const FRONTEND_VERSION = "1.72.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -394,6 +402,7 @@ const S = {
   conteo: null,
   lectorRemito: null,
   verPedido: false,
+  verResumenPedido: false, // resumen del pedido por rubro (copiar / WhatsApp), dentro de Stock > Pedido sugerido
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
   categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
   rangoHist: "d7", // d1/d7/d30/d60 = últimos N días (incluye hoy) — segmento Hoy/7/30/Todo, s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
@@ -1347,7 +1356,7 @@ function gridProduccion(st){
 
 function stockView(st){
   if(S.conteo) return stockViewConteo();
-  if(S.verPedido) return stockViewPedido(st);
+  if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   const al=alertas(st);
   let kgTotal=0;
   const filas=S.sabores.map(s=>{
@@ -1409,11 +1418,6 @@ function stockViewPedido(st){
     return {s, ped, vendido:s7[s.id]||0};
   });
   const dias=[2,3,4,7];
-  const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
-  const lineas=filas.filter(f=>f.ped>0).map(f=>`- ${f.s.nombre}: ${f.ped}`);
-  const tituloPedido=GRUPO_PRODUCTO_LABEL[grupoActivo]||"helado";
-  const waText = `*Pedido de ${tituloPedido} – ${S.local}*\n${fecha}\n\n${lineas.length?lineas.join("\n"):"Sin sabores para pedir"}\n\n*Total: ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}*`;
-  const waHref = "https://wa.me/?text="+encodeURIComponent(waText);
   const listaVisible = listaFiltrada(st);
 
   const tendenciaHTML=s=>{
@@ -1473,11 +1477,45 @@ function stockViewPedido(st){
   </div>
   ${chipFiltros()}
   <div style="margin-top:14px;gap:10px;display:flex;flex-direction:column;background:none;border:0">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
-  <div class="waPanel">
-    <p class="sec" style="margin:0">Mensaje del pedido</p>
-    <div class="waBubbleBox"><div class="waBubble">${esc(waText)}</div></div>
-    <div class="waActions"><button class="btn ghost" id="waCopiar">Copiar texto</button><a class="btn wa" href="${waHref}" target="_blank" rel="noopener">Enviar por WhatsApp</a></div>
-  </div>`;
+  <button type="button" class="ctaCard glass" id="verResumenBtn" style="margin-top:14px" aria-label="Ver resumen del pedido por rubro">
+    <span class="tx"><b>Ver resumen por rubro</b><span>Copiá o mandá por WhatsApp cada rubro</span></span>
+  </button>`;
+}
+
+/** Pedido sugerido agrupado por rubro (Vasquetas, Baldes, Icepops, Chocolatería,
+ *  Gluten Free), solo con sabores que tienen algo para pedir. Decidido por Gabi
+ *  21/10/2026: un rubro = un pedido aparte, con su texto para copiar o WhatsApp. */
+function pedidoPorRubro(st){
+  const sabores=saboresDelLocal();
+  return GRUPO_PRODUCTO_ORDEN.map(g=>{
+    const lineas=sabores.filter(s=>grupoProductoDe(s)===g).map(s=>({nombre:s.nombre, ped:pedidoSugerido(s.id,st)})).filter(l=>l.ped>0);
+    return {grupo:g, label:GRUPO_PRODUCTO_LABEL[g]||g, lineas, total:lineas.reduce((a,l)=>a+l.ped,0)};
+  }).filter(r=>r.lineas.length);
+}
+function textoPedidoRubro(r){
+  const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
+  return `*Pedido de ${r.label} – ${S.local}*\n${fecha}\n\n${r.lineas.map(l=>`- ${l.nombre}: ${l.ped}`).join("\n")}\n\n*Total: ${r.total} ${r.total===1?"unidad":"unidades"}*`;
+}
+function stockViewResumen(st){
+  const rubros=pedidoPorRubro(st);
+  const total=rubros.reduce((a,r)=>a+r.total,0), sabores=rubros.reduce((a,r)=>a+r.lineas.length,0);
+  const sinPedido=GRUPO_PRODUCTO_ORDEN.filter(g=>!rubros.some(r=>r.grupo===g) && saboresDelLocal().some(s=>grupoProductoDe(s)===g)).map(g=>GRUPO_PRODUCTO_LABEL[g]);
+  return `<button type="button" class="ctaCard glass" id="volverResumen" style="margin-bottom:14px" aria-label="Volver a revisar el pedido">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="tx"><b>Volver a revisar</b><span>${total} ${total===1?"unidad":"unidades"} en ${rubros.length} ${rubros.length===1?"rubro":"rubros"}</span></span>
+  </button>
+  <p class="sec" style="margin-top:6px">Resumen del pedido</p>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:.85rem;line-height:1.4">Revisá cada rubro. Copialo o mandalo por WhatsApp, uno por uno.</p>
+  ${rubros.length?`<div style="display:flex;flex-direction:column;gap:10px">${rubros.map(r=>`<div class="rubroCard">
+      <div class="rubroHead"><b>${esc(r.label)}</b><span>${r.lineas.length} ${r.lineas.length===1?"sabor":"sabores"} · ${r.total} uds</span></div>
+      <div class="rubroLineas">${r.lineas.map(l=>`<div class="rubroLinea"><span>${esc(l.nombre)}</span><b>${l.ped}</b></div>`).join("")}</div>
+      <div class="rubroBtns">
+        <button type="button" class="btn ghost" data-copiar-rubro="${r.grupo}">Copiar</button>
+        <a class="btn wa" href="${"https://wa.me/?text="+encodeURIComponent(textoPedidoRubro(r))}" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>`).join("")}</div>`:`<div class="empty">No hay nada para pedir hoy.</div>`}
+  <div class="rubroTotal">Total a pedir: <b>${total} uds</b> · ${sabores} ${sabores===1?"sabor":"sabores"} · ${rubros.length} ${rubros.length===1?"rubro":"rubros"}</div>
+  ${sinPedido.length?`<p style="margin:10px 0 0;color:var(--muted);font-size:.8rem;text-align:center">Sin nada para pedir: ${esc(sinPedido.join(", "))}.</p>`:""}`;
 }
 
 function stockViewConteo(){
@@ -2045,7 +2083,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="d7"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="d7"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -2376,7 +2414,14 @@ document.addEventListener("click", async e=>{
   }
   if(t.id==="conteoBtn"){ const st=stockMap(); S.conteo={}; S.vencConteo={}; S.vencOmit={}; Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id])); S.confirm=false; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
-  if(t.id==="volverPedido"){ S.verPedido=false; renderApp(); return }
+  if(t.id==="volverPedido"){ S.verPedido=false; S.verResumenPedido=false; renderApp(); return }
+  if(t.id==="verResumenBtn"){ S.verResumenPedido=true; renderApp(); return }
+  if(t.id==="volverResumen"){ S.verResumenPedido=false; renderApp(); return }
+  if(t.dataset.copiarRubro){
+    const r=pedidoPorRubro(stockMap()).find(x=>x.grupo===t.dataset.copiarRubro);
+    if(r){ try{ await navigator.clipboard.writeText(textoPedidoRubro(r)); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); } }
+    return;
+  }
   if(t.id==="aplicarTodos"){
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     Object.keys(S.conteo).forEach(id=>S.conteo[id]=v);
@@ -2386,11 +2431,6 @@ document.addEventListener("click", async e=>{
   if(t.id==="volver"){ S.confirm=false; renderApp(); return }
   if(t.id==="go"){ S.confirm=true; renderApp(); return }
   if(t.id==="ok"){ if(S.tab==="stock"&&S.conteo) guardarConteo(); else guardarMovimiento(); return }
-  if(t.id==="waCopiar"){
-    const txt=$(".waBubble").textContent;
-    try{ await navigator.clipboard.writeText(txt); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); }
-    return;
-  }
 });
 /** Los teclados numéricos del PIN (login y bloqueo de pantalla en PC) son
  *  paneles táctiles, pero en PC hace falta poder tipear con el teclado
