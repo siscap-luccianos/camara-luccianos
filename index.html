@@ -399,7 +399,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.75.1";
+const FRONTEND_VERSION = "1.75.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1316,6 +1316,25 @@ function lectorRemitoView(){
     <button class="btn ghost" type="button" id="remitoAgregarPagina">+ Agregar otra página</button>
     <button class="btn" type="button" id="remitoCargar" ${sinResolver?"disabled":""} style="flex:1">Cargar al carrito de ingreso</button>
   </div>`;
+}
+/** Las fotos de celular pueden pasar de 5 MB o venir en HEIC, y la API de
+ *  Anthropic rechaza las dos cosas con 400. La reducimos a JPEG (lado mayor
+ *  2000 px) antes de mandarla. Safari (iPhone) decodifica HEIC; Chrome no. */
+function comprimirFotoRemito(file){
+  return new Promise((ok,fail)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{
+      const k=Math.min(1, 2000/Math.max(img.naturalWidth,img.naturalHeight));
+      const c=document.createElement("canvas");
+      c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      ok(c.toDataURL("image/jpeg",0.85));
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); fail(new Error("foto no legible")) };
+    img.src=url;
+  });
 }
 async function leerRemitoFoto(base64, mime){
   const r = await api("leerRemito", {foto:base64, mime, local:S.local}, 60000);
@@ -2568,9 +2587,7 @@ document.addEventListener("change", e=>{
   if(e.target.id==="inputRemitoFoto"){
     const file=e.target.files[0]; e.target.value="";
     if(!file) return;
-    const lector=new FileReader();
-    lector.onload=()=>{
-      const dataUrl=lector.result;
+    const procesar=(dataUrl)=>{
       const base64=dataUrl.split(",")[1];
       // Si ya veníamos revisando páginas anteriores de este mismo remito,
       // seguimos acumulando en la misma sesión (lr.items/remitos/etc.) en
@@ -2585,9 +2602,9 @@ document.addEventListener("change", e=>{
       S.lectorRemito.fotoDataUrl=dataUrl;
       reiniciarInactividad(); // cancela el timer que ya estaba corriendo de antes de abrir el lector
       renderApp();
-      leerRemitoFoto(base64, file.type||"image/jpeg");
+      leerRemitoFoto(base64, "image/jpeg");
     };
-    lector.readAsDataURL(file);
+    comprimirFotoRemito(file).then(procesar).catch(()=>toast("No pude leer esa foto. Probá con otra o sacála de nuevo."));
     return;
   }
   if(e.target.dataset.remitoElegir!==undefined){
