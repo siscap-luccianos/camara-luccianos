@@ -174,7 +174,9 @@ select{max-width:220px}
 .emp.missing input{border-color:var(--alert);background:var(--alert-soft)}
 .sec{font-family:var(--body);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin:22px 0 10px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
-.card{position:relative}
+.card{position:relative;display:flex;flex-direction:column}
+.card>.pick{flex:1 1 auto}
+.lotesFull{grid-column:1/-1;padding:0 0 10px}
 .card>.pick{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:0 0 12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow:hidden;transition:transform .08s,border-color .15s}
 .card>.pick:active{transform:scale(.97)}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
@@ -217,7 +219,7 @@ select{max-width:220px}
 .row .plate{width:54px;height:54px}
 .row .nm{font-weight:700;min-width:0}
 .row .meta{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400}
-.row .right{display:flex;align-items:center;gap:8px}
+.row .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .row input[type=number]{width:70px;text-align:right;font-variant-numeric:tabular-nums}
 .saborRow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
 .rows .saborRow:first-child{border-top:0}
@@ -279,10 +281,10 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .mantAcc{display:grid;grid-template-columns:1fr 1.4fr;gap:8px}
 .mantAcc .btn{min-height:50px}
 .mantAcc .btn:disabled{opacity:.4}
-.loteInfo{display:block;margin-top:2px;font-size:.72rem;font-weight:800;color:var(--muted)}
+.loteInfo{display:block;padding:0 13px;font-size:.72rem;font-weight:800;color:var(--muted)}
 .loteInfo.warn{color:var(--warn)}
 .loteInfo.alert{color:var(--alert)}
-.linkLote{border:0;background:none;padding:4px 0 0;font:inherit;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;cursor:pointer;justify-self:start}
+.linkLote{display:block;padding:2px 13px 0;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;cursor:pointer}
 .lotesBox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .loteP{margin:0;font-size:.75rem;color:var(--muted)}
 .loteFila{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
@@ -993,8 +995,11 @@ function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
   if(!esChocolateria(id)) return;
   const nm=input.closest(".row").querySelector(".nm");
   const visible=nm.querySelector(".vencCampo");
-  if(cantidad>0 && !visible) nm.insertAdjacentHTML("beforeend", vencCampoHTML(id, prefijo==="ing:"?S.vencimientos[id]:S.vencConteo[id], prefijo, attr)+lotesExtraHTML(prefijo+id, id, cantidad));
-  else if(cantidad<=0 && visible){ visible.remove(); nm.querySelectorAll(".lotesBox").forEach(x=>x.remove()); delete S.lotesExtra[prefijo+id] }
+  const fila=input.closest(".row");
+  if(cantidad>0 && !visible){
+    nm.insertAdjacentHTML("beforeend", vencCampoHTML(id, prefijo==="ing:"?S.vencimientos[id]:S.vencConteo[id], prefijo, attr));
+    fila.insertAdjacentHTML("beforeend", `<div class="lotesFull">${lotesExtraHTML(prefijo+id, id, cantidad)}</div>`);
+  } else if(cantidad<=0 && visible){ visible.remove(); fila.querySelectorAll(".lotesFull").forEach(x=>x.remove()); delete S.lotesExtra[prefijo+id] }
 }
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
 
@@ -1594,11 +1599,12 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?vencCampoHTML(s.id,S.vencimientos[s.id],"ing:","data-venc")+lotesExtraHTML("ing:"+s.id,s.id,q):""}</div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?vencCampoHTML(s.id,S.vencimientos[s.id],"ing:","data-venc"):""}</div>
       ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
+    ${esChocolateria(s.id)&&q>0?`<div class="lotesFull">${lotesExtraHTML("ing:"+s.id,s.id,q)}</div>`:""}
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
@@ -1829,8 +1835,8 @@ function stockViewResumen(st){
 function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo")+lotesExtraHTML("conteo:"+s.id,s.id,cont[s.id]):""}</div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div></div>`;
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${esChocolateria(s.id)&&cont[s.id]>0?vencCampoHTML(s.id,S.vencConteo[s.id],"conteo:","data-venc-conteo"):""}</div>
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div>${esChocolateria(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesExtraHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
