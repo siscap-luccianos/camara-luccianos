@@ -117,6 +117,31 @@ select{max-width:220px}
 .rubroLinea:last-child{border-bottom:0}
 .rubroBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rubroTotal{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.88rem}
+.rubroCarrusel{display:flex;gap:10px;overflow-x:auto;margin:0 -16px 14px;padding:4px 16px 6px}
+.rubroTab{flex:none;min-width:150px;text-align:left;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:12px;display:flex;flex-direction:column;gap:4px;cursor:pointer;font:inherit}
+.rubroTab b{font-size:.95rem}
+.rubroTab span{font-size:.78rem;color:var(--muted)}
+.rubroTab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rubroTab.on span{color:#E2D6C4}
+.pedTabla{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:4px 12px}
+.pedHead,.pedFila{display:grid;grid-template-columns:1fr 52px 116px;align-items:center;gap:8px}
+.pedHead{padding:10px 0 6px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+.pedHead span:nth-child(2),.pedHead span:nth-child(3){text-align:center}
+.pedFila{padding:10px 0;border-bottom:1px solid var(--line)}
+.pedFila:last-child{border-bottom:0}
+.pedNom{display:flex;align-items:center;gap:10px;min-width:0;border:0;background:none;padding:0;cursor:pointer;font:inherit;color:var(--ink);text-align:left}
+.pedNom .nm{min-width:0}
+.pedHay{text-align:center;font-weight:800;font-size:1rem}
+.pedDetalle{padding:4px 0 12px 64px}
+.pedTend{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
+.pedTend b{text-transform:none;color:var(--ink);font-size:.8rem}
+.pedBarras{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}
+.pedBarra{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:112px}
+.pedNum{font-size:.72rem;font-weight:800}
+.pedNum.warn{color:var(--warn)}
+.pedCol{width:100%;max-width:40px;border-radius:6px 6px 2px 2px}
+.pedSem{font-size:.66rem;color:var(--muted);text-align:center;line-height:1.2}
+.pedAviso{margin-top:8px;font-size:.74rem;color:var(--warn);line-height:1.4}
 .calCard{display:flex;flex-direction:column;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;margin:0 0 12px;max-width:420px}
 .calHead{display:flex;align-items:center;justify-content:space-between}
 .calNav{width:34px;height:34px;border-radius:999px;border:none;background:#F0E7D9;color:var(--ink);font-size:18px;font-weight:800;cursor:pointer}
@@ -356,7 +381,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.72.0";
+const FRONTEND_VERSION = "1.73.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -403,6 +428,7 @@ const S = {
   lectorRemito: null,
   verPedido: false,
   verResumenPedido: false, // resumen del pedido por rubro (copiar / WhatsApp), dentro de Stock > Pedido sugerido
+  pedidoDetalle: {}, // sabores del pedido sugerido con su tendencia desplegada (id → true)
   diasEntrega: Number(ls.get("diasEntrega","3"))||3,
   categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
   rangoHist: "d7", // d1/d7/d30/d60 = últimos N días (incluye hoy) — segmento Hoy/7/30/Todo, s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
@@ -1408,17 +1434,16 @@ function stockView(st){
 function stockViewPedido(st){
   const s7=salidasDias(7);
   const tendencia=tendenciaSemanas();
-  const grupoActivo=S.filtroFamilia||"vasquetas";
-  let pedidoTotal=0;
-  // El pedido (y el mensaje de WhatsApp) va por grupo activo — mezclar
-  // vasquetas, Baldes e Icepops en un solo pedido no tiene sentido, son
-  // pedidos separados a proveedores/líneas distintas.
-  const filas=S.sabores.filter(s=>grupoProductoDe(s)===grupoActivo).map(s=>{
-    const ped=pedidoSugerido(s.id,st); pedidoTotal+=ped;
-    return {s, ped, vendido:s7[s.id]||0};
-  });
+  const sabores=saboresDelLocal();
+  // Un rubro por vez (carrusel): Vasquetas, Baldes, Icepops, Chocolatería, Gluten Free
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>sabores.some(s=>grupoProductoDe(s)===g));
+  const rubroActivo=grupos.includes(S.filtroFamilia)?S.filtroFamilia:(grupos[0]||"vasquetas");
+  const delRubro=g=>sabores.filter(s=>grupoProductoDe(s)===g);
+  const pedidoDe=s=>pedidoSugerido(s.id,st);
+  const totalDe=g=>delRubro(g).reduce((a,s)=>a+pedidoDe(s),0);
+  const saboresCon=g=>delRubro(g).filter(s=>pedidoDe(s)>0).length;
+  const totalTodo=grupos.reduce((a,g)=>a+totalDe(g),0);
   const dias=[2,3,4,7];
-  const listaVisible = listaFiltrada(st);
 
   const tendenciaHTML=s=>{
     const sem=tendencia[s.id]||[{total:0,agotado:false},{total:0,agotado:false},{total:0,agotado:false}];
@@ -1426,60 +1451,60 @@ function stockViewPedido(st){
     const tieneAgotado=sem.some(x=>x.agotado);
     const icono = sem[2].total>sem[0].total*1.15?"Subiendo":sem[2].total<sem[0].total*0.85?"Bajando":"Estable";
     return `<div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-        <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)">Últimas 3 semanas</div>
-        <div style="font-size:.72rem;font-weight:800">${icono}</div>
-      </div>
-      <div style="display:flex;align-items:flex-end;gap:10px;height:52px">
-        ${sem.map(x=>{
-          const alto=Math.max(10,Math.round((x.total/max)*40));
-          return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
-            <div style="height:${alto}px;width:100%;max-width:34px;border-radius:5px 5px 2px 2px;background:${x.agotado?"var(--warn-soft)":colorCategoria(s.categoria)};${x.agotado?"border:1.5px dashed var(--warn)":""}"></div>
-            <div style="font-size:.72rem;font-weight:700;color:${x.agotado?"var(--warn)":"var(--ink)"}">${x.total}</div>
+      <div class="pedTend"><span>Últimas 3 semanas</span><b>${icono}</b></div>
+      <div class="pedBarras">
+        ${sem.map((x,i)=>{
+          const alto=Math.max(8,Math.round((x.total/max)*56));
+          const etiqueta=i===2?"Esta semana (parcial)":`Hace ${3-i} sem.`;
+          return `<div class="pedBarra">
+            <span class="pedNum${x.agotado?" warn":""}">${x.total} uds</span>
+            <div class="pedCol" style="height:${alto}px;background:${x.agotado?"var(--warn-soft)":colorCategoria(s.categoria)};${x.agotado?"border:1.5px dashed var(--warn)":""}"></div>
+            <span class="pedSem">${etiqueta}</span>
           </div>`;
         }).join("")}
       </div>
-      ${tieneAgotado?`<div style="margin-top:6px;font-size:.72rem;color:var(--warn);line-height:1.4">Una de esas semanas se agotó antes de terminar — el consumo real pudo ser mayor.</div>`:""}
+      ${tieneAgotado?`<div class="pedAviso">Una de esas semanas se agotó antes de terminar: el consumo real pudo ser mayor.</div>`:""}
     </div>`;
   };
 
-  const row=f=>{
-    const {s,ped,vendido}=f;
-    return `<div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px">
-      <div style="display:flex;align-items:center;gap:10px">
-        ${plateHTML(s.id)}
-        <div class="nm" style="flex:1;min-width:0">${esc(s.nombre)}<div class="meta">Tenés ${st[s.id]} hoy · retiraste ${vendido} esta semana</div></div>
-      </div>
-      <div style="height:1px;background:var(--line)"></div>
-      ${tendenciaHTML(s)}
-      <div style="height:1px;background:var(--line)"></div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div>
-          <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Calculado automáticamente</div>
-          <div style="font-size:.75rem;color:var(--muted)">Podés ajustarlo con − y +</div>
-        </div>
+  const sabor=s=>{
+    const ped=pedidoDe(s), abierto=!!S.pedidoDetalle[s.id];
+    const vendido=s7[s.id]||0;
+    return `<div class="pedFila">
+        <button type="button" class="pedNom" data-pdet="${s.id}" aria-expanded="${abierto}">
+          ${plateHTML(s.id)}
+          <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} esta semana</span></span>
+        </button>
+        <span class="pedHay">${st[s.id]}</span>
         <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>
       </div>
-    </div>`};
+      ${abierto?`<div class="pedDetalle">${tendenciaHTML(s)}</div>`:""}`;
+  };
 
-  return `<button type="button" class="ctaCard glass" id="volverPedido" style="margin-bottom:14px" aria-label="Volver a Stock">
+  const tarjetaRubro=g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}">
+      <b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b>
+      <span>${totalDe(g)} uds</span>
+      <span>${saboresCon(g)} ${saboresCon(g)===1?"sabor":"sabores"} para pedir</span>
+    </button>`;
+
+  const lista=delRubro(rubroActivo);
+  return `<button type="button" class="ctaCard glass" id="volverPedido" style="margin-bottom:12px" aria-label="Volver a Stock">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="tx"><b>Volver a Stock</b><span>Pedido sugerido para ${filas.length} ${filas.length===1?"sabor":"sabores"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
+    <span class="tx"><b>Volver a Stock</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} para pedir en ${grupos.length} ${grupos.length===1?"rubro":"rubros"}</span></span>
   </button>
-  <p class="sec" style="margin-top:6px">Pedido sugerido</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">La app calcula esto sola con tu stock de hoy y lo que se vendió esta semana. Podés cambiar cualquier número antes de mandarlo.</p>
-  <div style="background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-bottom:14px">
-    <b>¿Cómo se calcula?</b> Lo que retiraste por día × los días hasta que llegue el próximo pedido, menos lo que ya te queda. Elegí primero en cuántos días llega:
-  </div>
   <div class="kpis">
     <div class="kpi"><span class="lbl">Próxima entrega en</span><div class="diasChips">${dias.map(d=>`<button type="button" class="chip" data-dias="${d}" aria-pressed="${S.diasEntrega===d}">${d} días</button>`).join("")}</div><span class="sub">+ 1 día de stock de seguridad</span></div>
-    <div class="kpi"><span class="lbl">Total a pedir</span><span class="val">${pedidoTotal}</span><span class="sub">unidades, siempre en múltiplos de 2</span></div>
   </div>
-  ${chipFiltros()}
-  <div style="margin-top:14px;gap:10px;display:flex;flex-direction:column;background:none;border:0">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>
-  <button type="button" class="ctaCard glass" id="verResumenBtn" style="margin-top:14px" aria-label="Ver resumen del pedido por rubro">
-    <span class="tx"><b>Ver resumen por rubro</b><span>Copiá o mandá por WhatsApp cada rubro</span></span>
-  </button>`;
+  <button type="button" class="ctaCard glass" id="verResumenBtn" style="margin:12px 0" aria-label="Ver resumen del pedido por rubro">
+    <span class="tx"><b>Ver resumen para enviar</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} · copiá todo o uno por rubro</span></span>
+  </button>
+  <div class="rubroCarrusel" role="tablist" aria-label="Rubros">${grupos.map(tarjetaRubro).join("")}</div>
+  <p class="sec" style="margin:4px 0 4px">${esc(GRUPO_PRODUCTO_LABEL[rubroActivo]||rubroActivo)} · qué pedir</p>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió esta semana y lo que te queda. Podés cambiar cualquier número con − y +. Tocá un sabor para ver su tendencia.</p>
+  <div class="pedTabla">
+    <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Pedir</span></div>
+    ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
+  </div>`;
 }
 
 /** Pedido sugerido agrupado por rubro (Vasquetas, Baldes, Icepops, Chocolatería,
@@ -1515,6 +1540,7 @@ function stockViewResumen(st){
       </div>
     </div>`).join("")}</div>`:`<div class="empty">No hay nada para pedir hoy.</div>`}
   <div class="rubroTotal">Total a pedir: <b>${total} uds</b> · ${sabores} ${sabores===1?"sabor":"sabores"} · ${rubros.length} ${rubros.length===1?"rubro":"rubros"}</div>
+  ${rubros.length?`<button type="button" class="btn" id="copiarTodo" style="width:100%;margin-top:10px">Copiar todo el pedido</button>`:""}
   ${sinPedido.length?`<p style="margin:10px 0 0;color:var(--muted);font-size:.8rem;text-align:center">Sin nada para pedir: ${esc(sinPedido.join(", "))}.</p>`:""}`;
 }
 
@@ -2417,6 +2443,13 @@ document.addEventListener("click", async e=>{
   if(t.id==="volverPedido"){ S.verPedido=false; S.verResumenPedido=false; renderApp(); return }
   if(t.id==="verResumenBtn"){ S.verResumenPedido=true; renderApp(); return }
   if(t.id==="volverResumen"){ S.verResumenPedido=false; renderApp(); return }
+  if(t.dataset.rubro){ S.filtroFamilia=t.dataset.rubro; renderApp(); return }
+  if(t.dataset.pdet){ S.pedidoDetalle[t.dataset.pdet]=!S.pedidoDetalle[t.dataset.pdet]; renderApp(); return }
+  if(t.id==="copiarTodo"){
+    const texto=pedidoPorRubro(stockMap()).map(textoPedidoRubro).join("\n\n");
+    try{ await navigator.clipboard.writeText(texto); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); }
+    return;
+  }
   if(t.dataset.copiarRubro){
     const r=pedidoPorRubro(stockMap()).find(x=>x.grupo===t.dataset.copiarRubro);
     if(r){ try{ await navigator.clipboard.writeText(textoPedidoRubro(r)); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); } }
