@@ -303,6 +303,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .semDot{display:inline-block;width:10px;height:10px;border-radius:999px;margin-right:2px}
 .semDot.rojo{background:#A23B2A}
 .semDot.amarillo{background:#C9A227}
+.semDot.verde{background:#2F7D4A}
 .linkLote{display:block;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;text-align:left;cursor:pointer}
 .lotesBox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .loteP{margin:0;font-size:.75rem;color:var(--muted)}
@@ -458,7 +459,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.3";
+const FRONTEND_VERSION = "1.77.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1148,10 +1149,11 @@ function loteInfoSpan(id, conVencidos){
   if(!lotes.length) return "";
   const vend=conVencidos ? lotes : lotes.filter(l=>diasHasta(l.f)>=0);
   const fechas=new Set(vend.map(l=>l.f)).size;
+  const nLotes=new Set((lotesPorSabor()[id]||[]).filter(l=>conVencidos || !l.f || diasHasta(l.f)>=0).map(l=>l.f||"")).size;
   const vencidas=lotes.filter(l=>diasHasta(l.f)<0).reduce((a,l)=>a+l.c,0);
   const primero=conVencidos ? ((S.lotePick[id] && vend.find(l=>l.f===S.lotePick[id])) || vend[0]) : loteSalida(id);
   let html="";
-  if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo ${SEM_CLASE[sem.k]}">${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)}${fechas>1?` · ${fechas} lotes`:""}</span>` }
+  if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo ${SEM_CLASE[sem.k]}">${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)} · ${sem.label}${nLotes>1?` · ${nLotes} lotes`:""}</span>` }
   if(!conVencidos && vencidas>0) html+=`<span class="loteInfo alert">${vencidas} vencidas, no se venden</span>`;
   return html;
 }
@@ -1230,11 +1232,16 @@ function ventaDesperdicioLote(id, f){
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
 const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"]];
 function hayLotesConFecha(){ return S.sabores.some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
+/** Leyenda del semáforo, visible en Salida para que se entienda sin preguntar. */
+function leyendaVencHTML(){
+  return `<p class="porVencerRef"><span class="semDot rojo"></span>Rojo: vence mañana o vencido · <span class="semDot amarillo"></span>Amarillo: 2 a ${VENC_AVISO_DIAS} días · <span class="semDot verde"></span>Verde: más de ${VENC_AVISO_DIAS} días</p>`;
+}
 function vencimientosPantallaHTML(){
   const todos=[];
   S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f) todos.push({s, l, sem:semaforoVenc(l.f)}) }));
   todos.sort((a,b)=>a.l.f<b.l.f?-1:a.l.f>b.l.f?1:a.s.nombre.localeCompare(b.s.nombre));
-  const pasa=(x,k)=>k==="todos"||(k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde");
+  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!l.f) todos.push({s, l, sem:null}) }));
+  const pasa=(x,k)=>k==="todos"||(!!x.sem&&((k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde")));
   const f=FILTROS_VENC.some(([k])=>k===S.filtroVenc) ? S.filtroVenc : "todos";
   const lista=todos.filter(x=>pasa(x,f));
   return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">${S.tab==="salida"?"Volver a Salida":"Volver a Stock"}</button>
@@ -1242,8 +1249,8 @@ function vencimientosPantallaHTML(){
   <div class="vencFiltros" role="group" aria-label="Filtrar vencimientos">
     ${FILTROS_VENC.map(([k,label])=>`<button type="button" class="chip" data-filtro-venc="${k}" aria-pressed="${f===k}">${label} · ${todos.filter(x=>pasa(x,k)).length}</button>`).join("")}
   </div>
-  ${lista.length?`<div class="vencLista">${lista.map(({s,l,sem})=>`<div class="vencRow ${SEM_CLASE[sem.k]}">
-      <div class="vencFecha">${fechaVencCorta(l.f)}<span>${sem.label}</span></div>
+  ${lista.length?`<div class="vencLista">${lista.map(({s,l,sem})=>`<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}">
+      <div class="vencFecha">${sem?fechaVencCorta(l.f):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
       <div class="vencNom">${esc(s.nombre)}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
     </div>`).join("")}</div>`:`<div class="empty">No hay lotes en este filtro.</div>`}`;
 }
@@ -1494,6 +1501,7 @@ function gridSalida(st){
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
   ${hayLotesConFecha()?`<button type="button" class="btn ghost" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
+  ${hayLotesConFecha()?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.some(esMantenible)?`<div class="mantHint">Alfajores y conitos: <b>mantené apretado</b> para elegir cuántos</div>`:""}
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
