@@ -310,6 +310,20 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .vencItem.warn .vencEstado{color:var(--warn)}
 .vencAcc{display:flex;gap:8px;flex-wrap:wrap}
 .vencAcc .btn{flex:1 1 120px}
+.vencFiltros{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.vencLista{display:flex;flex-direction:column;gap:8px}
+.vencRow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-left-width:5px;border-radius:14px;padding:12px 14px}
+.vencRow.alert{border-left-color:#A23B2A}
+.vencRow.warn{border-left-color:#C9A227}
+.vencRow.ok{border-left-color:#2F7D4A}
+.vencFecha{display:flex;flex-direction:column;font-weight:800;font-size:.95rem;min-width:96px}
+.vencFecha span{font-size:.72rem;font-weight:700;color:var(--muted)}
+.vencRow.alert .vencFecha span{color:var(--alert)}
+.vencRow.warn .vencFecha span{color:#5C4300}
+.vencRow.ok .vencFecha span{color:#2F7D4A}
+.vencRow,.vencItem{color:var(--ink)}
+.vencNom{display:flex;flex-direction:column;gap:2px;font-weight:700;min-width:0}
+.vencNom span{font-size:.8rem;font-weight:600;color:var(--muted)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
 .kpi{background:rgba(var(--surface-rgb),.62);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.8);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
 .kpi .lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -430,7 +444,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.76.1";
+const FRONTEND_VERSION = "1.76.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -469,6 +483,8 @@ const S = {
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
+  verVencimientos: false, // Stock: pantalla completa con todos los lotes con fecha, de más cerca a más lejos
+  filtroVenc: "todos", // filtro de esa pantalla: todos | vencidos | pronto | verde
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
@@ -1174,6 +1190,26 @@ function ventaDesperdicioLote(id, f){
   S.motivoDesperdicio=(diasHasta(f)<0?"Vencido el ":"Vence el ")+fechaVencCorta(f);
   renderApp();
 }
+/* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
+const FILTROS_VENC = [["todos","Todos"],["vencidos","Vencidos"],["pronto","Próximos 20 días"],["verde","Más de 20 días"]];
+function hayLotesConFecha(){ return S.sabores.some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
+function vencimientosPantallaHTML(){
+  const todos=[];
+  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f) todos.push({s, l, sem:semaforoVenc(l.f)}) }));
+  todos.sort((a,b)=>a.l.f<b.l.f?-1:a.l.f>b.l.f?1:a.s.nombre.localeCompare(b.s.nombre));
+  const pasa=(x,k)=>k==="todos"||(k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde");
+  const f=FILTROS_VENC.some(([k])=>k===S.filtroVenc) ? S.filtroVenc : "todos";
+  const lista=todos.filter(x=>pasa(x,f));
+  return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">Volver a Stock</button>
+  <p class="sec">Vencimientos · de más cerca a más lejos</p>
+  <div class="vencFiltros" role="group" aria-label="Filtrar vencimientos">
+    ${FILTROS_VENC.map(([k,label])=>`<button type="button" class="chip" data-filtro-venc="${k}" aria-pressed="${f===k}">${label} · ${todos.filter(x=>pasa(x,k)).length}</button>`).join("")}
+  </div>
+  ${lista.length?`<div class="vencLista">${lista.map(({s,l,sem})=>`<div class="vencRow ${SEM_CLASE[sem.k]}">
+      <div class="vencFecha">${fechaVencCorta(l.f)}<span>${sem.label}</span></div>
+      <div class="vencNom">${esc(s.nombre)}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
+    </div>`).join("")}</div>`:`<div class="empty">No hay lotes en este filtro.</div>`}`;
+}
 function iniciarConteo(){
   const st=stockMap();
   S.conteo={}; S.vencConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
@@ -1682,7 +1718,9 @@ function gridProduccion(st){
 function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
-  return porVencerHTML()+stockViewGeneral(st);
+  if(S.verVencimientos) return vencimientosPantallaHTML();
+  const botonVenc=hayLotesConFecha()?`<div class="vencFiltros"><button type="button" class="chip" data-ver-venc>Ver todos los vencimientos</button></div>`:"";
+  return botonVenc+porVencerHTML()+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -2661,7 +2699,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
-  if(t.dataset.t){ S.tab=t.dataset.t; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
   // Un mantener (pointerdown largo) ya abrió el diálogo de cantidad: su click no suma una unidad.
   if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
   if(t.dataset.add){
@@ -2764,6 +2802,9 @@ document.addEventListener("click", async e=>{
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
   if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.modoDesperdicio=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.vencConteoIr!==undefined){ iniciarConteo(); return }
+  if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
+  if(t.dataset.volverVenc!==undefined){ S.verVencimientos=false; renderApp(); return }
+  if(t.dataset.filtroVenc){ S.filtroVenc=t.dataset.filtroVenc; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
   if(t.id==="volverPedido"){ S.verPedido=false; S.verResumenPedido=false; renderApp(); return }
   if(t.id==="verResumenBtn"){ S.verResumenPedido=true; renderApp(); return }
