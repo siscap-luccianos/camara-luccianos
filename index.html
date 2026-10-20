@@ -345,7 +345,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.70.2";
+const FRONTEND_VERSION = "1.70.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -893,6 +893,16 @@ function vencCampoHTML(id, valor, prefijo, attr){
   if(S.vencOmit[clave] && !valor) return `<div class="vencCampo omitido"><span>Sin vencimiento</span><button type="button" class="vencOmitir" data-venc-cargar="${clave}">Cargar fecha</button></div>`;
   if(valor) return `<div class="vencCampo"><div class="vencHead"><span>Vencimiento: ${fechaVencCorta(valor)}</span><button type="button" class="vencOmitir" data-venc-omitir="${clave}">Quitar fecha</button></div><input type="date" ${attr}="${id}" value="${esc(valor)}"></div>`;
   return `<div class="vencCampo"><div class="vencHead"><span>Vencimiento · opcional</span><button type="button" class="vencOmitir" data-venc-omitir="${clave}">Omitir</button></div><span class="vencHint">Si no lo sabés, tocá Omitir y seguí con el siguiente.</span><input type="date" ${attr}="${id}"></div>`;
+}
+/** Al tipear la cantidad de chocolatería, el campo de vencimiento aparece (o se
+ *  quita) en el momento, sin esperar a Guardar. Se agrega al DOM del renglón en
+ *  vez de rehacer la lista, así no se pierde el foco mientras se escribe. */
+function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
+  if(!esChocolateria(id)) return;
+  const nm=input.closest(".row").querySelector(".nm");
+  const visible=nm.querySelector(".vencCampo");
+  if(cantidad>0 && !visible) nm.insertAdjacentHTML("beforeend", vencCampoHTML(id, prefijo==="ing:"?S.vencimientos[id]:S.vencConteo[id], prefijo, attr));
+  else if(cantidad<=0 && visible) visible.remove();
 }
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
 document.addEventListener("change", (e)=>{
@@ -2407,7 +2417,18 @@ document.addEventListener("input", e=>{
   if(e.target.id==="motivoDesperdicio"){ S.motivoDesperdicio=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
-  if(e.target.dataset.c){ S.conteo[e.target.dataset.c]=Math.max(0,parseInt(e.target.value,10)||0) }
+  if(e.target.dataset.c){
+    const n=Math.max(0,parseInt(e.target.value,10)||0);
+    S.conteo[e.target.dataset.c]=n;
+    mostrarVencRenglon(e.target, e.target.dataset.c, "conteo:", "data-venc-conteo", n);
+    renderBar();
+  }
+  if(e.target.dataset.cantInput){
+    const n=Math.max(0,Math.floor(+e.target.value||0));
+    if(n) S.cart.ingreso[e.target.dataset.cantInput]=n; else delete S.cart.ingreso[e.target.dataset.cantInput];
+    mostrarVencRenglon(e.target, e.target.dataset.cantInput, "ing:", "data-venc", n);
+    renderBar();
+  }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
 });
