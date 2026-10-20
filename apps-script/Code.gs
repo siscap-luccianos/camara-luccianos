@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.0";
+const BACKEND_VERSION = "1.39.1";
 
 function doPost(e) {
   let resultado;
@@ -498,8 +498,8 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   // ni producción) cada producto trae su vencimiento. Se valida acá, no solo en
   // el cliente.
   const catalogoVenc = _leerCrudo("Sabores");
-  const nombreVenc = {}, familiaVenc = {};
-  catalogoVenc.forEach((sab) => { nombreVenc[String(sab.id)] = sab.nombre; familiaVenc[String(sab.id)] = sab.familia || "vasquetas"; });
+  const nombreVenc = {}, familiaVenc = {}, categoriaVenc = {};
+  catalogoVenc.forEach((sab) => { nombreVenc[String(sab.id)] = sab.nombre; familiaVenc[String(sab.id)] = sab.familia || "vasquetas"; categoriaVenc[String(sab.id)] = sab.categoria || ""; });
   const vencimientos2 = {};
   if (tipo === "ingreso") {
     Object.keys(vencimientos || {}).forEach((id) => {
@@ -508,7 +508,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     });
   }
   if (tipo === "ingreso" && !subtipo) {
-    const sinVenc = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria" && !vencimientos2[id]);
+    const sinVenc = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria" && categoriaVenc[String(id)] !== "Alfajores" && categoriaVenc[String(id)] !== "Conitos" && !vencimientos2[id]);
     if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreVenc[String(id)] || ("Sabor " + id)).join(", ") + "." };
   }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };

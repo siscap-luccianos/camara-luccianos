@@ -86,6 +86,7 @@ select{max-width:220px}
 .vencCampo{display:flex;flex-direction:column;gap:4px;margin-top:6px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .vencCampo input{height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 10px;font-size:.9rem;font-weight:700;text-transform:none;letter-spacing:0}
 .vencCampo.falta input{border:1.5px dashed var(--alert)}
+.cantInput{width:64px;height:36px;text-align:center;font-weight:800;font-size:1rem;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 6px}
 /* Tarjeta con ícono + texto para un CTA destacado (Pedido sugerido / Volver
    a Stock, Leer remito con una foto) — se combina con .glass para la
    superficie translúcida. */
@@ -106,7 +107,7 @@ select{max-width:220px}
 .card>.pick:active{transform:scale(.97)}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
 .strip{display:block;width:100%;height:7px}
-.plate{width:44px;height:44px;flex:none;border-radius:12px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
+.plate{width:60px;height:60px;flex:none;border-radius:14px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
 .plate img{width:100%;height:100%;object-fit:cover;display:block}
 .cardTop{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 13px 0;width:100%}
 .pnombre{font-weight:700;font-size:.88rem;line-height:1.2;height:2.2em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -141,14 +142,14 @@ select{max-width:220px}
 .rows{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:9px 14px;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
-.row .plate{width:38px;height:38px}
+.row .plate{width:54px;height:54px}
 .row .nm{font-weight:700;min-width:0}
 .row .meta{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400}
 .row .right{display:flex;align-items:center;gap:8px}
 .row input[type=number]{width:70px;text-align:right;font-variant-numeric:tabular-nums}
 .saborRow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
 .rows .saborRow:first-child{border-top:0}
-.saborRow .plate{width:38px;height:38px}
+.saborRow .plate{width:54px;height:54px}
 .saborRow .nm{font-weight:700;min-width:0}
 .saborRow .meta{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400}
 .saborRow.baja{opacity:.55}
@@ -308,7 +309,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.68.0";
+const FRONTEND_VERSION = "1.68.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -841,8 +842,18 @@ async function desbloquearPC(){
 // El scroll no burbujea desde los contenedores, por eso va con captura.
 /* Chocolatería: cada producto del carrito de Ingreso pide su vencimiento antes de confirmar. */
 function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
+/** Alfajores, conitos y minis (categoría Alfajores/Conitos) se rotulan a mano en
+ *  el local: el vencimiento es opcional. El resto viene con fecha impresa y la pide. */
+function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" }
 function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&&d ? `${d}/${m}/${y}` : "" }
 document.addEventListener("change", (e)=>{
+  const idCant=e.target && e.target.dataset && e.target.dataset.cantInput;
+  if(idCant){
+    const n=Math.max(0, Math.floor(+e.target.value||0));
+    if(n) S.cart.ingreso[idCant]=n; else delete S.cart.ingreso[idCant];
+    renderApp();
+    return;
+  }
   const id=e.target && e.target.dataset && e.target.dataset.venc;
   if(!id) return;
   if(e.target.value) S.vencimientos[id]=e.target.value; else delete S.vencimientos[id];
@@ -1189,10 +1200,10 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?`<label class="vencCampo${S.vencimientos[s.id]?"":" falta"}">Vencimiento<input type="date" data-venc="${s.id}" value="${esc(S.vencimientos[s.id]||"")}"></label>`:""}</div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div>${esChocolateria(s.id)&&q>0?`<label class="vencCampo${requiereVencimiento(s.id)&&!S.vencimientos[s.id]?" falta":""}">Vencimiento${requiereVencimiento(s.id)?"":" (opcional)"}<input type="date" data-venc="${s.id}" value="${esc(S.vencimientos[s.id]||"")}"></label>`:""}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
-        <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
+        <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button>${esChocolateria(s.id)?`<input type="number" inputmode="numeric" min="0" class="cantInput" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}">`:`<span class="n">${q}</span>`}<button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
@@ -1831,7 +1842,7 @@ function renderBar(){
       visible=true;
       const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
       const faltaMotivo=enDesperdicio && !S.motivoDesperdicio.trim();
-      const faltaVenc=cartKey==="ingreso" ? ent.filter(([id])=>esChocolateria(id)&&!S.vencimientos[id]) : [];
+      const faltaVenc=cartKey==="ingreso" ? ent.filter(([id])=>requiereVencimiento(id)&&!S.vencimientos[id]) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
       const st=stockMap();
