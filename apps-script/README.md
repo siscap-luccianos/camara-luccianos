@@ -181,6 +181,17 @@ Si alguien falla 5 veces seguidas, los intentos con código quedan bloqueados 5 
 
 Una vez que hay un admin activo (Gabi) y ya está conectada la app, el resto de los admins/supervisores/encargados/colaboradores se dan de alta **desde la propia app** (pantalla de Empleados, según lo que permite el rol de quien está logueado — ver la matriz de `CLAUDE.md`). `crearPrimerAdmin()` es solo para el arranque, cuando todavía no hay nadie que pueda loguearse para crear al primero.
 
+## Escáner de peso por vasqueta (piloto, solo "Local prueba")
+
+El rótulo de fábrica de cada vasqueta trae un código de barras de 20 dígitos: `[4 producto][5 peso en centésimas de kg][6 fecha del lote DDMMAA][5 turno+operario]`. Ejemplo: `13970033305102621060` = producto 1397, 3,33 kg, lote 05/10/2026. El backend no lo interpreta: lo hace `index.html`. El backend solo guarda los pesos.
+
+Columnas nuevas (ya agregadas a la planilla):
+- `Locales.escaner_peso` — `SI` habilita el botón **Escanear vasqueta** en Salida de ese local. Hoy solo "Local prueba".
+- `Sabores.codigo_fabrica` — los 4 primeros dígitos del código (ej. `1397`). Si el número empieza con ceros (`0024`), cargarlo como texto (con apóstrofe `'0024`) — el backend igual lo completa a 4 dígitos. Cargados hoy: 1397 (Cheesecake al pistacchio), 0024 (King nero), 0008 (Chocolate Lucciano's), 0037 (Super Sabayón), 1519 (Alfajor pistacchio), 0180 (Alfajor Lucciano's), 0025 (Lemon pie).
+- `Registros.pesos` — `{idSabor:[kg,kg,...]}` de la salida (un peso por vasqueta escaneada).
+
+Para sumar un sabor al piloto alcanza con cargar su `codigo_fabrica` en la hoja (sin redeploy). Para sumar otro local, `escaner_peso=SI` en su fila. Para que el botón aparezca y se guarden los pesos hace falta pegar `Code.gs` 1.42.0 y hacer "Nueva implementación".
+
 ## Si algo no cierra
 
 - **"Falta configurar SESSION_SECRET..."** → repetí el paso 3.

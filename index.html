@@ -396,6 +396,19 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqSheet.etiqEnviando .btn{opacity:.75}
 .etiqGuardando{font-weight:600}
 .etiqEspacio{height:72vh}
+.btn.escaner{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pesosResumen{margin:-4px 0 12px;font-size:.88rem;color:var(--muted)}
+.pesosResumen b{color:var(--ink)}
+.escBox{max-height:92vh;overflow:auto}
+.escBox>*{flex-shrink:0}
+.escCampo{width:100%;height:52px;border-radius:14px;border:2px solid var(--accent);background:var(--surface);color:var(--ink);font-size:1.05rem;font-weight:700;padding:0 14px;letter-spacing:.04em}
+.escVideo{display:none;width:100%;aspect-ratio:4/3;object-fit:cover;background:#000;border-radius:16px}
+.escVideo.on{display:block}
+.escMsg{min-height:1.4em;border-radius:12px;padding:10px 12px;font-weight:700;font-size:.92rem;line-height:1.35;background:var(--accent-soft);color:var(--muted)}
+.escMsg.ok{background:var(--ok-soft);color:var(--ok)}
+.escMsg.err{background:var(--alert-soft);color:var(--alert)}
+.escLista{display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.escLista div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
@@ -600,7 +613,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.86.2";
+const FRONTEND_VERSION = "1.87.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -639,10 +652,11 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [],
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], escanerPeso: false,
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
+  pesos: {}, escaneadas: [], escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
@@ -1111,7 +1125,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || [];
-    S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
+    S.escanerPeso = !!r.datos.escanerPeso; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -1806,6 +1820,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
+  ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML()}`:""}
   ${hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
@@ -2320,7 +2335,8 @@ function filaMovimiento(r){
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
     const vto=textoVencRegistro(r,id);
     const grupo=etiquetaProductoDe(S.saboresPorId[id]||{});
-    return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${vto}`;
+    const pe=r.pesos&&r.pesos[id], peTxt=pe&&pe.length?` (${pe.length===+q?"":pe.length+" pesadas: "}${fmtKg(pe.reduce((a,x)=>a+x,0))} kg)`:"";
+    return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${peTxt}${vto}`;
   }).join(" · ");
   const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.tipo;
   const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":r.tipo;
@@ -2767,16 +2783,18 @@ function renderBar(){
       const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
+      const kgEscan=(cartKey==="salida")?sumaPesos():0, nEscan=(cartKey==="salida")?cantPesos():0;
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" ? remitoDuplicado(S.remito, S.local) : null;
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
+          ${kgEscan>0?`<br>Escaneadas: ${nEscan} · <b>${fmtKg(kgEscan)} kg</b>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg escaneados`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
@@ -2802,7 +2820,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || [];
-    S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
+    S.escanerPeso = !!d.escanerPeso; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -2821,10 +2839,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || [];
-  S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
+  S.escanerPeso = !!r.escanerPeso; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
   S.regs = r.registros;
   S.stock = r.stock;
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -2838,7 +2856,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.produccionRubros=[]; S.regs=[]; S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -2866,9 +2884,9 @@ function agregarRegistroOptimista(payload){
     empleadoId: String(S.empleado.id), empleado: S.empleado.nombre, items: payload.items||{},
     total: Object.values(payload.items||{}).reduce((a,b)=>a+(+b||0),0),
     remito: payload.remito||"", ts: Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
-    foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{},
+    foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -2885,23 +2903,26 @@ async function guardarMovimiento(){
     }
     const kilos={}; if(enProduccion) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
+    const pesosEnv={};
+    if(tipo==="salida"&&!enDesperdicio) for(const id of Object.keys(items)){ const a=(S.pesos[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? (S.fotoRemitoUrl||undefined) : undefined,
       subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : undefined,
       motivo: enDesperdicio ? S.motivoDesperdicio.trim() : undefined,
       kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined,
-      vencimientos: Object.keys(venc).length ? venc : undefined};
+      vencimientos: Object.keys(venc).length ? venc : undefined,
+      pesos: Object.keys(pesosEnv).length ? pesosEnv : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; limpiarPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; limpiarPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -2931,7 +2952,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
@@ -3110,7 +3131,7 @@ document.addEventListener("click", async e=>{
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
-  if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; recortarPesos(t.dataset.sub); S.confirm=false; scheduleRender(); return }
   if(t.dataset.wadd){
     const id=t.dataset.wadd, c=S.cart.desperdicio, disponible=stockMap()[id]||0;
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para marcar como desperdicio."); return }
@@ -3177,12 +3198,13 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; limpiarPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
+  if(t.id==="irEscaner"){ abrirEscaner(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
@@ -3623,6 +3645,153 @@ function mantenerClick(e){
   else return;
   renderMantener();
 }
+/* ============================================================
+   ESCÁNER DE PESO POR VASQUETA — piloto (Locales.escaner_peso=SI).
+   El rótulo de fábrica trae un código de barras ITF de 20 dígitos:
+   [4 producto][5 peso en centésimas de kg][6 fecha del lote DDMMAA][5 serie].
+   Al sacar una vasqueta se escanea (lector Bluetooth/USB que "tipea" los
+   números, o la cámara) y la salida suma esa vasqueta con su peso real.
+============================================================ */
+const ZXING_SRC="vendor/zxing-wasm-reader-3.1.6.iife.js", ZXING_WASM="vendor/zxing_reader-3.1.6.wasm";
+function fmtKg(k){ return (Number(k)||0).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}) }
+function limpiarPesos(){ S.pesos={}; S.escaneadas=[]; }
+function cantPesos(){ return Object.values(S.pesos).reduce((a,l)=>a+l.length,0) }
+function sumaPesos(){ return Math.round(Object.values(S.pesos).reduce((a,l)=>a+l.reduce((x,y)=>x+y,0),0)*100)/100 }
+function recortarPesos(id){
+  const n=S.cart.salida[id]||0, a=S.pesos[id]; if(!a) return;
+  while(a.length>n) a.pop();
+  if(!a.length) delete S.pesos[id];
+}
+function resumenPesosHTML(){
+  const n=cantPesos(); if(!n) return "";
+  return `<p class="pesosResumen">Escaneadas: <b>${n}</b> · <b>${fmtKg(sumaPesos())} kg</b></p>`;
+}
+function parseCodigoRotulo(txt){
+  const d=String(txt||"").replace(/\D/g,"");
+  if(d.length!==20) return null;
+  const kg=Number(d.slice(4,9))/100, dd=+d.slice(9,11), mm=+d.slice(11,13);
+  if(!(kg>0&&kg<=30)||dd<1||dd>31||mm<1||mm>12) return null;
+  return {codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15), crudo:d};
+}
+function pitido(ok){
+  try{
+    const A=window.AudioContext||window.webkitAudioContext;
+    if(A){ const c=pitido.c||(pitido.c=new A()), o=c.createOscillator(), g=c.createGain(); o.frequency.value=ok?880:220; g.gain.value=.08; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+(ok?.12:.3)); }
+    if(navigator.vibrate) navigator.vibrate(ok?50:[80,60,80]);
+  }catch(e){}
+}
+function abrirEscaner(){
+  if(S.escaner) return;
+  S.escaner={camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
+  const ov=document.createElement("div"); ov.id="escanerOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="escTit">
+    <p class="mantTit" id="escTit">Escanear vasqueta</p>
+    <p class="mantSub">Pasá el lector por el rótulo, o escribí los 20 números que están abajo del código de barras.</p>
+    <input type="text" id="escCodigo" class="escCampo" inputmode="numeric" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
+    <video id="escVideo" class="escVideo" playsinline muted></video>
+    <div class="escMsg" id="escMsg" role="status" aria-live="polite">Esperando el código…</div>
+    <div class="escLista" id="escLista"></div>
+    <div class="mantAcc">
+      <button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>
+      <button type="button" class="btn" data-esc-cerrar>Listo</button>
+    </div>
+  </div>`;
+  ov.addEventListener("click", e=>{
+    if(e.target===ov){ cerrarEscaner(); return }
+    const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.escCerrar!==undefined) cerrarEscaner();
+    else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
+  });
+  ov.addEventListener("input", e=>{ if(e.target.id==="escCodigo"){ const d=e.target.value.replace(/\D/g,""); if(d.length>=20){ e.target.value=""; procesarEscaneo(d) } } });
+  ov.addEventListener("keydown", e=>{
+    if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
+  });
+  document.body.appendChild(ov);
+  renderEscaner();
+  setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(i) i.focus() },50);
+}
+function cerrarEscaner(){
+  apagarCamara();
+  const ov=document.getElementById("escanerOv"); if(ov) ov.remove();
+  S.escaner=null; scheduleRender();
+}
+function renderEscaner(){
+  const e=S.escaner; if(!e) return;
+  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.textContent=e.msg?e.msg.t:"Esperando el código…" }
+  if(l) l.innerHTML=e.lista.slice(0,5).map(x=>`<div><span>${esc(x.nombre)}${x.repetido?" ⚠":""}<br><small style="color:var(--muted)">lote ${esc(x.lote)}</small></span><b>${fmtKg(x.kg)} kg</b></div>`).join("")
+    + (e.lista.length?`<div style="border:0"><span>Esta salida</span><b>${cantPesos()} · ${fmtKg(sumaPesos())} kg</b></div>`:"");
+  if(v) v.classList.toggle("on", !!e.camara);
+  if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
+}
+function procesarEscaneo(txt){
+  const e=S.escaner; if(!e) return;
+  const p=parseCodigoRotulo(txt);
+  if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: tiene que tener 20 números ("+String(txt).replace(/\D/g,"").length+" leídos)."}; pitido(false); renderEscaner(); return }
+  const ahora=Date.now();
+  if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
+  e.ultimo={crudo:p.crudo, ts:ahora};
+  const s=saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
+  if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+")."}; pitido(false); renderEscaner(); return }
+  const c=S.cart.salida;
+  if((c[s.id]||0)>=vendibleDe(s.id)){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
+  const repetido=S.escaneadas.indexOf(p.crudo)!==-1;
+  S.escaneadas.push(p.crudo);
+  c[s.id]=(c[s.id]||0)+1;
+  (S.pesos[s.id]=S.pesos[s.id]||[]).push(p.kg);
+  S.confirm=false;
+  e.lista.unshift({id:s.id, nombre:s.nombre, kg:p.kg, lote:p.lote, repetido});
+  e.msg={tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+(repetido?" · ⚠ este código ya se había escaneado":"")};
+  pitido(true); renderEscaner(); scheduleRender();
+  const i=document.getElementById("escCodigo"); if(i) i.focus();
+}
+function cargarZxing(){
+  if(window.ZXingWASM) return Promise.resolve();
+  return new Promise((ok,mal)=>{
+    const sc=document.createElement("script"); sc.src=ZXING_SRC;
+    sc.onload=()=>{ try{ ZXingWASM.setZXingModuleOverrides({locateFile:(f,pre)=>/\.wasm$/.test(f)?ZXING_WASM:pre+f}); ok() }catch(e){ mal(e) } };
+    sc.onerror=()=>mal(new Error("zxing")); document.head.appendChild(sc);
+  });
+}
+async function iniciarCamara(){
+  const e=S.escaner, v=document.getElementById("escVideo"); if(!e||!v) return;
+  try{
+    e.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}}, audio:false});
+  }catch(err){
+    e.msg={tipo:"err", t:err&&err.name==="NotAllowedError"?"Falta el permiso de la cámara.":"No se pudo abrir la cámara. Probá con el lector o escribí el número."}; renderEscaner(); return;
+  }
+  if(!S.escaner){ e.stream.getTracks().forEach(t=>t.stop()); return }
+  v.srcObject=e.stream; try{ await v.play() }catch(_){}
+  e.camara=true; e.msg={tipo:"", t:"Apuntá al código de barras del rótulo."}; renderEscaner();
+  let detector=null;
+  if("BarcodeDetector" in window){ try{ const f=await BarcodeDetector.getSupportedFormats(); if(f.indexOf("itf")!==-1) detector=new BarcodeDetector({formats:["itf"]}) }catch(_){} }
+  if(detector){
+    e.timer=setInterval(async()=>{ if(!e.camara||v.readyState<2) return; try{ const r=await detector.detect(v); if(r&&r[0]) procesarEscaneo(r[0].rawValue) }catch(_){} }, 250);
+    return;
+  }
+  try{ await cargarZxing() }catch(_){ e.msg={tipo:"err", t:"No se pudo cargar el lector de la cámara. Usá el lector o escribí el número."}; apagarCamara(); return }
+  if(!S.escaner||!e.camara) return;
+  const canvas=document.createElement("canvas"); let ocupado=false;
+  e.timer=setInterval(async()=>{
+    if(ocupado||!e.camara||v.readyState<2||!v.videoWidth) return; ocupado=true;
+    try{
+      canvas.width=v.videoWidth; canvas.height=v.videoHeight;
+      const ctx=canvas.getContext("2d",{willReadFrequently:true}); ctx.drawImage(v,0,0);
+      const r=await ZXingWASM.readBarcodes(ctx.getImageData(0,0,canvas.width,canvas.height),{formats:["ITF"],tryHarder:true,maxNumberOfSymbols:1});
+      if(e.camara&&r&&r[0]&&r[0].text) procesarEscaneo(r[0].text);
+    }catch(_){ /* sin código en este cuadro */ }
+    ocupado=false;
+  }, 300);
+}
+function apagarCamara(){
+  const e=S.escaner; if(!e) return;
+  clearInterval(e.timer); e.timer=null;
+  if(e.stream){ e.stream.getTracks().forEach(t=>t.stop()); e.stream=null }
+  const v=document.getElementById("escVideo"); if(v) v.srcObject=null;
+  e.camara=false; renderEscaner();
+}
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.escaner){ cerrarEscaner() } });
+
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.mantener){ cerrarMantener() } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.elegirLote){ cerrarElegirLote() } });
 

@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.41.0";
+const BACKEND_VERSION = "1.42.0";
 
 function doPost(e) {
   let resultado;
@@ -81,7 +81,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
@@ -459,7 +459,7 @@ function _datosSinCache(local, empleado) {
 
   const sabores = _leerCrudo("Sabores")
     .filter((s) => _esVerdadero(s.activo) !== false)
-    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0 }))
+    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica) }))
     .sort((a, b) => a.orden - b.orden);
 
   // Sabores que ESTE local marcó que no tiene (ej. Baldes en un local que
@@ -476,8 +476,11 @@ function _datosSinCache(local, empleado) {
   // Locales.produccion_rubros: qué rubros fabrica este local (ids separados por
   // coma: vasquetas, baldes, icepops, chocolateria, glutenfree). Vacío = todos.
   const produccionRubros = filaLocal ? _rubrosProduccion(filaLocal.produccion_rubros) : [];
+  // Locales.escaner_peso=SI habilita, en Salida, el escaneo del código de barras
+  // del rótulo de fábrica (peso por vasqueta). Piloto: hoy solo "Local prueba".
+  const escanerPeso = filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false;
 
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso };
 }
 
 function _cacheKeyDatos(local) {
@@ -509,7 +512,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, rol: empleado.rol };
 }
 
 function _registroPublico(r) {
@@ -519,11 +522,13 @@ function _registroPublico(r) {
   try { kilos = JSON.parse(r.kilos || "{}"); } catch (e) { kilos = {}; }
   let vencimientos = {};
   try { vencimientos = JSON.parse(r.vencimientos || "{}"); } catch (e) { vencimientos = {}; }
+  let pesos = {};
+  try { pesos = JSON.parse(r.pesos || "{}"); } catch (e) { pesos = {}; }
   return {
     id: String(r.id), tipo: r.tipo, local: r.local, empleadoId: String(r.empleadoId || ""), empleado: r.empleado, items: items,
     total: Number(r.total) || 0, remito: r.remito || "", ts: Number(r.ts),
     anulado: !!r.anulado_ts, anulado_por: r.anulado_por || "", motivo: r.motivo || "",
-    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos, vencimientos: vencimientos,
+    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos, vencimientos: vencimientos, pesos: pesos,
   };
 }
 
@@ -588,7 +593,38 @@ function _rubrosProduccion(valor) {
   return String(valor || "").split(",").map((x) => x.trim().toLowerCase()).filter((x) => validos.indexOf(x) !== -1);
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos) {
+/** Código de fábrica del rótulo (4 dígitos, ej. "1397"): la planilla puede
+ *  guardarlo como número y perder el cero inicial ("0024" -> 24), así que se
+ *  rellena a 4. Vacío si no hay. */
+function _codigoFabrica(valor) {
+  const t = String(valor === undefined || valor === null ? "" : valor).replace(/[^0-9]/g, "");
+  return t ? ("0000" + t).slice(-4) : "";
+}
+
+/** Pesos por vasqueta de una salida: { idSabor: [kg, kg, ...] }. Cada peso entre
+ *  0 y 30 kg (se redondea a 2 decimales) y no puede haber más pesos que unidades
+ *  del sabor en la salida. */
+function _normalizarPesos(pesos, items) {
+  const out = {};
+  if (!pesos || typeof pesos !== "object") return { ok: true, pesos: out };
+  const ids = Object.keys(pesos);
+  for (let i = 0; i < ids.length; i++) {
+    const id = ids[i];
+    const lista = Array.isArray(pesos[id]) ? pesos[id] : [];
+    const limpios = [];
+    for (let j = 0; j < lista.length; j++) {
+      const k = Math.round(Number(lista[j]) * 100) / 100;
+      if (!(k > 0 && k <= 30)) return { ok: false, error: "Peso de vasqueta inválido." };
+      limpios.push(k);
+    }
+    if (!limpios.length) continue;
+    if (limpios.length > (Number((items || {})[id]) || 0)) return { ok: false, error: "Hay más pesos que vasquetas en la salida." };
+    out[id] = limpios;
+  }
+  return { ok: true, pesos: out };
+}
+
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -602,6 +638,16 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const norm = _normalizarVencimientos(vencimientos, items, tipo);
   if (!norm.ok) return norm;
   const vencimientos2 = norm.vencimientos;
+  // Pesos por vasqueta (escaneo del rótulo de fábrica): solo en una Salida normal
+  // de un local con Locales.escaner_peso=SI (piloto).
+  const normPesos = _normalizarPesos(pesos, items);
+  if (!normPesos.ok) return normPesos;
+  const pesos2 = normPesos.pesos;
+  if (Object.keys(pesos2).length) {
+    const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+    if (!filaLocalPeso || _esVerdadero(filaLocalPeso.escaner_peso) !== true) return { ok: false, error: "Este local no tiene el escáner de peso activado." };
+    if (tipo !== "salida" || subtipo) return { ok: false, error: "El peso por vasqueta solo se carga en una salida." };
+  }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
@@ -675,6 +721,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       anulado_por: "", anulado_ts: "", motivo: motivo || "", foto_remito: fotoRemito || "", subtipo: subtipo || "",
       kilos: Object.keys(kilos2).length ? JSON.stringify(kilos2) : "",
       vencimientos: Object.keys(vencimientos2).length ? JSON.stringify(vencimientos2) : "",
+      pesos: Object.keys(pesos2).length ? JSON.stringify(pesos2) : "",
     });
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
