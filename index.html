@@ -218,7 +218,8 @@ select{max-width:220px}
 .btn.ghost{background:none;border:1.5px solid var(--line);color:var(--ink)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.wa{background:var(--wa);color:#fff;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
-.btn.desperdicio{background:rgba(var(--warn-rgb),.12);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--warn);border:1px solid rgba(var(--warn-rgb),.25);box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 4px 10px -6px rgba(var(--warn-rgb),.3)}
+.btn.desperdicio{background:#F5A300;color:#2B1D14;border:0;box-shadow:0 3px 14px rgba(245,163,0,.55)}
+.btn.verVenc{background:#0B5D8F;color:#fff;border:0;box-shadow:0 3px 14px rgba(11,93,143,.5)}
 .btn.produccion{background:var(--accent);color:var(--accent-ink);border:0;box-shadow:0 2px 12px rgba(122,62,29,.4)}
 .btn.volver{background:var(--ink);color:var(--bg);border:0;box-shadow:0 2px 12px rgba(42,30,23,.35)}
 /* Contraseñas compartidas (local/Operaciones): se ven enmascaradas
@@ -502,7 +503,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.8";
+const FRONTEND_VERSION = "1.78.10";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1307,7 +1308,7 @@ function porVencerHTML(){
       <div class="vencTop"><b>${esc(s.nombre)}</b><span>${l.c} ${unidad(s.id,l.c)} · ${fechaVencCorta(l.f)}</span></div>
       <div class="vencEstado">${estado(d)}</div>
       <div class="vencAcc">
-        ${d<0?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
+        ${d<=VENC_ROJO_DIAS?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
         ${d>=0&&venderPrimero(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
       </div>
     </div>`).join("")}
@@ -1672,7 +1673,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
-  ${hayLotesConFecha()?`<button type="button" class="btn ghost" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
+  ${hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
   ${hayLotesConFecha()?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
