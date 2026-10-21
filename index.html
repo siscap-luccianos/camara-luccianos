@@ -403,8 +403,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .altaForm input,.altaForm select{flex:1 1 160px}
 @media (prefers-reduced-motion:reduce){.card>.pick{transition:none}}
 @media (max-width:640px){.authList{grid-template-columns:1fr 1fr}}
-/* Video de la vista general de Operaciones: en PC/tablet más chico para que se vea el texto de abajo (en celular queda igual) */
-@media (min-width:768px){.promoMinion{max-width:300px;margin-left:auto!important;margin-right:auto!important}}
+/* Portada de la vista general de Operaciones: en PC/tablet más chica para que se vea el texto de abajo (en celular queda a ancho completo) */
+@media (min-width:768px){.promoBienvenida{max-width:420px;margin-left:auto!important;margin-right:auto!important}}
 .authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
 .authPremium{padding-top:8vh}
 .authPremium .authWrap{margin:0 auto;width:100%;max-width:420px;padding:0}
@@ -467,7 +467,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.18";
+const FRONTEND_VERSION = "1.77.19";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1455,8 +1455,8 @@ function renderNav(){
 
 function renderMain(){
   if(!S.local) return `
-    <div class="promoMinion" style="margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
-      <video src="media/promo-minion-icepop.mp4" autoplay muted loop playsinline disablepictureinpicture disableremoteplayback style="width:100%;display:block;background:#000;pointer-events:none"></video>
+    <div class="promoBienvenida" style="margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden">
+      <img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's" style="width:100%;display:block">
     </div>
     <div class="note">Elegí el local arriba para empezar.</div>`;
   if(!S.sabores.length){
