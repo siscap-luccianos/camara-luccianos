@@ -361,10 +361,17 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .vencAcc .btn{flex:1 1 120px}
 .vencFiltros{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
 .vencLista{display:flex;flex-direction:column;gap:8px}
-.vencRow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-left-width:5px;border-radius:14px;padding:12px 14px}
-.vencRow.alert{border-left-color:#A23B2A}
-.vencRow.warn{border-left-color:#C9A227}
-.vencRow.ok{border-left-color:#2F7D4A}
+.vencRow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-left-width:8px;border-radius:14px;padding:12px 14px}
+.vencRow.alert{border-left-color:#C62828;background:rgba(198,40,40,.08)}
+.vencRow.warn{border-left-color:#F2B400;background:rgba(242,180,0,.14)}
+.vencRow.ok{border-left-color:#1E8A4C;background:rgba(30,138,76,.08)}
+.vencRow.vencido s{text-decoration-thickness:2px;text-decoration-color:#5E0B0B}
+.vencTag{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 16px;border-radius:999px;font-weight:800;font-size:.85rem;letter-spacing:.05em;text-transform:uppercase}
+.vencTag.rojo{background:#C62828;color:#fff}
+.vencTag.amarillo{background:#F2B400;color:#2B1D14}
+.vencAcciones{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+.vencAcciones .btn{min-height:40px;padding:0 14px;font-size:.9rem;white-space:nowrap}
+@media (max-width:560px){.vencRow{grid-template-columns:auto minmax(0,1fr)}.vencAcciones{grid-column:1 / -1;justify-content:stretch}.vencAcciones .btn{flex:1}}
 .vencFecha{display:flex;flex-direction:column;font-weight:800;font-size:.95rem;min-width:96px}
 .vencFecha span{font-size:.72rem;font-weight:700;color:var(--muted)}
 .vencRow.alert .vencFecha span{color:var(--alert)}
@@ -503,7 +510,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.10";
+const FRONTEND_VERSION = "1.79.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1289,35 +1296,15 @@ function textoVencRegistro(r, id){
   return ` · vence ${v.map(l=>`${l.f?fechaVencCorta(l.f):"sin fecha"} (${l.c})`).join(" + ")}`;
 }
 /** Lotes que vencen en 7 días o menos (o ya vencieron), arriba de Stock para no olvidarse de venderlos a tiempo ni de sacar los vencidos. */
-function porVencerHTML(){
-  const lista=[];
-  saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=VENC_AVISO_DIAS) lista.push({s, l, d:diasHasta(l.f)}) }));
-  if(!lista.length) return "";
-  lista.sort((a,b)=>a.d-b.d);
-  // "Vender primero" solo tiene sentido si el producto tiene más de 2 lotes, y
-  // se ofrece únicamente en el lote que vence antes (el que tiene que salir primero).
-  const venderPrimero=(s,l)=>{
-    if((lotesPorSabor()[s.id]||[]).length<=2) return false;
-    const cercano=lotesVendibles(s.id).filter(x=>x.f).sort((a,b)=>a.f.localeCompare(b.f))[0];
-    return !!cercano && cercano.f===l.f;
-  };
-  const estado=d=>d<0?`Vencido hace ${-d} ${-d===1?"día":"días"}`:d===0?"Vence hoy":d===1?"Vence mañana":`Vence en ${d} días`;
-  return `<section class="porVencer"><p class="sec">Por vencer</p>
-    <p class="porVencerRef"><span class="semDot rojo"></span>Rojo: vencido o vence en ${VENC_ROJO_DIAS} días · <span class="semDot amarillo"></span>Amarillo: ${VENC_ROJO_DIAS+1} a ${VENC_AVISO_DIAS} días</p>
-    ${lista.map(({s,l,d})=>`<div class="vencItem ${d<=VENC_ROJO_DIAS?"alert":"warn"}">
-      <div class="vencTop"><b>${esc(s.nombre)}</b><span>${l.c} ${unidad(s.id,l.c)} · ${fechaVencCorta(l.f)}</span></div>
-      <div class="vencEstado">${estado(d)}</div>
-      <div class="vencAcc">
-        ${d<=VENC_ROJO_DIAS?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
-        ${d>=0&&venderPrimero(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
-      </div>
-    </div>`).join("")}
-  </section>`;
+/** "Vender primero" solo tiene sentido si el producto tiene más de 2 lotes, y se ofrece únicamente en el lote que vence antes. */
+function venderPrimeroLote(s,l){
+  if((lotesPorSabor()[s.id]||[]).length<=2) return false;
+  const cercano=lotesVendibles(s.id).filter(x=>x.f).sort((a,b)=>a.f.localeCompare(b.f))[0];
+  return !!cercano && cercano.f===l.f;
 }
-/** Desde Stock: pasa un lote a Desperdicio con su cantidad y motivo ya cargados (el empleado confirma). */
 function ventaDesperdicioLote(id, f){
   const lote=(lotesPorSabor()[id]||[]).find(l=>l.f===f);
-  S.tab="salida"; S.modoDesperdicio=true; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; S.verPedido=false;
+  S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=true; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; S.verPedido=false;
   S.cart.desperdicio={[id]:Math.min(lote?lote.c:0, stockMap()[id]||0)};
   S.lotePick={[id]:f};
   S.motivoDesperdicio=(diasHasta(f)<0?"Vencido el ":"Vence el ")+fechaVencCorta(f);
@@ -1345,12 +1332,20 @@ function vencimientosPantallaHTML(){
   <div class="vencFiltros" role="group" aria-label="Filtrar vencimientos">
     ${FILTROS_VENC.map(([k,label])=>`<button type="button" class="chip" data-filtro-venc="${k}" aria-pressed="${f===k}">${label} · ${todos.filter(x=>pasa(x,k)).length}</button>`).join("")}
   </div>
-  ${lista.length?`<div class="vencLista">${lista.map(({s,l,sem})=>`<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}">
-      <div class="vencFecha">${sem?fechaVencCorta(l.f):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
-      <div class="vencNom">${esc(s.nombre)}<span>${l.c} ${unidad(s.id,l.c)}</span>${!sem&&canEtiquetar()?`<button type="button" class="btn ghost" data-etiq-abrir="${s.id}" style="margin-top:6px">Poner fecha</button>`:""}</div>
-    </div>`).join("")}</div>`:`<div class="empty">No hay lotes en este filtro.</div>`}${S.etiq?`<div class="etiqEspacio"></div>${etiquetarSheetHTML()}`:""}`;
+  ${lista.length?`<div class="vencLista">${lista.map(({s,l,sem})=>{
+    const vencido=!!sem&&sem.d<0, tachar=t=>vencido?`<s>${t}</s>`:t;
+    // Etiqueta del semáforo: rojo = Desperdicio (el botón la reemplaza si el usuario es responsable), amarillo = Rotar, verde = sin etiqueta.
+    const etq=!sem?"":sem.k==="rojo"?(canEtiquetar()?"":`<span class="vencTag rojo">Desperdicio</span>`):sem.k==="amarillo"?`<span class="vencTag amarillo">Rotar</span>`:"";
+    const acc=(!sem&&canEtiquetar()?`<button type="button" class="btn ghost" data-etiq-abrir="${s.id}">Poner fecha</button>`:"")
+      +(sem&&sem.d<=VENC_ROJO_DIAS&&canEtiquetar()?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:"")
+      +(sem&&sem.d>=0&&venderPrimeroLote(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:"");
+    return `<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}${vencido?" vencido":""}">
+      <div class="vencFecha">${sem?tachar(fechaVencCorta(l.f)):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
+      <div class="vencNom">${tachar(esc(s.nombre))}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
+      ${(etq||acc)?`<div class="vencAcciones">${etq}${acc}</div>`:""}
+    </div>`; }).join("")}</div>`:`<div class="empty">No hay lotes en este filtro.</div>`}${S.etiq?`<div class="etiqEspacio"></div>${etiquetarSheetHTML()}`:""}`;
 }
-/** Reetiquetado (Ver vencimientos): Responsable de local y de turno; admin y supervisor en urgencias. */
+/** Reetiquetado y pase a desperdicio desde Ver vencimientos: Responsable de local y de turno; admin y supervisor en urgencias. */
 function canEtiquetar(){ return !!S.local && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
 /** Fecha ISO (YYYY-MM-DD) de hoy + n días, en hora local. */
 function isoMasDias(n){ const d=new Date(); d.setDate(d.getDate()+n); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-") }
@@ -1927,7 +1922,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return porVencerHTML()+stockViewGeneral(st);
+  return (hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:"")+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -3070,7 +3065,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
-  if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.modoDesperdicio=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
   if(t.dataset.etiqAbrir!==undefined){ etiqAbrir(t.dataset.etiqAbrir); return }
   if(t.dataset.etiqCancelar!==undefined){ S.etiq=null; renderApp(); return }
