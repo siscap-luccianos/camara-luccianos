@@ -308,6 +308,9 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqBtns .btn{flex:1}
 .etiqPregunta{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .etiqPregunta span{color:var(--muted)}
+.etiqSheet.etiqEnviando{pointer-events:none}
+.etiqSheet.etiqEnviando .btn{opacity:.75}
+.etiqGuardando{font-weight:600}
 .mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
@@ -498,7 +501,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.4";
+const FRONTEND_VERSION = "1.78.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1353,7 +1356,7 @@ function sinFechaUnidades(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f).
 /** Abre la hoja de reetiquetado: fecha sugerida = hoy + vida útil del producto (si la tiene). */
 function etiqAbrir(id){
   const s=S.saboresPorId[id]||{}, sin=sinFechaUnidades(id);
-  S.etiq={ id:String(id), max:sin, cant:sin, fecha:(+s.vida_util_dias>0)?isoMasDias(+s.vida_util_dias):"" };
+  S.etiq={ id:String(id), clienteId:uuid(), max:sin, cant:sin, fecha:(+s.vida_util_dias>0)?isoMasDias(+s.vida_util_dias):"" };
   renderApp();
 }
 function etiqSetCant(n){ if(!S.etiq) return; S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+n||1))); renderApp() }
@@ -1365,9 +1368,9 @@ function etiquetarSheetHTML(){
   const quedan=Math.max(0,e.max-e.cant);
   const pregunta=`<div class="etiqPregunta"><b>¿Confirmás el vencimiento?</b>
       <span>${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.</span>
-      <div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-volver>No, volver</button><button type="button" class="btn" data-etiq-si>Sí, confirmar</button></div></div>`;
+      <div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-volver ${e.enviando?"disabled":""}>No, volver</button><button type="button" class="btn" data-etiq-si ${e.enviando?"disabled":""}>${e.enviando?"Guardando…":"Sí, confirmar"}</button></div>${e.enviando?`<div class="meta etiqGuardando">Guardando el vencimiento… esperá un momento.</div>`:""}</div>`;
   const botones=`<div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button><button type="button" class="btn" data-etiq-confirmar ${etiqValida(e)?"":"disabled"}>Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}</button></div>`;
-  return `<div class="etiqSheet" role="dialog" aria-label="Poner vencimiento">
+  return `<div class="etiqSheet${e.enviando?" etiqEnviando":""}" role="dialog" aria-label="Poner vencimiento">
     <div class="etiqTitulo">Poner vencimiento</div>
     <div class="etiqSub">${esc(s.nombre||"")} · sin fecha: ${e.max} ${unidad(e.id,e.max)}</div>
     <label class="etiqLbl" for="etiqFecha">Fecha de vencimiento</label>
@@ -1399,12 +1402,12 @@ function etiqPedirConfirmacion(){
   S.etiq.confirmar=true; S.etiq.error=null; renderApp();
 }
 async function etiquetarConfirmar(){
-  const e=S.etiq; if(!e) return;
-  e.confirmar=false; e.error=null;
+  const e=S.etiq; if(!e || e.enviando) return; // un segundo toque mientras guarda no manda nada
+  e.enviando=true; e.error=null; renderApp();
   const s=S.saboresPorId[e.id]||{};
-  const r=await api("etiquetar",{clienteId:uuid(), local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
+  const r=await api("etiquetar",{clienteId:e.clienteId, local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
   if(r && r.ok){ S.etiq=null; toast(`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
-  else { if(S.etiq) S.etiq.error=(r&&r.error)||"No se pudo guardar el vencimiento."; renderApp(); }
+  else { if(S.etiq){ S.etiq.enviando=false; S.etiq.confirmar=false; S.etiq.error=(r&&r.error)||"No se pudo guardar el vencimiento."; } renderApp(); }
 }
 document.addEventListener("change", e=>{
   const el=e.target;
