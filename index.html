@@ -501,7 +501,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.5";
+const FRONTEND_VERSION = "1.78.6";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1364,7 +1364,7 @@ function etiqValida(e){ return e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}
 function etiquetarSheetHTML(){
   const e=S.etiq, s=S.saboresPorId[e.id]||{}, caja=+s.cantidad_maestra||0, vida=+s.vida_util_dias||0;
   const sugerida=vida?isoMasDias(vida):"";
-  const opciones=[6,12,30,caja].filter((n,i,a)=>n>0 && n<=e.max && a.indexOf(n)===i);
+  const opciones=[12,30,caja].filter((n,i,a)=>n>0 && n<=e.max && a.indexOf(n)===i);
   const quedan=Math.max(0,e.max-e.cant);
   const pregunta=`<div class="etiqPregunta"><b>¿Confirmás el vencimiento?</b>
       <span>${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.</span>
