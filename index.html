@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.31";
+const FRONTEND_VERSION = "1.77.32";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2062,16 +2062,23 @@ function grupoHistDe(id){ const s=S.saboresPorId[id]; const g=s?grupoProductoDe(
  *  avisar, apenas se sincronice de verdad). */
 function esPendienteSync(r){ return String(r.id||"").indexOf("pendiente-")===0 }
 function filaMovimiento(r){
-  const it=Object.entries(r.items||{}).filter(([,q])=>q).map(([id,q])=>{
+  // Con filtro de categoría (Vasquetas / Icepops / Chocolatería) solo se muestran
+  // los productos de esa categoría, así una salida mixta no aparece entera en cada filtro.
+  const cat=S.categoriaHist||"todas";
+  const filtra=r.tipo!=="conteo" && !["todas","desperdicio","produccion"].includes(cat);
+  const entradas=Object.entries(r.items||{}).filter(([id,q])=>q && (!filtra || grupoHistDe(id)===cat));
+  const total=filtra ? entradas.reduce((a,[,q])=>a+(+q||0),0) : r.total;
+  const it=entradas.map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
     const vto=textoVencRegistro(r,id);
-    return `${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${vto}`;
+    const grupo=GRUPO_PRODUCTO_LABEL[grupoProductoDe(S.saboresPorId[id]||{})]||"Sabor";
+    return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${vto}`;
   }).join(" · ");
   const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.tipo;
   const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":r.tipo;
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
-    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${r.total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
+    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${it}</div>`}
     ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
