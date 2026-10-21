@@ -70,9 +70,9 @@
 :root[data-tema="dorado"] .card>.pick.sem-rojo{border:4px solid #C62828;box-shadow:0 1px 0 #fff inset,0 18px 34px -18px rgba(0,0,0,.95),0 0 0 1px rgba(198,40,40,.35)}
 :root[data-tema="dorado"] .card>.pick.sem-amarillo{border:4px solid #F2B400;box-shadow:0 1px 0 #fff inset,0 18px 34px -18px rgba(0,0,0,.95),0 0 0 1px rgba(242,180,0,.4)}
 :root[data-tema="dorado"] .card>.pick.sem-verde{border:4px solid #1E8A4C;box-shadow:0 1px 0 #fff inset,0 18px 34px -18px rgba(0,0,0,.95),0 0 0 1px rgba(30,138,76,.35)}
-:root[data-tema="dorado"] .plate{position:relative;background:radial-gradient(circle at 50% 38%,#ffffff 0%,#fbf7ee 62%,#efe6d3 100%);border-radius:16px;box-shadow:0 0 0 1px rgba(201,169,97,.55),0 6px 12px -6px rgba(60,40,10,.55)}
-:root[data-tema="dorado"] .plate img{filter:drop-shadow(0 5px 6px rgba(60,40,15,.32));mix-blend-mode:multiply}
-:root[data-tema="dorado"] .plate::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 16px rgba(110,80,30,.28),inset 0 1px 0 rgba(255,255,255,.9)}
+:root[data-tema="dorado"] .plate{background:transparent;box-shadow:none;border-radius:0}
+:root[data-tema="dorado"] .plate img{filter:drop-shadow(0 4px 5px rgba(60,40,15,.22));mix-blend-mode:multiply}
+:root[data-tema="dorado"] .plate::after{content:none}
 :root[data-tema="dorado"] .sec{color:#C9A961}
 /* Botones −/+ y contadores: el "−" en carbón con aro dorado (se ve sobre el blanco), el "+" y el contador en oro con brillo. */
 :root[data-tema="dorado"] .stepper button,:root[data-tema="dorado"] .minus{background:linear-gradient(180deg,#34302A 0%,#14120F 100%);color:#E9D194;border:0;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 0 0 1.5px rgba(201,169,97,.75),0 5px 10px -5px rgba(0,0,0,.7)}
@@ -600,7 +600,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.86.1";
+const FRONTEND_VERSION = "1.86.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
