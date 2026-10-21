@@ -404,8 +404,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 @media (prefers-reduced-motion:reduce){.card>.pick{transition:none}}
 @media (max-width:640px){.authList{grid-template-columns:1fr 1fr}}
 .authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
-.authPremium .authWrap{margin:auto;width:100%;max-width:420px;padding:0}
-.authPremium .authLogo{width:280px;max-width:78%;height:auto;margin:auto auto 12px;filter:drop-shadow(0 6px 22px rgba(217,185,105,.28))}
+.authPremium .authWrap{margin:0 auto;width:100%;max-width:420px;padding:0}
+.authPremium .authLogo{width:280px;max-width:78%;height:auto;margin:0 auto 12px;filter:drop-shadow(0 6px 22px rgba(217,185,105,.28))}
 .authPremium .authCard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:28px 22px;box-sizing:border-box;color:#F5F0E8;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .authPremium h1{font-family:'Fraunces',Georgia,serif;font-weight:700;color:#F5F0E8}
 .authPremium p{color:#B3A395}
@@ -461,11 +461,14 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.15";
+const FRONTEND_VERSION = "1.77.16";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
 const INACTIVIDAD_PC_MS = 10 * 60 * 1000;
+// Admin/supervisor que entró con el código de admin: sesión que se CIERRA sola
+// (no se bloquea) a los 5 min sin tocar nada. Hay que volver a entrar con el código.
+const INACTIVIDAD_CODIGO_MS = 5 * 60 * 1000;
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -487,6 +490,7 @@ const S = {
   empleado: JSON.parse(ls.get("sesionEmpleado","null")),
   esGestion: ls.get("sesionEsGestion","")==="1", // entró por Operaciones (sin PIN propio) — el bloqueo por inactividad pide la clave de Operaciones, no un PIN
   gestionLocal: ls.get("sesionGestionLocal","") || null,
+  sesionCodigo: ls.get("sesionCodigo","")==="1", // entró con el código de admin: se cierra sola a los 5 min sin tocar
   esTablet: false, // se decide en start(): true si hay deviceLocal
   auth: null, // pantalla de login en curso
   locales: [],
@@ -528,10 +532,11 @@ const S = {
 function guardarSesionPC(){
   ls.set("sesionToken", S.token||""); ls.set("sesionEmpleado", JSON.stringify(S.empleado||null));
   ls.set("sesionEsGestion", S.esGestion?"1":"0"); ls.set("sesionGestionLocal", S.gestionLocal||"");
+  ls.set("sesionCodigo", S.sesionCodigo?"1":"0");
 }
 function limpiarSesion(){
-  S.token=null; S.empleado=null; S.esGestion=false; S.gestionLocal=null;
-  ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
+  S.token=null; S.empleado=null; S.esGestion=false; S.gestionLocal=null; S.sesionCodigo=false;
+  ls.del("sesionCodigo"); ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
 }
 
 /* ============================================================
@@ -900,6 +905,7 @@ function aplicarLogin(r){
   const puedeFijar = ["encargado","turno","colaborador","produccion"].indexOf(r.empleado.rol) !== -1;
   S.token = r.token; S.empleado = r.empleado;
   S.esGestion = esGestion; S.gestionLocal = esGestion ? S.auth.local : null;
+  S.sesionCodigo = !!(S.auth && S.auth.codigoAdmin);
   // Admin/supervisor: un login NUEVO (recién entrando, o después de haber
   // tocado "Salir") arranca siempre neutral, sin local elegido — nunca el
   // primero de la lista ni el último que se había mirado. Retomar el
@@ -955,6 +961,13 @@ function reiniciarInactividad(){
   clearTimeout(S.inactTimer);
   S.inactHasta = null; // lo fija abajo cuando hay un cierre o bloqueo real; el contador de la cabecera lo lee de acá
   if(S.lectorRemito || !S.empleado || S.esGestion) return; // remito en curso o Operaciones (admin/supervisor): sin timer
+  if(S.sesionCodigo){
+    // Entró con el código de admin/supervisor: se cierra la sesión entera a los 5 min
+    // sin tocar nada. No espera a que se guarde un carrito o conteo: la regla es salir.
+    S.inactHasta = Date.now() + INACTIVIDAD_CODIGO_MS;
+    S.inactTimer = setTimeout(()=>cerrarSesion(false), INACTIVIDAD_CODIGO_MS);
+    return;
+  }
   if(S.empleado.rol==="colaborador" || S.empleado.rol==="produccion"){
     // Colaborador/producción (tablet y PC, misma regla): se cierra la sesión
     // entera a los 60 s (vuelve a elegir quién sos) — pero no si hay un carrito
@@ -1342,7 +1355,10 @@ function renderAuth(){
   let cuerpo="";
   if(a.paso==="local"){
     const recientes=localesRecientes().filter(n=>S.locales.some(l=>l.nombre===n && !l.esGestion));
-    cuerpo=`${a.otroLocal?"":`<h1 style="margin-top:6px">Bienvenido</h1>
+    // Mismo lugar en todos los pasos: título, texto y "Volver" ocupan siempre el
+    // mismo espacio (ocultos si corresponde), así los campos no se mueven.
+    cuerpo=`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>
+      ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Bienvenido</h1><p style="visibility:hidden" aria-hidden="true">Elegí tu local para empezar.</p>`:`<h1>Bienvenido</h1>
       <p>Elegí tu local para empezar.</p>`}
       <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu local…"}" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
@@ -1350,7 +1366,7 @@ function renderAuth(){
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
   } else if(a.paso==="clave"){
     cuerpo=`<button class="authBack" data-authback="1">Volver</button>
-      ${a.otroLocal?"":`<h1>Contraseña de ${esc(a.local||"")}</h1>
+      ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Contraseña</h1><p style="visibility:hidden" aria-hidden="true">Pedísela a quien te haya dado de alta.</p>`:`<h1>Contraseña de ${esc(a.local||"")}</h1>
       <p>Pedísela a quien te haya dado de alta.</p>`}
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       <form id="formClave" autocomplete="on">
@@ -1384,7 +1400,8 @@ function renderAuth(){
         <button type="button" class="op" data-tecla="borrar" ${a.cargando?"disabled":""}>Borrar</button>
       </div>`;
   }
-  const logo = a.paso==="local" ? `<img class="authLogo" src="icons/wordmark-dorado.png" alt="Lucciano's">` : "";
+  // El logo está en todos los pasos (mismo lugar), así la tarjeta no salta al cambiar de paso.
+  const logo = `<img class="authLogo" src="icons/wordmark-dorado.png" alt="Lucciano's">`;
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard">${cuerpo}</div></div></div>`;
 }
 
@@ -2726,7 +2743,7 @@ function tocarSecretoOtroLocal(){
 }
 document.addEventListener("click", async e=>{
   const secreto=e.target.closest("[data-secreto-otro]");
-  if(secreto){ if(tocarSecretoOtroLocal()){ S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true}; renderApp() } return }
+  if(secreto){ if(tocarSecretoOtroLocal()){ const loc=(S.auth&&S.auth.local)||S.deviceLocal; if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } else { S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } renderApp() } return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
