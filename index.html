@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.32";
+const FRONTEND_VERSION = "1.77.33";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2072,7 +2072,7 @@ function filaMovimiento(r){
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
     const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
     const vto=textoVencRegistro(r,id);
-    const grupo=GRUPO_PRODUCTO_LABEL[grupoProductoDe(S.saboresPorId[id]||{})]||"Sabor";
+    const grupo=etiquetaProductoDe(S.saboresPorId[id]||{});
     return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${vto}`;
   }).join(" · ");
   const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.tipo;
@@ -2181,7 +2181,7 @@ function histView(){
       }
     }
     const ids=S.sabores.filter(s=>sem[s.id]);
-    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${GRUPO_PRODUCTO_LABEL[grupoProductoDe(S.saboresPorId[s.id]||{})]}</span>`:"";
+    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${etiquetaProductoDe(S.saboresPorId[s.id]||{})}</span>`:"";
     if(!ids.length) tabla=`<div class="empty">Sin salidas en este período.</div>`;
     else if(esSemana){
       const totalesDia=[0,0,0,0,0,0,0]; ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
@@ -2336,6 +2336,15 @@ function grupoProductoDe(s){
   if(familia==="chocolateria") return "chocolateria";
   if(familia==="glutenfree") return "glutenfree";
   return "vasquetas";
+}
+/** Etiqueta corta de un producto en Historial. Las icepops de fruta, crema,
+ *  bañados y luxury dicen "Ice Pop"; canoli, mini y Dubai dicen su nombre,
+ *  para no confundir (pedido de Gabi 21/10/2026). */
+const ETIQUETA_CATEGORIA_PRODUCTO = { "Cannoli":"Canoli", "Mini Icepops":"Mini Ice Pop", "Dubai":"Dubai" };
+function etiquetaProductoDe(s){
+  const g=grupoProductoDe(s);
+  if(g==="icepops") return ETIQUETA_CATEGORIA_PRODUCTO[s.categoria]||"Ice Pop";
+  return GRUPO_PRODUCTO_LABEL[g]||"Sabor";
 }
 function agruparPorProducto(lista){
   const porGrupo={};
