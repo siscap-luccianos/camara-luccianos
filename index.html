@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.30";
+const FRONTEND_VERSION = "1.77.31";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1257,6 +1257,13 @@ function porVencerHTML(){
   S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=VENC_AVISO_DIAS) lista.push({s, l, d:diasHasta(l.f)}) }));
   if(!lista.length) return "";
   lista.sort((a,b)=>a.d-b.d);
+  // "Vender primero" solo tiene sentido si el producto tiene más de 2 lotes, y
+  // se ofrece únicamente en el lote que vence antes (el que tiene que salir primero).
+  const venderPrimero=(s,l)=>{
+    if((lotesPorSabor()[s.id]||[]).length<=2) return false;
+    const cercano=lotesVendibles(s.id).filter(x=>x.f).sort((a,b)=>a.f.localeCompare(b.f))[0];
+    return !!cercano && cercano.f===l.f;
+  };
   const estado=d=>d<0?`Vencido hace ${-d} ${-d===1?"día":"días"}`:d===0?"Vence hoy":d===1?"Vence mañana":`Vence en ${d} días`;
   return `<section class="porVencer"><p class="sec">Por vencer</p>
     <p class="porVencerRef"><span class="semDot rojo"></span>Rojo: vencido o vence en ${VENC_ROJO_DIAS} días · <span class="semDot amarillo"></span>Amarillo: ${VENC_ROJO_DIAS+1} a ${VENC_AVISO_DIAS} días</p>
@@ -1265,7 +1272,7 @@ function porVencerHTML(){
       <div class="vencEstado">${estado(d)}</div>
       <div class="vencAcc">
         ${d<0?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
-        ${d>=0?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
+        ${d>=0&&venderPrimero(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
       </div>
     </div>`).join("")}
   </section>`;
