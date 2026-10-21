@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.7";
+const BACKEND_VERSION = "1.39.8";
 
 function doPost(e) {
   let resultado;
@@ -94,6 +94,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "cambiarRolEmpleado": return cambiarRolEmpleado(body.empleadoId, body.rol, empleado);
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
     case "adminSabor": return adminSabor(body.sabor, empleado);
+    case "minimoMasivo": return minimoMasivo(body.cambios, body.detalle, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
@@ -1371,6 +1372,45 @@ function adminSabor(sabor, empleado) {
     const r = existente ? _actualizarCrudo("Sabores", sabor.id, cambios) : _escribirCrudo("Sabores", cambios);
     if (r.ok) _auditar("admin_sabor", empleado.id, empleado.nombre, "Sabor " + r.id + " (" + sabor.nombre + ")");
     return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Cambia el mínimo de muchos sabores en una sola llamada (un rubro
+ *  entero, o el mínimo por defecto de cada tipo). Solo admin. Escribe la
+ *  columna "minimo" en una sola pasada, sin reemplazar el resto del sabor.
+ *  cambios: [{id, minimo}] — el valor va por sabor, así sirve tanto para
+ *  "todo el rubro en 6" como para "cada uno a su default". */
+function minimoMasivo(cambios, detalle, empleado) {
+  if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede cambiar los mínimos." };
+  if (!Array.isArray(cambios) || cambios.length === 0) return { ok: false, error: "No hay sabores para cambiar." };
+  if (cambios.length > 1000) return { ok: false, error: "Demasiados sabores en un solo cambio." };
+  const porId = {};
+  for (let k = 0; k < cambios.length; k++) {
+    const c = cambios[k];
+    const m = Number(c && c.minimo);
+    if (!c || !c.id || !isFinite(m) || m < 0 || Math.floor(m) !== m) return { ok: false, error: "Mínimo inválido." };
+    porId[String(c.id)] = m;
+  }
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const sheet = _sheet("Sabores");
+    const datos = sheet.getDataRange().getValues();
+    const headers = datos[0];
+    const colId = headers.indexOf("id");
+    const colMin = headers.indexOf("minimo");
+    if (colId === -1 || colMin === -1) return { ok: false, error: "Faltan columnas id/minimo en Sabores." };
+    let actualizados = 0;
+    for (let i = 1; i < datos.length; i++) {
+      const clave = String(datos[i][colId]);
+      if (!porId.hasOwnProperty(clave)) continue;
+      _escribirCeldaSinAdivinar(sheet.getRange(i + 1, colMin + 1), _sanitizarCelda(porId[clave]));
+      actualizados++;
+    }
+    _auditar("minimo_masivo", empleado.id, empleado.nombre, actualizados + " sabores" + (detalle ? " (" + detalle + ")" : ""));
+    return { ok: true, actualizados: actualizados };
   } finally {
     lock.releaseLock();
   }

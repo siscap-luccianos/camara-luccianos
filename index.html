@@ -244,13 +244,17 @@ select{max-width:220px}
 .saborRow.baja{opacity:.55}
 .saborForm{background:var(--accent-soft)}
 .saborForm input,.saborForm select{min-height:38px;border-radius:9px;border:1px solid var(--line);padding:0 10px;background:var(--surface);color:var(--ink)}
-.saborForm{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;align-items:end;padding:14px}
+.saborForm{display:grid;grid-template-columns:minmax(170px,1.6fr) minmax(120px,1fr) minmax(120px,1fr) minmax(170px,1.2fr) minmax(90px,.8fr) minmax(90px,.8fr);gap:12px;align-items:end;padding:14px}
 .saborForm .fSab{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .saborForm .fSab.ancho{grid-column:1/-1}
 .saborForm .fSab input,.saborForm .fSab select{width:100%;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:500}
 .saborForm .acciones{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .saborForm .chkSab{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--ink);margin-right:6px}
 .saborForm .chkSab input{width:18px;height:18px;min-height:0;padding:0}
+@media (max-width:720px){.saborForm{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rubroMin{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;background:var(--accent-soft);border-radius:12px;font-size:.85rem}
+.rubroMin>span{color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;font-size:.7rem;margin-right:4px}
+.rubroMin input{width:90px;min-height:34px;border-radius:9px;border:1px solid var(--line);padding:0 10px;background:var(--surface);color:var(--ink)}
 .stepper{display:flex;align-items:center;gap:6px}
 .stepper button{width:36px;height:36px;border-radius:999px;border:0;background:rgba(var(--header-bg-rgb),.08);color:var(--ink);font-weight:800;font-size:1.1rem}
 .stepper button:last-child{background:var(--accent);color:var(--accent-ink);box-shadow:0 4px 10px -4px rgba(var(--accent-rgb),.5)}
@@ -479,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.28";
+const FRONTEND_VERSION = "1.77.29";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2323,7 +2327,7 @@ function grupoProductoDe(s){
 function agruparPorProducto(lista){
   const porGrupo={};
   lista.forEach(s=>{ const g=grupoProductoDe(s); (porGrupo[g]=porGrupo[g]||[]).push(s) });
-  return GRUPO_PRODUCTO_ORDEN.filter(g=>porGrupo[g]).map(g=>({grupo:GRUPO_PRODUCTO_LABEL[g], sabores:porGrupo[g]}));
+  return GRUPO_PRODUCTO_ORDEN.filter(g=>porGrupo[g]).map(g=>({clave:g, grupo:GRUPO_PRODUCTO_LABEL[g], sabores:porGrupo[g]}));
 }
 function saboresView(){
   if(S.empleado.rol==="encargado" || adminEnLocalReal()) return saboresLocalView();
@@ -2403,7 +2407,14 @@ function saboresAdminView(){
   };
   const grupos=agruparPorProducto(S.saboresAdmin);
   return `<p class="sec">Sabores (${S.saboresAdmin.length})</p>
-  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p><div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}
+  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
+  <div class="rubroMin">
+    <span>Mínimo del rubro</span>
+    <input type="number" id="min-${g.clave}" min="0" step="1" placeholder="ej. 6">
+    <button type="button" class="chip" data-min-rubro="${g.clave}">Aplicar a los ${g.sabores.length}</button>
+    <button type="button" class="chip" data-min-defecto="${g.clave}">Mínimos por defecto</button>
+  </div>
+  <div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}
   <p class="sec" style="margin-top:14px">Dar de alta un sabor nuevo</p>
   <form class="saborRow saborForm" id="altaSaborForm">
     <label class="fSab ancho"><span>Nombre</span><input type="text" name="nombre" placeholder="Nombre del sabor" required></label>
@@ -2421,6 +2432,32 @@ async function guardarSabor(payload){
   if(r && r.ok){ toast("Sabor guardado"); S.editandoSaborId=null; cargarSaboresAdmin(); }
   else toast((r&&r.error)||"No se pudo guardar el sabor.");
 }
+/** Mínimo por defecto según el tipo del sabor. Son los mismos valores que
+ *  ya tiene la planilla. El formulario de alta lo propone solo al elegir el
+ *  tipo; después se puede cambiar sabor por sabor o por rubro entero. */
+const MINIMO_DEFECTO_TIPO = { v:6, i:6, c:6, b:3, m:3, p:3 };
+function minimoDefectoDe(s){ return MINIMO_DEFECTO_TIPO[s.tipo] ?? 6 }
+/** Cambia el mínimo de todo un rubro en una sola llamada. Con `minimoFijo`
+ *  pone ese número a todos; sin él, cada sabor vuelve a su default por tipo. */
+async function cambiarMinimosRubro(clave, minimoFijo){
+  const sabores = (S.saboresAdmin||[]).filter(s=>grupoProductoDe(s)===clave);
+  if(!sabores.length) return;
+  const etiqueta = GRUPO_PRODUCTO_LABEL[clave];
+  const porDefecto = minimoFijo==null;
+  const texto = porDefecto ? `los mínimos por defecto de ${etiqueta}` : `el mínimo de ${etiqueta} a ${minimoFijo}`;
+  if(!confirm(`¿Cambiar ${texto})? Son ${sabores.length} sabores.`)) return;
+  const cambios = sabores.map(s=>({id:s.id, minimo: porDefecto ? minimoDefectoDe(s) : minimoFijo}));
+  const r = await api("minimoMasivo", {cambios, detalle: porDefecto ? etiqueta+" por defecto" : etiqueta+" → "+minimoFijo});
+  if(r && r.ok){ toast(`Listo: ${r.actualizados} sabores actualizados`); cargarSaboresAdmin(); }
+  else if(r && /Acción desconocida/.test(r.error||"")) toast("Falta repegar Code.gs y hacer Nueva implementación para cambiar mínimos en bloque.");
+  else toast((r&&r.error)||"No se pudo cambiar los mínimos.");
+}
+document.addEventListener("change", e=>{
+  // Alta de sabor nuevo: el mínimo propuesto cambia solo según el tipo elegido
+  if(!e.target.matches || !e.target.matches("#altaSaborForm select[name=tipo]")) return;
+  const m = e.target.form.querySelector("input[name=minimo]");
+  if(m) m.value = MINIMO_DEFECTO_TIPO[e.target.value] ?? 6;
+});
 async function toggleSabor(s){
   // adminSabor() en Code.gs reemplaza el sabor ENTERO, no hace un update
   // parcial — así que hay que mandar todos los campos, aunque este botón
@@ -2842,6 +2879,12 @@ document.addEventListener("click", async e=>{
   if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual, t); return }
   if(t.dataset.eliminarEmp){ await eliminarEmpleadoDef(t.dataset.eliminarEmp, t.dataset.nombreEmp, t); return }
   if(t.dataset.editarSaborBtn){ S.editandoSaborId=t.dataset.editarSaborBtn; renderApp(); return }
+  if(t.dataset.minRubro){
+    const v=document.getElementById("min-"+t.dataset.minRubro).value;
+    if(v===""){ toast("Escribí el mínimo que querés para el rubro."); return }
+    cambiarMinimosRubro(t.dataset.minRubro, Number(v)); return
+  }
+  if(t.dataset.minDefecto){ cambiarMinimosRubro(t.dataset.minDefecto, null); return }
   if(t.dataset.cancelarSabor){ S.editandoSaborId=null; renderApp(); return }
   if(t.dataset.toggleSabor){
     const s=(S.saboresAdmin||[]).find(x=>x.id===t.dataset.toggleSabor);
