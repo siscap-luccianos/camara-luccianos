@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.40.0";
+const BACKEND_VERSION = "1.40.1";
 
 function doPost(e) {
   let resultado;
@@ -1021,9 +1021,10 @@ function etiquetar(clienteId, local, items, vencimientos, empleado) {
     const items2 = {};
     Object.keys(items).forEach((id) => { const q = Math.floor(Number(items[id]) || 0); if (q > 0) items2[id] = q; });
     const catalogo = _leerCrudo("Sabores");
-    const familiaDe = {}, nombreDe = {};
-    catalogo.forEach((s) => { familiaDe[String(s.id)] = s.familia || ""; nombreDe[String(s.id)] = s.nombre; });
+    const familiaDe = {}, nombreDe = {}, categoriaDe = {};
+    catalogo.forEach((s) => { familiaDe[String(s.id)] = s.familia || ""; nombreDe[String(s.id)] = s.nombre; categoriaDe[String(s.id)] = s.categoria || ""; });
     if (Object.keys(items2).some((id) => familiaDe[id] !== "chocolateria")) return { ok: false, error: "Solo se pone vencimiento a chocolatería." };
+    if (Object.keys(items2).some((id) => categoriaDe[id] === "Latas")) return { ok: false, error: "Las latas carrusel no llevan vencimiento." };
 
     const norm = _normalizarVencimientos(vencimientos, items2, "etiquetado");
     if (!norm.ok) return norm;
