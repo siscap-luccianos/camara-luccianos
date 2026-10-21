@@ -403,12 +403,12 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .altaForm input,.altaForm select{flex:1 1 160px}
 @media (prefers-reduced-motion:reduce){.card>.pick{transition:none}}
 @media (max-width:640px){.authList{grid-template-columns:1fr 1fr}}
-/* Portada de fondo a pantalla completa en la vista general (sin local elegido) */
-.fondoBienvenida{position:fixed;inset:0;z-index:0;background:#F5EFE6;overflow:hidden}
-.fondoBienvenida img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
-/* En celular la portada entra completa sobre blanco (su fondo es blanco) para que se lea el título */
-@media (max-width:767px){.fondoBienvenida{background:#fff}.fondoBienvenida img{object-fit:contain}}
-.notaBienvenida{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:1;background:rgba(255,255,255,.92);color:var(--ink);padding:10px 18px;border-radius:999px;font-weight:600;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+/* Vista sin local elegido (admin/supervisor, después de entrar): portada centrada en una píldora, fondo oscuro de la app */
+body.sinLocal{background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%) fixed;min-height:100vh}
+.portadaLocal{display:flex;justify-content:center;padding:40px 0 60px}
+.portadaMarco{width:100%;max-width:680px;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:48px;padding:18px;box-shadow:0 30px 70px -30px rgba(0,0,0,.6)}
+.portadaMarco img{width:100%;height:auto;display:block;border-radius:34px}
+@media (max-width:767px){.portadaLocal{padding:20px 0 40px}.portadaMarco{max-width:340px;border-radius:36px;padding:12px}.portadaMarco img{border-radius:26px}}
 .authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
 .authPremium{padding-top:8vh}
 .authPremium .authWrap{margin:0 auto;width:100%;max-width:420px;padding:0}
@@ -471,7 +471,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.21";
+const FRONTEND_VERSION = "1.77.22";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1461,8 +1461,7 @@ function renderMain(){
   // Vista general (sin local elegido): la portada ocupa toda la pantalla como fondo,
   // y la barra LogiStock de arriba queda encima.
   if(!S.local) return `
-    <div class="fondoBienvenida" aria-hidden="true"><img src="media/bienvenida-lucciano.jpg" alt=""></div>
-    <div class="notaBienvenida">Elegí el local arriba para empezar.</div>`;
+    <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div></div>`;
   if(!S.sabores.length){
     if(S.errorCarga) return `<div class="note">${esc(S.errorCarga)}<br><button class="btn ghost" id="reintentarCarga" style="margin-top:10px">Reintentar</button></div>`;
     return `<div class="note">Cargando datos de ${esc(S.local)}…</div>`;
@@ -3306,11 +3305,13 @@ function scheduleRender(){
 }
 function renderApp(){
   _lotesMemo=null;
+  document.body.classList.remove("sinLocal");
   const m=$("#app");
   if(S.auth){ m.innerHTML = renderAuth(); return }
   if(!S.empleado){ iniciarAuth(); return }
   if(S.bloqueado){ m.innerHTML = renderBloqueo(); return }
   m.innerHTML = renderHeader() + `<div class="wrap"><main id="main">${renderMain()}</main></div>` + renderNav() + `<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>`;
+  document.body.classList.toggle("sinLocal", !S.local);
   renderBar();
   if(S.offline || S.cola.length){
     const b=document.createElement("div"); b.className="offlineBadge";
