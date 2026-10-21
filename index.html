@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.37";
+const FRONTEND_VERSION = "1.77.38";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2117,9 +2117,9 @@ function calendarioHist(){
     <div class="calHead"><button type="button" class="calNav" data-cal-mes="-1" aria-label="Mes anterior">‹</button><span class="calTitulo">${esc(titulo.charAt(0).toUpperCase()+titulo.slice(1))}</span><button type="button" class="calNav" data-cal-mes="1" aria-label="Mes siguiente">›</button></div>
     <div class="calGrid calSem"><span>LU</span><span>MA</span><span>MI</span><span>JU</span><span>VI</span><span>SÁ</span><span>DO</span></div>
     <div class="calGrid">${celdas}</div>
-    <div class="calHint">Tocá un día para elegir ese día, o dos para elegir el rango entre ellos.</div>
+    <div class="calHint">Tocá un día y después Aplicar para ver solo ese día, o tocá dos días para elegir el rango entre ellos.</div>
     <div class="calRes"><span><b>Desde</b> ${fmt(c.d)}</span><span><b>Hasta</b> ${fmt(c.h||c.d)}</span></div>
-    <div class="calBotones"><button type="button" class="btn ghost" id="calCancelar">Cancelar</button><button type="button" class="btn" id="calAplicar" ${c.d?"":"disabled"}>Aplicar</button></div>
+    <div class="calBotones"><button type="button" class="btn ghost" id="calCancelar">Cancelar</button><button type="button" class="btn" id="calAplicar" ${c.d?"":"disabled"}>${c.h?"Aplicar":"Aplicar solo este día"}</button></div>
   </div>`;
 }
 function histView(){
