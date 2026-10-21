@@ -594,7 +594,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.85.3";
+const FRONTEND_VERSION = "1.86.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -657,7 +657,9 @@ const S = {
   verPedido: false,
   verResumenPedido: false, // resumen del pedido por rubro (copiar / WhatsApp), dentro de Stock > Pedido sugerido
   pedidoDetalle: {}, // sabores del pedido sugerido con su tendencia desplegada (id → true)
-  diasEntrega: Number(ls.get("diasEntrega","3"))||3,
+  // Días hasta la próxima entrega del pedido sugerido: se recuerda POR LOCAL (cada local tiene su ritmo de pedido).
+  get diasEntrega(){ return Number(ls.get("diasEntrega:"+(this.local||""), ls.get("diasEntrega","3")))||3 },
+  set diasEntrega(v){ ls.set("diasEntrega:"+(this.local||""), String(v)) },
   categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
   rangoHist: "s0", // d1/d60 = Hoy/Todo (últimos N días) — segmento Hoy/Semana/Mes/Todo, s0 = esta semana (lunes a domingo), m0 = este mes, s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
   calHist: null, // calendario de Historial abierto: {mes, d, h} (d/h = YYYY-MM-DD elegidos), null = cerrado
@@ -875,8 +877,18 @@ function multiploPedido(id){
   const s=S.saboresPorId[id];
   return (s && s.cantidad_maestra) ? s.cantidad_maestra : 2;
 }
+/** Días de historial con los que se promedia el consumo. Pedidos cortos (hasta 7 días): la última semana. Pedidos de
+ *  15, 21 o 30 días (locales de provincia): las últimas 4 semanas, que es un promedio más estable para tanto tiempo.
+ *  Si el local todavía no tiene tantos días de movimientos, se usa lo que haya (mínimo 7). */
+function ventanaConsumo(){
+  const objetivo = S.diasEntrega>=15 ? 28 : 7;
+  let primero=Infinity;
+  for(const r of regsActivos()) if(r.tipo==="salida" && r.ts<primero) primero=r.ts;
+  const disponibles = isFinite(primero) ? Math.ceil((jornadaDe()-primero)/864e5)+1 : 7;
+  return Math.max(7, Math.min(objetivo, disponibles));
+}
 function pedidoSugerido(id, st){
-  const s7=salidasDias(7), promedioDiario=(s7[id]||0)/7;
+  const ventana=ventanaConsumo(), sV=salidasDias(ventana), promedioDiario=(sV[id]||0)/ventana;
   let sug=Math.max(0, Math.ceil(promedioDiario*(S.diasEntrega+1) - st[id]));
   const multiplo=multiploPedido(id);
   sug = Math.ceil(sug/multiplo)*multiplo;
@@ -2106,7 +2118,7 @@ function stockViewPedido(st){
   const totalDe=g=>delRubro(g).reduce((a,s)=>a+pedidoDe(s),0);
   const saboresCon=g=>delRubro(g).filter(s=>pedidoDe(s)>0).length;
   const totalTodo=grupos.reduce((a,g)=>a+totalDe(g),0);
-  const dias=[2,3,4,7];
+  const dias=[2,3,4,7,15,21,30];
 
   const tendenciaHTML=s=>{
     const sem=tendencia[s.id]||[{total:0,agotado:false},{total:0,agotado:false},{total:0,agotado:false}];
@@ -2156,7 +2168,7 @@ function stockViewPedido(st){
     <span class="tx"><b>Volver a Stock</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} para pedir en ${grupos.length} ${grupos.length===1?"rubro":"rubros"}</span></span>
   </button>
   <div class="kpis">
-    <div class="kpi"><span class="lbl">Próxima entrega en</span><div class="diasChips">${dias.map(d=>`<button type="button" class="chip" data-dias="${d}" aria-pressed="${S.diasEntrega===d}">${d} días</button>`).join("")}</div><span class="sub">+ 1 día de stock de seguridad</span></div>
+    <div class="kpi"><span class="lbl">Próxima entrega en</span><div class="diasChips">${dias.map(d=>`<button type="button" class="chip" data-dias="${d}" aria-pressed="${S.diasEntrega===d}">${d} días</button>`).join("")}</div><span class="sub">+ 1 día de stock de seguridad${S.diasEntrega>=15?" · consumo promedio de las últimas 4 semanas":""}</span></div>
   </div>
   <button type="button" class="ctaCard glass" id="verResumenBtn" style="margin:12px 0" aria-label="Ver resumen del pedido por rubro">
     <span class="tx"><b>Ver resumen para enviar</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} · copiá todo o uno por rubro</span></span>
@@ -3109,7 +3121,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.vencCargar){ delete S.vencOmit[t.dataset.vencCargar]; renderApp(); return }
   if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
-  if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); ls.set("diasEntrega",String(S.diasEntrega)); S.pedidoAdj={}; renderApp(); return }
+  if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
   if(t.dataset.rangoMenu){ S.rangoMenu=!S.rangoMenu; renderApp(); return }
   if(t.dataset.rangoHist){ S.rangoHist=t.dataset.rangoHist; S.calHist=null; S.rangoMenu=false; renderApp(); return }
