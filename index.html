@@ -40,26 +40,68 @@
    superficies translúcidas y acento dorado. Se elige con el botón de tema de la cabecera
    (localStorage "tema"); el tema crema sigue siendo el de siempre. Las fotos de producto
    quedan sobre un recuadro blanco (--plate). */
+/* v1.84: negro y dorado "premium" — negro mate real (sin marrones), oro champagne (#C9A961) usado con medida:
+   filos finos, estado activo, botón principal y títulos; tarjetas de producto BLANCAS (las fotos tienen fondo blanco)
+   con filo dorado; texto cálido casi blanco sobre el fondo y carbón sobre las tarjetas. */
 :root[data-tema="dorado"]{
-  --bg:#1B1611; --surface:#2A2019; --ink:#F5F0E8; --muted:#B3A395; --line:rgba(255,255,255,.14);
-  --accent:#D9B869; --accent-hover:#E6C97F; --accent-ink:#1B1611; --accent-soft:rgba(217,185,105,.14);
-  --alert:#F0968A; --alert-soft:rgba(240,150,138,.16); --warn:#E0B266; --warn-soft:rgba(224,178,102,.16);
-  --ok:#8FCB9E; --ok-soft:rgba(143,203,158,.16); --plate:#ffffff;
-  --header-bg:#1B1611; --header-bg-rgb:27,22,17;
+  --bg:#0D0C0A; --surface:#1A1814; --ink:#F4EFE6; --muted:#ABA190; --line:rgba(201,169,97,.24);
+  --accent:#C9A961; --accent-hover:#DABD79; --accent-ink:#0D0C0A; --accent-soft:rgba(201,169,97,.14);
+  --alert:#FF9A8B; --alert-soft:rgba(255,154,139,.16); --warn:#E8C27A; --warn-soft:rgba(232,194,122,.16);
+  --ok:#9FD6AB; --ok-soft:rgba(159,214,171,.16); --plate:#ffffff;
+  --header-bg:#0D0C0A; --header-bg-rgb:13,12,10; --header-ink:#F4EFE6; --header-muted:#BDB19C;
   --wa-bubble:#204030; --wa-bubble-ink:#DCF3D0; --wa-panel:#182721;
-  --surface-rgb:42,32,25; --glass-line:rgba(255,255,255,.12);
-  --accent-rgb:217,185,105; --warn-rgb:224,178,102; --alert-rgb:240,150,138; color-scheme:dark}
-:root[data-tema="dorado"] body{background:radial-gradient(120% 60% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%) fixed;min-height:100vh}
-:root[data-tema="dorado"] .card>.pick,:root[data-tema="dorado"] .rows,:root[data-tema="dorado"] .kpi,:root[data-tema="dorado"] .note{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-:root[data-tema="dorado"] .chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-:root[data-tema="dorado"] .chip{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.06)}
-:root[data-tema="dorado"] .tabCat[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
-:root[data-tema="dorado"] .segPer{background:rgba(255,255,255,.08)}
-:root[data-tema="dorado"] .segBtn[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);box-shadow:none}
-:root[data-tema="dorado"] .userChip button{background:#F5F0E8;color:#2A1E17}
+  --surface-rgb:26,24,20; --glass-line:rgba(201,169,97,.32);
+  --accent-rgb:201,169,97; --warn-rgb:232,194,122; --alert-rgb:255,154,139; color-scheme:dark}
+:root[data-tema="dorado"] body{background:radial-gradient(560px 380px at 8% 4%,rgba(201,169,97,.26),transparent 70%) fixed,radial-gradient(640px 460px at 96% 34%,rgba(176,124,52,.18),transparent 70%) fixed,radial-gradient(560px 420px at 14% 96%,rgba(201,169,97,.16),transparent 70%) fixed,linear-gradient(180deg,#15120E 0%,#0B0A08 100%) fixed;min-height:100vh}
+/* Productos y listas sobre BLANCO: adentro valen los colores del tema crema (redefinidos), filo dorado afuera. */
+:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.ctaCard.glass,.vencRow){
+  --ink:#1F1A15;--muted:#6B6257;--line:#E7E0D3;--surface:#ffffff;--accent:#7A5A1E;--accent-hover:#5E4416;--accent-ink:#ffffff;--accent-soft:#F3EAD3;
+  --alert:#9A2515;--alert-soft:#F8DDD8;--warn:#7A4E00;--warn-soft:#FBEBC9;--ok:#24461A;--ok-soft:#E3EEDC;--accent-rgb:122,90,30;--warn-rgb:122,78,0;--alert-rgb:154,37,21;
+  background:linear-gradient(158deg,#ffffff 0%,#fffdf9 52%,#f6f0e4 100%);color:#1F1A15;border:1px solid rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(201,169,97,.6),0 1px 0 #fff inset,0 -22px 30px -26px rgba(122,90,30,.28) inset,0 18px 34px -18px rgba(0,0,0,.95),0 2px 6px rgba(0,0,0,.35);backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.ctaCard.glass,.vencRow) input,:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl) select{background:#fff;color:#1F1A15;border-color:#D9D0BF}
+:root[data-tema="dorado"] .rows .btn:not(.ghost),:root[data-tema="dorado"] .hist>* .btn:not(.ghost){background:#1F1A15;color:#F4EFE6;box-shadow:none}
+:root[data-tema="dorado"] .rows .btn.ghost,:root[data-tema="dorado"] .hist>* .btn.ghost{border-color:#D9D0BF;color:#1F1A15}
+:root[data-tema="dorado"] .card.agotado>.pick{opacity:.7}
+:root[data-tema="dorado"] .ctaCard.glass{background:linear-gradient(158deg,#ffffff 0%,#fffdf9 52%,#f6f0e4 100%)!important}
+:root[data-tema="dorado"] .vencRow.alert{border-left:8px solid #C62828;background:linear-gradient(90deg,rgba(198,40,40,.14),rgba(198,40,40,0) 60%),#ffffff}
+:root[data-tema="dorado"] .vencRow.warn{border-left:8px solid #F2B400;background:linear-gradient(90deg,rgba(242,180,0,.14),rgba(242,180,0,0) 60%),#ffffff}
+:root[data-tema="dorado"] .vencRow.ok{border-left:8px solid #1E8A4C;background:linear-gradient(90deg,rgba(30,138,76,.14),rgba(30,138,76,0) 60%),#ffffff}
+/* Semáforo de vencimientos (chocolatería): el borde de color tiene que verse sobre la tarjeta blanca. */
+:root[data-tema="dorado"] .card>.pick.sem-rojo{border:4px solid #C62828;box-shadow:0 1px 0 #fff inset,0 18px 34px -18px rgba(0,0,0,.95),0 0 0 1px rgba(198,40,40,.35)}
+:root[data-tema="dorado"] .card>.pick.sem-amarillo{border:4px solid #F2B400;box-shadow:0 1px 0 #fff inset,0 18px 34px -18px rgba(0,0,0,.95),0 0 0 1px rgba(242,180,0,.4)}
+:root[data-tema="dorado"] .card>.pick.sem-verde{border:4px solid #1E8A4C;box-shadow:0 1px 0 #fff inset,0 18px 34px -18px rgba(0,0,0,.95),0 0 0 1px rgba(30,138,76,.35)}
+:root[data-tema="dorado"] .plate{position:relative;background:radial-gradient(circle at 50% 38%,#ffffff 0%,#fbf7ee 62%,#efe6d3 100%);border-radius:16px;box-shadow:0 0 0 1px rgba(201,169,97,.55),0 6px 12px -6px rgba(60,40,10,.55)}
+:root[data-tema="dorado"] .plate img{filter:drop-shadow(0 5px 6px rgba(60,40,15,.32));mix-blend-mode:multiply}
+:root[data-tema="dorado"] .plate::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 16px rgba(110,80,30,.28),inset 0 1px 0 rgba(255,255,255,.9)}
+:root[data-tema="dorado"] .sec{color:#C9A961}
+/* Botones −/+ y contadores: el "−" en carbón con aro dorado (se ve sobre el blanco), el "+" y el contador en oro con brillo. */
+:root[data-tema="dorado"] .stepper button,:root[data-tema="dorado"] .minus{background:linear-gradient(180deg,#34302A 0%,#14120F 100%);color:#E9D194;border:0;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 0 0 1.5px rgba(201,169,97,.75),0 5px 10px -5px rgba(0,0,0,.7)}
+:root[data-tema="dorado"] .stepper button:last-child,:root[data-tema="dorado"] .qty{background:linear-gradient(180deg,#EDD699 0%,#C9A961 55%,#A5833A 100%);color:#14120F;box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 0 0 1.5px rgba(122,90,30,.55),0 6px 12px -6px rgba(90,60,10,.8)}
+:root[data-tema="dorado"] .stepper button:disabled{opacity:.45}
+:root[data-tema="dorado"] .stepper .n{color:#1F1A15}
+:root[data-tema="dorado"] .chip{border-color:rgba(201,169,97,.45);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03));color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.14) inset;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+:root[data-tema="dorado"] .chip[aria-pressed=true]{background:linear-gradient(180deg,#E6CC8C 0%,#C9A961 55%,#A9863D 100%);color:#0D0C0A;border-color:#E6CC8C;box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 6px 14px -8px rgba(201,169,97,.8)}
+:root[data-tema="dorado"] .tabCat{color:#ABA190}
+:root[data-tema="dorado"] .tabCat[aria-selected=true]{color:#DABD79;border-bottom-color:#C9A961}
+:root[data-tema="dorado"] .segPer{background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid rgba(201,169,97,.38);box-shadow:0 1px 0 rgba(255,255,255,.12) inset;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+:root[data-tema="dorado"] .segBtn{color:#ABA190}
+:root[data-tema="dorado"] .segBtn[aria-pressed=true]{background:#C9A961;color:#0D0C0A;box-shadow:none}
+:root[data-tema="dorado"] .btn:not(.ghost):not(.desperdicio):not(.produccion):not(.volver):not(.verVenc):not(.wa){background:linear-gradient(180deg,#E9D094 0%,#C9A961 52%,#A5833A 100%);color:#0D0C0A;box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 -2px 0 rgba(90,60,10,.25) inset,0 12px 24px -12px rgba(201,169,97,.85)}
+:root[data-tema="dorado"] .btn.ghost{border-color:rgba(201,169,97,.5);color:var(--ink);background:transparent}
+:root[data-tema="dorado"] .tagHist{background:rgba(201,169,97,.2);color:#8A6A25}
+:root[data-tema="dorado"] .userChip{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.02));border-color:rgba(201,169,97,.38);box-shadow:0 1px 0 rgba(255,255,255,.14) inset}
+:root[data-tema="dorado"] .userChip button{background:#F4EFE6;color:#1F1A15}
 :root[data-tema="dorado"] .userChip #editarNombre{background:transparent;color:var(--header-ink)}
-:root[data-tema="dorado"] .saborForm{background:rgba(217,185,105,.08)}
-:root[data-tema="dorado"] .bottomNav button[aria-selected=true]{color:var(--accent)}
+:root[data-tema="dorado"] .saborForm{background:rgba(201,169,97,.08)}
+:root[data-tema="dorado"] .bottomNav button[aria-selected=true]{color:#DABD79}
+:root[data-tema="dorado"] input,:root[data-tema="dorado"] select{background:rgba(255,255,255,.05);border-color:rgba(201,169,97,.35);color:var(--ink)}
+:root[data-tema="dorado"] ::placeholder{color:#8F8677}
+:root[data-tema="dorado"] header{border-bottom:1px solid rgba(201,169,97,.4)}
+/* Cabecera y barra de pestañas sólidas en los dos temas (antes se veían grisáceas). */
+html header{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.01) 70%),rgba(var(--header-bg-rgb),.84);backdrop-filter:blur(26px) saturate(190%);-webkit-backdrop-filter:blur(26px) saturate(190%);box-shadow:0 1px 0 rgba(255,255,255,.10) inset,0 10px 30px -14px rgba(0,0,0,.8)}
+html .bottomNav{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 55%),rgba(var(--header-bg-rgb),.72);backdrop-filter:blur(28px) saturate(190%);-webkit-backdrop-filter:blur(28px) saturate(190%);border-color:rgba(255,255,255,.14);box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 0 0 1px rgba(201,169,97,.28),0 18px 36px -14px rgba(0,0,0,.9)}
+html .timerInact{color:var(--header-muted)}
+html .timerInact.urgente{color:#F2C879}
 .btnTema{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--glass-line);background:rgba(255,255,255,.09);color:var(--header-ink);font-weight:700;font-size:.76rem}
 :root[data-tema="dorado"] .btnTema{border-color:rgba(217,185,105,.55);background:rgba(217,185,105,.12);color:#D9B869}
 .btnTema svg{width:16px;height:16px}
@@ -552,7 +594,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.82.0";
+const FRONTEND_VERSION = "1.85.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
