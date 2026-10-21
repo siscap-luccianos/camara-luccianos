@@ -306,6 +306,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqChips{display:flex;gap:8px;flex-wrap:wrap}
 .etiqBtns{display:flex;gap:10px;margin-top:10px}
 .etiqBtns .btn{flex:1}
+.etiqPregunta{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.etiqPregunta span{color:var(--muted)}
 .mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
@@ -496,7 +498,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.3";
+const FRONTEND_VERSION = "1.78.4";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1355,12 +1357,16 @@ function etiqAbrir(id){
   renderApp();
 }
 function etiqSetCant(n){ if(!S.etiq) return; S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+n||1))); renderApp() }
+function etiqValida(e){ return e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) }
 function etiquetarSheetHTML(){
   const e=S.etiq, s=S.saboresPorId[e.id]||{}, caja=+s.cantidad_maestra||0, vida=+s.vida_util_dias||0;
   const sugerida=vida?isoMasDias(vida):"";
-  const opciones=[...new Set([6,12,30,caja].filter(n=>n>0))].filter(n=>n<=e.max || n===caja);
-  const valida=e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha);
+  const opciones=[6,12,30,caja].filter((n,i,a)=>n>0 && n<=e.max && a.indexOf(n)===i);
   const quedan=Math.max(0,e.max-e.cant);
+  const pregunta=`<div class="etiqPregunta"><b>¿Confirmás el vencimiento?</b>
+      <span>${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.</span>
+      <div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-volver>No, volver</button><button type="button" class="btn" data-etiq-si>Sí, confirmar</button></div></div>`;
+  const botones=`<div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button><button type="button" class="btn" data-etiq-confirmar ${etiqValida(e)?"":"disabled"}>Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}</button></div>`;
   return `<div class="etiqSheet" role="dialog" aria-label="Poner vencimiento">
     <div class="etiqTitulo">Poner vencimiento</div>
     <div class="etiqSub">${esc(s.nombre||"")} · sin fecha: ${e.max} ${unidad(e.id,e.max)}</div>
@@ -1374,26 +1380,37 @@ function etiquetarSheetHTML(){
       <button type="button" class="btn ghost" data-etiq-inc aria-label="Más">+</button>
     </div>
     <div class="etiqChips">${opciones.map(n=>`<button type="button" class="chip" data-etiq-chip="${n}">${n===caja?"Caja "+n:n}</button>`).join("")}</div>
-    <div class="meta">Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b></div>
-    <div class="etiqBtns">
-      <button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button>
-      <button type="button" class="btn" data-etiq-confirmar ${valida?"":"disabled"}>Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}</button>
-    </div>
+    <div class="meta etiqQuedan">Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b></div>
+    ${e.error?`<div class="warn">${esc(e.error)}</div>`:""}
+    ${e.confirmar?pregunta:botones}
   </div>`;
+}
+/** Actualiza la hoja sin redibujarla: si se redibuja al soltar el campo, el clic del botón se pierde. */
+function etiqPintar(){
+  const e=S.etiq, sh=document.querySelector(".etiqSheet"); if(!e||!sh) return;
+  const inp=sh.querySelector("[data-etiq-cant]"); if(inp && +inp.value!==e.cant) inp.value=e.cant;
+  const quedan=Math.max(0,e.max-e.cant), q=sh.querySelector(".etiqQuedan");
+  if(q) q.innerHTML=`Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b>`;
+  const b=sh.querySelector("[data-etiq-confirmar]");
+  if(b){ b.disabled=!etiqValida(e); b.textContent=`Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}`; }
+}
+function etiqPedirConfirmacion(){
+  if(!etiqValida(S.etiq)) return toast("Revisá la fecha y la cantidad.");
+  S.etiq.confirmar=true; S.etiq.error=null; renderApp();
 }
 async function etiquetarConfirmar(){
   const e=S.etiq; if(!e) return;
-  if(!(e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha))) return toast("Revisá la fecha y la cantidad.");
+  e.confirmar=false; e.error=null;
   const s=S.saboresPorId[e.id]||{};
   const r=await api("etiquetar",{clienteId:uuid(), local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
   if(r && r.ok){ S.etiq=null; toast(`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
-  else toast((r&&r.error)||"No se pudo guardar el vencimiento.");
+  else { if(S.etiq) S.etiq.error=(r&&r.error)||"No se pudo guardar el vencimiento."; renderApp(); }
 }
 document.addEventListener("change", e=>{
   const el=e.target;
   if(!S.etiq || !el.dataset) return;
-  if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; renderApp(); }
-  if(el.dataset.etiqCant!==undefined) etiqSetCant(el.value);
+  if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; S.etiq.error=null; etiqPintar(); }
+  if(el.dataset.etiqCant!==undefined){ S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+el.value||1))); etiqPintar(); }
 });
 function iniciarConteo(){
   const st=stockMap();
@@ -3057,7 +3074,9 @@ document.addEventListener("click", async e=>{
   if(t.dataset.etiqInc!==undefined){ etiqSetCant(S.etiq.cant+1); return }
   if(t.dataset.etiqChip!==undefined){ etiqSetCant(t.dataset.etiqChip); return }
   if(t.dataset.etiqSugerida!==undefined){ S.etiq.fecha=t.dataset.etiqSugerida; renderApp(); return }
-  if(t.dataset.etiqConfirmar!==undefined){ etiquetarConfirmar(); return }
+  if(t.dataset.etiqConfirmar!==undefined){ etiqPedirConfirmacion(); return }
+  if(t.dataset.etiqVolver!==undefined){ S.etiq.confirmar=false; renderApp(); return }
+  if(t.dataset.etiqSi!==undefined){ etiquetarConfirmar(); return }
   if(t.dataset.volverVenc!==undefined){ S.verVencimientos=false; renderApp(); return }
   if(t.dataset.filtroVenc){ S.filtroVenc=t.dataset.filtroVenc; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
