@@ -54,6 +54,7 @@ button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:0 140px}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:linear-gradient(165deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 40%),rgba(var(--header-bg-rgb),.62);backdrop-filter:blur(26px) saturate(200%);-webkit-backdrop-filter:blur(26px) saturate(200%);color:var(--header-ink);padding-block:14px 0;border-bottom:1px solid rgba(255,255,255,.16);box-shadow:0 8px 32px rgba(0,0,0,.35)}
+header .btn.ghost{color:var(--header-ink);border-color:rgba(245,240,232,.4);background:transparent}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-inline:16px;max-width:980px;margin:0 auto}
 .brand .tit{display:flex;flex-direction:column;gap:1px}
 h1{font-family:var(--display);font-weight:700;font-size:1.4rem;margin:0;letter-spacing:-.01em}
@@ -482,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.23";
+const FRONTEND_VERSION = "1.77.26";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1427,6 +1428,10 @@ function renderAuth(){
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
 }
 
+/* Texto del buscador de local: el nombre del local, o "Operaciones" cuando el admin está en la vista general. */
+function valorLocalHeader(){
+  return S.local || (S.empleado && S.empleado.rol==="admin" ? "Operaciones" : "");
+}
 function renderHeader(){
   const st = S.stock!==undefined ? stockMap() : {};
   const al = S.sabores.length ? alertas(st) : [];
@@ -1437,7 +1442,7 @@ function renderHeader(){
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal
-          ? `<input type="text" id="local" list="localList" value="${esc(S.local||"")}" autocomplete="off"><datalist id="localList">${S.locales.filter(l=>!l.esGestion).map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
+          ? `<input type="text" id="local" list="localList" value="${esc(valorLocalHeader())}" autocomplete="off"><datalist id="localList">${S.empleado.rol==="admin"?`<option value="Operaciones"></option>`:""}${S.locales.filter(l=>!l.esGestion).map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.empleado.rol==="admin" && S.local && !S.esGestion ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
@@ -1473,7 +1478,7 @@ function renderNav(){
 function renderMain(){
   // Vista general (sin local elegido): la portada ocupa toda la pantalla como fondo,
   // y la barra LogiStock de arriba queda encima.
-  if(!S.local) return `
+  if(!S.local && S.tab!=="sabores") return `
     <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div></div>`;
   if(!S.sabores.length){
     if(S.errorCarga) return `<div class="note">${esc(S.errorCarga)}<br><button class="btn ghost" id="reintentarCarga" style="margin-top:10px">Reintentar</button></div>`;
@@ -3051,9 +3056,15 @@ document.addEventListener("change", e=>{
   }
   if(e.target.id==="local"){
     const v=e.target.value.trim();
+    // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
+    if(v.toLowerCase()==="operaciones" && S.empleado.rol==="admin"){
+      if(S.local){ S.local=null; S.tab="sabores"; renderApp(); }
+      else e.target.value="Operaciones";
+      return;
+    }
     const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
     if(match && match.nombre!==S.local) setLocal(match.nombre);
-    else e.target.value=S.local||"";
+    else e.target.value=valorLocalHeader();
   }
   if(e.target.dataset.cambiarRol!==undefined){
     cambiarRolEmpleado(e.target.dataset.cambiarRol, e.target.value, e.target);
