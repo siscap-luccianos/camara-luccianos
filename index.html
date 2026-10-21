@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.33";
+const FRONTEND_VERSION = "1.77.34";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2143,9 +2143,11 @@ function histView(){
     tituloTabla="Desperdicio";
     const filas=[];
     for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo==="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin)
-      for(const [id,q] of Object.entries(r.items||{})) if(+q) filas.push({nombre:nombre(id), motivo:r.motivo||"—", cantidad:+q});
-    tabla = filas.length ? `<div class="tbl"><table><thead><tr><th>Sabor</th><th>Motivo</th><th>Cant.</th></tr></thead><tbody>
-      ${filas.map(f=>`<tr><td>${esc(f.nombre)}</td><td>${esc(f.motivo)}</td><td>${f.cantidad}</td></tr>`).join("")}
+      for(const [id,q] of Object.entries(r.items||{})) if(+q) filas.push({ts:r.ts, nombre:nombre(id), motivo:r.motivo||"—", cantidad:+q});
+    // Día de cada desperdicio, en orden de fecha, para que al exportar se vea cuándo se dio de baja
+    filas.sort((a,b)=>a.ts-b.ts);
+    tabla = filas.length ? `<div class="tbl"><table><thead><tr><th>Día</th><th>Sabor</th><th>Motivo</th><th>Cant.</th></tr></thead><tbody>
+      ${filas.map(f=>`<tr><td>${new Date(f.ts).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</td><td>${esc(f.nombre)}</td><td>${esc(f.motivo)}</td><td>${f.cantidad}</td></tr>`).join("")}
       <tr class="totalFila"><td><b>Total</b></td><td></td><td><b>${filas.reduce((a,f)=>a+f.cantidad,0)}</b></td></tr>
       </tbody></table></div>` : `<div class="empty">Sin desperdicio en este período.</div>`;
   } else if(S.categoriaHist==="produccion"){
