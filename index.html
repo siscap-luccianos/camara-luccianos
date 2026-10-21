@@ -201,7 +201,7 @@ select{max-width:220px}
 .plate{width:60px;height:60px;flex:none;border-radius:14px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
 .plate img{width:100%;height:100%;object-fit:cover;display:block}
 .cardTop{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 13px 0;width:100%}
-.pnombre{font-weight:700;font-size:.88rem;line-height:1.2;height:2.2em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pnombre{font-weight:700;font-size:.88rem;line-height:1.2;height:2.45em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pstock{padding:0 13px;margin-top:auto;display:flex;align-items:baseline;gap:5px}
 .pstock b{font-family:var(--display);font-size:1.5rem;font-weight:700;line-height:1}
 .pstock span{font-size:.72rem;color:var(--muted)}
@@ -294,7 +294,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
 /* Mantener apretado en Salida (alfajores y conitos): diálogo "¿Cuántos sacás?" */
 [data-mantener]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.mantHint{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:.92rem;font-weight:600;line-height:1.35}
+.mantHint{text-align:center;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:.92rem;font-weight:600;line-height:1.35}
 .mantHint b{font-weight:800;text-decoration:underline;text-underline-offset:3px}
 .etiqSheet{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0 auto;max-width:520px;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(42,30,23,.18);padding:18px 20px 22px;max-height:72vh;overflow:auto;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
 .etiqSheet .btn{min-height:44px;padding:0 14px;font-size:.95rem}
@@ -517,7 +517,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.80.1";
+const FRONTEND_VERSION = "1.80.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
