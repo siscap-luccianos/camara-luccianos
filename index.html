@@ -54,11 +54,11 @@
   --accent-rgb:201,169,97; --warn-rgb:232,194,122; --alert-rgb:255,154,139; color-scheme:dark}
 :root[data-tema="dorado"] body{background:radial-gradient(560px 380px at 8% 4%,rgba(201,169,97,.26),transparent 70%) fixed,radial-gradient(640px 460px at 96% 34%,rgba(176,124,52,.18),transparent 70%) fixed,radial-gradient(560px 420px at 14% 96%,rgba(201,169,97,.16),transparent 70%) fixed,linear-gradient(180deg,#15120E 0%,#0B0A08 100%) fixed;min-height:100vh}
 /* Productos y listas sobre BLANCO: adentro valen los colores del tema crema (redefinidos), filo dorado afuera. */
-:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.ctaCard.glass,.vencRow){
+:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.ctaCard.glass,.vencRow,.pedTabla){
   --ink:#1F1A15;--muted:#6B6257;--line:#E7E0D3;--surface:#ffffff;--accent:#7A5A1E;--accent-hover:#5E4416;--accent-ink:#ffffff;--accent-soft:#F3EAD3;
   --alert:#9A2515;--alert-soft:#F8DDD8;--warn:#7A4E00;--warn-soft:#FBEBC9;--ok:#24461A;--ok-soft:#E3EEDC;--accent-rgb:122,90,30;--warn-rgb:122,78,0;--alert-rgb:154,37,21;
   background:linear-gradient(158deg,#ffffff 0%,#fffdf9 52%,#f6f0e4 100%);color:#1F1A15;border:1px solid rgba(255,255,255,.7);box-shadow:0 0 0 1px rgba(201,169,97,.6),0 1px 0 #fff inset,0 -22px 30px -26px rgba(122,90,30,.28) inset,0 18px 34px -18px rgba(0,0,0,.95),0 2px 6px rgba(0,0,0,.35);backdrop-filter:none;-webkit-backdrop-filter:none}
-:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.ctaCard.glass,.vencRow) input,:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl) select{background:#fff;color:#1F1A15;border-color:#D9D0BF}
+:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.ctaCard.glass,.vencRow,.pedTabla) input,:root[data-tema="dorado"] :is(.card>.pick,.rows,.kpi,.note,.hist>*,table.tbl,.pedTabla) select{background:#fff;color:#1F1A15;border-color:#D9D0BF}
 :root[data-tema="dorado"] .rows .btn:not(.ghost),:root[data-tema="dorado"] .hist>* .btn:not(.ghost){background:#1F1A15;color:#F4EFE6;box-shadow:none}
 :root[data-tema="dorado"] .rows .btn.ghost,:root[data-tema="dorado"] .hist>* .btn.ghost{border-color:#D9D0BF;color:#1F1A15}
 :root[data-tema="dorado"] .card.agotado>.pick{opacity:.7}
@@ -79,6 +79,11 @@
 :root[data-tema="dorado"] .stepper button:last-child,:root[data-tema="dorado"] .qty{background:linear-gradient(180deg,#EDD699 0%,#C9A961 55%,#A5833A 100%);color:#14120F;box-shadow:0 1px 0 rgba(255,255,255,.65) inset,0 0 0 1.5px rgba(122,90,30,.55),0 6px 12px -6px rgba(90,60,10,.8)}
 :root[data-tema="dorado"] .stepper button:disabled{opacity:.45}
 :root[data-tema="dorado"] .stepper .n{color:#1F1A15}
+/* Pedido sugerido: rubros en vidrio oscuro; el activo en oro con texto carbón (antes quedaba crema con texto casi blanco). */
+:root[data-tema="dorado"] .rubroTab{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.03));border-color:rgba(201,169,97,.45);color:#F4EFE6;box-shadow:0 1px 0 rgba(255,255,255,.14) inset}
+:root[data-tema="dorado"] .rubroTab span{color:#D3C8B4}
+:root[data-tema="dorado"] .rubroTab.on{background:linear-gradient(180deg,#EDD699 0%,#C9A961 55%,#A5833A 100%);border-color:#E6CC8C;color:#14120F;box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 8px 16px -8px rgba(201,169,97,.8)}
+:root[data-tema="dorado"] .rubroTab.on span{color:#2B2113}
 :root[data-tema="dorado"] .chip{border-color:rgba(201,169,97,.45);background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.03));color:var(--ink);box-shadow:0 1px 0 rgba(255,255,255,.14) inset;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 :root[data-tema="dorado"] .chip[aria-pressed=true]{background:linear-gradient(180deg,#E6CC8C 0%,#C9A961 55%,#A9863D 100%);color:#0D0C0A;border-color:#E6CC8C;box-shadow:0 1px 0 rgba(255,255,255,.55) inset,0 6px 14px -8px rgba(201,169,97,.8)}
 :root[data-tema="dorado"] .tabCat{color:#ABA190}
@@ -201,7 +206,8 @@ select{max-width:220px}
 .pedFila{padding:10px 0;border-bottom:1px solid var(--line)}
 .pedFila:last-child{border-bottom:0}
 .pedNom{display:flex;align-items:center;gap:10px;min-width:0;border:0;background:none;padding:0;cursor:pointer;font:inherit;color:var(--ink);text-align:left}
-.pedNom .nm{min-width:0}
+.pedNom .nm{min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700}
+.pedNom .meta{font-size:.78rem;color:var(--muted);font-weight:400}
 .pedHay{text-align:center;font-weight:800;font-size:1rem}
 .pedDetalle{padding:4px 0 12px 64px}
 .pedTend{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
@@ -594,7 +600,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.86.0";
+const FRONTEND_VERSION = "1.86.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
