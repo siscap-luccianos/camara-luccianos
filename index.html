@@ -446,7 +446,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 @media (max-width:640px){.authList{grid-template-columns:1fr 1fr}}
 /* Vista sin local elegido (admin/supervisor, después de entrar): portada centrada en una píldora, fondo oscuro de la app */
 body.sinLocal{background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%) fixed;min-height:100vh}
-.portadaLocal{display:flex;justify-content:center;padding:40px 0 60px}
+.portadaLocal{display:flex;flex-direction:column;align-items:center;gap:22px;padding:40px 0 100px}
+.portadaGestion{min-width:260px}
 .portadaMarco{width:100%;max-width:680px;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:48px;padding:18px;box-shadow:0 30px 70px -30px rgba(0,0,0,.6)}
 .portadaMarco img{width:100%;height:auto;display:block;border-radius:34px}
 @media (max-width:767px){.portadaLocal{padding:20px 0 40px}.portadaMarco{max-width:340px;border-radius:36px;padding:12px}.portadaMarco img{border-radius:26px}}
@@ -517,7 +518,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.80.2";
+const FRONTEND_VERSION = "1.81.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -551,7 +552,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [],
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
@@ -764,12 +765,27 @@ function estadoSabor(id, st){
  *  (nombre(), Historial y la lectura de remitos siguen viendo el
  *  catálogo completo), así un sabor que el local excluyó después de
  *  haber tenido movimientos viejos sigue mostrando su nombre real ahí. */
-function saboresDelLocal(){
+function saboresDelLocalBase(){
   if(!S.saboresExcluidos || !S.saboresExcluidos.length) return S.sabores;
   const ex=new Set(S.saboresExcluidos);
   return S.sabores.filter(s=>!ex.has(s.id));
 }
-function alertas(st){ return saboresDelLocal().filter(s=>estadoSabor(s.id,st)) }
+/** Rubros que fabrica este local en Producción (Locales.produccion_rubros). Vacío = todos. */
+function rubrosProduccion(){
+  const todos=GRUPO_PRODUCTO_ORDEN;
+  const r=(S.produccionRubros||[]).filter(g=>todos.includes(g));
+  return r.length?r:todos;
+}
+function saboresDelLocal(){
+  const base=saboresDelLocalBase();
+  // En la pantalla de Producción solo se ofrecen los rubros que ese local fabrica.
+  if(S.modoProduccion && S.tab==="ingreso" && (S.produccionRubros||[]).length){
+    const ok=new Set(rubrosProduccion());
+    return base.filter(s=>ok.has(grupoProductoDe(s)));
+  }
+  return base;
+}
+function alertas(st){ return saboresDelLocalBase().filter(s=>estadoSabor(s.id,st)) }
 
 // Vasquetas van de a 2 (pedido de fábrica, no se puede pedir una unidad
 // suelta). Un icepop con caja maestra cargada redondea a esa cantidad —
@@ -996,12 +1012,12 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || [];
-    S.produccionLocal = !!r.datos.produccion;
+    S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
     // que no se pierda este primer dato ya recibido.
-    guardarDatosCache(S.local, {sabores:r.datos.sabores, excluidos:r.datos.excluidos||[], produccion:!!r.datos.produccion, registros:r.datos.registros, stock:r.datos.stock});
+    guardarDatosCache(S.local, {sabores:r.datos.sabores, excluidos:r.datos.excluidos||[], produccion:!!r.datos.produccion, produccionRubros:r.datos.produccionRubros||[], registros:r.datos.registros, stock:r.datos.stock});
   } else {
     cargarDatos();
   }
@@ -1579,10 +1595,18 @@ const ICONOS_TAB = {
   stock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>`,
   historial: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
   equipo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  inicio: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
   sabores: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>`,
 };
 function renderNav(){
-  if(!S.local || !S.sabores.length) return "";
+  // Operaciones (admin sin local elegido): solo Inicio (la portada) y Sabores (catálogo global).
+  if(!S.local){
+    if(!S.empleado || S.empleado.rol!=="admin") return "";
+    const tabsOp=[["inicio","Inicio"],["sabores","Sabores"]];
+    const act = S.tab==="sabores" ? "sabores" : "inicio";
+    return `<nav role="tablist" id="tabs" class="bottomNav">${tabsOp.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${act===t}">${ICONOS_TAB[t]}<span>${l}</span></button>`).join("")}</nav>`;
+  }
+  if(!S.sabores.length) return "";
   const st=stockMap(), al=alertas(st);
   const esColaborador = S.empleado.rol==="colaborador";
   const tabs = [["salida","Salida"], esColaborador?["devolucion","Devolución"]:["ingreso","Ingreso"]];
@@ -1597,7 +1621,7 @@ function renderMain(){
   // Vista general (sin local elegido): la portada ocupa toda la pantalla como fondo,
   // y la barra LogiStock de arriba queda encima.
   if(!S.local && S.tab!=="sabores") return `
-    <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div></div>`;
+    <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="1">Gestionar sabores de todos los locales</button>` : ""}</div>`;
   if(!S.sabores.length){
     if(S.errorCarga) return `<div class="note">${esc(S.errorCarga)}<br><button class="btn ghost" id="reintentarCarga" style="margin-top:10px">Reintentar</button></div>`;
     return `<div class="note">Cargando datos de ${esc(S.local)}…</div>`;
@@ -1912,6 +1936,7 @@ function gridDevolucion(st){
  *  lo que efectivamente suma al stock). El rinde varía por lote y no se
  *  conoce de antemano, así que no se calcula un número a partir del otro. */
 function gridProduccion(st){
+  { const ok=rubrosProduccion(); if(!ok.includes(S.filtroFamilia||"vasquetas")){ S.filtroFamilia=ok[0]; S.filtroCategoria="todas" } }
   const cart=S.cart.produccion, kilos=S.kilosProduccion;
   const list=listaFiltrada(st);
   const row=s=>{
@@ -2677,7 +2702,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || [];
-    S.produccionLocal = !!d.produccion;
+    S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -2696,10 +2721,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || [];
-  S.produccionLocal = !!r.produccion;
+  S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
   S.regs = r.registros;
   S.stock = r.stock;
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -2713,7 +2738,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.regs=[]; S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.produccionRubros=[]; S.regs=[]; S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -2743,7 +2768,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -2806,7 +2831,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
@@ -3235,8 +3260,7 @@ document.addEventListener("change", e=>{
     const v=e.target.value.trim();
     // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
     if(v.toLowerCase()==="operaciones" && S.empleado.rol==="admin"){
-      if(S.local){ S.local=null; S.tab="sabores"; renderApp(); }
-      else e.target.value="Operaciones";
+      S.local=null; S.tab="sabores"; renderApp();
       return;
     }
     const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);

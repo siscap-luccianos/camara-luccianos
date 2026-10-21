@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.40.5";
+const BACKEND_VERSION = "1.41.0";
 
 function doPost(e) {
   let resultado;
@@ -473,8 +473,11 @@ function _datosSinCache(local, empleado) {
   // Locales.produccion=SI habilita el link "Producción" dentro de Ingreso
   // (hoy solo Unicenter) — ver registrar(), subtipo "produccion".
   const produccion = filaLocal ? _esVerdadero(filaLocal.produccion) === true : false;
+  // Locales.produccion_rubros: qué rubros fabrica este local (ids separados por
+  // coma: vasquetas, baldes, icepops, chocolateria, glutenfree). Vacío = todos.
+  const produccionRubros = filaLocal ? _rubrosProduccion(filaLocal.produccion_rubros) : [];
 
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros };
 }
 
 function _cacheKeyDatos(local) {
@@ -506,7 +509,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, rol: empleado.rol };
 }
 
 function _registroPublico(r) {
@@ -571,6 +574,20 @@ function _vencFaltante(v) {
   return v.some((l) => !l.f);
 }
 
+/** Rubro (grupo de producto) de un sabor del catálogo: mismo criterio que el
+ *  cliente (grupoProductoDe): Baldes por tipo "b", el resto por familia. */
+function _grupoProducto(sab) {
+  if (String(sab.tipo || "") === "b") return "baldes";
+  const f = String(sab.familia || "vasquetas");
+  if (f === "icepops" || f === "chocolateria" || f === "glutenfree") return f;
+  return "vasquetas";
+}
+/** Lista de rubros de Locales.produccion_rubros ("vasquetas,baldes"); [] = todos. */
+function _rubrosProduccion(valor) {
+  const validos = ["vasquetas", "baldes", "icepops", "chocolateria", "glutenfree"];
+  return String(valor || "").split(",").map((x) => x.trim().toLowerCase()).filter((x) => validos.indexOf(x) !== -1);
+}
+
 function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
@@ -593,6 +610,16 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const filaLocalProd = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
     if (!filaLocalProd || _esVerdadero(filaLocalProd.produccion) !== true) {
       return { ok: false, error: "Este local no tiene Producción activada." };
+    }
+    // Solo los rubros que este local fabrica (si no se cargó ninguno, vale todo).
+    const rubrosOk = _rubrosProduccion(filaLocalProd.produccion_rubros);
+    if (rubrosOk.length) {
+      const porId = {};
+      catalogoVenc.forEach((sab) => { porId[String(sab.id)] = sab; });
+      const fuera = Object.keys(items).filter((id) => porId[String(id)] && rubrosOk.indexOf(_grupoProducto(porId[String(id)])) === -1);
+      if (fuera.length) {
+        return { ok: false, error: "Este local no produce: " + fuera.map((id) => porId[String(id)].nombre).join(", ") + "." };
+      }
     }
   }
 
