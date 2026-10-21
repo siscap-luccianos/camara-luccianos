@@ -461,7 +461,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.13";
+const FRONTEND_VERSION = "1.77.14";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1338,16 +1338,16 @@ function renderAuth(){
   let cuerpo="";
   if(a.paso==="local"){
     const recientes=localesRecientes().filter(n=>S.locales.some(l=>l.nombre===n && !l.esGestion));
-    cuerpo=`<h1 style="margin-top:6px">Bienvenido</h1>
-      <p>Elegí tu local para empezar.</p>
-      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="Buscá tu local…" autocomplete="off">
+    cuerpo=`${a.otroLocal?"":`<h1 style="margin-top:6px">Bienvenido</h1>
+      <p>Elegí tu local para empezar.</p>`}
+      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu local…"}" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
-      ${recientes.length?`<div class="recientes"><div class="recientesTit">Recientes en este equipo</div>${recientes.map(n=>`<button type="button" class="recienteBtn" data-local-reciente="${esc(n)}"><span>${esc(n)}</span><span class="chev">›</span></button>`).join("")}</div>`:""}
+      ${recientes.length&&!a.otroLocal?`<div class="recientes"><div class="recientesTit">Recientes en este equipo</div>${recientes.map(n=>`<button type="button" class="recienteBtn" data-local-reciente="${esc(n)}"><span>${esc(n)}</span><span class="chev">›</span></button>`).join("")}</div>`:""}
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
   } else if(a.paso==="clave"){
     cuerpo=`<button class="authBack" data-authback="1">Volver</button>
-      <h1>Contraseña de ${esc(a.local||"")}</h1>
-      <p>Pedísela a quien te haya dado de alta.</p>
+      ${a.otroLocal?"":`<h1>Contraseña de ${esc(a.local||"")}</h1>
+      <p>Pedísela a quien te haya dado de alta.</p>`}
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       <form id="formClave" autocomplete="on">
         ${a.esGestion?`<input type="text" name="username" value="${esc(a.local||"")}" autocomplete="username" style="display:none" tabindex="-1" aria-hidden="true">`:""}
@@ -1364,8 +1364,7 @@ function renderAuth(){
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
-        :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}
-      ${!a.esGestion&&a.revelado?`<button class="btn ghost" type="button" data-otro-local="1" style="width:100%;margin-top:14px">Entrar a otro local con código de admin</button>`:""}`;
+        :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
@@ -2709,9 +2708,9 @@ function teclaBloqueo(k){
   renderApp();
   if(S.bloqueoPin.length===4) setTimeout(desbloquearPC, 150);
 }
-// El botón "Entrar a otro local con código de admin" no existe en pantalla
-// hasta que alguien toca 5 veces seguidas el título "Elegí tu perfil"
-// (en menos de 3 s). Sin ninguna pista visual, a propósito. Vale para PC y tablet.
+// Entrar a otro local con código de admin: no hay botón. Tocar 5 veces seguidas
+// el título "Elegí tu perfil" (en menos de 3 s) abre directo la casilla de
+// local y después la del código, sin textos. Vale para PC y tablet.
 let secretoToques=[];
 function tocarSecretoOtroLocal(){
   const ahora=Date.now();
@@ -2722,7 +2721,7 @@ function tocarSecretoOtroLocal(){
 }
 document.addEventListener("click", async e=>{
   const secreto=e.target.closest("[data-secreto-otro]");
-  if(secreto){ if(tocarSecretoOtroLocal()){ S.auth.revelado=true; renderApp() } return }
+  if(secreto){ if(tocarSecretoOtroLocal()){ S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true}; renderApp() } return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
@@ -2730,7 +2729,6 @@ document.addEventListener("click", async e=>{
 
   if(t.dataset.authback){ authVolver(); return }
   if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
-  if(t.dataset.otroLocal){ S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true}; renderApp(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
   if(t.dataset.teclaBloqueo){ teclaBloqueo(t.dataset.teclaBloqueo); return }
