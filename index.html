@@ -515,7 +515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.79.7";
+const FRONTEND_VERSION = "1.80.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1095,13 +1095,14 @@ async function desbloquearPC(){
 // El scroll no burbujea desde los contenedores, por eso va con captura.
 /* Chocolatería: cada producto del carrito de Ingreso pide su vencimiento antes de confirmar. */
 function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
-/** Alfajores, conitos y minis (categoría Alfajores/Conitos) se rotulan a mano en
- *  el local: el vencimiento es opcional. El resto viene con fecha impresa y la pide. */
-function requiereVencimiento(id){ const c=(S.saboresPorId[id]||{}).categoria; return esChocolateria(id) && c!=="Alfajores" && c!=="Conitos" && c!=="Latas" }
+/** Desde 21/10/2026 el vencimiento ya no es obligatorio en ningún producto (pedido de Gabi): quien
+ *  carga puede no tener la fecha a mano. Lo que quede sin fecha se completa después con "Poner fecha"
+ *  en Ver vencimientos. Se deja la función para no tocar a quienes la llaman. */
+function requiereVencimiento(id){ return false }
 /** Panel de vencimientos de un renglón de chocolatería (mock "Ingreso con lotes"): una fila por lote con
  *  fecha y unidades. El lote principal toma lo que sobra del total; los extra se escriben a mano. */
 function lotesPanelHTML(clave, id, cantidad){
-  if(!esChocolateria(id) || !(cantidad>0)) return "";
+  if(!esChocolateria(id) || !(cantidad>0) || (S.saboresPorId[id]||{}).categoria==="Latas") return "";
   const ing=clave.startsWith("ing:");
   const principal = ing ? S.vencimientos[id] : S.vencConteo[id];
   const attrP = ing ? "data-venc" : "data-venc-conteo";

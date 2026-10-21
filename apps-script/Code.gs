@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.40.4";
+const BACKEND_VERSION = "1.40.5";
 
 function doPost(e) {
   let resultado;
@@ -585,10 +585,6 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const norm = _normalizarVencimientos(vencimientos, items, tipo);
   if (!norm.ok) return norm;
   const vencimientos2 = norm.vencimientos;
-  if (tipo === "ingreso" && !subtipo) {
-    const sinVenc = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria" && categoriaVenc[String(id)] !== "Alfajores" && categoriaVenc[String(id)] !== "Conitos" && categoriaVenc[String(id)] !== "Latas" && _vencFaltante(vencimientos2[id]));
-    if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreVenc[String(id)] || ("Sabor " + id)).join(", ") + "." };
-  }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
@@ -1081,8 +1077,6 @@ function conteo(clienteId, local, items, empleado, vencimientos) {
     const norm = _normalizarVencimientos(vencimientos, items2, "conteo");
     if (!norm.ok) return norm;
     const vencimientos2 = norm.vencimientos;
-    const sinVenc = Object.keys(items2).filter((id) => items2[id] > 0 && familiaConteo[String(id)] === "chocolateria" && categoriaConteo[String(id)] !== "Alfajores" && categoriaConteo[String(id)] !== "Conitos" && categoriaConteo[String(id)] !== "Latas" && _vencFaltante(vencimientos2[id]));
-    if (sinVenc.length) return { ok: false, error: "Falta el vencimiento de: " + sinVenc.map((id) => nombreConteo[String(id)] || ("Sabor " + id)).join(", ") + "." };
     const total = _totalItems(items2);
     const ts = Date.now();
 
