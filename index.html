@@ -244,6 +244,13 @@ select{max-width:220px}
 .saborRow.baja{opacity:.55}
 .saborForm{background:var(--accent-soft)}
 .saborForm input,.saborForm select{min-height:38px;border-radius:9px;border:1px solid var(--line);padding:0 10px;background:var(--surface);color:var(--ink)}
+.saborForm{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;align-items:end;padding:14px}
+.saborForm .fSab{display:flex;flex-direction:column;gap:4px;min-width:0;font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.saborForm .fSab.ancho{grid-column:1/-1}
+.saborForm .fSab input,.saborForm .fSab select{width:100%;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:500}
+.saborForm .acciones{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.saborForm .chkSab{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--ink);margin-right:6px}
+.saborForm .chkSab input{width:18px;height:18px;min-height:0;padding:0}
 .stepper{display:flex;align-items:center;gap:6px}
 .stepper button{width:36px;height:36px;border-radius:999px;border:0;background:rgba(var(--header-bg-rgb),.08);color:var(--ink);font-weight:800;font-size:1.1rem}
 .stepper button:last-child{background:var(--accent);color:var(--accent-ink);box-shadow:0 4px 10px -4px rgba(var(--accent-rgb),.5)}
@@ -472,7 +479,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.27";
+const FRONTEND_VERSION = "1.77.28";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1485,8 +1492,8 @@ function renderMain(){
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
 const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas"];
-const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", glutenfree:"Gluten Free" };
-const FAMILIA_ORDEN = ["vasquetas","icepops","glutenfree"];
+const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free" };
+const FAMILIA_ORDEN = ["vasquetas","icepops","chocolateria","glutenfree"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
 /** Grupos con al menos un sabor cargado en este local — si solo hay
  *  Vasquetas (todavía no se cargó ningún Balde/Icepop/Gluten Free), no
@@ -2157,7 +2164,7 @@ function histView(){
       }
     }
     const ids=S.sabores.filter(s=>sem[s.id]);
-    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${grupoHistDe(s.id)==="icepops"?"Icepops":grupoHistDe(s.id)==="chocolateria"?"Chocolatería":"Vasqueta"}</span>`:"";
+    const tagHtml=s=>S.categoriaHist==="todas"?`<span class="tagHist">${GRUPO_PRODUCTO_LABEL[grupoProductoDe(S.saboresPorId[s.id]||{})]}</span>`:"";
     if(!ids.length) tabla=`<div class="empty">Sin salidas en este período.</div>`;
     else if(esSemana){
       const totalesDia=[0,0,0,0,0,0,0]; ids.forEach(s=>sem[s.id].forEach((x,i)=>totalesDia[i]+=x));
@@ -2373,25 +2380,18 @@ function saboresAdminView(){
   const fila = s => {
     if(S.editandoSaborId===s.id){
       return `<form class="saborRow saborForm" data-editar-sabor="${s.id}">
-        <input type="text" name="nombre" value="${esc(s.nombre)}" required style="flex:2 1 200px">
-        <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}" ${s.tipo===v?"selected":""}>${l}</option>`).join("")}</select>
-        <select name="familia" style="flex:0 0 110px">${FAMILIA_ORDEN.map(f=>`<option value="${f}" ${(s.familia||"vasquetas")===f?"selected":""}>${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select>
-        <select name="categoria" style="flex:1 1 140px">${opcionesCategoria(s.categoria)}</select>
-        <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
-          <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
-          <input type="number" name="minimo" value="${s.minimo}" min="0" style="width:100%">
+        <label class="fSab ancho"><span>Nombre</span><input type="text" name="nombre" value="${esc(s.nombre)}" required></label>
+        <label class="fSab"><span>Tipo</span><select name="tipo">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}" ${s.tipo===v?"selected":""}>${l}</option>`).join("")}</select></label>
+        <label class="fSab"><span>Familia</span><select name="familia">${FAMILIA_ORDEN.map(f=>`<option value="${f}" ${(s.familia||"vasquetas")===f?"selected":""}>${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select></label>
+        <label class="fSab"><span>Categoría</span><select name="categoria">${opcionesCategoria(s.categoria)}</select></label>
+        <label class="fSab"><span>Stock mínimo</span><input type="number" name="minimo" value="${s.minimo}" min="0"></label>
+        <label class="fSab"><span>Peso promedio (kg)</span><input type="number" name="peso" value="${s.peso||""}" min="0" step="0.1"></label>
+        <label class="fSab"><span>Unidades por caja</span><input type="number" name="cantidad_maestra" value="${s.cantidad_maestra||""}" min="0"></label>
+        <div class="acciones">
+          <label class="chkSab"><input type="checkbox" name="activo" ${s.activo?"checked":""}> Activo</label>
+          <button class="btn" type="submit">Guardar</button>
+          <button class="btn ghost" type="button" data-cancelar-sabor="1">Cancelar</button>
         </div>
-        <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
-          <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Peso promedio (kg)</span>
-          <input type="number" name="peso" value="${s.peso||""}" min="0" step="0.1" style="width:100%">
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
-          <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Unidades por caja</span>
-          <input type="number" name="cantidad_maestra" value="${s.cantidad_maestra||""}" min="0" style="width:100%">
-        </div>
-        <label style="display:flex;align-items:center;gap:6px;flex:0 0 auto"><input type="checkbox" name="activo" ${s.activo?"checked":""}> Activo</label>
-        <button class="btn" type="submit">Guardar</button>
-        <button class="btn ghost" type="button" data-cancelar-sabor="1">Cancelar</button>
       </form>`;
     }
     return `<div class="saborRow${s.activo?"":" baja"}">
@@ -2406,23 +2406,14 @@ function saboresAdminView(){
   ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p><div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}
   <p class="sec" style="margin-top:14px">Dar de alta un sabor nuevo</p>
   <form class="saborRow saborForm" id="altaSaborForm">
-    <input type="text" name="nombre" placeholder="Nombre del sabor" required style="flex:2 1 200px">
-    <select name="tipo" style="flex:0 0 110px">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select>
-    <select name="familia" style="flex:0 0 110px">${FAMILIA_ORDEN.map(f=>`<option value="${f}">${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select>
-    <select name="categoria" style="flex:1 1 140px">${opcionesCategoria("")}</select>
-    <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 74px">
-      <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Stock mínimo</span>
-      <input type="number" name="minimo" value="6" min="0" style="width:100%">
-    </div>
-    <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
-      <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Peso promedio (kg)</span>
-      <input type="number" name="peso" min="0" step="0.1" style="width:100%">
-    </div>
-    <div style="display:flex;flex-direction:column;gap:2px;flex:0 0 100px">
-      <span style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.03em">Unidades por caja</span>
-      <input type="number" name="cantidad_maestra" min="0" style="width:100%">
-    </div>
-    <button class="btn" type="submit">Agregar</button>
+    <label class="fSab ancho"><span>Nombre</span><input type="text" name="nombre" placeholder="Nombre del sabor" required></label>
+    <label class="fSab"><span>Tipo</span><select name="tipo">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></label>
+    <label class="fSab"><span>Familia</span><select name="familia">${FAMILIA_ORDEN.map(f=>`<option value="${f}">${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select></label>
+    <label class="fSab"><span>Categoría</span><select name="categoria">${opcionesCategoria("")}</select></label>
+    <label class="fSab"><span>Stock mínimo</span><input type="number" name="minimo" value="6" min="0"></label>
+    <label class="fSab"><span>Peso promedio (kg)</span><input type="number" name="peso" min="0" step="0.1"></label>
+    <label class="fSab"><span>Unidades por caja</span><input type="number" name="cantidad_maestra" min="0"></label>
+    <div class="acciones"><button class="btn" type="submit">Agregar</button></div>
   </form>`;
 }
 async function guardarSabor(payload){
