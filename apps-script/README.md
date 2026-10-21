@@ -187,7 +187,7 @@ El rótulo de fábrica de cada vasqueta trae un código de barras de 20 dígitos
 
 Columnas nuevas (ya agregadas a la planilla):
 - `Locales.escaner_peso` — `SI` habilita el botón **Escanear vasqueta** en Salida de ese local. Hoy solo "Local prueba".
-- `Sabores.codigo_fabrica` — los 4 primeros dígitos del código (ej. `1397`). Si el número empieza con ceros (`0024`), cargarlo como texto (con apóstrofe `'0024`) — el backend igual lo completa a 4 dígitos. Cargados hoy: 1397 (Cheesecake al pistacchio), 0024 (King nero), 0008 (Chocolate Lucciano's), 0037 (Super Sabayón), 1519 (Alfajor pistacchio), 0180 (Alfajor Lucciano's), 0025 (Lemon pie).
+- `Sabores.codigo_fabrica` — los 4 primeros dígitos del código (ej. `1397`). Si el número empieza con ceros (`0024`), cargarlo como texto (con apóstrofe `'0024`) — el backend igual lo completa a 4 dígitos. Cargados hoy: 1397 (Cheesecake al pistacchio), 0024 (King nero), 0008 (Chocolate Lucciano's), 0037 (Super Sabayón), 1519 (Alfajor pistacchio), 0180 (Alfajor Lucciano's), 0025 (Lemon pie), 1585 (Mango Alphonso), 0029 (Mascarpone con frutos rojos), 0012 (Cookies).
 - `Registros.pesos` — `{idSabor:[kg,kg,...]}` de la salida (un peso por vasqueta escaneada).
 
 Para sumar un sabor al piloto alcanza con cargar su `codigo_fabrica` en la hoja (sin redeploy). Para sumar otro local, `escaner_peso=SI` en su fila. Para que el botón aparezca y se guarden los pesos hace falta pegar `Code.gs` 1.42.0 y hacer "Nueva implementación".
