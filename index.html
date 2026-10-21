@@ -461,7 +461,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.14";
+const FRONTEND_VERSION = "1.77.15";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -767,7 +767,9 @@ async function cargarEmpleadosDeAuth(){
   // que admin/supervisor entren: se ve igual que cualquier local en el
   // buscador, nadie que no sepa que existe lo encuentra, y si tiene
   // contraseña cargada queda protegido igual que cualquier otro.
-  const esGestion = S.auth.esGestion, local = S.auth.local;
+  // Con código de admin en un local la lista son admin/supervisor (como en
+  // Operaciones), aunque la sesión sea de ese local.
+  const esGestion = S.auth.esGestion || !!S.auth.codigoAdmin, local = S.auth.local;
   const key = _empleadosCacheKey(esGestion, local);
   // Pintamos al toque con la nómina que vimos la última vez en este local
   // (si la hay) mientras se refresca en segundo plano — el mismo criterio
@@ -782,7 +784,7 @@ async function cargarEmpleadosDeAuth(){
   }
   S.auth.cargando = !pintadoDeCache; S.auth.errorCarga = ""; renderApp();
   const r = esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local});
-  if(!S.auth || S.auth.paso!=="quien" || S.auth.esGestion!==esGestion || S.auth.local!==local) return; // se movió de pantalla mientras esperábamos
+  if(!S.auth || S.auth.paso!=="quien" || (S.auth.esGestion||!!S.auth.codigoAdmin)!==esGestion || S.auth.local!==local) return; // se movió de pantalla mientras esperábamos
   if(r && r.ok){
     S.auth.empleados = r.empleados;
     S.auth.errorCarga = "";
@@ -817,13 +819,15 @@ async function authEnviarClave(){
     // con la lista de admin/supervisor en vez de la nómina del local.
     const info=S.locales.find(l=>l.nombre===S.auth.local);
     S.auth.codigoAdmin = !!r.modoAdmin;
-    S.auth.esGestion = !!r.modoAdmin || !!(info && info.esGestion);
+    // El código de admin en un local normal NO activa el modo Operaciones:
+    // entra a ese local (vista del local). Operaciones solo si es el local trucho.
+    S.auth.esGestion = !!(info && info.esGestion);
     S.auth.paso="quien"; cargarEmpleadosDeAuth();
   }
   else { S.auth.error=(r&&r.error)||"No se pudo verificar la contraseña."; renderApp(); }
 }
 function authElegirEmpleado(emp){
-  if(S.auth.esGestion){ authEntrarGestion(emp); return }
+  if(S.auth.esGestion || S.auth.codigoAdmin){ authEntrarGestion(emp); return }
   S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp();
 }
 /** Operaciones (admin/supervisor) no pide PIN — alcanza con la
@@ -1397,6 +1401,7 @@ function renderHeader(){
           ? `<input type="text" id="local" list="localList" value="${esc(S.local||"")}" autocomplete="off"><datalist id="localList">${S.locales.filter(l=>!l.esGestion).map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
+      ${S.empleado.rol==="admin" && S.local && !S.esGestion ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
       ${!S.esGestion ? (()=>{ const seg=segundosInact(); return `<span class="timerInact${seg!==null&&seg<=60?" urgente":""}" id="timerInact" title="Si no tocás nada, la sesión se bloquea al llegar a cero">${textoTimerInact(seg)}</span>` })() : ""}
       <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
@@ -2728,6 +2733,8 @@ document.addEventListener("click", async e=>{
   const t=e.target.closest("button,a"); if(!t) return;
 
   if(t.dataset.authback){ authVolver(); return }
+  // Admin: pasa a la vista general (catálogo para todos los locales) sin cerrar sesión.
+  if(t.dataset.irOperaciones){ S.local=null; S.tab="sabores"; renderApp(); return }
   if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
