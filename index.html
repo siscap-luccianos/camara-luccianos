@@ -461,7 +461,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.10";
+const FRONTEND_VERSION = "1.77.11";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1349,8 +1349,13 @@ function renderAuth(){
       <h1>Contraseña de ${esc(a.local||"")}</h1>
       <p>Pedísela a quien te haya dado de alta.</p>
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
-      <input type="text" id="authClave" class="inputMasked" placeholder="Contraseña" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%" ${a.cargando?"disabled":""}>
-      <button class="btn" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>`;
+      <form id="formClave" autocomplete="on">
+        ${a.esGestion?`<input type="text" name="username" value="${esc(a.local||"")}" autocomplete="username" style="display:none" tabindex="-1" aria-hidden="true">`:""}
+        ${a.esGestion
+          ? `<input type="password" id="authClave" name="password" autocomplete="current-password" placeholder="Contraseña" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%" ${a.cargando?"disabled":""}>`
+          : `<input type="text" id="authClave" class="inputMasked" placeholder="Contraseña" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%" ${a.cargando?"disabled":""}>`}
+        <button class="btn" type="submit" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>
+      </form>`;
   } else if(a.paso==="quien"){
     cuerpo=`${S.deviceLocal?`<button class="authBack" type="button" data-cambiar-dispositivo="1">¿No es tu local? Cambiar</button>`:`<button class="authBack" data-authback="1">Volver</button>`}
       <h1>Elegí tu perfil</h1>
@@ -2894,7 +2899,10 @@ document.addEventListener("keydown", e=>{
     return;
   }
   if(e.key==="Enter"){
-    const botonEnter={authLocal:"authLocalOk", authClave:"authClaveOk", bloqueoClaveInput:"bloqueoDesbloquear"}[e.target.id];
+    // authClave no va acá: Enter envía el formulario (formClave) y el
+    // botón submit dispara el mismo click de siempre; así el navegador ve
+    // el envío y puede ofrecer guardar la contraseña de Operaciones.
+    const botonEnter={authLocal:"authLocalOk", bloqueoClaveInput:"bloqueoDesbloquear"}[e.target.id];
     const btn=botonEnter && document.getElementById(botonEnter);
     if(btn && !btn.disabled){ e.preventDefault(); btn.click(); return }
   }
@@ -2906,6 +2914,10 @@ document.addEventListener("keydown", e=>{
   if(document.querySelector("[data-tecla]")){ e.preventDefault(); authTecla(tecla); return }
   if(document.querySelector("[data-tecla-bloqueo]")){ e.preventDefault(); teclaBloqueo(tecla); return }
 });
+// El formulario de la contraseña de local solo sirve para que el navegador
+// la reconozca (Operaciones la guarda); el envío real lo hace el click de
+// authClaveOk, así que acá se corta la navegación.
+document.addEventListener("submit", e=>{ if(e.target.id==="formClave") e.preventDefault() });
 document.addEventListener("focusin", e=>{
   // Seleccionar todo el contenido al entrar a un campo numérico (Conteo
   // físico, cantidad en el lector de remitos, mínimo/peso/caja en
