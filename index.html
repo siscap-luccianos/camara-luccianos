@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.29";
+const FRONTEND_VERSION = "1.77.30";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1266,7 +1266,6 @@ function porVencerHTML(){
       <div class="vencAcc">
         ${d<0?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:""}
         ${d>=0?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:""}
-        ${d<0?`<button type="button" class="btn ghost" data-venc-conteo-ir>Hacer conteo</button>`:""}
       </div>
     </div>`).join("")}
   </section>`;
@@ -2934,7 +2933,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
   if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.modoDesperdicio=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
-  if(t.dataset.vencConteoIr!==undefined){ iniciarConteo(); return }
   if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
   if(t.dataset.volverVenc!==undefined){ S.verVencimientos=false; renderApp(); return }
   if(t.dataset.filtroVenc){ S.filtroVenc=t.dataset.filtroVenc; renderApp(); return }
