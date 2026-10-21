@@ -496,7 +496,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.1";
+const FRONTEND_VERSION = "1.78.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1317,7 +1317,7 @@ function ventaDesperdicioLote(id, f){
   renderApp();
 }
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
-const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"]];
+const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"]];
 /** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
 function saboresConVencimiento(){ return S.sabores.filter(s=>esChocolateria(s.id)) }
 function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
@@ -1330,7 +1330,7 @@ function vencimientosPantallaHTML(){
   saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f) todos.push({s, l, sem:semaforoVenc(l.f)}) }));
   todos.sort((a,b)=>a.l.f<b.l.f?-1:a.l.f>b.l.f?1:a.s.nombre.localeCompare(b.s.nombre));
   saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!l.f) todos.push({s, l, sem:null}) }));
-  const pasa=(x,k)=>k==="todos"||(!!x.sem&&((k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde")));
+  const pasa=(x,k)=>k==="todos"||(k==="sinfecha"?!x.sem:(!!x.sem&&((k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde"))));
   const f=FILTROS_VENC.some(([k])=>k===S.filtroVenc) ? S.filtroVenc : "todos";
   const lista=todos.filter(x=>pasa(x,f));
   return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">${S.tab==="salida"?"Volver a Salida":"Volver a Stock"}</button>
