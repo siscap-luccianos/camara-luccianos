@@ -473,6 +473,11 @@ body.sinLocal{background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 5
 .authPremium .ini{width:64px;height:64px;font-family:'Fraunces',Georgia,serif;font-size:1.3rem;background:linear-gradient(135deg,#E3A46F,#9C5A2E);color:#1B1611}
 .authPremium .dots span{border-color:rgba(217,185,105,.55);width:14px;height:14px}
 .authPremium .dots span.on{background:#D9B869;border-color:#D9B869;box-shadow:0 0 14px rgba(217,185,105,.6)}
+.authPremium:has(.authList){overflow:hidden;padding-bottom:16px}
+.authPremium:has(.authList) .authWrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.authPremium:has(.authList) .authCard{flex:1 1 auto;min-height:0}
+.authPremium .authLogo,.authPremium .authPill{flex-shrink:0}
+.authPremium .authList{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start;padding-bottom:4px}
 .authPremium .keypad{max-width:300px;justify-items:center}
 .authPremium .keypad button{width:78px;height:78px;min-height:0;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#F5F0E8;font-family:'Fraunces',Georgia,serif;font-size:1.7rem;font-weight:600;padding:0}
 .authPremium .keypad button.op{color:#B3A395;font-family:'Manrope',system-ui,sans-serif;font-size:.85rem;font-weight:700}
@@ -510,7 +515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.79.5";
+const FRONTEND_VERSION = "1.79.6";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
