@@ -293,13 +293,16 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 [data-mantener]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .mantHint{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:.92rem;font-weight:600;line-height:1.35}
 .mantHint b{font-weight:800;text-decoration:underline;text-underline-offset:3px}
-.etiqSheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(42,30,23,.18);padding:20px 20px 28px;max-height:80vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.etiqSheet{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0 auto;max-width:520px;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(42,30,23,.18);padding:18px 20px 22px;max-height:72vh;overflow:auto;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+.etiqSheet .btn{min-height:44px;padding:0 14px;font-size:.95rem}
+.etiqSheet input[type=date]{width:100%;height:44px;box-sizing:border-box;padding:0 12px;font-size:.95rem}
 .etiqTitulo{font-size:1.3rem;font-weight:700}
 .etiqSub{color:var(--muted);font-size:.9rem}
 .etiqLbl{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:8px}
 .etiqSheet input[type=date],.etiqSheet input[type=number]{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:inherit}
 .etiqCant{display:flex;align-items:center;gap:10px}
-.etiqCant input{flex:1;text-align:center;font-size:1.6rem;font-weight:700}
+.etiqCant input{flex:1;height:44px;min-width:0;padding:0;text-align:center;font-size:1.1rem;font-weight:700}
+.etiqCant .btn{flex:0 0 44px;width:44px;min-height:44px;padding:0}
 .etiqChips{display:flex;gap:8px;flex-wrap:wrap}
 .etiqBtns{display:flex;gap:10px;margin-top:10px}
 .etiqBtns .btn{flex:1}
@@ -493,7 +496,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.78.0";
+const FRONTEND_VERSION = "1.78.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1281,7 +1284,7 @@ function textoVencRegistro(r, id){
 /** Lotes que vencen en 7 días o menos (o ya vencieron), arriba de Stock para no olvidarse de venderlos a tiempo ni de sacar los vencidos. */
 function porVencerHTML(){
   const lista=[];
-  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=VENC_AVISO_DIAS) lista.push({s, l, d:diasHasta(l.f)}) }));
+  saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f && diasHasta(l.f)<=VENC_AVISO_DIAS) lista.push({s, l, d:diasHasta(l.f)}) }));
   if(!lista.length) return "";
   lista.sort((a,b)=>a.d-b.d);
   // "Vender primero" solo tiene sentido si el producto tiene más de 2 lotes, y
@@ -1315,16 +1318,18 @@ function ventaDesperdicioLote(id, f){
 }
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
 const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"]];
-function hayLotesConFecha(){ return S.sabores.some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
+/** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
+function saboresConVencimiento(){ return S.sabores.filter(s=>esChocolateria(s.id)) }
+function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
 /** Leyenda del semáforo, visible en Salida para que se entienda sin preguntar. */
 function leyendaVencHTML(){
   return `<p class="porVencerRef"><span class="semDot rojo"></span>Rojo: vencido o vence en ${VENC_ROJO_DIAS} días · <span class="semDot amarillo"></span>Amarillo: ${VENC_ROJO_DIAS+1} a ${VENC_AVISO_DIAS} días · <span class="semDot verde"></span>Verde: más de ${VENC_AVISO_DIAS} días</p>`;
 }
 function vencimientosPantallaHTML(){
   const todos=[];
-  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f) todos.push({s, l, sem:semaforoVenc(l.f)}) }));
+  saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f) todos.push({s, l, sem:semaforoVenc(l.f)}) }));
   todos.sort((a,b)=>a.l.f<b.l.f?-1:a.l.f>b.l.f?1:a.s.nombre.localeCompare(b.s.nombre));
-  S.sabores.forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!l.f) todos.push({s, l, sem:null}) }));
+  saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!l.f) todos.push({s, l, sem:null}) }));
   const pasa=(x,k)=>k==="todos"||(!!x.sem&&((k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde")));
   const f=FILTROS_VENC.some(([k])=>k===S.filtroVenc) ? S.filtroVenc : "todos";
   const lista=todos.filter(x=>pasa(x,f));
