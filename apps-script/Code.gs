@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.39.8";
+const BACKEND_VERSION = "1.40.0";
 
 function doPost(e) {
   let resultado;
@@ -84,6 +84,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos);
+    case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
     case "altaEmpleado": return altaEmpleado(body.nombre, body.rol, body.local, empleado);
@@ -458,7 +459,7 @@ function _datosSinCache(local, empleado) {
 
   const sabores = _leerCrudo("Sabores")
     .filter((s) => _esVerdadero(s.activo) !== false)
-    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0 }))
+    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0 }))
     .sort((a, b) => a.orden - b.orden);
 
   // Sabores que ESTE local marcó que no tiene (ej. Baldes en un local que
@@ -996,6 +997,65 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
     // nomás ("cajas detectadas" en el cliente).
     bultosLeidosPalitos: bultosLeidosPalitos,
   };
+}
+
+/** Reetiquetado: le pone vencimiento a chocolatería que está en cámara sin fecha
+ *  (típicamente alfajores y conitos, que se etiquetan a mano después). No cambia
+ *  el stock: se guarda como movimiento tipo "etiquetado" (stockMap() lo ignora)
+ *  y los lotes del cliente lo leen para asignar la fecha. Responsable de local
+ *  y de turno, y también admin y supervisor en casos urgentes — nunca
+ *  colaborador ni producción. */
+function etiquetar(clienteId, local, items, vencimientos, empleado) {
+  if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo el responsable de local o de turno puede poner vencimientos." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  if (!items || !Object.keys(items).length) return { ok: false, error: "No hay productos para etiquetar." };
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (clienteId) {
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      if (existente) return { ok: true, id: existente.id, repetido: true };
+    }
+    const items2 = {};
+    Object.keys(items).forEach((id) => { const q = Math.floor(Number(items[id]) || 0); if (q > 0) items2[id] = q; });
+    const catalogo = _leerCrudo("Sabores");
+    const familiaDe = {}, nombreDe = {};
+    catalogo.forEach((s) => { familiaDe[String(s.id)] = s.familia || ""; nombreDe[String(s.id)] = s.nombre; });
+    if (Object.keys(items2).some((id) => familiaDe[id] !== "chocolateria")) return { ok: false, error: "Solo se pone vencimiento a chocolatería." };
+
+    const norm = _normalizarVencimientos(vencimientos, items2, "etiquetado");
+    if (!norm.ok) return norm;
+    if (Object.keys(items2).some((id) => _vencFaltante(norm.vencimientos[id]))) return { ok: false, error: "Falta la fecha de vencimiento." };
+
+    // No etiquetar más unidades que las que hay en cámara (red de seguridad;
+    // la cantidad exacta sin fecha la valida la pantalla con los lotes).
+    const infoLocal = _datosSinCache(local);
+    const stockActual = Object.assign({}, infoLocal.stock ? infoLocal.stock.base : {});
+    const bts = infoLocal.stock ? infoLocal.stock.ts : 0;
+    infoLocal.registros.forEach((rg) => {
+      if (rg.anulado || rg.ts <= bts) return;
+      const signo = rg.tipo === "ingreso" ? 1 : rg.tipo === "salida" ? -1 : 0;
+      if (!signo) return;
+      Object.keys(rg.items || {}).forEach((id) => { stockActual[id] = (Number(stockActual[id]) || 0) + signo * (Number(rg.items[id]) || 0); });
+    });
+    const excede = Object.keys(items2).filter((id) => items2[id] > (Number(stockActual[id]) || 0)).map((id) => nombreDe[id] || ("Sabor " + id));
+    if (excede.length) return { ok: false, error: "Hay más unidades de las que tenés en cámara de: " + excede.join(", ") + "." };
+
+    const ts = Date.now();
+    const r = _escribirCrudo("Registros", {
+      clienteId: clienteId || "", tipo: "etiquetado", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
+      items: JSON.stringify(items2), total: _totalItems(items2), remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "",
+      foto_remito: "", subtipo: "", kilos: "", vencimientos: JSON.stringify(norm.vencimientos),
+    });
+    const detalle = Object.keys(items2).map((id) => (nombreDe[id] || ("Sabor " + id)) + " x" + items2[id] + " → " + norm.vencimientos[id].map((l) => l.f + " (" + l.c + ")").join(" + ")).join("; ");
+    _auditar("etiquetar", empleado.id, empleado.nombre, local + ": " + detalle);
+    _invalidarCacheDatos(local);
+    return { ok: true, id: r.id, ts: ts };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function conteo(clienteId, local, items, empleado, vencimientos) {

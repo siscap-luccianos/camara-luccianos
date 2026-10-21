@@ -293,6 +293,16 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 [data-mantener]{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .mantHint{margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:.92rem;font-weight:600;line-height:1.35}
 .mantHint b{font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.etiqSheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(42,30,23,.18);padding:20px 20px 28px;max-height:80vh;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.etiqTitulo{font-size:1.3rem;font-weight:700}
+.etiqSub{color:var(--muted);font-size:.9rem}
+.etiqLbl{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.etiqSheet input[type=date],.etiqSheet input[type=number]{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:inherit}
+.etiqCant{display:flex;align-items:center;gap:10px}
+.etiqCant input{flex:1;text-align:center;font-size:1.6rem;font-weight:700}
+.etiqChips{display:flex;gap:8px;flex-wrap:wrap}
+.etiqBtns{display:flex;gap:10px;margin-top:10px}
+.etiqBtns .btn{flex:1}
 .mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
@@ -483,7 +493,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.39";
+const FRONTEND_VERSION = "1.78.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -528,6 +538,7 @@ const S = {
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
   verVencimientos: false, // Stock: pantalla completa con todos los lotes con fecha, de más cerca a más lejos
   filtroVenc: "todos", // filtro de esa pantalla: todos | vencidos | pronto | verde
+  etiq: null, // reetiquetado de chocolatería sin fecha: {id, max, cant, fecha} mientras se carga
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
@@ -1159,6 +1170,12 @@ function lotesDeVenc(v, cantidad){
   if(typeof v==="string" && LOTE_RE.test(v)) return [{f:v, c:cantidad}];
   return [{f:null, c:cantidad}];
 }
+/** Reetiquetado: `n` unidades que estaban sin fecha pasan a tener fecha `f`.
+ *  Salen primero de los lotes sin fecha; el total del sabor no cambia. */
+function etiquetarLote(L, f, n){
+  let resto=n;
+  L.forEach(l=>{ if(!l.f && l.c>0 && resto>0){ const t=Math.min(resto,l.c); l.c-=t; resto-=t; sumarLote(L,f,t); } });
+}
 /** Lotes de cada sabor del local, en orden de vencimiento (sin fecha al final). */
 function lotesPorSabor(){
   if(_lotesMemo) return _lotesMemo;
@@ -1170,6 +1187,7 @@ function lotesPorSabor(){
   });
   regsActivos().filter(r=>r.ts>bts).sort((a,b)=>a.ts-b.ts).forEach(r=>{
     const venc=r.vencimientos||{};
+    if(r.tipo==="etiquetado"){ Object.entries(r.items||{}).forEach(([id,q])=>{ const L=lotes[id]; if(L && (+q||0)>0) lotesDeVenc(venc[id], +q||0).forEach(l=>etiquetarLote(L,l.f,l.c)); }); return; }
     Object.entries(r.items||{}).forEach(([id,q])=>{
       const L=lotes[id], n=+q||0;
       if(!L||n<=0) return;
@@ -1317,9 +1335,61 @@ function vencimientosPantallaHTML(){
   </div>
   ${lista.length?`<div class="vencLista">${lista.map(({s,l,sem})=>`<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}">
       <div class="vencFecha">${sem?fechaVencCorta(l.f):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
-      <div class="vencNom">${esc(s.nombre)}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
-    </div>`).join("")}</div>`:`<div class="empty">No hay lotes en este filtro.</div>`}`;
+      <div class="vencNom">${esc(s.nombre)}<span>${l.c} ${unidad(s.id,l.c)}</span>${!sem&&canEtiquetar()?`<button type="button" class="btn ghost" data-etiq-abrir="${s.id}" style="margin-top:6px">Poner fecha</button>`:""}</div>
+    </div>`).join("")}</div>`:`<div class="empty">No hay lotes en este filtro.</div>`}${S.etiq?etiquetarSheetHTML():""}`;
 }
+/** Reetiquetado (Ver vencimientos): Responsable de local y de turno; admin y supervisor en urgencias. */
+function canEtiquetar(){ return !!S.local && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
+/** Fecha ISO (YYYY-MM-DD) de hoy + n días, en hora local. */
+function isoMasDias(n){ const d=new Date(); d.setDate(d.getDate()+n); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-") }
+function sinFechaUnidades(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f).reduce((a,l)=>a+l.c,0) }
+/** Abre la hoja de reetiquetado: fecha sugerida = hoy + vida útil del producto (si la tiene). */
+function etiqAbrir(id){
+  const s=S.saboresPorId[id]||{}, sin=sinFechaUnidades(id);
+  S.etiq={ id:String(id), max:sin, cant:sin, fecha:(+s.vida_util_dias>0)?isoMasDias(+s.vida_util_dias):"" };
+  renderApp();
+}
+function etiqSetCant(n){ if(!S.etiq) return; S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+n||1))); renderApp() }
+function etiquetarSheetHTML(){
+  const e=S.etiq, s=S.saboresPorId[e.id]||{}, caja=+s.cantidad_maestra||0, vida=+s.vida_util_dias||0;
+  const sugerida=vida?isoMasDias(vida):"";
+  const opciones=[...new Set([6,12,30,caja].filter(n=>n>0))].filter(n=>n<=e.max || n===caja);
+  const valida=e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha);
+  const quedan=Math.max(0,e.max-e.cant);
+  return `<div class="etiqSheet" role="dialog" aria-label="Poner vencimiento">
+    <div class="etiqTitulo">Poner vencimiento</div>
+    <div class="etiqSub">${esc(s.nombre||"")} · sin fecha: ${e.max} ${unidad(e.id,e.max)}</div>
+    <label class="etiqLbl" for="etiqFecha">Fecha de vencimiento</label>
+    <input id="etiqFecha" type="date" data-etiq-fecha value="${esc(e.fecha)}">
+    ${vida?`<button type="button" class="btn ghost" data-etiq-sugerida="${sugerida}">Usar la sugerida: ${fechaVencCorta(sugerida)} (${vida} días)</button>`:`<div class="meta">Este producto no tiene vida útil cargada: elegí la fecha a mano.</div>`}
+    <label class="etiqLbl" for="etiqCant">Cantidad a etiquetar</label>
+    <div class="etiqCant">
+      <button type="button" class="btn ghost" data-etiq-dec aria-label="Menos">−</button>
+      <input id="etiqCant" type="number" min="1" max="${e.max}" inputmode="numeric" data-etiq-cant value="${e.cant}">
+      <button type="button" class="btn ghost" data-etiq-inc aria-label="Más">+</button>
+    </div>
+    <div class="etiqChips">${opciones.map(n=>`<button type="button" class="chip" data-etiq-chip="${n}">${n===caja?"Caja "+n:n}</button>`).join("")}</div>
+    <div class="meta">Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b></div>
+    <div class="etiqBtns">
+      <button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button>
+      <button type="button" class="btn" data-etiq-confirmar ${valida?"":"disabled"}>Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}</button>
+    </div>
+  </div>`;
+}
+async function etiquetarConfirmar(){
+  const e=S.etiq; if(!e) return;
+  if(!(e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha))) return toast("Revisá la fecha y la cantidad.");
+  const s=S.saboresPorId[e.id]||{};
+  const r=await api("etiquetar",{clienteId:uuid(), local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
+  if(r && r.ok){ S.etiq=null; toast(`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
+  else toast((r&&r.error)||"No se pudo guardar el vencimiento.");
+}
+document.addEventListener("change", e=>{
+  const el=e.target;
+  if(!S.etiq || !el.dataset) return;
+  if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; renderApp(); }
+  if(el.dataset.etiqCant!==undefined) etiqSetCant(el.value);
+});
 function iniciarConteo(){
   const st=stockMap();
   S.conteo={}; S.vencConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
@@ -2111,7 +2181,7 @@ function filaMovimiento(r){
  *  movimientos de hoy — ni siquiera hace falta el filtro de período. */
 function histViewColaborador(){
   const desde=inicioDeHoy();
-  const regs=[...S.regs].filter(r=>String(r.empleadoId)===String(S.empleado.id)&&r.ts>=desde).sort((a,b)=>b.ts-a.ts);
+  const regs=[...S.regs].filter(r=>String(r.empleadoId)===String(S.empleado.id)&&r.ts>=desde&&r.tipo!=="etiquetado").sort((a,b)=>b.ts-a.ts);
   const lista=regs.map(filaMovimiento).join("");
   return `<p class="sec" style="margin-bottom:8px">Tus movimientos de hoy</p>
   ${lista?`<div class="hist">${lista}</div>`:`<div class="empty">Todavía no registraste nada hoy.</div>`}`;
@@ -2144,7 +2214,7 @@ function histView(){
   const rango = rangoHistInfo(S.rangoHist), esSemana = rango.tipo==="semana";
   // Tabla y Movimientos usan el mismo rango: así el segmento Hoy/7/30/Todo
   // cambia las dos cosas juntas (antes la tabla quedaba en "Esta semana").
-  const regs=[...S.regs].filter(r=>r.ts>=rango.inicio && r.ts<rango.fin).sort((a,b)=>b.ts-a.ts);
+  const regs=[...S.regs].filter(r=>r.ts>=rango.inicio && r.ts<rango.fin && r.tipo!=="etiquetado").sort((a,b)=>b.ts-a.ts);
   const diasSem=["Lu","Ma","Mi","Ju","Vi","Sá","Do"];
   const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
 
@@ -2976,6 +3046,13 @@ document.addEventListener("click", async e=>{
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
   if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.modoDesperdicio=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
+  if(t.dataset.etiqAbrir!==undefined){ etiqAbrir(t.dataset.etiqAbrir); return }
+  if(t.dataset.etiqCancelar!==undefined){ S.etiq=null; renderApp(); return }
+  if(t.dataset.etiqDec!==undefined){ etiqSetCant(S.etiq.cant-1); return }
+  if(t.dataset.etiqInc!==undefined){ etiqSetCant(S.etiq.cant+1); return }
+  if(t.dataset.etiqChip!==undefined){ etiqSetCant(t.dataset.etiqChip); return }
+  if(t.dataset.etiqSugerida!==undefined){ S.etiq.fecha=t.dataset.etiqSugerida; renderApp(); return }
+  if(t.dataset.etiqConfirmar!==undefined){ etiquetarConfirmar(); return }
   if(t.dataset.volverVenc!==undefined){ S.verVencimientos=false; renderApp(); return }
   if(t.dataset.filtroVenc){ S.filtroVenc=t.dataset.filtroVenc; renderApp(); return }
   if(t.id==="verPedidoBtn"){ S.verPedido=true; renderApp(); return }
