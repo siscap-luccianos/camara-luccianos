@@ -36,17 +36,6 @@
   --wa-bubble:#204030; --wa-bubble-ink:#DCF3D0; --wa-panel:#182721;
   --surface-rgb:36,29,23; --glass-line:rgba(255,255,255,.08);
   --accent-rgb:217,146,90; --warn-rgb:224,178,102; --alert-rgb:240,150,138; color-scheme:dark}
-/* Tema "dorado": los colores del login (negro/marrón con dorado). Lo elige admin con el botón de la cabecera; crema es el de siempre. */
-:root[data-tema="dorado"]{
-  --bg:#1F1812; --surface:#2A2019; --ink:#F5F0E8; --muted:#B3A395; --line:rgba(217,185,105,.22);
-  --accent:#D9B869; --accent-hover:#E8CB86; --accent-ink:#1B1611; --accent-soft:rgba(217,185,105,.14);
-  --alert:#F0968A; --alert-soft:#3D211C; --warn:#E8C27A; --warn-soft:#3A2C15;
-  --ok:#8FCB9E; --ok-soft:#1B3220; --plate:#F5F0E8;
-  --header-bg:#2A1E17; --header-bg-rgb:42,30,23; --header-ink:#F5F0E8; --header-muted:#D9CBB8; --header-chip:#3D2C22;
-  --surface-rgb:42,32,25; --glass-line:rgba(217,185,105,.18);
-  --accent-rgb:217,185,105; --warn-rgb:232,194,122; --alert-rgb:240,150,138;
-  color-scheme:dark}
-:root[data-tema="dorado"] body{background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%) fixed}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4}
 button,input,select{font:inherit;color:inherit}
@@ -483,7 +472,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.26";
+const FRONTEND_VERSION = "1.77.27";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -513,7 +502,6 @@ const S = {
   esGestion: ls.get("sesionEsGestion","")==="1", // entró por Operaciones (sin PIN propio) — el bloqueo por inactividad pide la clave de Operaciones, no un PIN
   gestionLocal: ls.get("sesionGestionLocal","") || null,
   sesionCodigo: ls.get("sesionCodigo","")==="1", // entró con el código de admin: se cierra sola a los 5 min sin tocar
-  tema: ls.get("tema","crema")==="dorado" ? "dorado" : "crema", // apariencia elegida por admin en este navegador (ver botón de la cabecera)
   esTablet: false, // se decide en start(): true si hay deviceLocal
   auth: null, // pantalla de login en curso
   locales: [],
@@ -1446,7 +1434,6 @@ function renderHeader(){
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
       ${S.empleado.rol==="admin" && S.local && !S.esGestion ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
-      ${S.empleado.rol==="admin" ? `<button type="button" class="btn ghost" data-tema-toggle="1">${S.tema==="dorado"?"Ver en crema":"Ver en dorado"}</button>` : ""}
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
       ${!S.esGestion ? (()=>{ const seg=segundosInact(); return `<span class="timerInact${seg!==null&&seg<=60?" urgente":""}" id="timerInact" title="Si no tocás nada, la sesión se bloquea al llegar a cero">${textoTimerInact(seg)}</span>` })() : ""}
       <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
@@ -2779,8 +2766,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.authback){ authVolver(); return }
   // Admin: pasa a la vista general (catálogo para todos los locales) sin cerrar sesión.
   if(t.dataset.irOperaciones){ S.local=null; S.tab="sabores"; renderApp(); return }
-  // Admin: alterna crema / dorado para comparar cómo se ve la app (se guarda en este navegador)
-  if(t.dataset.temaToggle){ S.tema = S.tema==="dorado" ? "crema" : "dorado"; ls.set("tema", S.tema); renderApp(); return }
   if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
@@ -3331,7 +3316,6 @@ function scheduleRender(){
 }
 function renderApp(){
   _lotesMemo=null;
-  document.documentElement.dataset.tema = S.tema || "crema";
   document.body.classList.remove("sinLocal");
   const m=$("#app");
   if(S.auth){ m.innerHTML = renderAuth(); return }
