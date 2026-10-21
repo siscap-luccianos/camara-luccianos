@@ -515,7 +515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.79.6";
+const FRONTEND_VERSION = "1.79.7";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -2358,7 +2358,7 @@ function _teamFila(e, rolesQuePuedoCrear){
     ${e.activo?`<div class="acciones">
       ${(e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
       ${puedeCambiarRol?`<select data-cambiar-rol="${e.id}" data-rol-actual="${e.rol}" aria-label="Cambiar rol de ${esc(e.nombre)}" style="font-size:.75rem;padding:6px 8px">${rolesQuePuedoCrear.map(r=>`<option value="${r}" ${r===e.rol?"selected":""}>${esc(ROL_LABEL[r])}</option>`).join("")}</select>`:""}
-      ${(e.rol!=="admin"&&e.rol!=="supervisor")?`<button type="button" data-resetpin="${e.id}">Resetear PIN</button>`:""}
+      ${(e.rol!=="admin"&&e.rol!=="supervisor"&&(S.empleado.rol!=="encargado"||e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion"||e.id===S.empleado.id))?`<button type="button" data-resetpin="${e.id}">Resetear PIN</button>`:""}
       <button type="button" data-baja="${e.id}">Dar de baja</button>
     </div>`:puedeEliminar?`<div class="acciones">
       <button type="button" style="color:var(--alert);border-color:var(--alert)" data-eliminar-emp="${e.id}" data-nombre-emp="${esc(e.nombre)}">Eliminar definitivamente</button>
@@ -2867,10 +2867,14 @@ async function eliminarEmpleadoDef(id, nombre, btn){
   });
 }
 async function resetearPin(id, btn){
-  if(!confirm("¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso.")) return;
+  const propio = S.empleado && String(id)===String(S.empleado.id);
+  if(!confirm(propio?"¿Resetear TU PIN? Se te va a cerrar la sesión y vas a crear uno nuevo en el próximo ingreso.":"¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso.")) return;
   await conBoton(btn, async ()=>{
     const r = await api("resetPin", {empleadoId:id});
-    if(r && r.ok) toast("PIN reseteado"); else toast((r&&r.error)||"No se pudo resetear el PIN.");
+    if(r && r.ok){
+      if(propio){ toast("PIN reseteado. Ingresá de nuevo para crear uno nuevo."); setTimeout(()=>cerrarSesion(true),1200) }
+      else toast("PIN reseteado");
+    } else toast((r&&r.error)||"No se pudo resetear el PIN.");
   });
 }
 async function editarNombreEmpleado(id, actual, btn){

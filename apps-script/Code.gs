@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.40.2";
+const BACKEND_VERSION = "1.40.4";
 
 function doPost(e) {
   let resultado;
@@ -1324,8 +1324,9 @@ function resetPin(empleadoId, empleado) {
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
   else if (empleado.rol === "supervisor") permitido = true;
-  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno" || objetivo.rol === "produccion") && String(objetivo.local) === String(empleado.local)) permitido = true;
-  if (!permitido) return { ok: false, error: "No tenés permiso para resetear el PIN de ese empleado." };
+  else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno" || objetivo.rol === "produccion") && String(objetivo.local || "").trim() === String(empleado.local || "").trim()) permitido = true;
+  else if (empleado.rol === "encargado" && String(objetivo.id) === String(empleado.id)) permitido = true; // su propio PIN
+  if (!permitido) return { ok: false, error: empleado.rol === "encargado" ? "Un responsable de local solo puede resetear su propio PIN y el de turno, colaboradores y producción de su local. Para el PIN de otro responsable, pedíselo a un supervisor o admin." : "No tenés permiso para resetear el PIN de ese empleado." };
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
