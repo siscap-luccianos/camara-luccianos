@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.40.1";
+const BACKEND_VERSION = "1.40.2";
 
 function doPost(e) {
   let resultado;
@@ -555,7 +555,7 @@ function _normalizarVencimientos(vencimientos, items, tipo) {
     const cantidad = Math.floor(Number(items[id]) || 0);
     if (cantidad <= 0) continue;
     const v = venc[id];
-    if (typeof v === "string") { if (esFecha(v)) out[id] = v; continue; }
+    if (typeof v === "string") { if (esFecha(v) || v === "sin-fecha") out[id] = v; continue; } // "sin-fecha": la salida se sacó del lote sin etiquetar
     if (!Array.isArray(v) || tipo === "salida") continue;
     const lotes = v.map((l) => ({ f: String((l && l.f) || ""), c: Math.floor(Number(l && l.c) || 0) })).filter((l) => l.c > 0);
     if (lotes.some((l) => l.f && !esFecha(l.f))) return { ok: false, error: "Hay un vencimiento con fecha inválida." };

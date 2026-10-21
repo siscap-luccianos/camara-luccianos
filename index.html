@@ -510,7 +510,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.79.4";
+const FRONTEND_VERSION = "1.79.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1177,8 +1177,10 @@ function sumarLote(lotes, f, c){
   if(ex) ex.c+=c; else lotes.push({f:f, c:c});
 }
 /** Saca `q` unidades: primero del lote elegido (si hay), después en orden de vencimiento. */
+/** Valor de S.lotePick / Registros.vencimientos de una salida cuando se eligió sacar del lote sin fecha. */
+const LOTE_SIN_FECHA="sin-fecha";
 function consumirLotes(lotes, q, elegido){
-  if(elegido){ const l=lotes.find(x=>x.f===elegido); if(l){ const k=Math.min(q,l.c); l.c-=k; q-=k } }
+  if(elegido){ const l=lotes.find(x=>elegido===LOTE_SIN_FECHA ? !x.f : x.f===elegido); if(l){ const k=Math.min(q,l.c); l.c-=k; q-=k } }
   for(const l of ordenarFEFO(lotes)){ if(q<=0) break; const k=Math.min(q,l.c); if(k>0){ l.c-=k; q-=k } }
 }
 /** Valor de Registros.vencimientos → lotes [{f,c}] (f null = sin fecha). */
@@ -1226,19 +1228,20 @@ function vendibleDe(id){ return sumaLotes(lotesVendibles(id)) }
 /** Lote del que sale la próxima unidad: el elegido a mano o, si no, el que vence antes. */
 function loteSalida(id){
   const v=lotesVendibles(id), elegido=S.lotePick[id];
-  return (elegido && v.find(l=>l.f===elegido)) || v[0] || null;
+  return (elegido && v.find(l=>elegido===LOTE_SIN_FECHA ? !l.f : l.f===elegido)) || v[0] || null;
 }
 /** Texto de lote dentro de la tarjeta: fecha que sale primero, cuántos lotes y vencidas. */
 /** Lote que se muestra en la tarjeta: el que sale primero (o el elegido), con su semáforo. */
 function loteMostrado(id, conVencidos){
   const lotes=(lotesPorSabor()[id]||[]).filter(l=>l.f);
   const vend=conVencidos ? lotes : lotes.filter(l=>diasHasta(l.f)>=0);
+  if(S.lotePick[id]===LOTE_SIN_FECHA){ const sf=(lotesPorSabor()[id]||[]).find(l=>!l.f); if(sf) return sf }
   return conVencidos ? ((S.lotePick[id] && vend.find(l=>l.f===S.lotePick[id])) || vend[0] || null) : loteSalida(id);
 }
 /** Clase del borde de la tarjeta según el semáforo del lote que se muestra. */
 function semCardClase(id, conVencidos){
   const l=esChocolateria(id) ? loteMostrado(id, conVencidos) : null;
-  return l ? " sem-"+semaforoVenc(l.f).k : "";
+  return l&&l.f ? " sem-"+semaforoVenc(l.f).k : "";
 }
 function loteInfoSpan(id, conVencidos){
   if(!esChocolateria(id)) return "";
@@ -1248,14 +1251,15 @@ function loteInfoSpan(id, conVencidos){
   const vencidas=lotes.filter(l=>diasHasta(l.f)<0).reduce((a,l)=>a+l.c,0);
   const primero=loteMostrado(id, conVencidos);
   let html="";
-  if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo"><span class="semDot ${sem.k}"></span>${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)} · ${sem.label}</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
+  if(primero&&!primero.f){ html+=`<span class="loteInfo"><span class="semDot"></span>${conVencidos?"Lote":"Sale primero"}: sin fecha</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
+  else if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo"><span class="semDot ${sem.k}"></span>${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)} · ${sem.label}</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
   if(!conVencidos && vencidas>0) html+=`<span class="loteN alertTxt">${vencidas} vencidas, no se venden</span>`;
   return html;
 }
 /** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
 function loteElegirBtn(id, conVencidos){
   if(!esChocolateria(id)) return "";
-  const fechas=new Set((lotesPorSabor()[id]||[]).filter(l=>l.f && (conVencidos || diasHasta(l.f)>=0)).map(l=>l.f)).size;
+  const fechas=new Set((lotesPorSabor()[id]||[]).filter(l=>!l.f || conVencidos || diasHasta(l.f)>=0).map(l=>l.f||"")).size;
   return fechas>1 ? `<span class="linkLote" role="button" tabindex="0" data-elegir-lote="${id}">Elegir lote</span>` : "";
 }
 function renderElegirLote(){
@@ -1263,15 +1267,17 @@ function renderElegirLote(){
   const id=S.elegirLote, s=id&&S.saboresPorId[id];
   if(!s){ S.elegirLote=null; if(ov) ov.remove(); return }
   if(!ov){ ov=document.createElement("div"); ov.id="loteOv"; ov.className="mantenerOv"; ov.addEventListener("click", loteClick); document.body.appendChild(ov) }
-  const elegido=S.lotePick[id]||"", auto=loteSalida(id), fechas=lotesVendibles(id).filter(l=>l.f);
+  const elegido=S.lotePick[id]||"", auto=loteSalida(id), fechas=lotesVendibles(id);
   ov.innerHTML = `<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="loteTit">
     <p class="mantTit" id="loteTit">¿De qué lote sale?</p>
     <p class="mantSub">${esc(s.nombre)} · ${vendibleDe(id)} ${unidad(id,vendibleDe(id))} para vender</p>
     <div class="loteOpts">
       <button type="button" class="loteOpt${elegido?"":" on"}" data-lote-pick="">
         <b>Automático</b><span>Sale primero el que vence antes${auto&&auto.f?` (${fechaVencCorta(auto.f)})`:""}</span></button>
-      ${fechas.map(l=>`<button type="button" class="loteOpt${elegido===l.f?" on":""}" data-lote-pick="${esc(l.f)}">
-        <b>Vence ${fechaVencCorta(l.f)}</b><span>${l.c} ${unidad(id,l.c)}${semaforoVenc(l.f).k==="verde"?"":" · "+semaforoVenc(l.f).label}</span></button>`).join("")}
+      ${fechas.map(l=>l.f?`<button type="button" class="loteOpt${elegido===l.f?" on":""}" data-lote-pick="${esc(l.f)}">
+        <b>Vence ${fechaVencCorta(l.f)}</b><span>${l.c} ${unidad(id,l.c)}${semaforoVenc(l.f).k==="verde"?"":" · "+semaforoVenc(l.f).label}</span></button>`
+        :`<button type="button" class="loteOpt${elegido===LOTE_SIN_FECHA?" on":""}" data-lote-pick="${LOTE_SIN_FECHA}">
+        <b>Sin fecha</b><span>${l.c} ${unidad(id,l.c)} · todavía sin etiquetar</span></button>`).join("")}
     </div>
     <p class="mantAyuda">Si ese lote tiene menos unidades que las que sacás, el resto sale del siguiente que vence antes.</p>
     <div class="mantAcc"><button type="button" class="btn ghost" data-lote-cancel>Cancelar</button></div>
@@ -1292,7 +1298,7 @@ function cerrarElegirLote(){ S.elegirLote=null; renderElegirLote() }
 /** Texto de vencimiento de un renglón del Historial (lote elegido, fecha única o varios lotes). */
 function textoVencRegistro(r, id){
   const v=r.vencimientos&&r.vencimientos[id]; if(!v) return "";
-  if(typeof v==="string") return ` · ${r.tipo==="salida"?"lote":"vence"} ${fechaVencCorta(v)}`;
+  if(typeof v==="string") return v===LOTE_SIN_FECHA ? " · lote sin fecha" : ` · ${r.tipo==="salida"?"lote":"vence"} ${fechaVencCorta(v)}`;
   return ` · vence ${v.map(l=>`${l.f?fechaVencCorta(l.f):"sin fecha"} (${l.c})`).join(" + ")}`;
 }
 /** Lotes que vencen en 7 días o menos (o ya vencieron), arriba de Stock para no olvidarse de venderlos a tiempo ni de sacar los vencidos. */
@@ -1529,7 +1535,7 @@ function renderAuth(){
       </div>`;
   }
   // El logo está en todos los pasos (mismo lugar), así la tarjeta no salta al cambiar de paso.
-  const logo = `<img class="authLogo" src="icons/wordmark-dorado.png" alt="Lucciano's">`;
+  const logo = `<img class="authLogo" src="icons/wordmark-dorado.png" width="363" height="154" alt="Lucciano's">`;
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
 }
 
@@ -3492,7 +3498,12 @@ function renderApp(){
   _lotesMemo=null;
   document.body.classList.remove("sinLocal");
   const m=$("#app");
-  if(S.auth){ m.innerHTML = renderAuth(); return }
+  if(S.auth){
+    // Actualiza solo la tarjeta: si se vuelve a crear todo (logo incluido) en cada toque, la pantalla salta y se traba.
+    const html=renderAuth(), tarjeta=m.querySelector(".authPremium .authCard");
+    if(tarjeta){ const tmp=document.createElement("div"); tmp.innerHTML=html; const nueva=tmp.querySelector(".authCard"); if(nueva){ tarjeta.innerHTML=nueva.innerHTML; return } }
+    m.innerHTML=html; return
+  }
   if(!S.empleado){ iniciarAuth(); return }
   if(S.bloqueado){ m.innerHTML = renderBloqueo(); return }
   m.innerHTML = renderHeader() + `<div class="wrap"><main id="main">${renderMain()}</main></div>` + renderNav() + `<div class="bar" id="bar" hidden><div class="in" id="barIn"></div></div>`;
