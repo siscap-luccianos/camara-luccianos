@@ -483,7 +483,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.77.38";
+const FRONTEND_VERSION = "1.77.39";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -654,10 +654,19 @@ function stockMapHasta(hasta){
   return m;
 }
 function stockMap(){ return stockMapHasta(Date.now()) }
-/** Lunes 00:00 de la semana de `ts` (o de ahora si no se pasa nada). */
+/** Jornada operativa: el día de trabajo arranca a las 04:00, así que lo que se
+ *  carga entre 00:00 y 04:00 cuenta en la jornada del día anterior. El ts real
+ *  de cada movimiento no cambia; solo cambia cómo se agrupa por día/semana/mes. */
+const CORTE_JORNADA_MS = 4*36e5;
+/** 04:00 (hora local) del día de jornada al que pertenece `ts` (o de ahora). */
+function jornadaDe(ts){
+  const d=new Date((ts===undefined?Date.now():ts)-CORTE_JORNADA_MS);
+  return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()+CORTE_JORNADA_MS;
+}
+/** Lunes 04:00 de la semana de jornada de `ts` (o de ahora si no se pasa nada). */
 function lunesDe(ts){
-  const d=new Date(ts===undefined?Date.now():ts), dow=(d.getDay()+6)%7;
-  return new Date(d.getFullYear(),d.getMonth(),d.getDate()-dow).getTime();
+  const j=new Date(jornadaDe(ts)), dow=(j.getDay()+6)%7;
+  return new Date(j.getFullYear(),j.getMonth(),j.getDate()-dow).getTime()+CORTE_JORNADA_MS;
 }
 /** Para cada sabor, consumo y si hubo quiebre de stock en cada una de las
  *  últimas 3 semanas calendario COMPLETAS (lunes a domingo), sin contar la
@@ -685,13 +694,13 @@ function tendenciaSemanas(){
   return resultado;
 }
 function salidasDias(dias){
-  const since=Date.now()-dias*864e5, m={};
+  const since=jornadaDe()-(dias-1)*864e5, m={};
   for(const r of regsActivos()) if(r.tipo==="salida"&&r.ts>=since) for(const [id,q] of Object.entries(r.items||{})) m[id]=(m[id]||0)+(+q||0);
   return m;
 }
+/** Inicio de la jornada de hoy (04:00 de hoy, o de ayer si son las 00:00–04:00). */
 function inicioDeHoy(){
-  const d=new Date();
-  return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  return jornadaDe();
 }
 /** Por sabor, cuánto sacó hoy esta persona y todavía no devolvió (neto de
  *  las devoluciones de hoy ya guardadas) — es lo que puede devolver ahora
@@ -2026,14 +2035,14 @@ const CAL_DIAS_ATRAS = 59;
 function rangoHistInfo(id){
   if(id.charAt(0)==="d"){
     // Últimos N días contando hoy: Hoy = d1, 7 días = d7, 30 días = d30, Todo = d60
-    const n=+id.slice(1), hoy=new Date(); hoy.setHours(0,0,0,0);
-    const inicio=hoy.getTime()-(n-1)*864e5, fin=Date.now()+1;
+    const n=+id.slice(1), hoy=jornadaDe();
+    const inicio=hoy-(n-1)*864e5, fin=Date.now()+1;
     const f=ms=>new Date(ms).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"});
-    const label = n===1 ? f(inicio) : `${new Date(inicio).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${f(fin-1)}`;
+    const label = n===1 ? f(inicio) : `${new Date(inicio).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${f(hoy)}`;
     return { tipo:"rango", inicio, fin, label };
   }
   if(id.charAt(0)==="c"){
-    const [d,h]=id.slice(1).split("|"), inicio=isoALocal(d), fin=isoALocal(h)+864e5;
+    const [d,h]=id.slice(1).split("|"), inicio=isoALocal(d)+CORTE_JORNADA_MS, fin=isoALocal(h)+864e5+CORTE_JORNADA_MS;
     const corto=ms=>new Date(ms).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
     return { tipo:"rango", inicio, fin, label:`${corto(inicio)} al ${new Date(isoALocal(h)).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit",year:"numeric"})}` };
   }
@@ -2042,8 +2051,8 @@ function rangoHistInfo(id){
     return { tipo:"semana", inicio, fin,
       label:`${new Date(inicio).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})} al ${new Date(fin-864e5).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"})}` };
   }
-  const n=+id.slice(1), ahora=new Date(), anio=ahora.getFullYear(), mes=ahora.getMonth()-n;
-  const inicio=new Date(anio,mes,1).getTime(), fin=new Date(anio,mes+1,1).getTime();
+  const n=+id.slice(1), ahora=new Date(jornadaDe()), anio=ahora.getFullYear(), mes=ahora.getMonth()-n;
+  const inicio=new Date(anio,mes,1).getTime()+CORTE_JORNADA_MS, fin=new Date(anio,mes+1,1).getTime()+CORTE_JORNADA_MS;
   const label=new Date(inicio).toLocaleDateString("es-AR",{month:"long",year:"numeric"});
   return { tipo:"mes", inicio, fin, label: label.charAt(0).toUpperCase()+label.slice(1) };
 }
@@ -2061,6 +2070,14 @@ function grupoHistDe(id){ const s=S.saboresPorId[id]; const g=s?grupoProductoDe(
  *  que no tiene un id real para anular/eliminar (y desaparece solo, sin
  *  avisar, apenas se sincronice de verdad). */
 function esPendienteSync(r){ return String(r.id||"").indexOf("pendiente-")===0 }
+/** Texto de fecha de un movimiento: la jornada a la que pertenece (corte 04:00)
+ *  y la hora real en que se cargó, para que una salida de madrugada se lea
+ *  como "Jornada <día anterior> · cargado <madrugada>". */
+function textoJornada(ts){
+  const j=new Date(jornadaDe(ts)).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"});
+  const c=new Date(ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  return `Jornada ${j} · cargado ${c}`;
+}
 function filaMovimiento(r){
   // Con filtro de categoría (Vasquetas / Icepops / Chocolatería) solo se muestran
   // los productos de esa categoría, así una salida mixta no aparece entera en cada filtro.
@@ -2079,7 +2096,7 @@ function filaMovimiento(r){
   const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":r.tipo;
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
     <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${r.subtipo==="desperdicio"&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
-    <time>${new Date(r.ts).toLocaleString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
+    <time>${textoJornada(r.ts)}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${it}</div>`}
     ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
     ${!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
@@ -2147,7 +2164,7 @@ function histView(){
     // Día de cada desperdicio, en orden de fecha, para que al exportar se vea cuándo se dio de baja
     filas.sort((a,b)=>a.ts-b.ts);
     tabla = filas.length ? `<div class="tbl"><table><thead><tr><th>Día</th><th>Sabor</th><th>Motivo</th><th>Cant.</th></tr></thead><tbody>
-      ${filas.map(f=>`<tr><td>${new Date(f.ts).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</td><td><span class="tagHist">${etiquetaProductoDe(S.saboresPorId[f.id]||{})}</span> ${esc(f.nombre)}</td><td>${esc(f.motivo)}</td><td>${f.cantidad}</td></tr>`).join("")}
+      ${filas.map(f=>`<tr><td>${new Date(jornadaDe(f.ts)).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"})}</td><td><span class="tagHist">${etiquetaProductoDe(S.saboresPorId[f.id]||{})}</span> ${esc(f.nombre)}</td><td>${esc(f.motivo)}</td><td>${f.cantidad}</td></tr>`).join("")}
       <tr class="totalFila"><td><b>Total</b></td><td></td><td></td><td><b>${filas.reduce((a,f)=>a+f.cantidad,0)}</b></td></tr>
       </tbody></table></div>` : `<div class="empty">Sin desperdicio en este período.</div>`;
   } else if(S.categoriaHist==="produccion"){
@@ -2160,7 +2177,7 @@ function histView(){
         if(kg||und) filas.push({ts:r.ts, id, kg, und});
       }
     filas.sort((a,b)=>a.ts-b.ts);
-    const dia=ts=>new Date(ts).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"});
+    const dia=ts=>new Date(jornadaDe(ts)).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit",year:"numeric"});
     const grupos=GRUPO_PRODUCTO_ORDEN.map(g=>{
       const gf=filas.filter(f=>grupoProductoDe(S.saboresPorId[f.id]||{tipo:"v"})===g);
       if(!gf.length) return "";
@@ -2176,7 +2193,7 @@ function histView(){
     tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Icepops" : S.categoriaHist==="chocolateria" ? "Salidas — Chocolatería" : "Salidas por sabor (todas las categorías)";
     const sem={};
     for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin){
-      const d=esSemana?(new Date(r.ts).getDay()+6)%7:0;
+      const d=esSemana?(new Date(jornadaDe(r.ts)).getDay()+6)%7:0;
       for(const [id,q] of Object.entries(r.items||{})){
         if(S.categoriaHist!=="todas" && grupoHistDe(id)!==S.categoriaHist) continue;
         (sem[id]=sem[id]||[0,0,0,0,0,0,0])[d]+=+q||0;
