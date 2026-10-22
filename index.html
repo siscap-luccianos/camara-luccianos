@@ -656,9 +656,22 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 :root[data-tema="dorado"] .rlvRow.tot{border-top:1px solid rgba(201,169,97,.5);background:rgba(201,169,97,.10)}
 :root[data-tema="dorado"] .rlvRow:not(.cab):not(.tot):hover{background:rgba(201,169,97,.07)}
 @media print{
-  .noPrint,header,.bottomNav,.bar{display:none!important}
+  .noPrint,header,.bottomNav,.bar,.toast{display:none!important}
   body,.wrap,main{background:#fff!important}
   table{font-size:.74rem}
+  /* Relevar: hoja limpia en blanco y negro, sin vidrio ni colores del tema, y la tabla entera en el ancho de la hoja */
+  html,body{background:#fff!important;height:auto!important;min-height:0!important}
+  .wrap,main{padding:0!important;margin:0!important;min-height:0!important;max-width:none!important}
+  .rlv{gap:10px!important;padding:0!important;max-width:none!important}
+  .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
+  .rlv .sub,.rlv .rlvNota,.rlv .rlvRow small,.rlv .rlvRow.cab{color:#555!important}
+  .rlv .rlvTabla{overflow:visible!important;border:1px solid #bbb!important;border-radius:8px!important}
+  .rlv .rlvTabla>div{min-width:0!important}
+  .rlv .rlvRow{grid-template-columns:minmax(0,1.7fr)!important;grid-auto-flow:column!important;grid-auto-columns:minmax(0,1fr)!important;column-gap:8px!important;padding:6px 10px!important;border-top:1px solid #ddd!important;break-inside:avoid;font-size:.8rem}
+  .rlv .rlvRow.cab{background:#eee!important;border-top:0!important;font-size:.66rem}
+  .rlv .rlvRow.tot{background:#f3f3f3!important;border-top:2px solid #333!important}
+  .rlv .rlvRow .num.cero{color:#b00020!important}
+  .rlv .rlvRow .num.nada{color:#888!important}
 }
 </style>
 </head>
@@ -678,7 +691,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.92.5";
+const FRONTEND_VERSION = "1.92.6";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
