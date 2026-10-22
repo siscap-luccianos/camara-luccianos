@@ -627,6 +627,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .rlvItem .tag{font-size:.7rem;color:var(--muted)}
 .rlvCheck{width:18px;height:18px;border-radius:6px;border:1px solid rgba(var(--header-bg-rgb),.3);background:rgba(var(--surface-rgb),.7);display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;box-sizing:border-box;flex:none}
 .rlvCheck.on{background:linear-gradient(180deg,rgba(var(--header-bg-rgb),.9),rgba(var(--header-bg-rgb),.75));color:var(--header-ink);border-color:transparent;box-shadow:0 4px 8px -4px rgba(var(--header-bg-rgb),.55)}
+.rlvPrint{display:none}
 .rlvTabla{overflow-x:auto}
 .rlvRow{display:grid;column-gap:12px;padding:11px 16px;border-top:1px solid rgba(var(--header-bg-rgb),.07);align-items:center;transition:background .12s}
 .rlvRow:not(.cab):not(.tot):hover{background:rgba(var(--surface-rgb),.55)}
@@ -668,6 +669,9 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .rlv{display:block!important;padding:0!important;max-width:none!important}
   .rlv>*{margin-bottom:10px!important}
   .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
+  .rlv .rlvPrint{display:block!important;text-align:center!important;margin-bottom:16px!important}
+  .rlv .rlvPrint h1{font-size:2.1rem!important;margin:0 0 10px!important}
+  .rlv .rlvPrint p{margin:4px 0!important;font-size:1.1rem!important}
   .rlv .sub,.rlv .rlvNota,.rlv .rlvRow small,.rlv .rlvRow.cab{color:#555!important}
   .rlv .rlvNota{text-align:center!important}
   .rlv .rlvTabla{overflow:visible!important;border:1px solid #bbb!important;border-radius:8px!important}
@@ -698,7 +702,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.93.0";
+const FRONTEND_VERSION = "1.93.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1763,6 +1767,13 @@ function renderAuth(){
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
 }
 
+/* Fecha y hora del relevamiento (hora de Argentina), para el encabezado del PDF de Relevar. */
+function fechaHoraRelevamiento(){
+  const d=new Date(), tz="America/Argentina/Buenos_Aires";
+  return d.toLocaleDateString("es-AR",{timeZone:tz,day:"2-digit",month:"2-digit",year:"numeric"})+" · "+d.toLocaleTimeString("es-AR",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false})+" hs";
+}
+// Al mandar a imprimir se actualiza la hora: si la pantalla llevaba rato abierta, el PDF lleva la hora real de la impresión.
+window.addEventListener("beforeprint",()=>{ document.querySelectorAll(".rlvFechaPrint").forEach(e=>{ e.textContent=fechaHoraRelevamiento() }) });
 /* Admin y supervisor entran a Operaciones (vista general, sin local elegido). */
 function esOperador(){ return !!(S.empleado && (S.empleado.rol==="admin" || S.empleado.rol==="supervisor")); }
 /* Se recuerda en este navegador que se estaba en Operaciones, para volver ahí al recargar (y no al último local). */
@@ -1889,6 +1900,9 @@ function relevarView(){
   const resumen="Mostrando "+filas.length+" locales"+(sel.length?" · "+conAlgo+" con stock de lo elegido":"");
 
   return `<div class="rlv">
+  <div class="rlvPrint"><h1>Stock por rubro</h1>
+    <p>Relevamiento realizado por: <b>${esc(S.empleado?S.empleado.nombre:"")}</b>${S.empleado&&ROL_LABEL[S.empleado.rol]?" · "+esc(ROL_LABEL[S.empleado.rol]):""}</p>
+    <p>Fecha y hora: <b class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</b></p></div>
   <div class="noPrint"><h1>Relevar productos</h1><p class="sub">Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla.</p></div>
 
   <div class="rlvCaja noPrint">
