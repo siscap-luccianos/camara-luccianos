@@ -596,34 +596,49 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .authList{grid-template-columns:1fr}
 }
 .tagHist{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:999px;background:var(--line);color:var(--muted);font-size:.62rem;font-weight:700;vertical-align:middle}
-/* Operaciones > Relevar productos */
-.rlv{display:flex;flex-direction:column;gap:14px;max-width:1100px;margin:0 auto;padding-top:8px}
-.rlv h1{margin:0;font-family:var(--display);font-size:1.7rem;line-height:1.15}
-.rlv .sub{margin:4px 0 0;color:var(--muted);font-size:.9rem;line-height:1.45}
-.rlvCaja{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
-.rlvLabel{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.rlvFilaCtl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.rlvBuscar{position:relative;flex:1 1 260px;min-width:0}
-.rlvBuscar input{width:100%;box-sizing:border-box;height:44px;border-radius:12px;border:1px solid var(--line);padding:0 46px 0 14px;font:inherit;font-size:.95rem;color:var(--ink);background:var(--bg)}
-.rlvX{position:absolute;right:7px;top:7px;width:30px;height:30px;border-radius:999px;border:0;background:var(--line);color:var(--ink);font-size:1.1rem;line-height:1;cursor:pointer}
-.rlvLista{border:1px solid var(--line);border-radius:12px;max-height:260px;overflow-y:auto}
-.rlvItem{width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+/* Operaciones > Relevar productos — liquid glass: vidrio esmerilado, sombras suaves, controles chicos. */
+.rlv{display:flex;flex-direction:column;gap:16px;max-width:1080px;margin:0 auto;padding-top:8px}
+.rlv h1{margin:0;font-family:var(--display);font-size:1.45rem;line-height:1.15;letter-spacing:-.01em}
+.rlv .sub{margin:4px 0 0;color:var(--muted);font-size:.84rem;line-height:1.45}
+.rlvCaja,.rlvTabla{background:linear-gradient(160deg,rgba(var(--surface-rgb),.74),rgba(var(--surface-rgb),.46));backdrop-filter:blur(18px) saturate(170%);-webkit-backdrop-filter:blur(18px) saturate(170%);border:1px solid rgba(var(--surface-rgb),.85);border-radius:20px;box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 14px 34px -18px rgba(var(--header-bg-rgb),.30),0 2px 6px -3px rgba(var(--header-bg-rgb),.12)}
+.rlvCaja{padding:14px 16px;display:flex;flex-direction:column;gap:11px}
+.rlvCaja .rlvCaja{background:rgba(var(--surface-rgb),.38);backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:16px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 6px 16px -12px rgba(var(--header-bg-rgb),.25)}
+.rlvLabel.col{flex:none;width:132px}
+@media(max-width:640px){.rlvLabel.col{width:100%}}
+.rlvLabel{font-size:.66rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.rlvFilaCtl{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.rlvBuscar{position:relative;flex:1 1 240px;min-width:0}
+.rlvBuscar input{width:100%;box-sizing:border-box;height:38px;border-radius:999px;border:1px solid rgba(var(--header-bg-rgb),.14);padding:0 40px 0 16px;font:inherit;font-size:.88rem;color:var(--ink);background:rgba(var(--surface-rgb),.6);box-shadow:0 1px 3px rgba(var(--header-bg-rgb),.07) inset;outline:none;transition:border-color .15s,box-shadow .15s}
+.rlvBuscar input:focus{border-color:rgba(var(--accent-rgb),.55);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.14)}
+.rlvX{position:absolute;right:6px;top:6px;width:26px;height:26px;border-radius:999px;border:0;background:rgba(var(--header-bg-rgb),.10);color:var(--ink);font-size:1rem;line-height:1;cursor:pointer;transition:background .15s}
+.rlvX:hover{background:rgba(var(--header-bg-rgb),.18)}
+.rlvBtn{height:30px;padding:0 13px;border-radius:999px;border:1px solid rgba(var(--header-bg-rgb),.14);background:linear-gradient(180deg,rgba(var(--surface-rgb),.9),rgba(var(--surface-rgb),.5));color:var(--ink);font:inherit;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 5px 12px -7px rgba(var(--header-bg-rgb),.35);transition:transform .15s,box-shadow .15s}
+.rlvBtn:hover{transform:translateY(-1px);box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 8px 16px -8px rgba(var(--header-bg-rgb),.4)}
+.rlvBtn.alto{height:38px;padding:0 16px}
+.rlvBtn.pri{background:linear-gradient(180deg,rgba(var(--accent-rgb),.95),rgba(var(--accent-rgb),.78));color:var(--accent-ink);border-color:rgba(var(--accent-rgb),.5);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 8px 16px -9px rgba(var(--accent-rgb),.7)}
+.rlv .chip{min-height:30px;padding:0 11px;font-size:.76rem;background:rgba(var(--surface-rgb),.62);border:1px solid rgba(var(--header-bg-rgb),.13);box-shadow:0 1px 0 rgba(255,255,255,.7) inset,0 3px 9px -6px rgba(var(--header-bg-rgb),.35)}
+.rlv .chip small{opacity:.7;font-weight:600}
+.rlv .chip[aria-pressed=true]{background:linear-gradient(180deg,rgba(var(--header-bg-rgb),.92),rgba(var(--header-bg-rgb),.78));color:var(--header-ink);border-color:transparent;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 8px 16px -9px rgba(var(--header-bg-rgb),.65)}
+.rlvLista{border-radius:14px;background:rgba(var(--surface-rgb),.42);border:1px solid rgba(var(--header-bg-rgb),.08);max-height:240px;overflow-y:auto;box-shadow:0 1px 3px rgba(var(--header-bg-rgb),.06) inset}
+.rlvItem{width:100%;display:flex;align-items:center;gap:11px;padding:8px 13px;border:0;border-top:1px solid rgba(var(--header-bg-rgb),.06);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer;transition:background .12s}
 .rlvItem:first-child{border-top:0}
-.rlvItem .nom{flex:1;font-weight:600;font-size:.92rem}
-.rlvItem .tag{font-size:.72rem;color:var(--muted)}
-.rlvCheck{width:22px;height:22px;border-radius:7px;border:1px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;box-sizing:border-box;flex:none}
-.rlvCheck.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.rlvTabla{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
-.rlvRow{display:grid;column-gap:12px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
-.rlvRow.cab{background:var(--bg);border-top:0;align-items:end;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
-.rlvRow.tot{border-top:2px solid var(--ink);background:var(--bg);font-weight:800}
-.rlvRow .loc{min-width:0;font-weight:600;font-size:.92rem}
-.rlvRow .loc small{display:block;color:var(--muted);font-weight:500;font-size:.74rem}
-.rlvRow .num{text-align:right;font-size:1rem;font-weight:800;font-variant-numeric:tabular-nums}
+.rlvItem:hover{background:rgba(var(--surface-rgb),.7)}
+.rlvItem .nom{flex:1;font-weight:600;font-size:.86rem}
+.rlvItem .tag{font-size:.7rem;color:var(--muted)}
+.rlvCheck{width:18px;height:18px;border-radius:6px;border:1px solid rgba(var(--header-bg-rgb),.3);background:rgba(var(--surface-rgb),.7);display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;box-sizing:border-box;flex:none}
+.rlvCheck.on{background:linear-gradient(180deg,rgba(var(--header-bg-rgb),.9),rgba(var(--header-bg-rgb),.75));color:var(--header-ink);border-color:transparent;box-shadow:0 4px 8px -4px rgba(var(--header-bg-rgb),.55)}
+.rlvTabla{overflow-x:auto}
+.rlvRow{display:grid;column-gap:12px;padding:11px 16px;border-top:1px solid rgba(var(--header-bg-rgb),.07);align-items:center;transition:background .12s}
+.rlvRow:not(.cab):not(.tot):hover{background:rgba(var(--surface-rgb),.55)}
+.rlvRow.cab{background:rgba(var(--header-bg-rgb),.035);border-top:0;align-items:end;font-size:.66rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.rlvRow.tot{border-top:1px solid rgba(var(--header-bg-rgb),.22);background:rgba(var(--header-bg-rgb),.045);font-weight:800}
+.rlvRow .loc{min-width:0;font-weight:600;font-size:.88rem}
+.rlvRow .loc small{display:block;color:var(--muted);font-weight:500;font-size:.7rem;margin-top:1px}
+.rlvRow .num{text-align:right;font-size:.95rem;font-weight:800;font-variant-numeric:tabular-nums}
 .rlvRow .num.cero{color:var(--alert)}
 .rlvRow .num.nada{color:var(--muted);font-weight:500}
-.rlvRow.cab .num{font-size:.78rem;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:0}
-.rlvNota{font-size:.8rem;color:var(--muted);line-height:1.5}
+.rlvRow.cab .num{font-size:.7rem;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:0}
+.rlvNota{font-size:.76rem;color:var(--muted);line-height:1.5}
 @media print{
   .noPrint,header,.bottomNav,.bar{display:none!important}
   body,.wrap,main{background:#fff!important}
@@ -647,7 +662,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.92.0";
+const FRONTEND_VERSION = "1.92.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1778,7 +1793,7 @@ function relevarHace(ts){
 function relevarView(){
   const R=relevarEstado();
   if(R.datos===undefined && !R.error) cargarRelevar();
-  if(R.error) return `<div class="note">${esc(R.error)}</div><button class="btn ghost" type="button" data-rlv-recargar style="margin-top:10px">Reintentar</button>`;
+  if(R.error) return `<div class="note">${esc(R.error)}</div><button class="rlvBtn" type="button" data-rlv-recargar style="margin-top:10px">Reintentar</button>`;
   if(!R.datos) return `<div class="note">Cargando el stock de todos los locales…</div>`;
   const D=R.datos, sab=D.sabores, porId={}; sab.forEach(s=>{ porId[s.id]=s });
   const sel=R.sel.map(id=>porId[id]).filter(Boolean);
@@ -1837,22 +1852,22 @@ function relevarView(){
     <div class="rlvFilaCtl">${prodChips}</div>
     <div class="rlvFilaCtl">
       <div class="rlvBuscar"><input type="text" id="rlvQ" value="${esc(R.q)}" placeholder="Buscar en el catálogo: Dubai, King, Alfajor…" aria-label="Buscar en el catálogo" autocomplete="off">${hayTexto?`<button type="button" class="rlvX" data-rlv-limpiarq aria-label="Borrar la búsqueda">×</button>`:""}</div>
-      <button type="button" class="btn ghost" data-rlv-lista>${listaAbierta?"Ocultar catálogo ▴":"Ver catálogo ▾"}</button>
+      <button type="button" class="rlvBtn alto" data-rlv-lista>${listaAbierta?"Ocultar catálogo ▴":"Ver catálogo ▾"}</button>
     </div>
-    ${listaAbierta?`<div class="rlvFilaCtl"><span class="rlvLabel" style="min-width:110px">Filtrar por rubro</span>${rubroChips}</div><div class="rlvLista">${catalogoHTML}</div>`:""}
+    ${listaAbierta?`<div class="rlvFilaCtl"><span class="rlvLabel col">Filtrar por rubro</span>${rubroChips}</div><div class="rlvLista">${catalogoHTML}</div>`:""}
   </div>
 
   <div class="rlvCaja noPrint">
     <div class="rlvFilaCtl">
-      <span class="rlvLabel">Locales a mostrar</span>
-      <button type="button" class="btn" data-rlv-panel>${R.panel?"Cerrar lista ▴":"Elegir locales ▾"} · ${nMarcados} marcados</button>
+      <span class="rlvLabel col">Locales a mostrar</span>
+      <button type="button" class="rlvBtn pri" data-rlv-panel>${R.panel?"Cerrar lista ▴":"Elegir locales ▾"} · ${nMarcados} marcados</button>
       <button type="button" class="chip" data-rlv-solo aria-pressed="${R.solo}">Solo los que tienen stock</button>
     </div>
     <div class="rlvFilaCtl">${locChips}</div>
-    ${R.panel?`<div class="rlvCaja" style="background:var(--bg)">
+    ${R.panel?`<div class="rlvCaja">
       <div class="rlvBuscar" style="flex:none"><input type="text" id="rlvQL" value="${esc(R.qL)}" placeholder="Buscar por nombre o región…" aria-label="Buscar un local" autocomplete="off">${R.qL.length?`<button type="button" class="rlvX" data-rlv-limpiarql aria-label="Borrar la búsqueda">×</button>`:""}</div>
-      ${regionChips?`<div class="rlvFilaCtl"><span class="rlvLabel" style="min-width:110px">Marcar por región</span>${regionChips}</div>`:""}
-      ${grupoChips?`<div class="rlvFilaCtl"><span class="rlvLabel" style="min-width:110px">Marcar por tipo</span>${grupoChips}<button type="button" class="btn ghost" data-rlv-quitartodos style="margin-left:auto">Quitar todos</button></div>`:""}
+      ${regionChips?`<div class="rlvFilaCtl"><span class="rlvLabel col">Marcar por región</span>${regionChips}</div>`:""}
+      ${grupoChips?`<div class="rlvFilaCtl"><span class="rlvLabel col">Marcar por tipo</span>${grupoChips}<button type="button" class="rlvBtn" data-rlv-quitartodos style="margin-left:auto">Quitar todos</button></div>`:""}
       <div class="rlvLista">${listaLocales}</div>
     </div>`:""}
   </div>
@@ -1861,8 +1876,8 @@ function relevarView(){
   ${tablaHTML}
   <div class="rlvFilaCtl">
     <div class="rlvNota" style="flex:1 1 380px">«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ${D.generado?relevarHace(D.generado):""}.</div>
-    <button type="button" class="btn ghost noPrint" data-rlv-recargar>Actualizar</button>
-    <button type="button" class="btn ghost noPrint" id="rlvExportar">🖨 Exportar</button>
+    <button type="button" class="rlvBtn noPrint" data-rlv-recargar>Actualizar</button>
+    <button type="button" class="rlvBtn noPrint" id="rlvExportar">🖨 Exportar</button>
   </div></div>`;
 }
 function relevarClick(t){
