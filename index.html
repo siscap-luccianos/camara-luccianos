@@ -596,6 +596,34 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .authList{grid-template-columns:1fr}
 }
 .tagHist{display:inline-block;margin-left:5px;padding:1px 6px;border-radius:999px;background:var(--line);color:var(--muted);font-size:.62rem;font-weight:700;vertical-align:middle}
+/* Operaciones > Relevar productos */
+.rlv{display:flex;flex-direction:column;gap:14px;max-width:1100px;margin:0 auto;padding-top:8px}
+.rlv h1{margin:0;font-family:var(--display);font-size:1.7rem;line-height:1.15}
+.rlv .sub{margin:4px 0 0;color:var(--muted);font-size:.9rem;line-height:1.45}
+.rlvCaja{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.rlvLabel{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rlvFilaCtl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rlvBuscar{position:relative;flex:1 1 260px;min-width:0}
+.rlvBuscar input{width:100%;box-sizing:border-box;height:44px;border-radius:12px;border:1px solid var(--line);padding:0 46px 0 14px;font:inherit;font-size:.95rem;color:var(--ink);background:var(--bg)}
+.rlvX{position:absolute;right:7px;top:7px;width:30px;height:30px;border-radius:999px;border:0;background:var(--line);color:var(--ink);font-size:1.1rem;line-height:1;cursor:pointer}
+.rlvLista{border:1px solid var(--line);border-radius:12px;max-height:260px;overflow-y:auto}
+.rlvItem{width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.rlvItem:first-child{border-top:0}
+.rlvItem .nom{flex:1;font-weight:600;font-size:.92rem}
+.rlvItem .tag{font-size:.72rem;color:var(--muted)}
+.rlvCheck{width:22px;height:22px;border-radius:7px;border:1px solid var(--muted);display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;box-sizing:border-box;flex:none}
+.rlvCheck.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.rlvTabla{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.rlvRow{display:grid;column-gap:12px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.rlvRow.cab{background:var(--bg);border-top:0;align-items:end;font-size:.72rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.rlvRow.tot{border-top:2px solid var(--ink);background:var(--bg);font-weight:800}
+.rlvRow .loc{min-width:0;font-weight:600;font-size:.92rem}
+.rlvRow .loc small{display:block;color:var(--muted);font-weight:500;font-size:.74rem}
+.rlvRow .num{text-align:right;font-size:1rem;font-weight:800;font-variant-numeric:tabular-nums}
+.rlvRow .num.cero{color:var(--alert)}
+.rlvRow .num.nada{color:var(--muted);font-weight:500}
+.rlvRow.cab .num{font-size:.78rem;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:0}
+.rlvNota{font-size:.8rem;color:var(--muted);line-height:1.5}
 @media print{
   .noPrint,header,.bottomNav,.bar{display:none!important}
   body,.wrap,main{background:#fff!important}
@@ -619,7 +647,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.91.3";
+const FRONTEND_VERSION = "1.92.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1148,7 +1176,7 @@ function cerrarSesion(silencioso){
   S.busy = false; // si se cierra la sesión en medio de un guardado (ej. auto-cierre de tablet tras una salida), que no quede "Guardando…" trabado para la próxima persona que entre
   S.local = S.deviceLocal || null;
   S.tab = "salida";
-  S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null; S.errorEquipo = null; S.errorGestion = null;
+  S.equipo = undefined; S.gestion = undefined; S.saboresAdmin = undefined; S.relevar = undefined; S.editandoSaborId = null; S.errorSaboresAdmin = null; S.errorEquipo = null; S.errorGestion = null;
   clearTimeout(S.inactTimer);
   clearInterval(S.pollTimer);
   if(!silencioso) toast("Sesión cerrada");
@@ -1718,14 +1746,151 @@ const ICONOS_TAB = {
   historial: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
   equipo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   inicio: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
+  relevar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 4v16"/></svg>`,
   sabores: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>`,
 };
+/* ============================================================
+   RELEVAR PRODUCTOS (solo Operaciones: admin y supervisor).
+   Una tabla locales × productos con el stock vigente que cada local
+   tiene en la app (acción "relevar"). Mock aprobado por Gabi 23/10/2026.
+============================================================ */
+function relevarEstado(){
+  if(!S.relevar){
+    let sel=[], marcados={};
+    try{ sel=JSON.parse(ls.get("relevarProductos","[]"))||[] }catch(e){ sel=[] }
+    try{ (JSON.parse(ls.get("relevarLocales","[]"))||[]).forEach(n=>{ marcados[n]=true }) }catch(e){ marcados={} }
+    S.relevar={datos:undefined, error:null, sel, marcados, q:"", rubro:"todos", lista:false, panel:false, qL:"", solo:false};
+  }
+  return S.relevar;
+}
+function relevarGuardar(){ const R=relevarEstado(); ls.set("relevarProductos",JSON.stringify(R.sel)); ls.set("relevarLocales",JSON.stringify(Object.keys(R.marcados))) }
+async function cargarRelevar(){
+  const R=relevarEstado(); R.datos=null; R.error=null;
+  const r=await api("relevar",{});
+  if(r && r.ok){ R.datos=r; R.sel=R.sel.filter(id=>r.sabores.some(s=>s.id===id)); }
+  else { R.datos=undefined; R.error=(r&&r.error)||"No se pudo conectar. Probá de nuevo."; }
+  if(!S.local && S.tab==="relevar") renderApp();
+}
+function relevarHace(ts){
+  const m=Math.max(0,Math.round((Date.now()-ts)/60000));
+  return m<1?"recién":m<60?"hace "+m+" min":"hace "+Math.round(m/60)+" h";
+}
+function relevarView(){
+  const R=relevarEstado();
+  if(R.datos===undefined && !R.error) cargarRelevar();
+  if(R.error) return `<div class="note">${esc(R.error)}</div><button class="btn ghost" type="button" data-rlv-recargar style="margin-top:10px">Reintentar</button>`;
+  if(!R.datos) return `<div class="note">Cargando el stock de todos los locales…</div>`;
+  const D=R.datos, sab=D.sabores, porId={}; sab.forEach(s=>{ porId[s.id]=s });
+  const sel=R.sel.map(id=>porId[id]).filter(Boolean);
+  const grupoDe=s=>grupoProductoDe(s), etiqueta=s=>GRUPO_PRODUCTO_LABEL[grupoDe(s)];
+  const q=normalizar(R.q.trim());
+  const porTexto=sab.filter(s=>!q||normalizar(s.nombre).includes(q)||normalizar(etiqueta(s)).includes(q));
+  const res=porTexto.filter(s=>R.rubro==="todos"||grupoDe(s)===R.rubro);
+  const hayTexto=R.q.length>0, listaAbierta=R.lista||hayTexto;
+
+  const rubros=[["todos","Todos"]].concat(GRUPO_PRODUCTO_ORDEN.filter(g=>sab.some(s=>grupoDe(s)===g)).map(g=>[g,GRUPO_PRODUCTO_LABEL[g]]));
+  const rubroChips=rubros.map(([k,l])=>`<button type="button" class="chip" data-rlv-rubro="${k}" aria-pressed="${R.rubro===k}">${esc(l)} · ${porTexto.filter(s=>k==="todos"||grupoDe(s)===k).length}</button>`).join("");
+  const catalogoHTML=res.length?res.map(s=>{ const on=R.sel.includes(s.id);
+    return `<button type="button" class="rlvItem" data-rlv-prod="${s.id}"><span class="rlvCheck${on?" on":""}">${on?"✓":""}</span><span class="nom">${esc(s.nombre)}</span><span class="tag">${esc(etiqueta(s))}</span></button>` }).join("")
+    : `<div class="empty">No hay productos con ese nombre.</div>`;
+  const prodChips=sel.length?sel.map(s=>`<button type="button" class="chip" aria-pressed="true" data-rlv-prod="${s.id}" aria-label="Quitar ${esc(s.nombre)}">${esc(s.nombre)} <small>${esc(etiqueta(s))}</small> ×</button>`).join("")
+    : `<span class="rlvNota">Todavía no elegiste ningún producto.</span>`;
+
+  // Locales
+  const todos=D.locales;
+  const regiones={}; todos.forEach(l=>{ if(l.region) regiones[l.region]=(regiones[l.region]||0)+1 });
+  const regionesOrden=Object.keys(regiones).sort((a,b)=>regiones[b]-regiones[a]||a.localeCompare(b));
+  const grupos=[]; todos.forEach(l=>{ if(l.grupo && grupos.indexOf(l.grupo)===-1) grupos.push(l.grupo) });
+  const qL=normalizar(R.qL.trim());
+  const enBusqueda=todos.filter(l=>!qL||normalizar(l.nombre).includes(qL)||normalizar(l.region).includes(qL));
+  const nMarcados=todos.filter(l=>R.marcados[l.nombre]).length;
+  const regionChips=regionesOrden.map(r=>{ const del=todos.filter(l=>l.region===r), on=del.every(l=>R.marcados[l.nombre]);
+    return `<button type="button" class="chip" data-rlv-region="${esc(r)}" aria-pressed="${on}">${esc(r)} · ${del.length}</button>` }).join("");
+  const grupoChips=grupos.map(g=>`<button type="button" class="chip" data-rlv-grupo="${esc(g)}">${esc(g)} · ${todos.filter(l=>l.grupo===g).length}</button>`).join("");
+  const listaLocales=enBusqueda.length?enBusqueda.map(l=>{ const on=!!R.marcados[l.nombre];
+    return `<button type="button" class="rlvItem" data-rlv-loc="${esc(l.nombre)}"><span class="rlvCheck${on?" on":""}">${on?"✓":""}</span><span class="nom">${esc(l.nombre)}</span><span class="tag">${esc([l.region,l.grupo].filter(Boolean).join(" · "))}</span></button>` }).join("")
+    : `<div class="empty">No hay locales con ese nombre.</div>`;
+  const locChips=todos.filter(l=>R.marcados[l.nombre]).map(l=>`<button type="button" class="chip" aria-pressed="false" data-rlv-loc="${esc(l.nombre)}" aria-label="Quitar ${esc(l.nombre)}">${esc(l.nombre)} ×</button>`).join("")
+    || `<span class="rlvNota">Todavía no marcaste ningún local. Abrí la lista y elegí los que quieras ver.</span>`;
+
+  // Tabla
+  const tiene=l=>sel.some(p=>(l.stock[p.id]||0)>0);
+  const filas=todos.filter(l=>R.marcados[l.nombre] && (!R.solo||tiene(l)));
+  if(sel.length){ const p0=sel[0].id; filas.sort((a,b)=>((b.stock[p0]===undefined?-1:b.stock[p0])-(a.stock[p0]===undefined?-1:a.stock[p0]))||a.nombre.localeCompare(b.nombre)) }
+  const cols="minmax(180px,1.6fr) "+sel.map(()=>"minmax(96px,1fr)").join(" ");
+  const ancho=(180+sel.length*96)+(sel.length+1)*12+32;
+  const celda=(l,p)=>{ const v=l.stock[p.id]; return v===undefined?`<div class="num nada">—</div>`:v===0?`<div class="num cero">0</div>`:`<div class="num">${v}</div>` };
+  const tablaHTML=sel.length&&nMarcados?`<div class="rlvTabla"><div style="min-width:${ancho}px">
+    <div class="rlvRow cab" style="grid-template-columns:${cols}"><div>Local</div>${sel.map(p=>`<div class="num">${esc(p.nombre)}</div>`).join("")}</div>
+    ${filas.map(l=>`<div class="rlvRow" style="grid-template-columns:${cols}"><div class="loc">${esc(l.nombre)}<small>${esc([l.grupo,l.region].filter(Boolean).join(" · "))}${l.sinDatos?" · sin movimientos cargados":""}</small></div>${sel.map(p=>celda(l,p)).join("")}</div>`).join("")}
+    <div class="rlvRow tot" style="grid-template-columns:${cols}"><div>Total</div>${sel.map(p=>`<div class="num">${filas.reduce((a,l)=>a+(l.stock[p.id]||0),0)}</div>`).join("")}</div>
+  </div></div>`
+    : `<div class="empty">${sel.length?"Marcá al menos un local para armar la tabla.":"Elegí al menos un producto para armar la tabla."}</div>`;
+  const conAlgo=filas.filter(tiene).length;
+  const resumen="Mostrando "+filas.length+" locales"+(sel.length?" · "+conAlgo+" con stock de lo elegido":"");
+
+  return `<div class="rlv">
+  <div><h1>Relevar productos</h1><p class="sub">Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla.</p></div>
+
+  <div class="rlvCaja noPrint">
+    <div class="rlvLabel">Productos a relevar</div>
+    <div class="rlvFilaCtl">${prodChips}</div>
+    <div class="rlvFilaCtl">
+      <div class="rlvBuscar"><input type="text" id="rlvQ" value="${esc(R.q)}" placeholder="Buscar en el catálogo: Dubai, King, Alfajor…" aria-label="Buscar en el catálogo" autocomplete="off">${hayTexto?`<button type="button" class="rlvX" data-rlv-limpiarq aria-label="Borrar la búsqueda">×</button>`:""}</div>
+      <button type="button" class="btn ghost" data-rlv-lista>${listaAbierta?"Ocultar catálogo ▴":"Ver catálogo ▾"}</button>
+    </div>
+    ${listaAbierta?`<div class="rlvFilaCtl"><span class="rlvLabel" style="min-width:110px">Filtrar por rubro</span>${rubroChips}</div><div class="rlvLista">${catalogoHTML}</div>`:""}
+  </div>
+
+  <div class="rlvCaja noPrint">
+    <div class="rlvFilaCtl">
+      <span class="rlvLabel">Locales a mostrar</span>
+      <button type="button" class="btn" data-rlv-panel>${R.panel?"Cerrar lista ▴":"Elegir locales ▾"} · ${nMarcados} marcados</button>
+      <button type="button" class="chip" data-rlv-solo aria-pressed="${R.solo}">Solo los que tienen stock</button>
+    </div>
+    <div class="rlvFilaCtl">${locChips}</div>
+    ${R.panel?`<div class="rlvCaja" style="background:var(--bg)">
+      <div class="rlvBuscar" style="flex:none"><input type="text" id="rlvQL" value="${esc(R.qL)}" placeholder="Buscar por nombre o región…" aria-label="Buscar un local" autocomplete="off">${R.qL.length?`<button type="button" class="rlvX" data-rlv-limpiarql aria-label="Borrar la búsqueda">×</button>`:""}</div>
+      ${regionChips?`<div class="rlvFilaCtl"><span class="rlvLabel" style="min-width:110px">Marcar por región</span>${regionChips}</div>`:""}
+      ${grupoChips?`<div class="rlvFilaCtl"><span class="rlvLabel" style="min-width:110px">Marcar por tipo</span>${grupoChips}<button type="button" class="btn ghost" data-rlv-quitartodos style="margin-left:auto">Quitar todos</button></div>`:""}
+      <div class="rlvLista">${listaLocales}</div>
+    </div>`:""}
+  </div>
+
+  <div class="rlvNota">${esc(resumen)}</div>
+  ${tablaHTML}
+  <div class="rlvFilaCtl">
+    <div class="rlvNota" style="flex:1 1 380px">«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ${D.generado?relevarHace(D.generado):""}.</div>
+    <button type="button" class="btn ghost noPrint" data-rlv-recargar>Actualizar</button>
+    <button type="button" class="btn ghost noPrint" id="rlvExportar">🖨 Exportar</button>
+  </div></div>`;
+}
+function relevarClick(t){
+  const R=relevarEstado();
+  const alt=(obj,k)=>{ if(obj[k]) delete obj[k]; else obj[k]=true };
+  if(t.dataset.rlvProd){ const i=R.sel.indexOf(t.dataset.rlvProd); if(i===-1) R.sel.push(t.dataset.rlvProd); else R.sel.splice(i,1); relevarGuardar(); renderApp(); return true }
+  if(t.dataset.rlvRubro){ R.rubro=t.dataset.rlvRubro; renderApp(); return true }
+  if(t.dataset.rlvLista!==undefined){ R.lista=!(R.lista||R.q.length>0); if(!R.lista) R.q=""; renderApp(); return true }
+  if(t.dataset.rlvLimpiarq!==undefined){ R.q=""; renderApp(); return true }
+  if(t.dataset.rlvLimpiarql!==undefined){ R.qL=""; renderApp(); return true }
+  if(t.dataset.rlvPanel!==undefined){ R.panel=!R.panel; renderApp(); return true }
+  if(t.dataset.rlvSolo!==undefined){ R.solo=!R.solo; renderApp(); return true }
+  if(t.dataset.rlvLoc){ alt(R.marcados,t.dataset.rlvLoc); relevarGuardar(); renderApp(); return true }
+  if(t.dataset.rlvRegion && R.datos){ const del=R.datos.locales.filter(l=>l.region===t.dataset.rlvRegion), todas=del.every(l=>R.marcados[l.nombre]); del.forEach(l=>{ if(todas) delete R.marcados[l.nombre]; else R.marcados[l.nombre]=true }); relevarGuardar(); renderApp(); return true }
+  if(t.dataset.rlvGrupo && R.datos){ R.datos.locales.filter(l=>l.grupo===t.dataset.rlvGrupo).forEach(l=>{ R.marcados[l.nombre]=true }); relevarGuardar(); renderApp(); return true }
+  if(t.dataset.rlvQuitartodos!==undefined){ R.marcados={}; relevarGuardar(); renderApp(); return true }
+  if(t.dataset.rlvRecargar!==undefined){ R.datos=undefined; R.error=null; renderApp(); return true }
+  if(t.id==="rlvExportar"){ window.print(); return true }
+  return false;
+}
+
 function renderNav(){
   // Operaciones (admin sin local elegido): solo Inicio (la portada) y Sabores (catálogo global).
   if(!S.local){
-    if(!S.empleado || S.empleado.rol!=="admin") return "";
-    const tabsOp=[["inicio","Inicio"],["sabores","Sabores"]];
-    const act = S.tab==="sabores" ? "sabores" : "inicio";
+    if(!S.empleado || (S.empleado.rol!=="admin" && S.empleado.rol!=="supervisor")) return "";
+    const tabsOp=[["inicio","Inicio"],["relevar","Relevar"]];
+    if(S.empleado.rol==="admin") tabsOp.push(["sabores","Sabores"]);
+    const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : "inicio";
     return `<nav role="tablist" id="tabs" class="bottomNav navCorta">${tabsOp.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${act===t}">${ICONOS_TAB[t]}<span>${l}</span></button>`).join("")}</nav>`;
   }
   if(!S.sabores.length) return "";
@@ -1740,8 +1905,10 @@ function renderNav(){
 }
 
 function renderMain(){
+  if(S.local && S.tab==="relevar") S.tab="salida"; // Relevar es solo de Operaciones (sin local elegido)
   // Vista general (sin local elegido): la portada ocupa toda la pantalla como fondo,
   // y la barra LogiStock de arriba queda encima.
+  if(!S.local && S.tab==="relevar" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return relevarView();
   if(!S.local && S.tab!=="sabores") return `
     <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="1">Gestionar sabores de todos los locales</button>` : ""}</div>`;
   if(!S.sabores.length){
@@ -3135,6 +3302,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
+  if(relevarClick(t)) return;
   if(t.dataset.t){ S.tab=t.dataset.t; S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
   // Un mantener (pointerdown largo) ya abrió el diálogo de cantidad: su click no suma una unidad.
   if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
@@ -3330,6 +3498,12 @@ document.addEventListener("focusin", e=>{
   if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number") e.target.select();
 });
 document.addEventListener("input", e=>{
+  if(e.target.id==="rlvQ" || e.target.id==="rlvQL"){
+    const R=relevarEstado(), id=e.target.id, pos=e.target.selectionStart;
+    if(id==="rlvQ") R.q=e.target.value; else R.qL=e.target.value;
+    renderApp(); const el=$("#"+id); if(el){ el.focus(); el.setSelectionRange(pos,pos) }
+    return;
+  }
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
   if(e.target.id==="remito"){ S.remito=e.target.value }
   if(e.target.id==="motivoDesperdicio"){ S.motivoDesperdicio=e.target.value; S.confirm=false; renderBar() }

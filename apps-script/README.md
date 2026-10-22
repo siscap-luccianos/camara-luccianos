@@ -194,6 +194,14 @@ Si un rótulo no se lee, se toca el sabor como siempre y el piloto pregunta los 
 
 Para sumar un sabor al piloto alcanza con cargar su `codigo_fabrica` en la hoja (sin redeploy). Para sumar otro local, `escaner_peso=SI` en su fila. Para que el botón aparezca y se guarden los pesos hace falta pegar `Code.gs` 1.42.0 y hacer "Nueva implementación".
 
+## Relevar productos (solo Operaciones, `Code.gs` 1.43.0)
+
+Pestaña **Relevar** de Operaciones (admin y supervisor): una tabla con el stock vigente de los productos que se elijan en los locales que se marquen. La acción `relevar` lee `Sabores`, `Locales`, `Stock` y `Registros` una sola vez y devuelve, por local, el mismo stock que ve ese local (último conteo + ingresos − salidas, sin anulados, últimos 60 días; los sabores de `Locales.sabores_excluidos` no vienen y se muestran como «—»).
+
+- Columna `Locales.region` (provincia, zona o país: CABA, GBA, Mar del Plata, USA, España…): sirve para marcar locales por región. Si falta, el local simplemente no aparece en los botones de región. La columna `grupo` ya existe («Propios» / «Franquicias») y se usa para marcar por tipo.
+- Para sumar o corregir una región alcanza con editar esa celda en la hoja, sin redeploy.
+- Solo los roles admin y supervisor pueden llamarla; cualquier otro recibe «Solo Operaciones puede relevar productos».
+
 ## Si algo no cierra
 
 - **"Falta configurar SESSION_SECRET..."** → repetí el paso 3.

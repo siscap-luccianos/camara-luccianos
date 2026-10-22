@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.42.1";
+const BACKEND_VERSION = "1.43.0";
 
 function doPost(e) {
   let resultado;
@@ -81,6 +81,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
+    case "relevar": return relevar(empleado);
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos);
@@ -513,6 +514,64 @@ function datos(local, empleado) {
   }
 
   return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, rol: empleado.rol };
+}
+
+/** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
+ *  locales de una vez, para armar la tabla "Relevar productos". No calcula nada
+ *  distinto de lo que ve cada local: es la misma cuenta que stockMap() del
+ *  cliente (último conteo + ingresos − salidas posteriores, sin anulados, con
+ *  la misma ventana de DIAS_HISTORIAL que usa datos()). Devuelve el catálogo
+ *  activo y, por local, {nombre, grupo, region, stock:{idSabor:unidades},
+ *  conteoTs, sinDatos}. En "stock" faltan los sabores que ese local marcó que
+ *  no tiene (Locales.sabores_excluidos): el cliente los muestra como "—". */
+function relevar(empleado) {
+  if (empleado.rol !== "admin" && empleado.rol !== "supervisor") {
+    return { ok: false, error: "Solo Operaciones puede relevar productos." };
+  }
+  const limite = Date.now() - DIAS_HISTORIAL * 864e5;
+  const saboresFilas = _leerCrudo("Sabores").filter((s) => _esVerdadero(s.activo) !== false);
+  const sabores = saboresFilas
+    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, familia: s.familia || "vasquetas", categoria: s.categoria || "Cremas", orden: Number(s.orden) || 0, peso: Number(s.peso) || 0 }))
+    .sort((a, b) => a.orden - b.orden);
+
+  const stockPorLocal = {};
+  _leerCrudo("Stock").forEach((f) => { stockPorLocal[String(f.local || "").trim()] = _stockPublico(f); });
+
+  const regsPorLocal = {};
+  _leerCrudo("Registros").forEach((r) => {
+    if (r.anulado_ts || Number(r.ts) < limite) return;
+    if (r.tipo !== "ingreso" && r.tipo !== "salida") return;
+    const k = String(r.local || "").trim();
+    (regsPorLocal[k] = regsPorLocal[k] || []).push(r);
+  });
+
+  const locales = [];
+  _leerCrudo("Locales").forEach((l) => {
+    const nombre = String(l.nombre || "").trim();
+    if (!nombre || _esVerdadero(l.activo) === false || _esVerdadero(l.operaciones) === true) return;
+    const st = stockPorLocal[nombre] || null;
+    const bts = st ? st.ts : 0;
+    const stock = {};
+    sabores.forEach((sb) => { stock[sb.id] = Number(st && st.base ? st.base[sb.id] : 0) || 0; });
+    const regs = regsPorLocal[nombre] || [];
+    regs.forEach((r) => {
+      if (Number(r.ts) <= bts) return;
+      const signo = r.tipo === "ingreso" ? 1 : -1;
+      let items = {};
+      try { items = JSON.parse(r.items || "{}"); } catch (e) { items = {}; }
+      Object.keys(items).forEach((id) => {
+        if (stock[id] === undefined) return;
+        stock[id] += signo * (Number(items[id]) || 0);
+      });
+    });
+    String(l.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean).forEach((id) => { delete stock[id]; });
+    locales.push({
+      nombre: nombre, grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(),
+      stock: stock, conteoTs: st ? st.ts : 0, sinDatos: !st && regs.length === 0,
+    });
+  });
+  locales.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  return { ok: true, sabores: sabores, locales: locales, generado: Date.now() };
 }
 
 function _registroPublico(r) {
