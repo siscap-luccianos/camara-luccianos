@@ -710,7 +710,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.93.6";
+const FRONTEND_VERSION = "1.93.7";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1927,7 +1927,7 @@ function relevarView(){
   <div class="noPrint"><h1>Relevar productos</h1><p class="sub">Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla.</p></div>
 
   <div class="rlvCaja noPrint">
-    <div class="rlvLabel">Productos a relevar</div>
+    <div class="rlvFilaCtl" style="justify-content:space-between"><span class="rlvLabel">Productos a relevar</span>${sel.length||nMarcados?`<button type="button" class="rlvBtn" data-rlv-nuevo>Nuevo relevamiento</button>`:""}</div>
     <div class="rlvFilaCtl">${prodChips}</div>
     ${sel.length?`<div class="rlvNota ${sel.length>RLV_MAX_HORIZONTAL?"rlvAviso":""}">${esc(notaHojaRelevar(sel.length))}</div>`:""}
     <div class="rlvFilaCtl">
@@ -1974,6 +1974,11 @@ function relevarClick(t){
   if(t.dataset.rlvRegion && R.datos){ const del=R.datos.locales.filter(l=>l.region===t.dataset.rlvRegion), todas=del.every(l=>R.marcados[l.nombre]); del.forEach(l=>{ if(todas) delete R.marcados[l.nombre]; else R.marcados[l.nombre]=true }); relevarGuardar(); renderApp(); return true }
   if(t.dataset.rlvGrupo && R.datos){ R.datos.locales.filter(l=>l.grupo===t.dataset.rlvGrupo).forEach(l=>{ R.marcados[l.nombre]=true }); relevarGuardar(); renderApp(); return true }
   if(t.dataset.rlvQuitartodos!==undefined){ R.marcados={}; relevarGuardar(); renderApp(); return true }
+  if(t.dataset.rlvNuevo!==undefined){
+    if(!confirm("¿Empezar un relevamiento nuevo? Se borran los productos y locales elegidos.")) return true;
+    R.sel=[]; R.marcados={}; R.q=""; R.qL=""; R.rubro="todos"; R.lista=false; R.panel=false; R.solo=false;
+    relevarGuardar(); renderApp(); return true;
+  }
   if(t.dataset.rlvRecargar!==undefined){ R.datos=undefined; R.error=null; renderApp(); return true }
   if(t.id==="rlvExportar"){ window.print(); return true }
   return false;
@@ -3795,6 +3800,11 @@ async function start(){
         S.tab = ls.get("tabOperaciones","") || (S.empleado.rol==="admin" ? "sabores" : "relevar");
         if(S.tab==="sabores" && S.empleado.rol!=="admin") S.tab="relevar";
       } else if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
+    }
+    // Admin/supervisor en la vista general: vuelve a la pestaña de Operaciones donde estaba (Relevar, Sabores), no a la portada.
+    if(!S.local && esOperador()){
+      const t=ls.get("tabOperaciones","");
+      if(t==="relevar" || (t==="sabores" && S.empleado.rol==="admin")) S.tab=t;
     }
     // Si la página se recarga sin señal (se cerró sola, se reinició el
     // dispositivo), acá no veníamos de un login con datos frescos ni de
