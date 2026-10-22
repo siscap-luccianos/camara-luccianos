@@ -678,7 +678,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.92.4";
+const FRONTEND_VERSION = "1.92.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1829,14 +1829,10 @@ function relevarView(){
 
   // Locales
   const todos=D.locales;
-  const regiones={}; todos.forEach(l=>{ if(l.region) regiones[l.region]=(regiones[l.region]||0)+1 });
-  const regionesOrden=Object.keys(regiones).sort((a,b)=>regiones[b]-regiones[a]||a.localeCompare(b));
   const grupos=[]; todos.forEach(l=>{ if(l.grupo && grupos.indexOf(l.grupo)===-1) grupos.push(l.grupo) });
   const qL=normalizar(R.qL.trim());
   const enBusqueda=todos.filter(l=>!qL||normalizar(l.nombre).includes(qL)||normalizar(l.region).includes(qL));
   const nMarcados=todos.filter(l=>R.marcados[l.nombre]).length;
-  const regionChips=regionesOrden.map(r=>{ const del=todos.filter(l=>l.region===r), on=del.every(l=>R.marcados[l.nombre]);
-    return `<button type="button" class="chip" data-rlv-region="${esc(r)}" aria-pressed="${on}">${esc(r)} · ${del.length}</button>` }).join("");
   const grupoChips=grupos.map(g=>`<button type="button" class="chip" data-rlv-grupo="${esc(g)}">${esc(g)} · ${todos.filter(l=>l.grupo===g).length}</button>`).join("");
   const listaLocales=enBusqueda.length?enBusqueda.map(l=>{ const on=!!R.marcados[l.nombre];
     return `<button type="button" class="rlvItem" data-rlv-loc="${esc(l.nombre)}"><span class="rlvCheck${on?" on":""}">${on?"✓":""}</span><span class="nom">${esc(l.nombre)}</span><span class="tag">${esc([l.region,l.grupo].filter(Boolean).join(" · "))}</span></button>` }).join("")
@@ -1882,7 +1878,6 @@ function relevarView(){
     <div class="rlvFilaCtl">${locChips}</div>
     ${R.panel?`<div class="rlvCaja">
       <div class="rlvBuscar" style="flex:none"><input type="text" id="rlvQL" value="${esc(R.qL)}" placeholder="Buscar por nombre o región…" aria-label="Buscar un local" autocomplete="off">${R.qL.length?`<button type="button" class="rlvX" data-rlv-limpiarql aria-label="Borrar la búsqueda">×</button>`:""}</div>
-      ${regionChips?`<div class="rlvFilaCtl"><span class="rlvLabel col">Marcar por región</span>${regionChips}</div>`:""}
       ${grupoChips?`<div class="rlvFilaCtl"><span class="rlvLabel col">Marcar por tipo</span>${grupoChips}<button type="button" class="rlvBtn" data-rlv-quitartodos style="margin-left:auto">Quitar todos</button></div>`:""}
       <div class="rlvLista">${listaLocales}</div>
     </div>`:""}
