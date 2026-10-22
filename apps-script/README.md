@@ -200,6 +200,7 @@ La chocolatería no pasa por la caja de la app. Al cerrar, el responsable mira e
 
 - `Locales.venta_dia` — `SI` habilita el botón en Salida de ese local. Hoy solo "Local prueba" (ya cargado en la planilla).
 - Solo productos de chocolatería. No la carga el colaborador.
+- En ese local la chocolatería **no se saca con una salida común**: el servidor la rechaza (Desperdicio sí puede sacarla).
 - Fecha opcional: hasta 7 días atrás, para un día que se olvidaron de cargar (se guarda a las 23:30 de esa fecha). No se acepta una fecha anterior al último conteo (ese conteo ya la incluye).
 - Los lotes salen primero los que vencen antes. El stock no puede quedar en negativo (si la caja vendió más que la app, falta cargar un ingreso).
 - Para sumar otro local alcanza con `venta_dia=SI` en su fila. Hace falta pegar `Code.gs` 1.44.0 y "Nueva implementación" para que el botón aparezca y el servidor acepte el subtipo.

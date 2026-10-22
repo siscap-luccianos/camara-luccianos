@@ -713,6 +713,15 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
+  // En un local con «Venta del día» la chocolatería no se saca con una salida común: se
+  // descuenta al cierre con la venta del día (Desperdicio sí puede sacarla).
+  if (tipo === "salida" && !subtipo) {
+    const filaLocalSalida = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+    if (filaLocalSalida && _esVerdadero(filaLocalSalida.venta_dia) === true) {
+      const choco = Object.keys(items).filter((id) => familiaVenc[String(id)] === "chocolateria");
+      if (choco.length) return { ok: false, error: "La chocolatería de este local se descuenta con la «Venta del día», no con una salida común." };
+    }
+  }
   if (subtipo === "venta" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo && ["devolucion", "desperdicio", "produccion", "venta"].indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
   // Venta del día (chocolatería): salida con lo que dice la caja al cerrar. Solo en

@@ -711,7 +711,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.94.0";
+const FRONTEND_VERSION = "1.94.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1583,7 +1583,7 @@ function vencimientosPantallaHTML(){
     const etq=!sem?"":sem.k==="rojo"?(canEtiquetar()?"":`<span class="vencTag rojo">Desperdicio</span>`):sem.k==="amarillo"?`<span class="vencTag amarillo">Rotar</span>`:"";
     const acc=(!sem&&canEtiquetar()?`<button type="button" class="btn ghost" data-etiq-abrir="${s.id}">Poner fecha</button>`:"")
       +(sem&&sem.d<=VENC_ROJO_DIAS&&canEtiquetar()?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:"")
-      +(sem&&sem.d>=0&&venderPrimeroLote(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:"");
+      +(sem&&sem.d>=0&&!S.ventaDia&&venderPrimeroLote(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:"");
     return `<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}${vencido?" vencido":""}">
       <div class="vencFecha">${sem?tachar(fechaVencCorta(l.f)):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
       <div class="vencNom">${tachar(esc(s.nombre))}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
@@ -2055,8 +2055,12 @@ function categoriasPresentes(){
  *  las familias son pestañas con subrayado; tocar la activa despliega sus
  *  subcategorías (Todas + las de la familia), y tocar de nuevo las cierra.
  *  Cerradas, la pestaña muestra la subcategoría elegida ("Vasquetas · Frutales"). */
+/** En un local con «Venta del día» (Locales.venta_dia=SI) la chocolatería ya no se saca en la
+ *  Salida normal: se descuenta una vez por día, al cierre, con lo que dice la caja. Solo se
+ *  oculta en la Salida común; Desperdicio, Ingreso, Conteo y Stock la siguen mostrando. */
+function chocoOcultaEnSalida(){ return !!S.ventaDia && S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio }
 function chipFiltros(){
-  const grupos=familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
+  const grupos=familiasPresentes().filter(g=>!(g==="chocolateria" && chocoOcultaEnSalida())), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
   const subElegida=S.filtroCategoria!=="todas"?S.filtroCategoria:null;
   const etiqueta=g=>{
@@ -2085,6 +2089,7 @@ function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
   if(S.modoVenta) return gridVentaDia(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
+  if(chocoOcultaEnSalida() && S.filtroFamilia==="chocolateria"){ S.filtroFamilia=(familiasPresentes().find(g=>g!=="chocolateria"))||"vasquetas"; S.filtroCategoria="todas"; S.catAbierta=false; }
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   const card=s=>{
@@ -2100,6 +2105,7 @@ function gridSalida(st){
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
   ${S.ventaDia&&S.empleado.rol!=="colaborador"?`<button type="button" class="btn produccion" id="irVentaDia" style="margin-bottom:12px">Venta del día</button>`:""}
+  ${S.ventaDia?`<p style="margin:-4px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: se descuenta al cierre con la «Venta del día».</p>`:""}
   ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML("salida")}`:""}
   <button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>
   ${chipFiltros()}
