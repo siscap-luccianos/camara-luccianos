@@ -659,15 +659,21 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .noPrint,header,.bottomNav,.bar,.toast{display:none!important}
   body,.wrap,main{background:#fff!important}
   table{font-size:.74rem}
-  /* Relevar: hoja limpia en blanco y negro, sin vidrio ni colores del tema, y la tabla entera en el ancho de la hoja */
+  /* Hoja sin encabezado ni pie del navegador (fecha, nombre, dirección, nº de página): margen de página 0 y el margen se da con padding, repetido en cada página */
+  @page{margin:0}
+  .wrap,main{padding:12mm 14mm!important;margin:0!important;min-height:0!important;max-width:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  /* Relevar: hoja limpia en blanco y negro, sin vidrio ni colores del tema, tabla entera en el ancho de la hoja y TODO centrado */
   html,body{background:#fff!important;height:auto!important;min-height:0!important}
-  .wrap,main{padding:0!important;margin:0!important;min-height:0!important;max-width:none!important}
-  .rlv{gap:10px!important;padding:0!important;max-width:none!important}
+  .rlv{display:block!important;padding:0!important;max-width:none!important}
+  .rlv>*{margin-bottom:10px!important}
   .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
   .rlv .sub,.rlv .rlvNota,.rlv .rlvRow small,.rlv .rlvRow.cab{color:#555!important}
+  .rlv .rlvNota{text-align:center!important}
   .rlv .rlvTabla{overflow:visible!important;border:1px solid #bbb!important;border-radius:8px!important}
   .rlv .rlvTabla>div{min-width:0!important}
-  .rlv .rlvRow{grid-template-columns:minmax(0,1.7fr)!important;grid-auto-flow:column!important;grid-auto-columns:minmax(0,1fr)!important;column-gap:8px!important;padding:6px 10px!important;border-top:1px solid #ddd!important;break-inside:avoid;font-size:.8rem}
+  .rlv .rlvRow{grid-template-columns:minmax(0,2.6fr)!important;grid-auto-flow:column!important;grid-auto-columns:minmax(0,1fr)!important;column-gap:8px!important;padding:6px 10px!important;border-top:1px solid #ddd!important;break-inside:avoid;font-size:.8rem;align-items:center!important}
+  .rlv .rlvRow>*{text-align:center!important;justify-self:stretch!important}
+  .rlv .rlvRow small{display:block}
   .rlv .rlvRow.cab{background:#eee!important;border-top:0!important;font-size:.66rem}
   .rlv .rlvRow.tot{background:#f3f3f3!important;border-top:2px solid #333!important}
   .rlv .rlvRow .num.cero{color:#b00020!important}
@@ -691,7 +697,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.92.7";
+const FRONTEND_VERSION = "1.92.8";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1870,7 +1876,7 @@ function relevarView(){
   const resumen="Mostrando "+filas.length+" locales"+(sel.length?" · "+conAlgo+" con stock de lo elegido":"");
 
   return `<div class="rlv">
-  <div><h1>Relevar productos</h1><p class="sub">Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla.</p></div>
+  <div class="noPrint"><h1>Relevar productos</h1><p class="sub">Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla.</p></div>
 
   <div class="rlvCaja noPrint">
     <div class="rlvLabel">Productos a relevar</div>
