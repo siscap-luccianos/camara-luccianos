@@ -627,7 +627,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .rlvItem .tag{font-size:.7rem;color:var(--muted)}
 .rlvCheck{width:18px;height:18px;border-radius:6px;border:1px solid rgba(var(--header-bg-rgb),.3);background:rgba(var(--surface-rgb),.7);display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;box-sizing:border-box;flex:none}
 .rlvCheck.on{background:linear-gradient(180deg,rgba(var(--header-bg-rgb),.9),rgba(var(--header-bg-rgb),.75));color:var(--header-ink);border-color:transparent;box-shadow:0 4px 8px -4px rgba(var(--header-bg-rgb),.55)}
-.rlvPrint,.rlvPie{display:none}
+.rlvPrint,.rlvPie,.rlvPrintCant{display:none}
 .rlvAviso{color:var(--alert)!important;font-weight:700}
 .rlvTabla{overflow-x:auto}
 .rlvRow{display:grid;column-gap:12px;padding:11px 16px;border-top:1px solid rgba(var(--header-bg-rgb),.07);align-items:center;transition:background .12s}
@@ -672,6 +672,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
   .rlv .rlvPrint{display:block!important;text-align:center!important;margin-bottom:16px!important}
   .rlv .rlvPrint .rlvMarca{font-size:.95rem!important;font-weight:700!important;letter-spacing:.28em!important;text-transform:uppercase!important;color:#444!important;margin-bottom:8px!important}
+  .rlv .rlvPrintCant{display:block!important;text-align:center!important;font-size:1.05rem!important;font-weight:700!important}
   .rlv .rlvPie{display:block!important;position:fixed!important;left:0!important;right:0!important;bottom:5mm!important;text-align:center!important;font-size:.72rem!important;letter-spacing:.18em!important;text-transform:uppercase!important;color:#777!important}
   .rlv .rlvPrint h1{font-size:2.1rem!important;margin:0 0 10px!important}
   .rlv .rlvPrint p{margin:4px 0!important;font-size:1.1rem!important}
@@ -709,7 +710,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.93.5";
+const FRONTEND_VERSION = "1.93.6";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1950,7 +1951,8 @@ function relevarView(){
     </div>`:""}
   </div>
 
-  <div class="rlvNota">${esc(resumen)}</div>
+  <div class="rlvNota noPrint">${esc(resumen)}</div>
+  <div class="rlvPrintCant">${filas.length} ${filas.length===1?"Local":"Locales"}</div>
   ${tablaHTML}
   <div class="rlvFilaCtl">
     <div class="rlvNota noPrint" style="flex:1 1 380px">«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ${D.generado?relevarHace(D.generado):""}.</div>
