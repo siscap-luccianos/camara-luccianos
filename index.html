@@ -709,7 +709,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.93.4";
+const FRONTEND_VERSION = "1.93.5";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1920,7 +1920,7 @@ function relevarView(){
 
   return `<div class="rlv${sel.length>RLV_MAX_VERTICAL?" rlvAncha":""}" data-rlv-n="${sel.length}">
   <div class="rlvPrint"><div class="rlvMarca">LogiStock Lucciano's</div><h1>Stock por rubro</h1>
-    <p>Relevamiento realizado por: <b>${esc(S.empleado?S.empleado.nombre:"")}</b>${S.empleado&&ROL_LABEL[S.empleado.rol]?" · "+esc(ROL_LABEL[S.empleado.rol]):""}</p>
+    <p>Relevamiento realizado por: <b>${esc(S.empleado?S.empleado.nombre:"")}</b></p>
     <p>Fecha y hora: <b class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</b></p></div>
   <div class="rlvPie">LogiStock Lucciano's</div>
   <div class="noPrint"><h1>Relevar productos</h1><p class="sub">Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla.</p></div>
@@ -1953,7 +1953,7 @@ function relevarView(){
   <div class="rlvNota">${esc(resumen)}</div>
   ${tablaHTML}
   <div class="rlvFilaCtl">
-    <div class="rlvNota" style="flex:1 1 380px">«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ${D.generado?relevarHace(D.generado):""}.</div>
+    <div class="rlvNota noPrint" style="flex:1 1 380px">«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ${D.generado?relevarHace(D.generado):""}.</div>
     <button type="button" class="rlvBtn noPrint" data-rlv-recargar>Actualizar</button>
     <button type="button" class="rlvBtn noPrint" id="rlvExportar">🖨 Exportar</button>
   </div></div>`;
