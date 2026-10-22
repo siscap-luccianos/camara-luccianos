@@ -707,7 +707,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.93.2";
+const FRONTEND_VERSION = "1.93.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1772,8 +1772,8 @@ function renderAuth(){
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
 }
 
-/* PDF de Relevar: hasta 5 productos entran en hoja vertical; de 6 a 8 sale solo en horizontal; con más de 8 no entra bien. */
-const RLV_MAX_VERTICAL = 5, RLV_MAX_HORIZONTAL = 8;
+/* PDF de Relevar: hasta 4 productos entran en hoja vertical; de 5 a 8 sale solo en horizontal; con más de 8 no entra bien. */
+const RLV_MAX_VERTICAL = 4, RLV_MAX_HORIZONTAL = 8;
 function notaHojaRelevar(n){
   if(!n) return "";
   if(n<=RLV_MAX_VERTICAL) return `PDF vertical (hasta ${RLV_MAX_VERTICAL} productos). Con más, sale horizontal.`;
