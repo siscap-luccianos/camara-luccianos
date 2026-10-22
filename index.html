@@ -401,6 +401,10 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .pesosResumen b{color:var(--ink)}
 .escBox{max-height:92vh;overflow:auto}
 .escBox>*{flex-shrink:0}
+.escCampo.kgPeso{height:64px;text-align:center;font-family:'Fraunces',Georgia,serif;font-size:2.2rem;letter-spacing:0}
+.kgPad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kgPad button{height:58px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.6rem}
+.kgPad button:active{background:var(--accent-soft)}
 .escCampo{width:100%;height:52px;border-radius:14px;border:2px solid var(--accent);background:var(--surface);color:var(--ink);font-size:1.05rem;font-weight:700;padding:0 14px;letter-spacing:.04em}
 .escVideo{display:none;width:100%;aspect-ratio:4/3;object-fit:cover;background:#000;border-radius:16px}
 .escVideo.on{display:block}
@@ -613,7 +617,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.89.0";
+const FRONTEND_VERSION = "1.90.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -3711,7 +3715,7 @@ function abrirEscaner(){
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="escTit">
     <p class="mantTit" id="escTit">Escanear vasqueta</p>
     <p class="mantSub">Pasá el lector por cada rótulo: pip, pip, pip. Si uno no se lee, tocá «Listo» y tocá el sabor para poner el peso.</p>
-    <input type="text" id="escCodigo" class="escCampo" inputmode="numeric" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
+    <input type="text" id="escCodigo" class="escCampo" inputmode="none" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
     <video id="escVideo" class="escVideo" playsinline muted></video>
     <div class="escMsg" id="escMsg" role="status" aria-live="polite">Esperando el código…</div>
     <div class="escLista" id="escLista"></div>
@@ -3822,8 +3826,11 @@ function abrirKilos(id,c){
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="kgTit">
     <p class="mantTit" id="kgTit">¿Cuánto pesa?</p>
     <p class="mantSub">${esc(s.nombre)}${ref?` · peso promedio ${fmtKg(ref)} kg`:""}</p>
-    <input type="text" id="kgPeso" class="escCampo" inputmode="decimal" autocomplete="off" placeholder="Kilos, ej. 3,40" aria-label="Kilos de la vasqueta">
+    <input type="text" id="kgPeso" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" placeholder="0,00 kg" aria-label="Kilos de la vasqueta">
     <div class="escMsg" id="kgMsg" role="status" aria-live="polite" hidden></div>
+    <div class="kgPad" role="group" aria-label="Teclado numérico">
+      ${["1","2","3","4","5","6","7","8","9",",","0","⌫"].map(k=>`<button type="button" data-kg-tecla="${k}" aria-label="${k===","?"coma":k==="⌫"?"borrar":k}">${k}</button>`).join("")}
+    </div>
     <div class="mantAcc">
       <button type="button" class="btn ghost" data-kg-cancel>Cancelar</button>
       <button type="button" class="btn" data-kg-ok>Agregar</button>
@@ -3834,12 +3841,33 @@ function abrirKilos(id,c){
     const b=e.target.closest("button"); if(!b) return;
     if(b.dataset.kgCancel!==undefined) cerrarKilos();
     else if(b.dataset.kgOk!==undefined) confirmarKilos();
+    else if(b.dataset.kgTecla!==undefined) teclaKilos(b.dataset.kgTecla);
   });
-  ov.addEventListener("keydown", e=>{ if(e.key==="Enter" && e.target.id==="kgPeso"){ e.preventDefault(); confirmarKilos() } });
+  // Con teclado físico (PC) también se puede tipear: el campo es de solo lectura para que la tablet no abra su teclado.
+  ov.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ e.preventDefault(); confirmarKilos(); return }
+    if(/^[0-9]$/.test(e.key)){ e.preventDefault(); teclaKilos(e.key) }
+    else if(e.key===","||e.key==="."){ e.preventDefault(); teclaKilos(",") }
+    else if(e.key==="Backspace"||e.key==="Delete"){ e.preventDefault(); teclaKilos("⌫") }
+  });
   document.body.appendChild(ov);
   setTimeout(()=>{ const i=document.getElementById("kgPeso"); if(i) i.focus() },50);
 }
 function cerrarKilos(){ const ov=document.getElementById("kilosOv"); if(ov) ov.remove(); S.kilosDlg=null }
+/** Teclado numérico propio de «¿Cuánto pesa?»: hasta 2 enteros y 2 decimales, coma como separador. */
+function teclaKilos(k){
+  const inp=document.getElementById("kgPeso"), msg=document.getElementById("kgMsg"); if(!inp) return;
+  let v=inp.value;
+  if(k==="⌫") v=v.slice(0,-1);
+  else if(k===","){ if(!v.includes(",")) v=(v===""?"0":v)+","; }
+  else{
+    const [ent,dec]=v.split(",");
+    if(v.includes(",")){ if(dec.length<2) v+=k }
+    else if(ent.length<2){ v=(ent==="0")?k:ent+k }
+  }
+  inp.value=v;
+  if(msg){ msg.hidden=true }
+}
 function confirmarKilos(){
   const d=S.kilosDlg; if(!d) return;
   const inp=document.getElementById("kgPeso"), msg=document.getElementById("kgMsg");
