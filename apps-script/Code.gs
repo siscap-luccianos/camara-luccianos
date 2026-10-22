@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.43.0";
+const BACKEND_VERSION = "1.44.0";
 
 function doPost(e) {
   let resultado;
@@ -82,7 +82,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
     case "relevar": return relevar(empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
@@ -480,8 +480,11 @@ function _datosSinCache(local, empleado) {
   // Locales.escaner_peso=SI habilita, en Salida, el escaneo del código de barras
   // del rótulo de fábrica (peso por vasqueta). Piloto: hoy solo "Local prueba".
   const escanerPeso = filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false;
+  // Locales.venta_dia=SI habilita, en Salida, "Venta del día" (chocolatería): una
+  // salida con lo que dice la caja al cerrar. Piloto: hoy solo "Local prueba".
+  const ventaDia = filaLocal ? _esVerdadero(filaLocal.venta_dia) === true : false;
 
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia };
 }
 
 function _cacheKeyDatos(local) {
@@ -513,7 +516,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
@@ -683,7 +686,7 @@ function _normalizarPesos(pesos, items) {
   return { ok: true, pesos: out };
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos, fecha) {
   if (tipo !== "salida" && tipo !== "ingreso") return { ok: false, error: "Tipo de movimiento inválido." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -710,7 +713,30 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
-  if (subtipo && ["devolucion", "desperdicio", "produccion"].indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo === "venta" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo && ["devolucion", "desperdicio", "produccion", "venta"].indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
+  // Venta del día (chocolatería): salida con lo que dice la caja al cerrar. Solo en
+  // un local con Locales.venta_dia=SI, solo productos de chocolatería y no la
+  // carga el colaborador (el que mira la caja es el responsable). La fecha es
+  // opcional (para el día que se olvidaron de cargarla): hasta 7 días atrás.
+  let tsVenta = 0;
+  if (fecha && subtipo !== "venta") return { ok: false, error: "La fecha solo se usa en la venta del día." };
+  if (subtipo === "venta") {
+    const filaLocalVenta = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+    if (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true) return { ok: false, error: "Este local no tiene la venta del día activada." };
+    if (empleado.rol === "colaborador") return { ok: false, error: "La venta del día la carga un responsable." };
+    const noChoco = Object.keys(items).filter((id) => familiaVenc[String(id)] !== "chocolateria");
+    if (noChoco.length) return { ok: false, error: "La venta del día es solo de chocolatería." };
+    if (fecha) {
+      const tz = "America/Argentina/Buenos_Aires";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) return { ok: false, error: "Fecha de venta inválida." };
+      const hoyBA = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd");
+      const haceUnaSemana = Utilities.formatDate(new Date(Date.now() - 7 * 24 * 3600 * 1000), tz, "yyyy-MM-dd");
+      if (String(fecha) > hoyBA) return { ok: false, error: "La fecha de la venta no puede ser futura." };
+      if (String(fecha) < haceUnaSemana) return { ok: false, error: "La fecha de la venta no puede ser de hace más de 7 días." };
+      tsVenta = Math.min(Date.now(), Utilities.parseDate(fecha + " 23:30", tz, "yyyy-MM-dd HH:mm").getTime());
+    }
+  }
   if (subtipo === "produccion") {
     const filaLocalProd = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
     if (!filaLocalProd || _esVerdadero(filaLocalProd.produccion) !== true) {
@@ -773,7 +799,13 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const total = _totalItems(items2);
     const kilos2 = {};
     Object.keys(kilos || {}).forEach((id) => { const k = Number(kilos[id]) || 0; if (k > 0) kilos2[id] = k; });
-    const ts = Date.now();
+    const ts = tsVenta || Date.now();
+    if (tsVenta) {
+      // Un conteo posterior ya incluye esa venta: cargarla de nuevo descontaría dos veces.
+      const stockVenta = _datosSinCache(local).stock;
+      const bts2 = stockVenta ? stockVenta.ts : 0;
+      if (ts <= bts2) return { ok: false, error: "Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta." };
+    }
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: tipo, local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: remito || "", ts: ts,
@@ -1284,7 +1316,7 @@ function anular(registroId, motivo, empleado) {
     // la Devolución (orden inverso al que se cargaron).
     const tipoReg = filas[idx][col.tipo];
     const subtipoReg = filas[idx][col.subtipo];
-    if (tipoReg === "salida" && subtipoReg !== "desperdicio") {
+    if (tipoReg === "salida" && subtipoReg !== "desperdicio" && subtipoReg !== "venta") {
       const hayDevolucionPosterior = filas.some((fila, i) => {
         if (i === 0) return false;
         return fila[col.tipo] === "ingreso" &&

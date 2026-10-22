@@ -194,6 +194,16 @@ Si un rótulo no se lee, se toca el sabor como siempre y el piloto pregunta los 
 
 Para sumar un sabor al piloto alcanza con cargar su `codigo_fabrica` en la hoja (sin redeploy). Para sumar otro local, `escaner_peso=SI` en su fila. Para que el botón aparezca y se guarden los pesos hace falta pegar `Code.gs` 1.42.0 y hacer "Nueva implementación".
 
+## Venta del día — chocolatería (piloto, `Code.gs` 1.44.0)
+
+La chocolatería no pasa por la caja de la app. Al cerrar, el responsable mira en el sistema de caja lo vendido de cada producto y lo carga en **Salida → Venta del día**: una salida común (descuenta stock y cuenta como consumo para el pedido sugerido) con `Registros.subtipo = "venta"` y el motivo "Venta del día dd/mm". Flujo: un Conteo físico al arrancar y, de ahí, una venta del día por cierre.
+
+- `Locales.venta_dia` — `SI` habilita el botón en Salida de ese local. Hoy solo "Local prueba" (ya cargado en la planilla).
+- Solo productos de chocolatería. No la carga el colaborador.
+- Fecha opcional: hasta 7 días atrás, para un día que se olvidaron de cargar (se guarda a las 23:30 de esa fecha). No se acepta una fecha anterior al último conteo (ese conteo ya la incluye).
+- Los lotes salen primero los que vencen antes. El stock no puede quedar en negativo (si la caja vendió más que la app, falta cargar un ingreso).
+- Para sumar otro local alcanza con `venta_dia=SI` en su fila. Hace falta pegar `Code.gs` 1.44.0 y "Nueva implementación" para que el botón aparezca y el servidor acepte el subtipo.
+
 ## Relevar productos (solo Operaciones, `Code.gs` 1.43.0)
 
 Pestaña **Relevar** de Operaciones (admin y supervisor): una tabla con el stock vigente de los productos que se elijan en los locales que se marquen. La acción `relevar` lee `Sabores`, `Locales`, `Stock` y `Registros` una sola vez y devuelve, por local, el mismo stock que ve ese local (último conteo + ingresos − salidas, sin anulados, últimos 60 días; los sabores de `Locales.sabores_excluidos` no vienen y se muestran como «—»).
