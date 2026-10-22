@@ -397,12 +397,6 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqGuardando{font-weight:600}
 .etiqEspacio{height:72vh}
 .btn.escaner{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.escBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.escManual{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
-.escManualTit{margin:0;font-weight:700;font-size:.9rem}
-.escManualFila{display:grid;grid-template-columns:1fr 96px;gap:8px}
-.escSel,.escKg{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1rem;padding:0 10px;min-width:0}
-.escKg{text-align:center;font-weight:700}
 .pesosResumen{margin:-4px 0 12px;font-size:.88rem;color:var(--muted)}
 .pesosResumen b{color:var(--ink)}
 .escBox{max-height:92vh;overflow:auto}
@@ -619,7 +613,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.88.0";
+const FRONTEND_VERSION = "1.89.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1826,7 +1820,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
-  ${S.escanerPeso?`<div class="escBtns"><button type="button" class="btn escaner" id="irEscaner">Escanear vasqueta</button><button type="button" class="btn ghost" id="irKilosManual">Sin código · kilos</button></div>${resumenPesosHTML("salida")}`:""}
+  ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML("salida")}`:""}
   ${hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
@@ -1851,7 +1845,7 @@ function gridDesperdicio(st){
   <p class="sec" style="margin-top:6px">Desperdicio</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
-  ${S.escanerPeso?`<button type="button" class="btn ghost" id="irKilosManual" style="margin-bottom:12px">Cargar kilos de lo que se descarta</button>${resumenPesosHTML("desperdicio")}`:""}
+  ${S.escanerPeso?resumenPesosHTML("desperdicio"):""}
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -3135,12 +3129,14 @@ document.addEventListener("click", async e=>{
   if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
+    if(esPesable(id)){ abrirKilos(id,"salida"); return }
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; recortarPesos(t.dataset.sub,"salida"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.wadd){
     const id=t.dataset.wadd, c=S.cart.desperdicio, disponible=stockMap()[id]||0;
+    if(esPesable(id)){ abrirKilos(id,"desperdicio"); return }
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para marcar como desperdicio."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
@@ -3212,7 +3208,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
-  if(t.id==="irKilosManual"){ abrirEscaner(true); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
@@ -3654,12 +3649,15 @@ function mantenerClick(e){
   renderMantener();
 }
 /* ============================================================
-   ESCÁNER DE PESO POR VASQUETA — piloto (Locales.escaner_peso=SI).
+   PESO POR VASQUETA — piloto (Locales.escaner_peso=SI).
    El rótulo de fábrica trae un código de barras ITF de 20 dígitos:
    [4 producto][5 peso en centésimas de kg][6 fecha del lote DDMMAA][5 serie].
-   Al sacar una vasqueta (Salida o Desperdicio) se escanea (lector Bluetooth/USB
-   que "tipea" los números, o la cámara) y se suma esa vasqueta con su peso real.
-   Si el rótulo está dañado o no hay rótulo, se elige el sabor y se tipean los kilos.
+   Salida sigue igual: se toca un sabor y suma. En un local piloto:
+   - "Escanear vasqueta": pip, pip, pip (lector Bluetooth/USB que "tipea" los
+     números, o la cámara) y cada pip suma 1 vasqueta de ese sabor con su peso real.
+   - Si una vasqueta no se lee (rótulo dañado/sin rótulo), se toca el sabor como
+     siempre y en vez de sumar de a 1 pregunta cuánto pesa (kilos a mano).
+   Lo mismo en Desperdicio, pero sin escáner: tocar el sabor pregunta los kilos.
 ============================================================ */
 const ZXING_SRC="vendor/zxing-wasm-reader-3.1.6.iife.js", ZXING_WASM="vendor/zxing_reader-3.1.6.wasm";
 const GRUPOS_PESABLES=["vasquetas","baldes","glutenfree"]; // lo que viene en vasqueta/balde con peso; Icepops y chocolatería no
@@ -3678,6 +3676,11 @@ function resumenPesosHTML(c){
   const n=cantPesos(c); if(!n) return "";
   return `<p class="pesosResumen">Con peso: <b>${n}</b> · <b>${fmtKg(sumaPesos(c))} kg</b></p>`;
 }
+function esPesable(id){ const s=S.saboresPorId[String(id)]; return !!(S.escanerPeso && s && GRUPOS_PESABLES.includes(grupoProductoDe(s))) }
+function disponibleParaPesar(id,c){
+  const ya=S.cart[c][id]||0;
+  return c==="desperdicio" ? Math.max(0,(stockMap()[id]||0)-ya) : Math.max(0,vendibleDe(id)-ya);
+}
 function parseCodigoRotulo(txt){
   const d=String(txt||"").replace(/\D/g,"");
   if(d.length!==20) return null;
@@ -3692,39 +3695,28 @@ function pitido(ok){
     if(navigator.vibrate) navigator.vibrate(ok?50:[80,60,80]);
   }catch(e){}
 }
-function disponibleEscaner(id){
-  const e=S.escaner, c=e?e.cart:"salida", yaEnCarrito=S.cart[c][id]||0;
-  return c==="desperdicio" ? Math.max(0,(stockMap()[id]||0)-yaEnCarrito) : Math.max(0,vendibleDe(id)-yaEnCarrito);
+/** Suma 1 vasqueta con su peso al carrito de Salida o de Desperdicio. */
+function sumarPesada(c, id, kg){
+  S.cart[c][id]=(S.cart[c][id]||0)+1;
+  (pesosDe(c)[id]=pesosDe(c)[id]||[]).push(kg);
+  S.confirm=false;
+  pitido(true); scheduleRender();
 }
-function opcionesSaborManual(){
-  const sel=(document.getElementById("escSabor")||{}).value||"";
-  const por={}; saboresDelLocal().forEach(s=>{ const g=grupoProductoDe(s); if(GRUPOS_PESABLES.includes(g)&&disponibleEscaner(s.id)>0) (por[g]=por[g]||[]).push(s) });
-  return `<option value="">Elegí el sabor…</option>`+GRUPO_PRODUCTO_ORDEN.filter(g=>por[g]).map(g=>`<optgroup label="${esc(GRUPO_PRODUCTO_LABEL[g]||g)}">${por[g].map(s=>`<option value="${s.id}"${String(s.id)===sel?" selected":""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
-}
-function abrirEscaner(manual){
+
+/* ---- Escáner (solo Salida) ---- */
+function abrirEscaner(){
   if(S.escaner) return;
-  const cart=S.modoDesperdicio?"desperdicio":"salida";
-  S.escaner={cart, camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
+  S.escaner={camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
   const ov=document.createElement("div"); ov.id="escanerOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="escTit">
-    <p class="mantTit" id="escTit">${cart==="desperdicio"?"Desperdicio con kilos":"Escanear vasqueta"}</p>
-    ${cart==="desperdicio"
-      ? `<p class="mantSub">Elegí el sabor y escribí los kilos de lo que se descarta. Es opcional: sin kilos se descuenta igual por unidad.</p>`
-      : `<p class="mantSub">Pasá el lector por el rótulo, o escribí los 20 números que están abajo del código de barras.</p>
+    <p class="mantTit" id="escTit">Escanear vasqueta</p>
+    <p class="mantSub">Pasá el lector por cada rótulo: pip, pip, pip. Si uno no se lee, tocá «Listo» y tocá el sabor para poner el peso.</p>
     <input type="text" id="escCodigo" class="escCampo" inputmode="numeric" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
-    <video id="escVideo" class="escVideo" playsinline muted></video>`}
-    <div class="escMsg" id="escMsg" role="status" aria-live="polite">${cart==="desperdicio"?"Elegí el sabor y los kilos.":"Esperando el código…"}</div>
+    <video id="escVideo" class="escVideo" playsinline muted></video>
+    <div class="escMsg" id="escMsg" role="status" aria-live="polite">Esperando el código…</div>
     <div class="escLista" id="escLista"></div>
-    <div class="escManual">
-      <p class="escManualTit">${cart==="desperdicio"?"Kilos de la vasqueta":"¿Rótulo dañado o sin rótulo? Cargá los kilos a mano"}</p>
-      <div class="escManualFila">
-        <select id="escSabor" class="escSel" aria-label="Sabor"></select>
-        <input type="text" id="escKg" class="escKg" inputmode="decimal" autocomplete="off" placeholder="Kilos" aria-label="Kilos de la vasqueta">
-      </div>
-      <button type="button" class="btn ghost" data-esc-manual>${cart==="desperdicio"?"Agregar":"Agregar sin código"}</button>
-    </div>
     <div class="mantAcc">
-      ${cart==="desperdicio"?"":`<button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>`}
+      <button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>
       <button type="button" class="btn" data-esc-cerrar>Listo</button>
     </div>
   </div>`;
@@ -3732,18 +3724,15 @@ function abrirEscaner(manual){
     if(e.target===ov){ cerrarEscaner(); return }
     const b=e.target.closest("button"); if(!b) return;
     if(b.dataset.escCerrar!==undefined) cerrarEscaner();
-    else if(b.dataset.escManual!==undefined) agregarManual();
     else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
   });
   ov.addEventListener("input", e=>{ if(e.target.id==="escCodigo"){ const d=e.target.value.replace(/\D/g,""); if(d.length>=20){ e.target.value=""; procesarEscaneo(d) } } });
   ov.addEventListener("keydown", e=>{
-    if(e.key!=="Enter") return;
-    if(e.target.id==="escCodigo"){ e.preventDefault(); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
-    else if(e.target.id==="escKg"){ e.preventDefault(); agregarManual() }
+    if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
   });
   document.body.appendChild(ov);
   renderEscaner();
-  setTimeout(()=>{ const i=document.getElementById(manual||cart==="desperdicio"?"escSabor":"escCodigo"); if(i) i.focus() },50);
+  setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(i) i.focus() },50);
 }
 function cerrarEscaner(){
   apagarCamara();
@@ -3752,50 +3741,30 @@ function cerrarEscaner(){
 }
 function renderEscaner(){
   const e=S.escaner; if(!e) return;
-  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]"), sel=document.getElementById("escSabor");
-  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.textContent=e.msg?e.msg.t:(e.cart==="desperdicio"?"Elegí el sabor y los kilos.":"Esperando el código…") }
-  if(l) l.innerHTML=e.lista.slice(0,5).map(x=>`<div><span>${esc(x.nombre)}${x.repetido?" ⚠":""}<br><small style="color:var(--muted)">${x.manual?"kilos a mano":"lote "+esc(x.lote)}</small></span><b>${fmtKg(x.kg)} kg</b></div>`).join("")
-    + (e.lista.length?`<div style="border:0"><span>Esta ${e.cart==="desperdicio"?"baja":"salida"}</span><b>${cantPesos(e.cart)} · ${fmtKg(sumaPesos(e.cart))} kg</b></div>`:"");
-  if(sel) sel.innerHTML=opcionesSaborManual();
+  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.textContent=e.msg?e.msg.t:"Esperando el código…" }
+  if(l) l.innerHTML=e.lista.slice(0,5).map(x=>`<div><span>${esc(x.nombre)}${x.repetido?" ⚠":""}<br><small style="color:var(--muted)">lote ${esc(x.lote)}</small></span><b>${fmtKg(x.kg)} kg</b></div>`).join("")
+    + (e.lista.length?`<div style="border:0"><span>Esta salida</span><b>${cantPesos("salida")} · ${fmtKg(sumaPesos("salida"))} kg</b></div>`:"");
   if(v) v.classList.toggle("on", !!e.camara);
   if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
-}
-/** Suma una vasqueta pesada al carrito de la salida/desperdicio abierto. */
-function sumarVasquetaPesada(s, kg, extra){
-  const e=S.escaner, c=S.cart[e.cart];
-  c[s.id]=(c[s.id]||0)+1;
-  (pesosDe(e.cart)[s.id]=pesosDe(e.cart)[s.id]||[]).push(kg);
-  S.confirm=false;
-  e.lista.unshift(Object.assign({id:s.id, nombre:s.nombre, kg}, extra));
-  pitido(true); renderEscaner(); scheduleRender();
 }
 function procesarEscaneo(txt){
   const e=S.escaner; if(!e) return;
   const p=parseCodigoRotulo(txt);
-  if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: tiene que tener 20 números ("+String(txt).replace(/\D/g,"").length+" leídos)."}; pitido(false); renderEscaner(); return }
+  if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: tiene que tener 20 números ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
   if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
   e.ultimo={crudo:p.crudo, ts:ahora};
   const s=saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
-  if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+"). Cargalo con «Agregar sin código»."}; pitido(false); renderEscaner(); return }
-  if(disponibleEscaner(s.id)<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
+  if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+"). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
+  if(disponibleParaPesar(s.id,"salida")<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
   const repetido=S.escaneadas.indexOf(p.crudo)!==-1;
   S.escaneadas.push(p.crudo);
   e.msg={tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+(repetido?" · ⚠ este código ya se había escaneado":"")};
-  sumarVasquetaPesada(s, p.kg, {lote:p.lote, repetido});
+  e.lista.unshift({id:s.id, nombre:s.nombre, kg:p.kg, lote:p.lote, repetido});
+  sumarPesada("salida", s.id, p.kg);
+  renderEscaner();
   const i=document.getElementById("escCodigo"); if(i) i.focus();
-}
-function agregarManual(){
-  const e=S.escaner; if(!e) return;
-  const sel=document.getElementById("escSabor"), inp=document.getElementById("escKg");
-  const id=sel&&sel.value, kg=Math.round(parseFloat(String(inp.value).replace(",","."))*100)/100;
-  if(!id){ e.msg={tipo:"err", t:"Elegí el sabor de la vasqueta."}; pitido(false); renderEscaner(); return }
-  if(!(kg>=0.1&&kg<=30)){ e.msg={tipo:"err", t:"Escribí los kilos de la vasqueta (entre 0,1 y 30), por ejemplo 3,40."}; pitido(false); renderEscaner(); if(inp) inp.focus(); return }
-  const s=saboresDelLocal().find(x=>String(x.id)===String(id));
-  if(!s||disponibleEscaner(s.id)<=0){ e.msg={tipo:"err", t:"No hay stock de ese sabor para sacar."}; pitido(false); renderEscaner(); return }
-  e.msg={tipo:"ok", t:s.nombre+" · "+fmtKg(kg)+" kg (a mano)"};
-  sumarVasquetaPesada(s, kg, {manual:true});
-  const i2=document.getElementById("escKg"); if(i2){ i2.value=""; i2.focus() }
 }
 function cargarZxing(){
   if(window.ZXingWASM) return Promise.resolve();
@@ -3842,6 +3811,45 @@ function apagarCamara(){
   const v=document.getElementById("escVideo"); if(v) v.srcObject=null;
   e.camara=false; renderEscaner();
 }
+
+/* ---- Kilos a mano: al tocar un sabor en un local piloto ---- */
+function abrirKilos(id,c){
+  if(S.kilosDlg) return;
+  if(disponibleParaPesar(id,c)<=0){ toast(c==="desperdicio"?"No queda más stock para marcar como desperdicio.":"No hay stock de ese sabor."); return }
+  S.kilosDlg={id:String(id), c};
+  const s=S.saboresPorId[String(id)], ref=Number(s.peso)||0;
+  const ov=document.createElement("div"); ov.id="kilosOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="kgTit">
+    <p class="mantTit" id="kgTit">¿Cuánto pesa?</p>
+    <p class="mantSub">${esc(s.nombre)}${ref?` · peso promedio ${fmtKg(ref)} kg`:""}</p>
+    <input type="text" id="kgPeso" class="escCampo" inputmode="decimal" autocomplete="off" placeholder="Kilos, ej. 3,40" aria-label="Kilos de la vasqueta">
+    <div class="escMsg" id="kgMsg" role="status" aria-live="polite" hidden></div>
+    <div class="mantAcc">
+      <button type="button" class="btn ghost" data-kg-cancel>Cancelar</button>
+      <button type="button" class="btn" data-kg-ok>Agregar</button>
+    </div>
+  </div>`;
+  ov.addEventListener("click", e=>{
+    if(e.target===ov){ cerrarKilos(); return }
+    const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.kgCancel!==undefined) cerrarKilos();
+    else if(b.dataset.kgOk!==undefined) confirmarKilos();
+  });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Enter" && e.target.id==="kgPeso"){ e.preventDefault(); confirmarKilos() } });
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const i=document.getElementById("kgPeso"); if(i) i.focus() },50);
+}
+function cerrarKilos(){ const ov=document.getElementById("kilosOv"); if(ov) ov.remove(); S.kilosDlg=null }
+function confirmarKilos(){
+  const d=S.kilosDlg; if(!d) return;
+  const inp=document.getElementById("kgPeso"), msg=document.getElementById("kgMsg");
+  const kg=Math.round(parseFloat(String(inp.value).replace(",","."))*100)/100;
+  if(!(kg>=0.1&&kg<=30)){ msg.hidden=false; msg.className="escMsg err"; msg.textContent="Escribí los kilos de la vasqueta (entre 0,1 y 30), por ejemplo 3,40."; pitido(false); inp.focus(); return }
+  if(disponibleParaPesar(d.id,d.c)<=0){ cerrarKilos(); toast("No hay stock de ese sabor."); return }
+  sumarPesada(d.c, d.id, kg);
+  cerrarKilos();
+}
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.kilosDlg){ cerrarKilos() } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.escaner){ cerrarEscaner() } });
 
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.mantener){ cerrarMantener() } });
