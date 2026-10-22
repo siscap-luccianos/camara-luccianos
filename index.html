@@ -698,7 +698,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.92.9";
+const FRONTEND_VERSION = "1.93.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1763,9 +1763,21 @@ function renderAuth(){
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
 }
 
-/* Texto del buscador de local: el nombre del local, o "Operaciones" cuando el admin está en la vista general. */
+/* Admin y supervisor entran a Operaciones (vista general, sin local elegido). */
+function esOperador(){ return !!(S.empleado && (S.empleado.rol==="admin" || S.empleado.rol==="supervisor")); }
+/* Se recuerda en este navegador que se estaba en Operaciones, para volver ahí al recargar (y no al último local). */
+const OPERACIONES_RECUERDO = "__operaciones__";
+function irAOperaciones(tabForzada){
+  S.local=null;
+  S.tab = tabForzada || ls.get("tabOperaciones","") || (S.empleado.rol==="admin" ? "sabores" : "relevar");
+  if(S.tab==="sabores" && S.empleado.rol!=="admin") S.tab="relevar";
+  S.verVencimientos=false; S.confirm=false; S.catAbierta=false;
+  try{ ls.set("ultimoLocal", OPERACIONES_RECUERDO); }catch(e){}
+  renderApp();
+}
+/* Texto del buscador de local: el nombre del local, o "Operaciones" cuando se está en la vista general. */
 function valorLocalHeader(){
-  return S.local || (S.empleado && S.empleado.rol==="admin" ? "Operaciones" : "");
+  return S.local || (esOperador() ? "Operaciones" : "");
 }
 function renderHeader(){
   const st = S.stock!==undefined ? stockMap() : {};
@@ -1777,10 +1789,10 @@ function renderHeader(){
       <div class="localSel">
         <label for="local">Local</label>
         ${puedeElegirLocal
-          ? `<input type="text" id="local" list="localList" value="${esc(valorLocalHeader())}" autocomplete="off"><datalist id="localList">${S.empleado.rol==="admin"?`<option value="Operaciones"></option>`:""}${S.locales.filter(l=>!l.esGestion).map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
+          ? `<input type="text" id="local" list="localList" value="${esc(valorLocalHeader())}" autocomplete="off"><datalist id="localList">${esOperador()?`<option value="Operaciones"></option>`:""}${S.locales.filter(l=>!l.esGestion).map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>`
           : `<span class="localFija">${esc(S.local||"")}</span>`}
       </div>
-      ${S.empleado.rol==="admin" && S.local && !S.esGestion ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
+      ${esOperador() && S.local ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
       ${!S.esGestion ? (()=>{ const seg=segundosInact(); return `<span class="timerInact${seg!==null&&seg<=60?" urgente":""}" id="timerInact" title="Si no tocás nada, la sesión se bloquea al llegar a cero">${textoTimerInact(seg)}</span>` })() : ""}
       <button type="button" class="btnTema" id="cambiarTema" aria-label="Cambiar tema" title="Cambiar tema: crema / negro y dorado">${temaActual()==="dorado"?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>Dorado':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Crema'}</button>
@@ -1956,7 +1968,7 @@ function renderMain(){
   // y la barra LogiStock de arriba queda encima.
   if(!S.local && S.tab==="relevar" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return relevarView();
   if(!S.local && S.tab!=="sabores") return `
-    <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="1">Gestionar sabores de todos los locales</button>` : ""}</div>`;
+    <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="sabores">Gestionar sabores de todos los locales</button>` : ""}</div>`;
   if(!S.sabores.length){
     if(S.errorCarga) return `<div class="note">${esc(S.errorCarga)}<br><button class="btn ghost" id="reintentarCarga" style="margin-top:10px">Reintentar</button></div>`;
     return `<div class="note">Cargando datos de ${esc(S.local)}…</div>`;
@@ -3314,7 +3326,7 @@ document.addEventListener("click", async e=>{
 
   if(t.dataset.authback){ authVolver(); return }
   // Admin: pasa a la vista general (catálogo para todos los locales) sin cerrar sesión.
-  if(t.dataset.irOperaciones){ S.local=null; S.tab="sabores"; renderApp(); return }
+  if(t.dataset.irOperaciones){ irAOperaciones(t.dataset.irOperaciones==="sabores" ? "sabores" : undefined); return }
   if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
@@ -3349,7 +3361,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.tab=t.dataset.t; S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
   // Un mantener (pointerdown largo) ya abrió el diálogo de cantidad: su click no suma una unidad.
   if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
   if(t.dataset.add){
@@ -3616,8 +3628,8 @@ document.addEventListener("change", e=>{
   if(e.target.id==="local"){
     const v=e.target.value.trim();
     // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
-    if(v.toLowerCase()==="operaciones" && S.empleado.rol==="admin"){
-      S.local=null; S.tab="sabores"; renderApp();
+    if(v.toLowerCase()==="operaciones" && esOperador()){
+      irAOperaciones();
       return;
     }
     const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
@@ -3740,7 +3752,12 @@ async function start(){
     S.local = S.deviceLocal || S.empleado.local || S.local;
     if(!S.local && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")){
       const ultimo = ls.get("ultimoLocal","");
-      if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
+      if(ultimo===OPERACIONES_RECUERDO){
+        // Estaba en Operaciones: vuelve ahí (misma pestaña que tenía), no al último local.
+        S.local = null;
+        S.tab = ls.get("tabOperaciones","") || (S.empleado.rol==="admin" ? "sabores" : "relevar");
+        if(S.tab==="sabores" && S.empleado.rol!=="admin") S.tab="relevar";
+      } else if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
     }
     // Si la página se recarga sin señal (se cerró sola, se reinició el
     // dispositivo), acá no veníamos de un login con datos frescos ni de
