@@ -628,6 +628,7 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .rlvCheck{width:18px;height:18px;border-radius:6px;border:1px solid rgba(var(--header-bg-rgb),.3);background:rgba(var(--surface-rgb),.7);display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;box-sizing:border-box;flex:none}
 .rlvCheck.on{background:linear-gradient(180deg,rgba(var(--header-bg-rgb),.9),rgba(var(--header-bg-rgb),.75));color:var(--header-ink);border-color:transparent;box-shadow:0 4px 8px -4px rgba(var(--header-bg-rgb),.55)}
 .rlvPrint{display:none}
+.rlvAviso{color:var(--alert)!important;font-weight:700}
 .rlvTabla{overflow-x:auto}
 .rlvRow{display:grid;column-gap:12px;padding:11px 16px;border-top:1px solid rgba(var(--header-bg-rgb),.07);align-items:center;transition:background .12s}
 .rlvRow:not(.cab):not(.tot):hover{background:rgba(var(--surface-rgb),.55)}
@@ -681,6 +682,10 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
   .rlv .rlvRow small{display:block}
   .rlv .rlvRow.cab{background:#eee!important;border-top:0!important;font-size:.66rem}
   .rlv .rlvRow.tot{background:#f3f3f3!important;border-top:2px solid #333!important}
+  .rlv.rlvAncha .rlvRow{font-size:.74rem!important;padding:5px 8px!important;column-gap:6px!important}
+  .rlv.rlvAncha .rlvRow.cab{font-size:.6rem!important}
+  .rlv.rlvAncha .rlvRow.cab .num{font-size:.62rem!important}
+  .rlv.rlvAncha .rlvRow small{font-size:.6rem!important}
   .rlv .rlvRow .num.cero{color:#b00020!important}
   .rlv .rlvRow .num.nada{color:#888!important}
 }
@@ -702,7 +707,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.93.1";
+const FRONTEND_VERSION = "1.93.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1767,13 +1772,25 @@ function renderAuth(){
   return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
 }
 
+/* PDF de Relevar: hasta 5 productos entran en hoja vertical; de 6 a 8 sale solo en horizontal; con más de 8 no entra bien. */
+const RLV_MAX_VERTICAL = 5, RLV_MAX_HORIZONTAL = 8;
+function notaHojaRelevar(n){
+  if(!n) return "";
+  if(n<=RLV_MAX_VERTICAL) return `PDF vertical (hasta ${RLV_MAX_VERTICAL} productos). Con más, sale horizontal.`;
+  if(n<=RLV_MAX_HORIZONTAL) return `PDF horizontal automático (hasta ${RLV_MAX_HORIZONTAL}). Si no cambia, elegí «Horizontal».`;
+  return `Máximo ${RLV_MAX_HORIZONTAL} productos por PDF: dividí el relevamiento.`;
+}
 /* Fecha y hora del relevamiento (hora de Argentina), para el encabezado del PDF de Relevar. */
 function fechaHoraRelevamiento(){
   const d=new Date(), tz="America/Argentina/Buenos_Aires";
   return d.toLocaleDateString("es-AR",{timeZone:tz,day:"2-digit",month:"2-digit",year:"numeric"})+" · "+d.toLocaleTimeString("es-AR",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false})+" hs";
 }
 // Al mandar a imprimir se actualiza la hora: si la pantalla llevaba rato abierta, el PDF lleva la hora real de la impresión.
-window.addEventListener("beforeprint",()=>{ document.querySelectorAll(".rlvFechaPrint").forEach(e=>{ e.textContent=fechaHoraRelevamiento() }) });
+window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); });
+window.addEventListener("beforeprint",()=>{
+  const r=document.querySelector(".rlv[data-rlv-n]"); // solo si se está imprimiendo la pantalla de Relevar
+  if(r){ const n=Number(r.dataset.rlvN)||0, st=document.createElement("style"); st.id="rlvOrientacion"; st.textContent="@page{size:A4 "+(n>RLV_MAX_VERTICAL?"landscape":"portrait")+";margin:0}"; document.head.appendChild(st); }
+  document.querySelectorAll(".rlvFechaPrint").forEach(e=>{ e.textContent=fechaHoraRelevamiento() }) });
 /* Admin y supervisor entran a Operaciones (vista general, sin local elegido). */
 function esOperador(){ return !!(S.empleado && (S.empleado.rol==="admin" || S.empleado.rol==="supervisor")); }
 /* Se recuerda en este navegador que se estaba en Operaciones, para volver ahí al recargar (y no al último local). */
@@ -1899,7 +1916,7 @@ function relevarView(){
   const conAlgo=filas.filter(tiene).length;
   const resumen="Mostrando "+filas.length+" locales"+(sel.length?" · "+conAlgo+" con stock de lo elegido":"");
 
-  return `<div class="rlv">
+  return `<div class="rlv${sel.length>RLV_MAX_VERTICAL?" rlvAncha":""}" data-rlv-n="${sel.length}">
   <div class="rlvPrint"><h1>Stock por rubro</h1>
     <p>Relevamiento realizado por: <b>${esc(S.empleado?S.empleado.nombre:"")}</b>${S.empleado&&ROL_LABEL[S.empleado.rol]?" · "+esc(ROL_LABEL[S.empleado.rol]):""}</p>
     <p>Fecha y hora: <b class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</b></p></div>
@@ -1908,6 +1925,7 @@ function relevarView(){
   <div class="rlvCaja noPrint">
     <div class="rlvLabel">Productos a relevar</div>
     <div class="rlvFilaCtl">${prodChips}</div>
+    ${sel.length?`<div class="rlvNota ${sel.length>RLV_MAX_HORIZONTAL?"rlvAviso":""}">${esc(notaHojaRelevar(sel.length))}</div>`:""}
     <div class="rlvFilaCtl">
       <div class="rlvBuscar"><input type="text" id="rlvQ" value="${esc(R.q)}" placeholder="Buscar en el catálogo: Dubai, King, Alfajor…" aria-label="Buscar en el catálogo" autocomplete="off">${hayTexto?`<button type="button" class="rlvX" data-rlv-limpiarq aria-label="Borrar la búsqueda">×</button>`:""}</div>
       <button type="button" class="rlvBtn alto" data-rlv-lista>${listaAbierta?"Ocultar catálogo ▴":"Ver catálogo ▾"}</button>
