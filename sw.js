@@ -9,7 +9,7 @@
 // Subir una versión nueva: cambiar CACHE_VERSION junto con FRONTEND_VERSION
 // en index.html (no hace falta que sea el mismo número, alcanza con que
 // cambie) — así el navegador descarta la caché vieja sola.
-const CACHE_VERSION = "logistock-shell-v1.92.6";
+const CACHE_VERSION = "logistock-shell-v1.92.7";
 const SHELL_KEY = "./";
 const PRECACHE = [
   "./",
@@ -58,8 +58,11 @@ self.addEventListener("fetch", (e) => {
 
   if (esCascaron(url) || esManifest(url)) {
     const clave = esManifest(url) ? "manifest.json" : SHELL_KEY;
+    // cache:"no-cache" = siempre revalidar con el servidor. GitHub Pages manda
+    // max-age=600, así que sin esto el navegador podía servir una copia de
+    // hasta 10 minutos de antigüedad aunque ya estuviera publicada la nueva.
     e.respondWith(
-      fetch(req)
+      fetch(req, { cache: "no-cache" })
         .then((res) => {
           caches.open(CACHE_VERSION).then((c) => c.put(clave, res.clone()));
           return res;
