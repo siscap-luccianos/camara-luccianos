@@ -634,7 +634,8 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .rlvRow.tot{border-top:1px solid rgba(var(--header-bg-rgb),.22);background:rgba(var(--header-bg-rgb),.045);font-weight:800}
 .rlvRow .loc{min-width:0;font-weight:600;font-size:.88rem}
 .rlvRow .loc small{display:block;color:var(--muted);font-weight:500;font-size:.7rem;margin-top:1px}
-.rlvRow .num{text-align:right;font-size:.95rem;font-weight:800;font-variant-numeric:tabular-nums}
+.rlvRow>*{text-align:center}
+.rlvRow .num{text-align:center;font-size:.95rem;font-weight:800;font-variant-numeric:tabular-nums}
 .rlvRow .num.cero{color:var(--alert)}
 .rlvRow .num.nada{color:var(--muted);font-weight:500}
 .rlvRow.cab .num{font-size:.7rem;font-weight:800;color:var(--ink);text-transform:none;letter-spacing:0}
@@ -697,7 +698,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.92.8";
+const FRONTEND_VERSION = "1.92.9";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1891,12 +1892,12 @@ function relevarView(){
   <div class="rlvCaja noPrint">
     <div class="rlvFilaCtl">
       <span class="rlvLabel col">Locales a mostrar</span>
-      <button type="button" class="rlvBtn pri" data-rlv-panel>${R.panel?"Cerrar lista ▴":"Elegir locales ▾"} · ${nMarcados} marcados</button>
+      <button type="button" class="rlvBtn pri" data-rlv-panel>${R.panel?"Ocultar locales ▴":"Elegir locales ▾"} · ${nMarcados} marcados</button>
       <button type="button" class="chip" data-rlv-solo aria-pressed="${R.solo}">Solo los que tienen stock</button>
     </div>
     <div class="rlvFilaCtl">${locChips}</div>
     ${R.panel?`<div class="rlvCaja">
-      <div class="rlvBuscar" style="flex:none"><input type="text" id="rlvQL" value="${esc(R.qL)}" placeholder="Buscar por nombre o región…" aria-label="Buscar un local" autocomplete="off">${R.qL.length?`<button type="button" class="rlvX" data-rlv-limpiarql aria-label="Borrar la búsqueda">×</button>`:""}</div>
+      <div class="rlvFilaCtl"><div class="rlvBuscar"><input type="text" id="rlvQL" value="${esc(R.qL)}" placeholder="Buscar por nombre o región…" aria-label="Buscar un local" autocomplete="off">${R.qL.length?`<button type="button" class="rlvX" data-rlv-limpiarql aria-label="Borrar la búsqueda">×</button>`:""}</div><button type="button" class="rlvBtn alto" data-rlv-panel>Ocultar locales ▴</button></div>
       ${grupoChips?`<div class="rlvFilaCtl"><span class="rlvLabel col">Marcar por tipo</span>${grupoChips}<button type="button" class="rlvBtn" data-rlv-quitartodos style="margin-left:auto">Quitar todos</button></div>`:""}
       <div class="rlvLista">${listaLocales}</div>
     </div>`:""}
