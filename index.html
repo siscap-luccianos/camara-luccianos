@@ -619,7 +619,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.91.1";
+const FRONTEND_VERSION = "1.91.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -1463,6 +1463,8 @@ function ventaDesperdicioLote(id, f){
 const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"]];
 /** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
 function saboresConVencimiento(){ return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
+/** Hay chocolatería en stock (con fecha o sin fecha): alcanza para mostrar «Ver vencimientos», donde se completan las fechas que faltan. */
+function hayLotesVencimiento(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).length>0) }
 function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
 /** Leyenda del semáforo, visible en Salida para que se entienda sin preguntar. */
 function leyendaVencHTML(){
@@ -1827,7 +1829,7 @@ function gridSalida(st){
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
   ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML("salida")}`:""}
-  ${hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
+  ${hayLotesVencimiento()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
@@ -2083,7 +2085,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return (hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:"")+stockViewGeneral(st);
+  return (hayLotesVencimiento()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:"")+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
