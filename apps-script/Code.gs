@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.42.0";
+const BACKEND_VERSION = "1.42.1";
 
 function doPost(e) {
   let resultado;
@@ -638,15 +638,15 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const norm = _normalizarVencimientos(vencimientos, items, tipo);
   if (!norm.ok) return norm;
   const vencimientos2 = norm.vencimientos;
-  // Pesos por vasqueta (escaneo del rótulo de fábrica): solo en una Salida normal
-  // de un local con Locales.escaner_peso=SI (piloto).
+  // Pesos por vasqueta (escaneo del rótulo de fábrica o kilos a mano): en una Salida o un
+  // Desperdicio (merma) de un local con Locales.escaner_peso=SI (piloto).
   const normPesos = _normalizarPesos(pesos, items);
   if (!normPesos.ok) return normPesos;
   const pesos2 = normPesos.pesos;
   if (Object.keys(pesos2).length) {
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     if (!filaLocalPeso || _esVerdadero(filaLocalPeso.escaner_peso) !== true) return { ok: false, error: "Este local no tiene el escáner de peso activado." };
-    if (tipo !== "salida" || subtipo) return { ok: false, error: "El peso por vasqueta solo se carga en una salida." };
+    if (tipo !== "salida" || (subtipo && subtipo !== "desperdicio")) return { ok: false, error: "El peso por vasqueta solo se carga en una salida o un desperdicio." };
   }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };

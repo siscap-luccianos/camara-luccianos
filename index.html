@@ -397,6 +397,12 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqGuardando{font-weight:600}
 .etiqEspacio{height:72vh}
 .btn.escaner{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.escBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.escManual{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.escManualTit{margin:0;font-weight:700;font-size:.9rem}
+.escManualFila{display:grid;grid-template-columns:1fr 96px;gap:8px}
+.escSel,.escKg{height:46px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1rem;padding:0 10px;min-width:0}
+.escKg{text-align:center;font-weight:700}
 .pesosResumen{margin:-4px 0 12px;font-size:.88rem;color:var(--muted)}
 .pesosResumen b{color:var(--ink)}
 .escBox{max-height:92vh;overflow:auto}
@@ -613,7 +619,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.87.0";
+const FRONTEND_VERSION = "1.88.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_TABLET_MS = 60000;
@@ -656,7 +662,7 @@ const S = {
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{} },
-  pesos: {}, escaneadas: [], escaner: null,
+  pesos: {salida:{},desperdicio:{}}, escaneadas: [], escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
@@ -1820,7 +1826,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
-  ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML()}`:""}
+  ${S.escanerPeso?`<div class="escBtns"><button type="button" class="btn escaner" id="irEscaner">Escanear vasqueta</button><button type="button" class="btn ghost" id="irKilosManual">Sin código · kilos</button></div>${resumenPesosHTML("salida")}`:""}
   ${hayLotesConFecha()?`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`:""}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
@@ -1845,6 +1851,7 @@ function gridDesperdicio(st){
   <p class="sec" style="margin-top:6px">Desperdicio</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
+  ${S.escanerPeso?`<button type="button" class="btn ghost" id="irKilosManual" style="margin-bottom:12px">Cargar kilos de lo que se descarta</button>${resumenPesosHTML("desperdicio")}`:""}
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -2783,18 +2790,18 @@ function renderBar(){
       const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
-      const kgEscan=(cartKey==="salida")?sumaPesos():0, nEscan=(cartKey==="salida")?cantPesos():0;
+      const conPeso=(cartKey==="salida"||cartKey==="desperdicio"), kgEscan=conPeso?sumaPesos(cartKey):0, nEscan=conPeso?cantPesos(cartKey):0;
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" ? remitoDuplicado(S.remito, S.local) : null;
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
-          ${kgEscan>0?`<br>Escaneadas: ${nEscan} · <b>${fmtKg(kgEscan)} kg</b>`:""}
+          ${kgEscan>0?`<br>Con peso: ${nEscan} · <b>${fmtKg(kgEscan)} kg</b>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg escaneados`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
@@ -2904,7 +2911,7 @@ async function guardarMovimiento(){
     const kilos={}; if(enProduccion) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const pesosEnv={};
-    if(tipo==="salida"&&!enDesperdicio) for(const id of Object.keys(items)){ const a=(S.pesos[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
+    if(tipo==="salida") for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? (S.fotoRemitoUrl||undefined) : undefined,
@@ -2916,13 +2923,13 @@ async function guardarMovimiento(){
     const r = await api("registrar", payload);
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; limpiarPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; limpiarPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -3131,13 +3138,13 @@ document.addEventListener("click", async e=>{
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
-  if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; recortarPesos(t.dataset.sub); S.confirm=false; scheduleRender(); return }
+  if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; recortarPesos(t.dataset.sub,"salida"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.wadd){
     const id=t.dataset.wadd, c=S.cart.desperdicio, disponible=stockMap()[id]||0;
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para marcar como desperdicio."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
-  if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; recortarPesos(t.dataset.wsub,"desperdicio"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
   if(t.dataset.ccaja){ const id=t.dataset.ccaja; S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
@@ -3198,13 +3205,14 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; limpiarPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
+  if(t.id==="irKilosManual"){ abrirEscaner(true); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
@@ -3649,22 +3657,26 @@ function mantenerClick(e){
    ESCÁNER DE PESO POR VASQUETA — piloto (Locales.escaner_peso=SI).
    El rótulo de fábrica trae un código de barras ITF de 20 dígitos:
    [4 producto][5 peso en centésimas de kg][6 fecha del lote DDMMAA][5 serie].
-   Al sacar una vasqueta se escanea (lector Bluetooth/USB que "tipea" los
-   números, o la cámara) y la salida suma esa vasqueta con su peso real.
+   Al sacar una vasqueta (Salida o Desperdicio) se escanea (lector Bluetooth/USB
+   que "tipea" los números, o la cámara) y se suma esa vasqueta con su peso real.
+   Si el rótulo está dañado o no hay rótulo, se elige el sabor y se tipean los kilos.
 ============================================================ */
 const ZXING_SRC="vendor/zxing-wasm-reader-3.1.6.iife.js", ZXING_WASM="vendor/zxing_reader-3.1.6.wasm";
+const GRUPOS_PESABLES=["vasquetas","baldes","glutenfree"]; // lo que viene en vasqueta/balde con peso; Icepops y chocolatería no
 function fmtKg(k){ return (Number(k)||0).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function limpiarPesos(){ S.pesos={}; S.escaneadas=[]; }
-function cantPesos(){ return Object.values(S.pesos).reduce((a,l)=>a+l.length,0) }
-function sumaPesos(){ return Math.round(Object.values(S.pesos).reduce((a,l)=>a+l.reduce((x,y)=>x+y,0),0)*100)/100 }
-function recortarPesos(id){
-  const n=S.cart.salida[id]||0, a=S.pesos[id]; if(!a) return;
+function limpiarPesos(){ S.pesos={salida:{},desperdicio:{}}; S.escaneadas=[]; }
+function pesosDe(c){ c=c||"salida"; return S.pesos[c]||(S.pesos[c]={}) }
+function cantPesos(c){ return Object.values(pesosDe(c)).reduce((a,l)=>a+l.length,0) }
+function sumaPesos(c){ return Math.round(Object.values(pesosDe(c)).reduce((a,l)=>a+l.reduce((x,y)=>x+y,0),0)*100)/100 }
+function recortarPesos(id,c){
+  c=c||"salida";
+  const n=S.cart[c][id]||0, a=pesosDe(c)[id]; if(!a) return;
   while(a.length>n) a.pop();
-  if(!a.length) delete S.pesos[id];
+  if(!a.length) delete pesosDe(c)[id];
 }
-function resumenPesosHTML(){
-  const n=cantPesos(); if(!n) return "";
-  return `<p class="pesosResumen">Escaneadas: <b>${n}</b> · <b>${fmtKg(sumaPesos())} kg</b></p>`;
+function resumenPesosHTML(c){
+  const n=cantPesos(c); if(!n) return "";
+  return `<p class="pesosResumen">Con peso: <b>${n}</b> · <b>${fmtKg(sumaPesos(c))} kg</b></p>`;
 }
 function parseCodigoRotulo(txt){
   const d=String(txt||"").replace(/\D/g,"");
@@ -3680,19 +3692,39 @@ function pitido(ok){
     if(navigator.vibrate) navigator.vibrate(ok?50:[80,60,80]);
   }catch(e){}
 }
-function abrirEscaner(){
+function disponibleEscaner(id){
+  const e=S.escaner, c=e?e.cart:"salida", yaEnCarrito=S.cart[c][id]||0;
+  return c==="desperdicio" ? Math.max(0,(stockMap()[id]||0)-yaEnCarrito) : Math.max(0,vendibleDe(id)-yaEnCarrito);
+}
+function opcionesSaborManual(){
+  const sel=(document.getElementById("escSabor")||{}).value||"";
+  const por={}; saboresDelLocal().forEach(s=>{ const g=grupoProductoDe(s); if(GRUPOS_PESABLES.includes(g)&&disponibleEscaner(s.id)>0) (por[g]=por[g]||[]).push(s) });
+  return `<option value="">Elegí el sabor…</option>`+GRUPO_PRODUCTO_ORDEN.filter(g=>por[g]).map(g=>`<optgroup label="${esc(GRUPO_PRODUCTO_LABEL[g]||g)}">${por[g].map(s=>`<option value="${s.id}"${String(s.id)===sel?" selected":""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("");
+}
+function abrirEscaner(manual){
   if(S.escaner) return;
-  S.escaner={camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
+  const cart=S.modoDesperdicio?"desperdicio":"salida";
+  S.escaner={cart, camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
   const ov=document.createElement("div"); ov.id="escanerOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="escTit">
-    <p class="mantTit" id="escTit">Escanear vasqueta</p>
-    <p class="mantSub">Pasá el lector por el rótulo, o escribí los 20 números que están abajo del código de barras.</p>
+    <p class="mantTit" id="escTit">${cart==="desperdicio"?"Desperdicio con kilos":"Escanear vasqueta"}</p>
+    ${cart==="desperdicio"
+      ? `<p class="mantSub">Elegí el sabor y escribí los kilos de lo que se descarta. Es opcional: sin kilos se descuenta igual por unidad.</p>`
+      : `<p class="mantSub">Pasá el lector por el rótulo, o escribí los 20 números que están abajo del código de barras.</p>
     <input type="text" id="escCodigo" class="escCampo" inputmode="numeric" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
-    <video id="escVideo" class="escVideo" playsinline muted></video>
-    <div class="escMsg" id="escMsg" role="status" aria-live="polite">Esperando el código…</div>
+    <video id="escVideo" class="escVideo" playsinline muted></video>`}
+    <div class="escMsg" id="escMsg" role="status" aria-live="polite">${cart==="desperdicio"?"Elegí el sabor y los kilos.":"Esperando el código…"}</div>
     <div class="escLista" id="escLista"></div>
+    <div class="escManual">
+      <p class="escManualTit">${cart==="desperdicio"?"Kilos de la vasqueta":"¿Rótulo dañado o sin rótulo? Cargá los kilos a mano"}</p>
+      <div class="escManualFila">
+        <select id="escSabor" class="escSel" aria-label="Sabor"></select>
+        <input type="text" id="escKg" class="escKg" inputmode="decimal" autocomplete="off" placeholder="Kilos" aria-label="Kilos de la vasqueta">
+      </div>
+      <button type="button" class="btn ghost" data-esc-manual>${cart==="desperdicio"?"Agregar":"Agregar sin código"}</button>
+    </div>
     <div class="mantAcc">
-      <button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>
+      ${cart==="desperdicio"?"":`<button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>`}
       <button type="button" class="btn" data-esc-cerrar>Listo</button>
     </div>
   </div>`;
@@ -3700,15 +3732,18 @@ function abrirEscaner(){
     if(e.target===ov){ cerrarEscaner(); return }
     const b=e.target.closest("button"); if(!b) return;
     if(b.dataset.escCerrar!==undefined) cerrarEscaner();
+    else if(b.dataset.escManual!==undefined) agregarManual();
     else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
   });
   ov.addEventListener("input", e=>{ if(e.target.id==="escCodigo"){ const d=e.target.value.replace(/\D/g,""); if(d.length>=20){ e.target.value=""; procesarEscaneo(d) } } });
   ov.addEventListener("keydown", e=>{
-    if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
+    if(e.key!=="Enter") return;
+    if(e.target.id==="escCodigo"){ e.preventDefault(); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
+    else if(e.target.id==="escKg"){ e.preventDefault(); agregarManual() }
   });
   document.body.appendChild(ov);
   renderEscaner();
-  setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(i) i.focus() },50);
+  setTimeout(()=>{ const i=document.getElementById(manual||cart==="desperdicio"?"escSabor":"escCodigo"); if(i) i.focus() },50);
 }
 function cerrarEscaner(){
   apagarCamara();
@@ -3717,12 +3752,22 @@ function cerrarEscaner(){
 }
 function renderEscaner(){
   const e=S.escaner; if(!e) return;
-  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
-  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.textContent=e.msg?e.msg.t:"Esperando el código…" }
-  if(l) l.innerHTML=e.lista.slice(0,5).map(x=>`<div><span>${esc(x.nombre)}${x.repetido?" ⚠":""}<br><small style="color:var(--muted)">lote ${esc(x.lote)}</small></span><b>${fmtKg(x.kg)} kg</b></div>`).join("")
-    + (e.lista.length?`<div style="border:0"><span>Esta salida</span><b>${cantPesos()} · ${fmtKg(sumaPesos())} kg</b></div>`:"");
+  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]"), sel=document.getElementById("escSabor");
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.textContent=e.msg?e.msg.t:(e.cart==="desperdicio"?"Elegí el sabor y los kilos.":"Esperando el código…") }
+  if(l) l.innerHTML=e.lista.slice(0,5).map(x=>`<div><span>${esc(x.nombre)}${x.repetido?" ⚠":""}<br><small style="color:var(--muted)">${x.manual?"kilos a mano":"lote "+esc(x.lote)}</small></span><b>${fmtKg(x.kg)} kg</b></div>`).join("")
+    + (e.lista.length?`<div style="border:0"><span>Esta ${e.cart==="desperdicio"?"baja":"salida"}</span><b>${cantPesos(e.cart)} · ${fmtKg(sumaPesos(e.cart))} kg</b></div>`:"");
+  if(sel) sel.innerHTML=opcionesSaborManual();
   if(v) v.classList.toggle("on", !!e.camara);
   if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
+}
+/** Suma una vasqueta pesada al carrito de la salida/desperdicio abierto. */
+function sumarVasquetaPesada(s, kg, extra){
+  const e=S.escaner, c=S.cart[e.cart];
+  c[s.id]=(c[s.id]||0)+1;
+  (pesosDe(e.cart)[s.id]=pesosDe(e.cart)[s.id]||[]).push(kg);
+  S.confirm=false;
+  e.lista.unshift(Object.assign({id:s.id, nombre:s.nombre, kg}, extra));
+  pitido(true); renderEscaner(); scheduleRender();
 }
 function procesarEscaneo(txt){
   const e=S.escaner; if(!e) return;
@@ -3732,18 +3777,25 @@ function procesarEscaneo(txt){
   if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
   e.ultimo={crudo:p.crudo, ts:ahora};
   const s=saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
-  if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+")."}; pitido(false); renderEscaner(); return }
-  const c=S.cart.salida;
-  if((c[s.id]||0)>=vendibleDe(s.id)){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
+  if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+"). Cargalo con «Agregar sin código»."}; pitido(false); renderEscaner(); return }
+  if(disponibleEscaner(s.id)<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
   const repetido=S.escaneadas.indexOf(p.crudo)!==-1;
   S.escaneadas.push(p.crudo);
-  c[s.id]=(c[s.id]||0)+1;
-  (S.pesos[s.id]=S.pesos[s.id]||[]).push(p.kg);
-  S.confirm=false;
-  e.lista.unshift({id:s.id, nombre:s.nombre, kg:p.kg, lote:p.lote, repetido});
   e.msg={tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+(repetido?" · ⚠ este código ya se había escaneado":"")};
-  pitido(true); renderEscaner(); scheduleRender();
+  sumarVasquetaPesada(s, p.kg, {lote:p.lote, repetido});
   const i=document.getElementById("escCodigo"); if(i) i.focus();
+}
+function agregarManual(){
+  const e=S.escaner; if(!e) return;
+  const sel=document.getElementById("escSabor"), inp=document.getElementById("escKg");
+  const id=sel&&sel.value, kg=Math.round(parseFloat(String(inp.value).replace(",","."))*100)/100;
+  if(!id){ e.msg={tipo:"err", t:"Elegí el sabor de la vasqueta."}; pitido(false); renderEscaner(); return }
+  if(!(kg>=0.1&&kg<=30)){ e.msg={tipo:"err", t:"Escribí los kilos de la vasqueta (entre 0,1 y 30), por ejemplo 3,40."}; pitido(false); renderEscaner(); if(inp) inp.focus(); return }
+  const s=saboresDelLocal().find(x=>String(x.id)===String(id));
+  if(!s||disponibleEscaner(s.id)<=0){ e.msg={tipo:"err", t:"No hay stock de ese sabor para sacar."}; pitido(false); renderEscaner(); return }
+  e.msg={tipo:"ok", t:s.nombre+" · "+fmtKg(kg)+" kg (a mano)"};
+  sumarVasquetaPesada(s, kg, {manual:true});
+  const i2=document.getElementById("escKg"); if(i2){ i2.value=""; i2.focus() }
 }
 function cargarZxing(){
   if(window.ZXingWASM) return Promise.resolve();
