@@ -711,7 +711,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.97.0";
+const FRONTEND_VERSION = "1.98.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2176,6 +2176,25 @@ function motivoChoco(){
   return "Transferencia a "+S.destinoTransf.trim();
 }
 function chocoFaltaMotivo(){ const st=subtipoChoco(); return (st==="sincargo"&&!S.motivoChoco.trim())||(st==="transferencia"&&!S.destinoTransf.trim()) }
+/** Packs de chocolatería para la Salida de chocolatería: un toque suma las
+ *  unidades de cada producto, así el sistema registra unidades sueltas.
+ *  Alfajores: x6 y x10 del mismo sabor; conitos: caja de 6. Los surtidos son
+ *  recetas fijas (ids de Sabores). El "x6 surtido" queda afuera hasta que
+ *  Gabi confirme su composición (lo que pasó eran 7 unidades). */
+const PACKS_UNIDAD_CHOCO={Alfajores:[1,6,10], Conitos:[1,6]};
+const PACKS_SURTIDOS_CHOCO=[
+  {k:"x10s", label:"x10 surtido", receta:{117:3,118:3,119:2,120:2}},
+  {k:"lata5", label:"Lata x5 surtida", receta:{117:1,118:1,119:1,120:1,122:1}}
+];
+function agregarVentaPack(receta){
+  const st=stockMap(), cart=S.cart.venta;
+  for(const id of Object.keys(receta)){
+    const hay=st[id]||0, ya=cart[id]||0;
+    if(ya+receta[id]>hay){ toast(`No alcanza el stock de ${nombre(id)} (hay ${hay}, ya cargaste ${ya}).`); return false }
+  }
+  Object.keys(receta).forEach(id=>{ cart[id]=(cart[id]||0)+receta[id] });
+  S.confirm=false; return true;
+}
 function gridVentaDia(st){
   const cart=S.cart.venta, list=listaFiltrada(st), cats=categoriasPresentes();
   const tipo=S.tipoChoco||"venta", sub=subtipoChoco();
@@ -2183,7 +2202,7 @@ function gridVentaDia(st){
   const row=s=>{
     const hay=st[s.id]||0, v=cart[s.id]||0;
     return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}</div></div>
-    <div class="right"><input type="number" min="0" max="${hay}" inputmode="numeric" data-vd="${s.id}" value="${v||""}" placeholder="0"${hay>0?"":" disabled"}></div></div>`};
+    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip" data-vd-add="${s.id}" data-n="${n}"${hay-v>=n?"":" disabled"}>${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}<input type="number" min="0" max="${hay}" inputmode="numeric" data-vd="${s.id}" value="${v||""}" placeholder="0"${hay>0?"":" disabled"}></div></div>`};
   const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida."}[tipo];
   const extra = tipo==="venta"
     ? `<div class="remitoRow"><label for="fechaVenta" style="font-weight:700">Fecha de la venta</label><input type="date" id="fechaVenta" value="${fechaVentaEfectiva()}" min="${minISO}" max="${hoyISO}"></div>
@@ -2201,6 +2220,8 @@ function gridVentaDia(st){
   </div>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${texto} Se descuenta del stock.</p>
   ${extra}
+  <p class="sec" style="margin:4px 0 6px">Packs surtidos</p>
+  <div class="chips" style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap">${PACKS_SURTIDOS_CHOCO.map(p=>`<button type="button" class="chip" data-vd-pack="${p.k}">${p.label}</button>`).join("")}</div>
   <div class="tools"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
   <div class="subCats" role="group" aria-label="Categorías">
     <button type="button" class="subCat" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todas</button>
@@ -3580,6 +3601,16 @@ document.addEventListener("click", async e=>{
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="irVentaDia"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
   if(t.dataset.ingTipo){ S.tipoIngreso=t.dataset.ingTipo; S.remito=""; S.confirm=false; renderApp(); return }
+  if(t.dataset.vdAdd){
+    const id=t.dataset.vdAdd, n=Number(t.dataset.n)||0;
+    if(!agregarVentaPack({[id]:n})) return;
+    scheduleRender(); return;
+  }
+  if(t.dataset.vdPack){
+    const p=PACKS_SURTIDOS_CHOCO.find(x=>x.k===t.dataset.vdPack);
+    if(p && agregarVentaPack(p.receta)) scheduleRender();
+    return;
+  }
   if(t.dataset.tipoChoco){ S.tipoChoco=t.dataset.tipoChoco; S.confirm=false; renderApp(); return }
   if(t.dataset.bajaMotivo){ S.bajaMotivo=t.dataset.bajaMotivo; S.confirm=false; renderApp(); return }
   if(t.id==="volverVenta"){ S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.confirm=false; renderApp(); return }
