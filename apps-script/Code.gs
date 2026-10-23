@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.45.0";
+const BACKEND_VERSION = "1.46.0";
 
 function doPost(e) {
   let resultado;
@@ -727,8 +727,16 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   // «sincargo» (regalo, evento, muestra: lleva motivo), «baja» (por vencimiento) y
   // «transferencia» (a otro local: lleva el destino en el motivo).
   const SUBTIPOS_CHOCO = ["venta", "giftcard", "sincargo", "baja", "transferencia"];
-  const esSalidaChoco = SUBTIPOS_CHOCO.indexOf(subtipo) !== -1;
+  // «transferencia» también existe como ingreso: es la mercadería que recibe (o le prestan) a este local.
+  const esTransfIngreso = subtipo === "transferencia" && tipo === "ingreso";
+  const esSalidaChoco = SUBTIPOS_CHOCO.indexOf(subtipo) !== -1 && !esTransfIngreso;
   if (esSalidaChoco && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (esTransfIngreso) {
+    const filaLocalTr = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+    if (!filaLocalTr || _esVerdadero(filaLocalTr.venta_dia) !== true) return { ok: false, error: "Este local no tiene las transferencias activadas." };
+    if (empleado.rol === "colaborador") return { ok: false, error: "Esta carga la hace un responsable." };
+    if (!String(motivo || "").trim()) return { ok: false, error: "Falta el local de origen de la transferencia." };
+  }
   if (subtipo && ["devolucion", "desperdicio", "produccion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
   // Solo en un local con Locales.venta_dia=SI, solo productos de chocolatería y no
   // los carga el colaborador (el que mira la caja es el responsable). La fecha solo

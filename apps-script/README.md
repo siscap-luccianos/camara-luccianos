@@ -199,6 +199,7 @@ Para sumar un sabor al piloto alcanza con cargar su `codigo_fabrica` en la hoja 
 La chocolatería no pasa por la caja de la app. Al cerrar, el responsable mira en el sistema de caja lo vendido de cada producto y lo carga en **Salida → Venta del día**: una salida común (descuenta stock y cuenta como consumo para el pedido sugerido) con `Registros.subtipo = "venta"` y el motivo "Venta del día dd/mm". Flujo: un Conteo físico al arrancar y, de ahí, una venta del día por cierre.
 
 - `Locales.venta_dia` — `SI` habilita el botón en Salida de ese local. Hoy solo "Local prueba" (ya cargado en la planilla).
+- Transferencias: la **enviada** es una salida (`subtipo=transferencia`) y la **recibida** es un ingreso (`tipo=ingreso`, `subtipo=transferencia`, origen en `motivo`). Backend 1.46.0.
 - Tipos de salida (`Registros.subtipo`): `venta`, `giftcard`, `sincargo` (motivo obligatorio), `baja` (por vencimiento) y `transferencia` (destino obligatorio, no cuenta como consumo). Backend `Code.gs` 1.45.0.
 - Solo productos de chocolatería. No la carga el colaborador.
 - En ese local la chocolatería **no se saca con una salida común**: el servidor la rechaza (Desperdicio sí puede sacarla).
