@@ -315,6 +315,12 @@ select{max-width:220px}
 .row .meta{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400}
 .row .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .row input[type=number]{width:70px;text-align:right;font-variant-numeric:tabular-nums}
+/* sin las flechitas nativas de subir/bajar: un toque al lado del número cambiaba la cantidad sin querer */
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0;display:none}
+.packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;height:41px;padding:0 8px;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accent-rgb),.10);color:var(--ink);line-height:1.05}
+.packBox b{font-size:1rem;font-variant-numeric:tabular-nums}
+.packBox small{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .saborRow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
 .rows .saborRow:first-child{border-top:0}
 .saborRow .plate{width:54px;height:54px}
@@ -711,7 +717,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.98.2";
+const FRONTEND_VERSION = "1.99.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -754,6 +760,7 @@ const S = {
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
+  packVenta: {}, // unidades de cada producto que vienen de packs surtidos (parte de S.cart.venta)
   pesos: {salida:{},desperdicio:{}}, escaneadas: [], escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
@@ -1719,6 +1726,8 @@ document.addEventListener("change", (e)=>{
   renderBar();
 });
 function registrarActividad(){ if(S.empleado && !S.bloqueado) reiniciarInactividad() }
+// la rueda del mouse sobre un número con foco lo cambiaba sin querer
+document.addEventListener("wheel",e=>{ const a=document.activeElement; if(a && a.type==="number" && a===e.target) a.blur() },{passive:true});
 ["click","input","touchstart","keydown","wheel","pointermove"].forEach(ev=>document.addEventListener(ev, registrarActividad, {passive:true}));
 document.addEventListener("scroll", registrarActividad, {passive:true, capture:true});
 
@@ -2166,11 +2175,13 @@ const LABEL_SUBTIPO_CHOCO = {venta:"venta del día", giftcard:"gift card", sinca
 function etiquetaSubtipoChoco(r){ return r.subtipo==="transferencia"&&r.tipo==="ingreso" ? "transferencia recibida" : LABEL_SUBTIPO_CHOCO[r.subtipo] }
 function resetTipoChoco(){ S.tipoIngreso="remito"; S.tipoChoco="venta"; S.bajaMotivo="vencimiento"; S.motivoChoco=""; S.destinoTransf=""; }
 /** Subtipo que se guarda en Registros: venta | giftcard | sincargo | baja | transferencia. */
+/** La venta del día y la gift card se pueden cargar con la fecha en que ocurrieron. */
+function chocoConFecha(){ const st=subtipoChoco(); return st==="venta"||st==="giftcard" }
 function subtipoChoco(){ const t=S.tipoChoco||"venta"; return t==="baja" ? (S.bajaMotivo==="transferencia"?"transferencia":"baja") : t }
 function motivoChoco(){
   const st=subtipoChoco();
   if(st==="venta") return "Venta del día "+fechaVentaTexto(fechaVentaEfectiva()).slice(0,5);
-  if(st==="giftcard") return "Gift card";
+  if(st==="giftcard") return "Gift card"+(S.fechaVenta?" del "+fechaVentaTexto(fechaVentaEfectiva()).slice(0,5):"");
   if(st==="sincargo") return "Sin cargo: "+S.motivoChoco.trim();
   if(st==="baja") return "Baja por vencimiento";
   return "Transferencia a "+S.destinoTransf.trim();
@@ -2186,13 +2197,23 @@ const PACKS_SURTIDOS_CHOCO=[
   {k:"x10s", label:"x10 surtido", receta:{117:3,118:3,119:2,120:2}},
   {k:"lata5", label:"Lata x5 surtida", receta:{117:1,118:1,119:1,120:1,122:1}}
 ];
-function agregarVentaPack(receta){
+/** Unidades de un producto que vienen de packs surtidos dentro de la venta en curso.
+ *  El carrito guarda el total; el campo de la fila muestra solo lo que se suma suelto. */
+function packVentaDe(id){
+  if(!Object.keys(S.cart.venta).length) S.packVenta={};
+  return Math.min(S.packVenta[id]||0, S.cart.venta[id]||0);
+}
+function agregarVentaPack(receta, esSurtido){
   const st=stockMap(), cart=S.cart.venta;
+  if(!Object.keys(cart).length) S.packVenta={};
   for(const id of Object.keys(receta)){
     const hay=st[id]||0, ya=cart[id]||0;
     if(ya+receta[id]>hay){ toast(`No alcanza el stock de ${nombre(id)} (hay ${hay}, ya cargaste ${ya}).`); return false }
   }
-  Object.keys(receta).forEach(id=>{ cart[id]=(cart[id]||0)+receta[id] });
+  Object.keys(receta).forEach(id=>{
+    cart[id]=(cart[id]||0)+receta[id];
+    if(esSurtido) S.packVenta[id]=packVentaDe(id)+receta[id];
+  });
   S.confirm=false; return true;
 }
 function gridVentaDia(st){
@@ -2200,13 +2221,14 @@ function gridVentaDia(st){
   const tipo=S.tipoChoco||"venta", sub=subtipoChoco();
   const hoyISO=fechaJornadaISO(), minISO=isoDeFecha(new Date(jornadaDe()-VENTA_DIAS_ATRAS*864e5));
   const row=s=>{
-    const hay=st[s.id]||0, v=cart[s.id]||0;
-    return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}</div></div>
-    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip" data-vd-add="${s.id}" data-n="${n}"${hay-v>=n?"":" disabled"}>${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}<input type="number" min="0" max="${hay}" inputmode="numeric" data-vd="${s.id}" value="${v||""}" placeholder="0"${hay>0?"":" disabled"}></div></div>`};
+    const hay=st[s.id]||0, v=cart[s.id]||0, pk=packVentaDe(s.id), suelto=v-pk;
+    return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · Total ${v}`:""}</div></div>
+    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip" data-vd-add="${s.id}" data-n="${n}"${hay-v>=n?"":" disabled"}>${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}${pk?`<span class="packBox" title="Unidades que vienen de packs surtidos"><b>${pk}</b><small>surtidos</small></span>`:""}<input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div></div>`};
   const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida."}[tipo];
-  const extra = tipo==="venta"
-    ? `<div class="remitoRow"><label for="fechaVenta" style="font-weight:700">Fecha de la venta</label><input type="date" id="fechaVenta" value="${fechaVentaEfectiva()}" min="${minISO}" max="${hoyISO}"></div>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">${S.fechaVenta?`Estás cargando la venta de un día anterior. Para volver a hoy, elegí la fecha de hoy.`:`Es la de hoy. Cambiala solo si te olvidaste de cargar un día anterior (hasta ${VENTA_DIAS_ATRAS+1} días atrás).`}</p>`
+  const lblFecha = tipo==="giftcard" ? "la gift card" : "la venta";
+  const extra = (tipo==="venta"||tipo==="giftcard")
+    ? `<div class="remitoRow"><label for="fechaVenta" style="font-weight:700">Fecha de ${lblFecha}</label><input type="date" id="fechaVenta" value="${fechaVentaEfectiva()}" min="${minISO}" max="${hoyISO}"></div>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">${S.fechaVenta?`Estás cargando ${lblFecha} de un día anterior. Para volver a hoy, elegí la fecha de hoy.`:`Es la de hoy. Cambiala solo si te olvidaste de cargar un día anterior (hasta ${VENTA_DIAS_ATRAS+1} días atrás).`}</p>`
     : tipo==="sincargo"
     ? `<div class="remitoRow"><label for="motivoChoco" style="font-weight:700">Motivo</label><input type="text" id="motivoChoco" placeholder="Ej: regalo, evento, muestra" value="${esc(S.motivoChoco)}"></div>`
     : tipo==="baja"
@@ -3167,7 +3189,7 @@ function renderBar(){
       const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":enVenta?LABEL_SUBTIPO_CHOCO[subtipoChoco()]:enTransfIn?"transferencia recibida":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
       const faltaMotivo=(enDesperdicio && !S.motivoDesperdicio.trim()) || (enVenta && chocoFaltaMotivo()) || (enTransfIn && !S.remito.trim());
       // Venta de un día anterior al último conteo: ese conteo ya la incluye, descontaría dos veces.
-      const fechaAntesConteo=enVenta && subtipoChoco()==="venta" && !!S.fechaVenta && tsVentaDe(S.fechaVenta)<=((S.stock&&S.stock.ts)||0);
+      const fechaAntesConteo=enVenta && chocoConFecha() && !!S.fechaVenta && tsVentaDe(S.fechaVenta)<=((S.stock&&S.stock.ts)||0);
       const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
@@ -3299,7 +3321,7 @@ async function guardarMovimiento(){
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? (S.fotoRemitoUrl||undefined) : undefined,
       subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? subtipoChoco() : enTransfIn ? "transferencia" : undefined,
       motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : enTransfIn ? "Transferencia de "+S.remito.trim() : undefined,
-      fecha: enVenta && subtipoChoco()==="venta" && S.fechaVenta ? S.fechaVenta : undefined,
+      fecha: enVenta && chocoConFecha() && S.fechaVenta ? S.fechaVenta : undefined,
       kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined,
       vencimientos: Object.keys(venc).length ? venc : undefined,
       pesos: Object.keys(pesosEnv).length ? pesosEnv : undefined};
@@ -3608,7 +3630,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.vdPack){
     const p=PACKS_SURTIDOS_CHOCO.find(x=>x.k===t.dataset.vdPack);
-    if(p && agregarVentaPack(p.receta)) scheduleRender();
+    if(p && agregarVentaPack(p.receta,true)) scheduleRender();
     return;
   }
   if(t.dataset.tipoChoco){ S.tipoChoco=t.dataset.tipoChoco; S.confirm=false; renderApp(); return }
@@ -3750,10 +3772,10 @@ document.addEventListener("input", e=>{
     renderBar();
   }
   if(e.target.dataset.vd){
-    const id=e.target.dataset.vd, hay=stockMap()[id]||0;
+    const id=e.target.dataset.vd, hay=stockMap()[id]||0, pk=packVentaDe(id), maxSuelto=Math.max(0,hay-pk);
     let n=Math.max(0,Math.floor(+e.target.value||0));
-    if(n>hay){ n=hay; e.target.value=hay; toast(`Solo hay ${hay} en la app. Si se vendió más, falta cargar un ingreso.`) }
-    if(n) S.cart.venta[id]=n; else delete S.cart.venta[id];
+    if(n>maxSuelto){ n=maxSuelto; e.target.value=maxSuelto; toast(`Solo hay ${hay} en la app${pk?` (${pk} ya están en packs surtidos)`:""}. Si se vendió más, falta cargar un ingreso.`) }
+    if(n+pk) S.cart.venta[id]=n+pk; else delete S.cart.venta[id];
     S.confirm=false; renderBar();
   }
   if(e.target.dataset.cantInput){

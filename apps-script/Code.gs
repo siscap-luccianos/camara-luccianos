@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.47.0";
+const BACKEND_VERSION = "1.48.0";
 
 function doPost(e) {
   let resultado;
@@ -743,9 +743,9 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (subtipo && ["devolucion", "desperdicio", "produccion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
   // Solo en un local con Locales.venta_dia=SI, solo productos de chocolatería y no
   // los carga el colaborador (el que mira la caja es el responsable). La fecha solo
-  // vale para la venta (para el día que se olvidaron de cargarla): hasta 7 días atrás.
+  // vale para la venta y la gift card (para el día que se olvidaron de cargarlas): hasta 7 días atrás.
   let tsVenta = 0;
-  if (fecha && subtipo !== "venta") return { ok: false, error: "La fecha solo se usa en la venta del día." };
+  if (fecha && subtipo !== "venta" && subtipo !== "giftcard") return { ok: false, error: "La fecha solo se usa en la venta del día y en la gift card." };
   if (esSalidaChoco) {
     const filaLocalVenta = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     if (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true) return { ok: false, error: "Este local no tiene la salida de chocolatería activada." };
@@ -755,11 +755,11 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     if ((subtipo === "sincargo" || subtipo === "transferencia") && !String(motivo || "").trim()) return { ok: false, error: subtipo === "transferencia" ? "Falta el local de destino de la transferencia." : "Falta el motivo de la salida sin cargo." };
     if (fecha) {
       const tz = "America/Argentina/Buenos_Aires";
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) return { ok: false, error: "Fecha de venta inválida." };
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) return { ok: false, error: "Fecha inválida." };
       const hoyBA = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd");
       const haceUnaSemana = Utilities.formatDate(new Date(Date.now() - 7 * 24 * 3600 * 1000), tz, "yyyy-MM-dd");
-      if (String(fecha) > hoyBA) return { ok: false, error: "La fecha de la venta no puede ser futura." };
-      if (String(fecha) < haceUnaSemana) return { ok: false, error: "La fecha de la venta no puede ser de hace más de 7 días." };
+      if (String(fecha) > hoyBA) return { ok: false, error: "La fecha no puede ser futura." };
+      if (String(fecha) < haceUnaSemana) return { ok: false, error: "La fecha no puede ser de hace más de 7 días." };
       tsVenta = Math.min(Date.now(), Utilities.parseDate(fecha + " 23:30", tz, "yyyy-MM-dd HH:mm").getTime());
     }
   }
@@ -830,7 +830,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       // Un conteo posterior ya incluye esa venta: cargarla de nuevo descontaría dos veces.
       const stockVenta = _datosSinCache(local).stock;
       const bts2 = stockVenta ? stockVenta.ts : 0;
-      if (ts <= bts2) return { ok: false, error: "Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta." };
+      if (ts <= bts2) return { ok: false, error: "Esa fecha es anterior al último conteo físico: el conteo ya incluye ese movimiento." };
     }
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: tipo, local: local, empleadoId: empleado.id, empleado: empleado.nombre,
