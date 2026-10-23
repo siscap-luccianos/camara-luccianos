@@ -711,7 +711,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.96.0";
+const FRONTEND_VERSION = "1.97.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -750,7 +750,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], escanerPeso: false, ventaDia: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], escanerPeso: false, ventaDia: false, chocoSoloDeposito: false,
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
@@ -1227,7 +1227,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || [];
-    S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
+    S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -1328,6 +1328,10 @@ async function desbloquearPC(){
 // El scroll no burbujea desde los contenedores, por eso va con captura.
 /* Chocolatería: cada producto del carrito de Ingreso pide su vencimiento antes de confirmar. */
 function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
+/** Chocolatería con vencimientos y lotes. En un local «solo depósito» (Locales.choco_solo_deposito=SI, p. ej. un
+ *  centro comercial con el depósito lejos) la chocolatería solo se cuenta: no se cargan fechas, así que no hay
+ *  lotes, semáforo ni «Ver vencimientos». La salida es la común (lo que sale del depósito es el consumo). */
+function usaLotes(id){ return esChocolateria(id) && !S.chocoSoloDeposito }
 /** Desde 21/10/2026 el vencimiento ya no es obligatorio en ningún producto (pedido de Gabi): quien
  *  carga puede no tener la fecha a mano. Lo que quede sin fecha se completa después con "Poner fecha"
  *  en Ver vencimientos. Se deja la función para no tocar a quienes la llaman. */
@@ -1335,7 +1339,7 @@ function requiereVencimiento(id){ return false }
 /** Panel de vencimientos de un renglón de chocolatería (mock "Ingreso con lotes"): una fila por lote con
  *  fecha y unidades. El lote principal toma lo que sobra del total; los extra se escriben a mano. */
 function lotesPanelHTML(clave, id, cantidad){
-  if(!esChocolateria(id) || !(cantidad>0) || (S.saboresPorId[id]||{}).categoria==="Latas") return "";
+  if(!usaLotes(id) || !(cantidad>0) || (S.saboresPorId[id]||{}).categoria==="Latas") return "";
   const ing=clave.startsWith("ing:");
   const principal = ing ? S.vencimientos[id] : S.vencConteo[id];
   const attrP = ing ? "data-venc" : "data-venc-conteo";
@@ -1372,7 +1376,7 @@ function lotesPanelHTML(clave, id, cantidad){
 /** Al tipear la cantidad de chocolatería, el panel de vencimientos aparece (o se quita) en el momento,
  *  sin esperar a Guardar. Solo se reemplaza el panel, no el campo de cantidad, así no se pierde el foco. */
 function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
-  if(!esChocolateria(id)) return;
+  if(!usaLotes(id)) return;
   const fila=input.closest(".row"), clave=prefijo+id, panel=fila.querySelector(".lotesFull");
   if(cantidad<=0){ if(panel) panel.remove(); delete S.lotesExtra[clave]; return }
   const html=`<div class="lotesFull">${lotesPanelHTML(clave,id,cantidad)}</div>`;
@@ -1463,7 +1467,7 @@ function lotesPorSabor(){
 }
 /** Lotes que se pueden vender: los que todavía no vencieron (sin fecha también se vende). */
 function lotesVendibles(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f || diasHasta(l.f)>=0) }
-function vendibleDe(id){ return sumaLotes(lotesVendibles(id)) }
+function vendibleDe(id){ return S.chocoSoloDeposito && esChocolateria(id) ? (stockMap()[id]||0) : sumaLotes(lotesVendibles(id)) }
 /** Lote del que sale la próxima unidad: el elegido a mano o, si no, el que vence antes. */
 function loteSalida(id){
   const v=lotesVendibles(id), elegido=S.lotePick[id];
@@ -1479,11 +1483,11 @@ function loteMostrado(id, conVencidos){
 }
 /** Clase del borde de la tarjeta según el semáforo del lote que se muestra. */
 function semCardClase(id, conVencidos){
-  const l=esChocolateria(id) ? loteMostrado(id, conVencidos) : null;
+  const l=usaLotes(id) ? loteMostrado(id, conVencidos) : null;
   return l&&l.f ? " sem-"+semaforoVenc(l.f).k : "";
 }
 function loteInfoSpan(id, conVencidos){
-  if(!esChocolateria(id)) return "";
+  if(!usaLotes(id)) return "";
   const lotes=(lotesPorSabor()[id]||[]).filter(l=>l.f);
   if(!lotes.length) return "";
   const nLotes=new Set((lotesPorSabor()[id]||[]).filter(l=>conVencidos || !l.f || diasHasta(l.f)>=0).map(l=>l.f||"")).size;
@@ -1497,7 +1501,7 @@ function loteInfoSpan(id, conVencidos){
 }
 /** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
 function loteElegirBtn(id, conVencidos){
-  if(!esChocolateria(id)) return "";
+  if(!usaLotes(id)) return "";
   const fechas=new Set((lotesPorSabor()[id]||[]).filter(l=>!l.f || conVencidos || diasHasta(l.f)>=0).map(l=>l.f||"")).size;
   return fechas>1 ? `<span class="linkLote" role="button" tabindex="0" data-elegir-lote="${id}">Elegir lote</span>` : "";
 }
@@ -1558,7 +1562,7 @@ function ventaDesperdicioLote(id, f){
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
 const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"]];
 /** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
-function saboresConVencimiento(){ return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
+function saboresConVencimiento(){ if(S.chocoSoloDeposito) return []; return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
 /** Hay chocolatería en stock, con fecha o sin fecha. */
 function hayLotesVencimiento(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).length>0) }
 function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
@@ -2109,7 +2113,7 @@ function gridSalida(st){
   ${S.ventaDia&&S.empleado.rol!=="colaborador"?`<button type="button" class="btn produccion" id="irVentaDia" style="margin-bottom:12px">Salida de chocolatería</button>`:""}
   ${S.ventaDia?`<p style="margin:-4px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:""}
   ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML("salida")}`:""}
-  <button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>
+  ${S.chocoSoloDeposito?"":`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">Tocá un sabor para sumar una unidad</p>
@@ -2365,7 +2369,7 @@ function gridIngreso(st){
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
-    ${esChocolateria(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
+    ${usaLotes(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
@@ -2433,7 +2437,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return `<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`+stockViewGeneral(st);
+  return (S.chocoSoloDeposito?"":`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`)+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -2601,7 +2605,7 @@ function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
   const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div></div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div>${esChocolateria(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div>${usaLotes(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
@@ -3184,7 +3188,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || [];
-    S.escanerPeso = !!d.escanerPeso; S.ventaDia = !!d.ventaDia; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
+    S.escanerPeso = !!d.escanerPeso; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -3203,10 +3207,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || [];
-  S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
+  S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
   S.regs = r.registros;
   S.stock = r.stock;
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -3220,7 +3224,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -3250,7 +3254,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: payload.fecha ? tsVentaDe(payload.fecha) : Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -3317,7 +3321,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {

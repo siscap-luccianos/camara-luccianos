@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.46.0";
+const BACKEND_VERSION = "1.47.0";
 
 function doPost(e) {
   let resultado;
@@ -483,8 +483,11 @@ function _datosSinCache(local, empleado) {
   // Locales.venta_dia=SI habilita, en Salida, "Venta del día" (chocolatería): una
   // salida con lo que dice la caja al cerrar. Piloto: hoy solo "Local prueba".
   const ventaDia = filaLocal ? _esVerdadero(filaLocal.venta_dia) === true : false;
+  // Locales.choco_solo_deposito=SI: la chocolatería se cuenta sin vencimientos (centro comercial con
+  // el depósito lejos); la salida es la común. Si el local ya usa «Venta del día», esa manda.
+  const chocoSoloDeposito = !ventaDia && (filaLocal ? _esVerdadero(filaLocal.choco_solo_deposito) === true : false);
 
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito };
 }
 
 function _cacheKeyDatos(local) {
@@ -516,7 +519,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los

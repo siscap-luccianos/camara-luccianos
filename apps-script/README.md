@@ -207,6 +207,12 @@ La chocolatería no pasa por la caja de la app. Al cerrar, el responsable mira e
 - Los lotes salen primero los que vencen antes. El stock no puede quedar en negativo (si la caja vendió más que la app, falta cargar un ingreso).
 - Para sumar otro local alcanza con `venta_dia=SI` en su fila. Hace falta pegar `Code.gs` 1.44.0 y "Nueva implementación" para que el botón aparezca y el servidor acepte el subtipo.
 
+## Chocolatería en un centro comercial (`Code.gs` 1.47.0)
+
+Dos formas de llevarla, por local, con una columna en `Locales` (valor `SI`):
+- `venta_dia` = **todo junto**: local y depósito suman en un solo stock y un responsable carga la Venta del día al cerrar (ver más arriba). Con vencimientos.
+- `choco_solo_deposito` = **solo depósito**: la chocolatería usa la salida común (lo que sale del depósito es el consumo) y no lleva vencimientos: no aparecen los campos de fecha, «Ver vencimientos» ni el semáforo. Si el local tiene las dos, manda `venta_dia`.
+
 ## Relevar productos (solo Operaciones, `Code.gs` 1.43.0)
 
 Pestaña **Relevar** de Operaciones (admin y supervisor): una tabla con el stock vigente de los productos que se elijan en los locales que se marquen. La acción `relevar` lee `Sabores`, `Locales`, `Stock` y `Registros` una sola vez y devuelve, por local, el mismo stock que ve ese local (último conteo + ingresos − salidas, sin anulados, últimos 60 días; los sabores de `Locales.sabores_excluidos` no vienen y se muestran como «—»).
