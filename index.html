@@ -711,7 +711,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.98.0";
+const FRONTEND_VERSION = "1.98.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2179,10 +2179,10 @@ function chocoFaltaMotivo(){ const st=subtipoChoco(); return (st==="sincargo"&&!
 /** Packs de chocolatería para la Salida de chocolatería: un toque suma las
  *  unidades de cada producto, así el sistema registra unidades sueltas.
  *  Alfajores: x6 y x10 del mismo sabor; conitos: caja de 6. Los surtidos son
- *  recetas fijas (ids de Sabores). El "x6 surtido" queda afuera hasta que
- *  Gabi confirme su composición (lo que pasó eran 7 unidades). */
+ *  recetas fijas (ids de Sabores). */
 const PACKS_UNIDAD_CHOCO={Alfajores:[1,6,10], Conitos:[1,6]};
 const PACKS_SURTIDOS_CHOCO=[
+  {k:"x6s", label:"x6 surtido", receta:{117:2,118:2,119:1,120:1}},
   {k:"x10s", label:"x10 surtido", receta:{117:3,118:3,119:2,120:2}},
   {k:"lata5", label:"Lata x5 surtida", receta:{117:1,118:1,119:1,120:1,122:1}}
 ];
