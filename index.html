@@ -319,9 +319,11 @@ select{max-width:220px}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0;display:none}
 .chip.sinStock{opacity:.4}
-.packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;height:41px;padding:0 8px;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accent-rgb),.10);color:var(--ink);line-height:1.05}
-.packBox b{font-size:1rem;font-variant-numeric:tabular-nums}
-.packBox small{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.packCajas{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:62px;padding:4px 8px;border-radius:12px;border:1.5px solid #6A9A5E;background:rgba(106,154,94,.12);color:var(--ink);line-height:1.05;font:inherit;cursor:pointer}
+.packBox.surt{border-color:#B58A4A;background:rgba(181,138,74,.14)}
+.packBox b{font-size:1.05rem;font-variant-numeric:tabular-nums}
+.packBox small{font-size:.58rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 .saborRow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
 .rows .saborRow:first-child{border-top:0}
 .saborRow .plate{width:54px;height:54px}
@@ -718,7 +720,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.99.2";
+const FRONTEND_VERSION = "1.100.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -761,7 +763,7 @@ const S = {
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
-  packVenta: {}, // unidades de cada producto que vienen de packs surtidos (parte de S.cart.venta)
+  detVenta: {}, // de dónde vino cada unidad del carrito de la venta: {idSabor:{x6,x10,x6s,x10s,lata5}} en unidades (el resto son sueltas)
   pesos: {salida:{},desperdicio:{}}, escaneadas: [], escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
@@ -2198,24 +2200,51 @@ const PACKS_SURTIDOS_CHOCO=[
   {k:"x10s", label:"x10 surtido", receta:{117:3,118:3,119:2,120:2}},
   {k:"lata5", label:"Lata x5 surtida", receta:{117:1,118:1,119:1,120:1,122:1}}
 ];
-/** Unidades de un producto que vienen de packs surtidos dentro de la venta en curso.
- *  El carrito guarda el total; el campo de la fila muestra solo lo que se suma suelto. */
+/** De dónde vienen las unidades del carrito de la venta. S.cart.venta guarda el total;
+ *  S.detVenta lo desglosa por origen (x6, x10 y packs surtidos). Lo que no está desglosado
+ *  son unidades sueltas (+1 o escritas en el campo). Cada origen se muestra en una caja. */
+const ORIGEN_LABEL={x6:"x6", x10:"x10", x6s:"Surt. x6", x10s:"Surt. x10", lata5:"Lata x5"};
+const ORIGEN_ORDEN=["x6","x10","x6s","x10s","lata5"];
 function packVentaDe(id){
-  if(!Object.keys(S.cart.venta).length) S.packVenta={};
-  return Math.min(S.packVenta[id]||0, S.cart.venta[id]||0);
+  if(!Object.keys(S.cart.venta).length) S.detVenta={};
+  const d=S.detVenta[id]||{};
+  return Math.min(Object.keys(d).reduce((a,k)=>a+d[k],0), S.cart.venta[id]||0);
 }
-function agregarVentaPack(receta, esSurtido){
+/** Suma una receta {id:unidades} al carrito (todo o nada). kind = origen a anotar en las cajas, o null si son sueltas. */
+function agregarVentaPack(receta, kind){
   const st=stockMap(), cart=S.cart.venta;
-  if(!Object.keys(cart).length) S.packVenta={};
+  if(!Object.keys(cart).length) S.detVenta={};
   for(const id of Object.keys(receta)){
     const hay=st[id]||0, ya=cart[id]||0;
     if(ya+receta[id]>hay){ toast(`No alcanza el stock de ${nombre(id)} (hay ${hay}, ya cargaste ${ya}).`); return false }
   }
   Object.keys(receta).forEach(id=>{
     cart[id]=(cart[id]||0)+receta[id];
-    if(esSurtido) S.packVenta[id]=packVentaDe(id)+receta[id];
+    if(kind){ const d=S.detVenta[id]=S.detVenta[id]||{}; d[kind]=(d[kind]||0)+receta[id] }
   });
   S.confirm=false; return true;
+}
+/** Quita una carga de un origen: un x6/x10 de ese producto, o el pack surtido entero (de todos sus productos). */
+function quitarVentaPack(id, kind){
+  const surt=PACKS_SURTIDOS_CHOCO.find(p=>p.k===kind);
+  const receta = surt ? surt.receta : {[id]: kind==="x6"?6:10};
+  const cart=S.cart.venta;
+  if(!Object.keys(receta).every(i=>((S.detVenta[i]||{})[kind]||0)>=receta[i])) return;
+  Object.keys(receta).forEach(i=>{
+    const d=S.detVenta[i];
+    d[kind]-=receta[i]; if(d[kind]<=0) delete d[kind];
+    cart[i]=Math.max(0,(cart[i]||0)-receta[i]); if(!cart[i]) delete cart[i];
+  });
+  S.confirm=false;
+}
+function cajasOrigenHTML(id){
+  const d=S.detVenta[id]||{}, ks=ORIGEN_ORDEN.filter(k=>d[k]>0);
+  if(!ks.length) return "";
+  return `<div class="packCajas">${ks.map(k=>{
+    const surt=PACKS_SURTIDOS_CHOCO.find(p=>p.k===k);
+    const veces=surt ? d[k]/surt.receta[id] : d[k]/(k==="x6"?6:10);
+    return `<button type="button" class="packBox${surt?" surt":""}" data-vd-quitar="${id}|${k}" title="Tocá para quitar uno"><b>${d[k]}</b><small>${ORIGEN_LABEL[k]} ×${veces}</small></button>`;
+  }).join("")}</div>`;
 }
 function gridVentaDia(st){
   const cart=S.cart.venta, list=listaFiltrada(st), cats=categoriasPresentes();
@@ -2223,8 +2252,8 @@ function gridVentaDia(st){
   const hoyISO=fechaJornadaISO(), minISO=isoDeFecha(new Date(jornadaDe()-VENTA_DIAS_ATRAS*864e5));
   const row=s=>{
     const hay=st[s.id]||0, v=cart[s.id]||0, pk=packVentaDe(s.id), suelto=v-pk;
-    return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · Total ${v}`:""}</div></div>
-    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}${pk?`<span class="packBox" title="Unidades que vienen de packs surtidos"><b>${pk}</b><small>surtidos</small></span>`:""}<input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div></div>`};
+    return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · <b>Total ${v}</b>`:""}</div>${cajasOrigenHTML(s.id)}</div>
+    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}<input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div></div>`};
   const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida."}[tipo];
   const lblFecha = tipo==="giftcard" ? "la gift card" : "la venta";
   const extra = (tipo==="venta"||tipo==="giftcard")
@@ -3626,12 +3655,13 @@ document.addEventListener("click", async e=>{
   if(t.dataset.ingTipo){ S.tipoIngreso=t.dataset.ingTipo; S.remito=""; S.confirm=false; renderApp(); return }
   if(t.dataset.vdAdd){
     const id=t.dataset.vdAdd, n=Number(t.dataset.n)||0;
-    if(!agregarVentaPack({[id]:n})) return;
+    if(!agregarVentaPack({[id]:n}, n===6?"x6":n===10?"x10":null)) return;
     scheduleRender(); return;
   }
+  if(t.dataset.vdQuitar){ const [id,kind]=t.dataset.vdQuitar.split("|"); quitarVentaPack(id,kind); scheduleRender(); return }
   if(t.dataset.vdPack){
     const p=PACKS_SURTIDOS_CHOCO.find(x=>x.k===t.dataset.vdPack);
-    if(p && agregarVentaPack(p.receta,true)) scheduleRender();
+    if(p && agregarVentaPack(p.receta,p.k)) scheduleRender();
     return;
   }
   if(t.dataset.tipoChoco){ S.tipoChoco=t.dataset.tipoChoco; S.confirm=false; renderApp(); return }
