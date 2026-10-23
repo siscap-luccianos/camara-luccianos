@@ -319,7 +319,9 @@ select{max-width:220px}
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0;display:none}
 .chip.sinStock{opacity:.4}
-.packCajas{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.packAcc{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.packBtns{display:flex;gap:6px;flex-wrap:wrap}
+.packCajas{display:flex;gap:6px;flex-wrap:wrap}
 .packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:62px;padding:4px 8px;border-radius:12px;border:1.5px solid #6A9A5E;background:rgba(106,154,94,.12);color:var(--ink);line-height:1.05;font:inherit;cursor:pointer}
 .packBox.surt{border-color:#B58A4A;background:rgba(181,138,74,.14)}
 .packBox b{font-size:1.05rem;font-variant-numeric:tabular-nums}
@@ -720,7 +722,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.100.0";
+const FRONTEND_VERSION = "1.100.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2196,14 +2198,14 @@ function chocoFaltaMotivo(){ const st=subtipoChoco(); return (st==="sincargo"&&!
  *  recetas fijas (ids de Sabores). */
 const PACKS_UNIDAD_CHOCO={Alfajores:[1,6,10], Conitos:[1,6]};
 const PACKS_SURTIDOS_CHOCO=[
-  {k:"x6s", label:"x6 surtido", receta:{117:2,118:2,119:1,120:1}},
-  {k:"x10s", label:"x10 surtido", receta:{117:3,118:3,119:2,120:2}},
-  {k:"lata5", label:"Lata x5 surtida", receta:{117:1,118:1,119:1,120:1,122:1}}
+  {k:"x6s", label:"x6 mix", receta:{117:2,118:2,119:1,120:1}},
+  {k:"x10s", label:"x10 mix", receta:{117:3,118:3,119:2,120:2}},
+  {k:"lata5", label:"Lata x5 mix", receta:{117:1,118:1,119:1,120:1,122:1}}
 ];
 /** De dónde vienen las unidades del carrito de la venta. S.cart.venta guarda el total;
  *  S.detVenta lo desglosa por origen (x6, x10 y packs surtidos). Lo que no está desglosado
  *  son unidades sueltas (+1 o escritas en el campo). Cada origen se muestra en una caja. */
-const ORIGEN_LABEL={x6:"x6", x10:"x10", x6s:"Surt. x6", x10s:"Surt. x10", lata5:"Lata x5"};
+const ORIGEN_LABEL={x6:"x6", x10:"x10", x6s:"x6 mix", x10s:"x10 mix", lata5:"Lata x5 mix"};
 const ORIGEN_ORDEN=["x6","x10","x6s","x10s","lata5"];
 function packVentaDe(id){
   if(!Object.keys(S.cart.venta).length) S.detVenta={};
@@ -2237,6 +2239,17 @@ function quitarVentaPack(id, kind){
   });
   S.confirm=false;
 }
+/** Botones de la fila (a ancho completo debajo del producto, para no tener que volver arriba)
+ *  y las cajas por origen. Alfajores: surtidos + +1/x6/x10; conitos: +1/x6. */
+function accionesPackHTML(s,hay,v){
+  const unidades=PACKS_UNIDAD_CHOCO[s.categoria]||[];
+  const surt = s.categoria==="Alfajores" ? PACKS_SURTIDOS_CHOCO : [];
+  const chipSurt=p=>`<button type="button" class="chip" data-vd-pack="${p.k}">${p.label}</button>`;
+  const chipUni=n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`;
+  const botones=surt.map(chipSurt).join("")+unidades.map(chipUni).join("");
+  const cajas=cajasOrigenHTML(s.id);
+  return botones||cajas ? `<div class="packAcc">${botones?`<div class="packBtns">${botones}</div>`:""}${cajas}</div>` : "";
+}
 function cajasOrigenHTML(id){
   const d=S.detVenta[id]||{}, ks=ORIGEN_ORDEN.filter(k=>d[k]>0);
   if(!ks.length) return "";
@@ -2252,8 +2265,8 @@ function gridVentaDia(st){
   const hoyISO=fechaJornadaISO(), minISO=isoDeFecha(new Date(jornadaDe()-VENTA_DIAS_ATRAS*864e5));
   const row=s=>{
     const hay=st[s.id]||0, v=cart[s.id]||0, pk=packVentaDe(s.id), suelto=v-pk;
-    return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · <b>Total ${v}</b>`:""}</div>${cajasOrigenHTML(s.id)}</div>
-    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}<input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div></div>`};
+    return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · <b>Total ${v}</b>`:""}</div></div>
+    <div class="right"><input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div>${accionesPackHTML(s,hay,v)}</div>`};
   const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida."}[tipo];
   const lblFecha = tipo==="giftcard" ? "la gift card" : "la venta";
   const extra = (tipo==="venta"||tipo==="giftcard")
@@ -2272,8 +2285,6 @@ function gridVentaDia(st){
   </div>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${texto} Se descuenta del stock.</p>
   ${extra}
-  <p class="sec" style="margin:4px 0 6px">Packs surtidos</p>
-  <div class="chips" style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap">${PACKS_SURTIDOS_CHOCO.map(p=>`<button type="button" class="chip" data-vd-pack="${p.k}">${p.label}</button>`).join("")}</div>
   <div class="tools"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
   <div class="subCats" role="group" aria-label="Categorías">
     <button type="button" class="subCat" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todas</button>
