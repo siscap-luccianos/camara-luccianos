@@ -711,7 +711,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.98.1";
+const FRONTEND_VERSION = "1.98.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -3687,12 +3687,18 @@ document.addEventListener("keydown", e=>{
   // Conteo físico como una columna de Excel: Enter y flecha abajo bajan al
   // siguiente sabor, flecha arriba sube al anterior; al entrar al campo se
   // selecciona el número (ver focusin) y se pisa tipeando.
-  if(e.target.dataset && (e.target.dataset.c!==undefined || e.target.dataset.vd!==undefined) && ["Enter","ArrowDown","ArrowUp"].includes(e.key)){
+  if(e.target.dataset && (e.target.dataset.c!==undefined || e.target.dataset.vd!==undefined || e.target.dataset.cantInput!==undefined) && ["Enter","ArrowDown","ArrowUp"].includes(e.key)){
     e.preventDefault();
-    const campos=[...document.querySelectorAll(e.target.dataset.c!==undefined?"input[data-c]":"input[data-vd]:not([disabled])")];
+    const sel = e.target.dataset.c!==undefined ? "input[data-c]" : e.target.dataset.vd!==undefined ? "input[data-vd]:not([disabled])" : "input[data-cant-input]";
+    const campos=[...document.querySelectorAll(sel)];
     const paso = e.key==="ArrowUp" ? -1 : 1;
     const destino=campos[campos.indexOf(e.target)+paso];
-    if(destino) destino.focus(); else if(e.key!=="ArrowUp") e.target.blur();
+    if(destino){
+      destino.focus();
+      // el foco solo no alcanza: la cabecera y la barra de abajo tapan el campo,
+      // así que se lo lleva al centro de la pantalla para no tener que scrollear a mano
+      destino.scrollIntoView({block:"center", behavior:"smooth"});
+    } else if(e.key!=="ArrowUp") e.target.blur();
     return;
   }
   if(e.key==="Enter"){
