@@ -711,7 +711,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.94.1";
+const FRONTEND_VERSION = "1.95.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -768,6 +768,7 @@ const S = {
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
   modoVenta: false, // viendo "Venta del día" (chocolatería) desde adentro de Salida
+  tipoChoco: "venta", bajaMotivo: "vencimiento", motivoChoco: "", destinoTransf: "", // tipo de salida de chocolatería (venta|giftcard|sincargo|baja) y sus datos
   fechaVenta: "", // "" = la jornada de hoy; si no, YYYY-MM-DD de la venta que se olvidaron de cargar
   modoProduccion: false, // viendo Producción desde adentro de Ingreso (local con Locales.produccion=SI)
   motivoDesperdicio: "",
@@ -924,7 +925,7 @@ function tendenciaSemanas(){
     for(const r of movs){
       for(const [id,qRaw] of Object.entries(r.items||{})){
         const q=+qRaw||0; if(!q) continue;
-        if(r.tipo==="salida"){ totales[id]=(totales[id]||0)+q; stockCorrida[id]=(stockCorrida[id]||0)-q; if(stockCorrida[id]<=0) agotado[id]=true; }
+        if(r.tipo==="salida"){ if(r.subtipo!=="transferencia") totales[id]=(totales[id]||0)+q; stockCorrida[id]=(stockCorrida[id]||0)-q; if(stockCorrida[id]<=0) agotado[id]=true; }
         else { stockCorrida[id]=(stockCorrida[id]||0)+q; }
       }
     }
@@ -934,7 +935,7 @@ function tendenciaSemanas(){
 }
 function salidasDias(dias){
   const since=jornadaDe()-(dias-1)*864e5, m={};
-  for(const r of regsActivos()) if(r.tipo==="salida"&&r.ts>=since) for(const [id,q] of Object.entries(r.items||{})) m[id]=(m[id]||0)+(+q||0);
+  for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="transferencia"&&r.ts>=since) for(const [id,q] of Object.entries(r.items||{})) m[id]=(m[id]||0)+(+q||0);
   return m;
 }
 /** Inicio de la jornada de hoy (04:00 de hoy, o de ayer si son las 00:00–04:00). */
@@ -948,7 +949,7 @@ function pendienteDevolucionHoy(){
   const desde=inicioDeHoy(), sacado={}, devuelto={};
   for(const r of regsActivos()){
     if(r.ts<desde || String(r.empleadoId)!==String(S.empleado.id)) continue;
-    if(r.tipo==="salida" && r.subtipo!=="desperdicio" && r.subtipo!=="venta") for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
+    if(r.tipo==="salida" && !r.subtipo) for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
     else if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,q] of Object.entries(r.items||{})) devuelto[id]=(devuelto[id]||0)+(+q||0);
   }
   const pendiente={};
@@ -2104,8 +2105,8 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
-  ${S.ventaDia&&S.empleado.rol!=="colaborador"?`<button type="button" class="btn produccion" id="irVentaDia" style="margin-bottom:12px">Venta del día</button>`:""}
-  ${S.ventaDia?`<p style="margin:-4px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: se descuenta al cierre con la «Venta del día».</p>`:""}
+  ${S.ventaDia&&S.empleado.rol!=="colaborador"?`<button type="button" class="btn produccion" id="irVentaDia" style="margin-bottom:12px">Salida de chocolatería</button>`:""}
+  ${S.ventaDia?`<p style="margin:-4px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:""}
   ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML("salida")}`:""}
   <button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>
   ${chipFiltros()}
@@ -2148,18 +2149,51 @@ function fechaVentaEfectiva(){ return S.fechaVenta || fechaJornadaISO() }
 function fechaVentaTexto(iso){ const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}` }
 /** Momento con el que el servidor guarda la venta: 23:30 de esa fecha (o ahora, si es hoy). */
 function tsVentaDe(fecha){ return fecha ? Math.min(Date.now(), isoALocal(fecha)+23.5*36e5) : Date.now() }
+/** SALIDA DE CHOCOLATERÍA — en un local con «Venta del día» (Locales.venta_dia=SI) la chocolatería
+ *  no se saca con la Salida común: toda salida pasa por acá, con su tipo. Venta = lo que dice la caja
+ *  al cerrar; Gift card; Sin cargo (regalo, evento, muestra: lleva motivo); Baja o transferencia
+ *  (por vencimiento, o a otro local: lleva el destino). Todas descuentan stock; la transferencia
+ *  no cuenta como consumo para el pedido sugerido (no es demanda de este local). */
+const CLASES_CHOCO = ["venta","giftcard","sincargo","baja","transferencia"];
+const TIPOS_CHOCO = [["venta","Venta del día"],["giftcard","Gift card"],["sincargo","Sin cargo"],["baja","Baja"]];
+const LABEL_SUBTIPO_CHOCO = {venta:"venta del día", giftcard:"gift card", sincargo:"sin cargo", baja:"baja por vencimiento", transferencia:"transferencia"};
+function resetTipoChoco(){ S.tipoChoco="venta"; S.bajaMotivo="vencimiento"; S.motivoChoco=""; S.destinoTransf=""; }
+/** Subtipo que se guarda en Registros: venta | giftcard | sincargo | baja | transferencia. */
+function subtipoChoco(){ const t=S.tipoChoco||"venta"; return t==="baja" ? (S.bajaMotivo==="transferencia"?"transferencia":"baja") : t }
+function motivoChoco(){
+  const st=subtipoChoco();
+  if(st==="venta") return "Venta del día "+fechaVentaTexto(fechaVentaEfectiva()).slice(0,5);
+  if(st==="giftcard") return "Gift card";
+  if(st==="sincargo") return "Sin cargo: "+S.motivoChoco.trim();
+  if(st==="baja") return "Baja por vencimiento";
+  return "Transferencia a "+S.destinoTransf.trim();
+}
+function chocoFaltaMotivo(){ const st=subtipoChoco(); return (st==="sincargo"&&!S.motivoChoco.trim())||(st==="transferencia"&&!S.destinoTransf.trim()) }
 function gridVentaDia(st){
   const cart=S.cart.venta, list=listaFiltrada(st), cats=categoriasPresentes();
+  const tipo=S.tipoChoco||"venta", sub=subtipoChoco();
   const hoyISO=fechaJornadaISO(), minISO=isoDeFecha(new Date(jornadaDe()-VENTA_DIAS_ATRAS*864e5));
   const row=s=>{
     const hay=st[s.id]||0, v=cart[s.id]||0;
     return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}</div></div>
     <div class="right"><input type="number" min="0" max="${hay}" inputmode="numeric" data-vd="${s.id}" value="${v||""}" placeholder="0"${hay>0?"":" disabled"}></div></div>`};
+  const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que se transfieren a otro local."}[tipo];
+  const extra = tipo==="venta"
+    ? `<div class="remitoRow"><label for="fechaVenta" style="font-weight:700">Fecha de la venta</label><input type="date" id="fechaVenta" value="${fechaVentaEfectiva()}" min="${minISO}" max="${hoyISO}"></div>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">${S.fechaVenta?`Estás cargando la venta de un día anterior. Para volver a hoy, elegí la fecha de hoy.`:`Es la de hoy. Cambiala solo si te olvidaste de cargar un día anterior (hasta ${VENTA_DIAS_ATRAS+1} días atrás).`}</p>`
+    : tipo==="sincargo"
+    ? `<div class="remitoRow"><label for="motivoChoco" style="font-weight:700">Motivo</label><input type="text" id="motivoChoco" placeholder="Ej: regalo, evento, muestra" value="${esc(S.motivoChoco)}"></div>`
+    : tipo==="baja"
+    ? `<div class="chips" style="margin:0 0 10px;display:flex;gap:8px"><button type="button" class="chip" data-baja-motivo="vencimiento" aria-pressed="${sub==="baja"}">Por vencimiento</button><button type="button" class="chip" data-baja-motivo="transferencia" aria-pressed="${sub==="transferencia"}">Transferencia a otro local</button></div>
+  ${sub==="transferencia"?`<div class="remitoRow"><label for="destinoTransf" style="font-weight:700">Local de destino</label><input type="text" id="destinoTransf" placeholder="Ej: Obelisco CABA" value="${esc(S.destinoTransf)}"></div>`:""}`
+    : "";
   return `<button class="btn volver" type="button" id="volverVenta" style="margin-bottom:12px">Volver a Salida</button>
-  <p class="sec" style="margin-top:6px">Venta del día · Chocolatería</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Cargá lo que vendió la caja de cada producto. Se descuenta del stock como una salida.</p>
-  <div class="remitoRow"><label for="fechaVenta" style="font-weight:700">Fecha de la venta</label><input type="date" id="fechaVenta" value="${fechaVentaEfectiva()}" min="${minISO}" max="${hoyISO}"></div>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">${S.fechaVenta?`Estás cargando la venta de un día anterior. Para volver a hoy, elegí la fecha de hoy.`:`Es la de hoy. Cambiala solo si te olvidaste de cargar un día anterior (hasta ${VENTA_DIAS_ATRAS+1} días atrás).`}</p>
+  <p class="sec" style="margin-top:6px">Salida de chocolatería</p>
+  <div class="tabsCat" role="tablist" style="margin-bottom:10px">
+    ${TIPOS_CHOCO.map(([k,l])=>`<button type="button" class="tabCat" role="tab" data-tipo-choco="${k}" aria-selected="${tipo===k}">${l}</button>`).join("")}
+  </div>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${texto} Se descuenta del stock.</p>
+  ${extra}
   <div class="tools"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
   <div class="subCats" role="group" aria-label="Categorías">
     <button type="button" class="subCat" data-cat="todas" aria-pressed="${S.filtroCategoria==="todas"}">Todas</button>
@@ -2656,10 +2690,10 @@ function filaMovimiento(r){
     const pe=r.pesos&&r.pesos[id], peTxt=pe&&pe.length?` (${pe.map(fmtKg).join(" · ")} kg${pe.length<+q?`, ${pe.length} de ${q} pesadas`:""})`:"";
     return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${peTxt}${vto}`;
   }).join(" · ");
-  const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":r.subtipo==="venta"?"venta":r.tipo;
-  const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":r.subtipo==="venta"?"venta del día":r.tipo;
+  const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":CLASES_CHOCO.includes(r.subtipo)?"venta":r.tipo;
+  const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":CLASES_CHOCO.includes(r.subtipo)?LABEL_SUBTIPO_CHOCO[r.subtipo]:r.tipo;
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
-    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||r.subtipo==="venta")&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
+    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${textoJornada(r.ts)}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${it}</div>`}
     ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
@@ -2756,7 +2790,7 @@ function histView(){
   } else {
     tituloTabla = S.categoriaHist==="vasquetas" ? "Salidas — Vasquetas" : S.categoriaHist==="icepops" ? "Salidas — Icepops" : S.categoriaHist==="chocolateria" ? "Salidas — Chocolatería" : "Salidas por sabor (todas las categorías)";
     const sem={}, kgSab={};
-    for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="desperdicio"&&r.ts>=rango.inicio&&r.ts<rango.fin){
+    for(const r of regsActivos()) if(r.tipo==="salida"&&r.subtipo!=="desperdicio"&&r.subtipo!=="transferencia"&&r.ts>=rango.inicio&&r.ts<rango.fin){
       const d=esSemana?(new Date(jornadaDe(r.ts)).getDay()+6)%7:0;
       for(const [id,q] of Object.entries(r.items||{})){
         if(S.categoriaHist!=="todas" && grupoHistDe(id)!==S.categoriaHist) continue;
@@ -3100,10 +3134,10 @@ function renderBar(){
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
     if(tot){
       visible=true;
-      const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":enVenta?"venta del día":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
-      const faltaMotivo=enDesperdicio && !S.motivoDesperdicio.trim();
+      const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":enVenta?LABEL_SUBTIPO_CHOCO[subtipoChoco()]:S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
+      const faltaMotivo=(enDesperdicio && !S.motivoDesperdicio.trim()) || (enVenta && chocoFaltaMotivo());
       // Venta de un día anterior al último conteo: ese conteo ya la incluye, descontaría dos veces.
-      const fechaAntesConteo=enVenta && !!S.fechaVenta && tsVentaDe(S.fechaVenta)<=((S.stock&&S.stock.ts)||0);
+      const fechaAntesConteo=enVenta && subtipoChoco()==="venta" && !!S.fechaVenta && tsVentaDe(S.fechaVenta)<=((S.stock&&S.stock.ts)||0);
       const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
@@ -3112,7 +3146,7 @@ function renderBar(){
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" ? remitoDuplicado(S.remito, S.local) : null;
-        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}${enVenta?`<br>Venta del <b>${fechaVentaTexto(fechaVentaEfectiva())}</b>`:""}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
+        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}${enVenta?`<br>${subtipoChoco()==="venta"?`Venta del <b>${fechaVentaTexto(fechaVentaEfectiva())}</b>`:`<b>${esc(motivoChoco())}</b>`}`:""}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${kgEscan>0?`<br>Con peso: ${nEscan} · <b>${fmtKg(kgEscan)} kg</b>`:""}
           ${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior.</div>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
@@ -3183,7 +3217,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -3233,22 +3267,22 @@ async function guardarMovimiento(){
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion ? (S.fotoRemitoUrl||undefined) : undefined,
-      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? "venta" : undefined,
-      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? "Venta del día "+fechaVentaTexto(fechaVentaEfectiva()).slice(0,5) : undefined,
-      fecha: enVenta && S.fechaVenta ? S.fechaVenta : undefined,
+      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? subtipoChoco() : undefined,
+      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : undefined,
+      fecha: enVenta && subtipoChoco()==="venta" && S.fechaVenta ? S.fechaVenta : undefined,
       kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined,
       vencimientos: Object.keys(venc).length ? venc : undefined,
       pesos: Object.keys(pesosEnv).length ? pesosEnv : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
-      toast((enDesperdicio?"Desperdicio registrado: ":enVenta?"Venta del día registrada: ":enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; S.modoProduccion=false; S.motivoDesperdicio="";
+      toast((enDesperdicio?"Desperdicio registrado: ":enVenta?(LABEL_SUBTIPO_CHOCO[subtipoChoco()].charAt(0).toUpperCase()+LABEL_SUBTIPO_CHOCO[subtipoChoco()].slice(1)+" registrada: "):enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -3450,7 +3484,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
   // Un mantener (pointerdown largo) ya abrió el diálogo de cantidad: su click no suma una unidad.
   if(S.mantenerSuprimirClick){ S.mantenerSuprimirClick=false; if(t.dataset.add) return }
   if(t.dataset.add){
@@ -3535,9 +3569,11 @@ document.addEventListener("click", async e=>{
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
-  if(t.id==="irVentaDia"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
-  if(t.id==="volverVenta"){ S.modoVenta=false; S.fechaVenta=""; S.confirm=false; renderApp(); return }
-  if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; S.confirm=false; renderApp(); return }
+  if(t.id==="irVentaDia"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.tipoChoco){ S.tipoChoco=t.dataset.tipoChoco; S.confirm=false; renderApp(); return }
+  if(t.dataset.bajaMotivo){ S.bajaMotivo=t.dataset.bajaMotivo; S.confirm=false; renderApp(); return }
+  if(t.id==="volverVenta"){ S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.confirm=false; renderApp(); return }
+  if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
   if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
   if(t.id==="remitoVolverRevision"){ S.lectorRemito.paso="revision"; S.lectorRemito.error=""; renderApp(); return }
@@ -3562,7 +3598,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
-  if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
   if(t.dataset.etiqAbrir!==undefined){ etiqAbrir(t.dataset.etiqAbrir); return }
   if(t.dataset.etiqCancelar!==undefined){ S.etiq=null; renderApp(); return }
@@ -3655,6 +3691,8 @@ document.addEventListener("input", e=>{
   }
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
   if(e.target.id==="remito"){ S.remito=e.target.value }
+  if(e.target.id==="motivoChoco"){ S.motivoChoco=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.id==="destinoTransf"){ S.destinoTransf=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="motivoDesperdicio"){ S.motivoDesperdicio=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }

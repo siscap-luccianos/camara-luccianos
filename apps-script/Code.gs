@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.44.0";
+const BACKEND_VERSION = "1.45.0";
 
 function doPost(e) {
   let resultado;
@@ -722,20 +722,26 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       if (choco.length) return { ok: false, error: "La chocolatería de este local se descuenta con la «Venta del día», no con una salida común." };
     }
   }
-  if (subtipo === "venta" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
-  if (subtipo && ["devolucion", "desperdicio", "produccion", "venta"].indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
-  // Venta del día (chocolatería): salida con lo que dice la caja al cerrar. Solo en
-  // un local con Locales.venta_dia=SI, solo productos de chocolatería y no la
-  // carga el colaborador (el que mira la caja es el responsable). La fecha es
-  // opcional (para el día que se olvidaron de cargarla): hasta 7 días atrás.
+  // Salidas de chocolatería de un local con Locales.venta_dia=SI: todas pasan por el
+  // sistema, cada una con su tipo. «venta» = lo que dice la caja al cerrar; «giftcard»,
+  // «sincargo» (regalo, evento, muestra: lleva motivo), «baja» (por vencimiento) y
+  // «transferencia» (a otro local: lleva el destino en el motivo).
+  const SUBTIPOS_CHOCO = ["venta", "giftcard", "sincargo", "baja", "transferencia"];
+  const esSalidaChoco = SUBTIPOS_CHOCO.indexOf(subtipo) !== -1;
+  if (esSalidaChoco && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo && ["devolucion", "desperdicio", "produccion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
+  // Solo en un local con Locales.venta_dia=SI, solo productos de chocolatería y no
+  // los carga el colaborador (el que mira la caja es el responsable). La fecha solo
+  // vale para la venta (para el día que se olvidaron de cargarla): hasta 7 días atrás.
   let tsVenta = 0;
   if (fecha && subtipo !== "venta") return { ok: false, error: "La fecha solo se usa en la venta del día." };
-  if (subtipo === "venta") {
+  if (esSalidaChoco) {
     const filaLocalVenta = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-    if (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true) return { ok: false, error: "Este local no tiene la venta del día activada." };
-    if (empleado.rol === "colaborador") return { ok: false, error: "La venta del día la carga un responsable." };
+    if (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true) return { ok: false, error: "Este local no tiene la salida de chocolatería activada." };
+    if (empleado.rol === "colaborador") return { ok: false, error: "Esta salida la carga un responsable." };
     const noChoco = Object.keys(items).filter((id) => familiaVenc[String(id)] !== "chocolateria");
-    if (noChoco.length) return { ok: false, error: "La venta del día es solo de chocolatería." };
+    if (noChoco.length) return { ok: false, error: "Esta salida es solo de chocolatería." };
+    if ((subtipo === "sincargo" || subtipo === "transferencia") && !String(motivo || "").trim()) return { ok: false, error: subtipo === "transferencia" ? "Falta el local de destino de la transferencia." : "Falta el motivo de la salida sin cargo." };
     if (fecha) {
       const tz = "America/Argentina/Buenos_Aires";
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha))) return { ok: false, error: "Fecha de venta inválida." };
@@ -1325,7 +1331,7 @@ function anular(registroId, motivo, empleado) {
     // la Devolución (orden inverso al que se cargaron).
     const tipoReg = filas[idx][col.tipo];
     const subtipoReg = filas[idx][col.subtipo];
-    if (tipoReg === "salida" && subtipoReg !== "desperdicio" && subtipoReg !== "venta") {
+    if (tipoReg === "salida" && !subtipoReg) {
       const hayDevolucionPosterior = filas.some((fila, i) => {
         if (i === 0) return false;
         return fila[col.tipo] === "ingreso" &&
