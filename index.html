@@ -318,6 +318,7 @@ select{max-width:220px}
 /* sin las flechitas nativas de subir/bajar: un toque al lado del número cambiaba la cantidad sin querer */
 input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0;display:none}
+.chip.sinStock{opacity:.4}
 .packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:58px;height:41px;padding:0 8px;border-radius:12px;border:1.5px solid var(--accent);background:rgba(var(--accent-rgb),.10);color:var(--ink);line-height:1.05}
 .packBox b{font-size:1rem;font-variant-numeric:tabular-nums}
 .packBox small{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
@@ -717,7 +718,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.99.1";
+const FRONTEND_VERSION = "1.99.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2223,7 +2224,7 @@ function gridVentaDia(st){
   const row=s=>{
     const hay=st[s.id]||0, v=cart[s.id]||0, pk=packVentaDe(s.id), suelto=v-pk;
     return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · Total ${v}`:""}</div></div>
-    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip" data-vd-add="${s.id}" data-n="${n}"${hay-v>=n?"":" disabled"}>${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}${pk?`<span class="packBox" title="Unidades que vienen de packs surtidos"><b>${pk}</b><small>surtidos</small></span>`:""}<input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div></div>`};
+    <div class="right">${PACKS_UNIDAD_CHOCO[s.categoria]?`<div style="display:flex;gap:6px">${PACKS_UNIDAD_CHOCO[s.categoria].map(n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`).join("")}</div>`:""}${pk?`<span class="packBox" title="Unidades que vienen de packs surtidos"><b>${pk}</b><small>surtidos</small></span>`:""}<input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div></div>`};
   const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida."}[tipo];
   const lblFecha = tipo==="giftcard" ? "la gift card" : "la venta";
   const extra = (tipo==="venta"||tipo==="giftcard")
