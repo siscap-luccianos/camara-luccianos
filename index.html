@@ -722,7 +722,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.100.2";
+const FRONTEND_VERSION = "1.101.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2196,7 +2196,7 @@ function chocoFaltaMotivo(){ const st=subtipoChoco(); return (st==="sincargo"&&!
  *  unidades de cada producto, así el sistema registra unidades sueltas.
  *  Alfajores: x6 y x10 del mismo sabor; conitos: caja de 6. Los surtidos son
  *  recetas fijas (ids de Sabores). */
-const PACKS_UNIDAD_CHOCO={Alfajores:[1,6,10], Conitos:[1,6]};
+const PACKS_UNIDAD_CHOCO={Alfajores:[1,5,6,10], Conitos:[1,6]}; // 5 = lata de 5 del mismo sabor
 const PACKS_SURTIDOS_CHOCO=[
   {k:"x6s", label:"x6 mix", receta:{117:2,118:2,119:1,120:1}},
   {k:"x10s", label:"x10 mix", receta:{117:3,118:3,119:2,120:2}},
@@ -2205,8 +2205,8 @@ const PACKS_SURTIDOS_CHOCO=[
 /** De dónde vienen las unidades del carrito de la venta. S.cart.venta guarda el total;
  *  S.detVenta lo desglosa por origen (x6, x10 y packs surtidos). Lo que no está desglosado
  *  son unidades sueltas (+1 o escritas en el campo). Cada origen se muestra en una caja. */
-const ORIGEN_LABEL={x6:"x6", x10:"x10", x6s:"x6 mix", x10s:"x10 mix", lata5:"Lata x5 mix"};
-const ORIGEN_ORDEN=["x6","x10","x6s","x10s","lata5"];
+const ORIGEN_LABEL={x5:"x5", x6:"x6", x10:"x10", x6s:"x6 mix", x10s:"x10 mix", lata5:"Lata x5 mix"};
+const ORIGEN_ORDEN=["x5","x6","x10","x6s","x10s","lata5"];
 function packVentaDe(id){
   if(!Object.keys(S.cart.venta).length) S.detVenta={};
   const d=S.detVenta[id]||{};
@@ -2229,7 +2229,7 @@ function agregarVentaPack(receta, kind){
 /** Quita una carga de un origen: un x6/x10 de ese producto, o el pack surtido entero (de todos sus productos). */
 function quitarVentaPack(id, kind){
   const surt=PACKS_SURTIDOS_CHOCO.find(p=>p.k===kind);
-  const receta = surt ? surt.receta : {[id]: kind==="x6"?6:10};
+  const receta = surt ? surt.receta : {[id]: parseInt(kind.slice(1),10)||0};
   const cart=S.cart.venta;
   if(!Object.keys(receta).every(i=>((S.detVenta[i]||{})[kind]||0)>=receta[i])) return;
   Object.keys(receta).forEach(i=>{
@@ -2243,7 +2243,7 @@ function quitarVentaPack(id, kind){
  *  y las cajas por origen. Alfajores: surtidos + +1/x6/x10; conitos: +1/x6. */
 function accionesPackHTML(s,hay,v){
   const unidades=PACKS_UNIDAD_CHOCO[s.categoria]||[];
-  const surt = s.categoria==="Alfajores" ? PACKS_SURTIDOS_CHOCO : [];
+  const surt = PACKS_SURTIDOS_CHOCO.filter(p=>p.receta[s.id]); // el mix solo aparece en los productos que lo llevan
   const chipSurt=p=>`<button type="button" class="chip" data-vd-pack="${p.k}">${p.label}</button>`;
   const chipUni=n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`;
   const botones=surt.map(chipSurt).join("")+unidades.map(chipUni).join("");
@@ -2255,7 +2255,7 @@ function cajasOrigenHTML(id){
   if(!ks.length) return "";
   return `<div class="packCajas">${ks.map(k=>{
     const surt=PACKS_SURTIDOS_CHOCO.find(p=>p.k===k);
-    const veces=surt ? d[k]/surt.receta[id] : d[k]/(k==="x6"?6:10);
+    const veces=surt ? d[k]/surt.receta[id] : d[k]/(parseInt(k.slice(1),10)||1);
     return `<button type="button" class="packBox${surt?" surt":""}" data-vd-quitar="${id}|${k}" title="Tocá para quitar uno"><b>${d[k]}</b><small>${ORIGEN_LABEL[k]} ×${veces}</small></button>`;
   }).join("")}</div>`;
 }
@@ -3666,7 +3666,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.ingTipo){ S.tipoIngreso=t.dataset.ingTipo; S.remito=""; S.confirm=false; renderApp(); return }
   if(t.dataset.vdAdd){
     const id=t.dataset.vdAdd, n=Number(t.dataset.n)||0;
-    if(!agregarVentaPack({[id]:n}, n===6?"x6":n===10?"x10":null)) return;
+    if(!agregarVentaPack({[id]:n}, n>1?"x"+n:null)) return;
     scheduleRender(); return;
   }
   if(t.dataset.vdQuitar){ const [id,kind]=t.dataset.vdQuitar.split("|"); quitarVentaPack(id,kind); scheduleRender(); return }
