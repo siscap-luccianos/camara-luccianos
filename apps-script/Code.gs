@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.48.0";
+const BACKEND_VERSION = "1.49.0";
 
 function doPost(e) {
   let resultado;
@@ -55,7 +55,7 @@ function doGet() {
 
 // Acciones que no requieren token (login y datos públicos no sensibles:
 // nombres de locales/empleados para armar los selectores de login).
-const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "loginAdminLocal", "verificarClaveLocal"];
+const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "loginAdminLocal", "verificarClaveLocal", "estadoEquipo"];
 
 function _despachar(body) {
   const accion = body.accion;
@@ -68,7 +68,8 @@ function _despachar(body) {
     case "localesActivos": return localesActivos();
     case "empleadosLocal": return empleadosLocal(body.local);
     case "empleadosGestion": return empleadosGestion();
-    case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local);
+    case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local, body.equipoId, body.equipoNombre);
+    case "estadoEquipo": return estadoEquipo(body.equipoId, body.equipoNombre, body.local, body.empleadoId);
     case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local);
     case "loginAdminLocal": return loginAdminLocal(body.empleadoId, body.codigo, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
@@ -100,6 +101,8 @@ function _despacharConSesion(accion, body, empleado) {
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
+    case "equiposLocal": return equiposLocal(body.local, empleado);
+    case "equipoDecidir": return equipoDecidir(body.clave, body.decision, body.nombre, body.local, empleado);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
 }
@@ -208,6 +211,7 @@ function localesActivos() {
     locales: filas.map((l) => ({
       nombre: l.nombre, grupo: l.grupo || "", tieneClave: !!String(l.clave || "").trim(),
       esGestion: _esVerdadero(l.operaciones) === true,
+      controlEquipos: _esVerdadero(l.control_equipos) === true,
     })),
   };
 }
@@ -275,6 +279,127 @@ function loginAdminLocal(empleadoId, codigo, local) {
   return _resultadoLogin(empleado, local, false);
 }
 
+/* ============================================================
+   CONTROL DE EQUIPOS POR LOCAL (hoja Dispositivos, Locales.control_equipos=SI)
+   Cada local puede tener hasta EQUIPOS_MAX equipos aprobados. Un equipo nuevo
+   queda "pendiente" hasta que un encargado de ese local, un supervisor o un
+   admin lo aprueba; no llega a probar el PIN. Admin y supervisor no cuentan ni
+   necesitan aprobación. Quitar o rechazar no cierra sesiones ya abiertas.
+============================================================ */
+
+const EQUIPOS_MAX = 3;
+
+function _localConControlEquipos(local) {
+  const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local || "").trim())[0];
+  return !!fila && _esVerdadero(fila.control_equipos) === true;
+}
+
+function _claveEquipo(equipoId, local) { return String(equipoId) + "@" + String(local || "").trim(); }
+
+function _nombreEquipoLimpio(n) { return String(n || "").replace(/[<>]/g, "").trim().slice(0, 60) || "Equipo sin nombre"; }
+
+/** Estado de este equipo para este local y esta persona. Si el equipo no está
+ *  aprobado deja el pedido anotado como pendiente (para que lo vea el encargado).
+ *  Devuelve { estado: "libre" | "aprobado" | "pendiente" | "lleno" | "sinId", usados, max, ... }. */
+function _estadoEquipo(local, empleado, equipoId, equipoNombre) {
+  if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return { estado: "libre" };
+  if (!_localConControlEquipos(local)) return { estado: "libre" };
+  if (!equipoId) return { estado: "sinId", max: EQUIPOS_MAX };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const filas = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim());
+    const usados = filas.filter((d) => d.estado === "aprobado").length;
+    const clave = _claveEquipo(equipoId, local);
+    const propia = filas.filter((d) => String(d.id) === clave)[0];
+    const ahora = Date.now();
+    const quien = empleado ? empleado.nombre : "";
+    if (propia && propia.estado === "aprobado") {
+      _actualizarCrudo("Dispositivos", clave, { ultimo_ts: ahora, ultimo_empleado: quien });
+      return { estado: "aprobado", usados: usados, max: EQUIPOS_MAX };
+    }
+    const detalle = _nombreEquipoLimpio(equipoNombre);
+    if (propia) {
+      _actualizarCrudo("Dispositivos", clave, { estado: "pendiente", ultimo_ts: ahora, ultimo_empleado: quien });
+    } else {
+      _escribirCrudoConId("Dispositivos", { id: clave, equipo: String(equipoId), local: String(local).trim(), nombre: detalle, detalle: detalle, estado: "pendiente", solicitado_ts: ahora, ultimo_ts: ahora, ultimo_empleado: quien });
+    }
+    return { estado: usados >= EQUIPOS_MAX ? "lleno" : "pendiente", usados: usados, max: EQUIPOS_MAX, nombre: propia ? propia.nombre : detalle, desde: propia && propia.solicitado_ts ? Number(propia.solicitado_ts) : ahora };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Para login(): null si puede seguir, o la respuesta de error si el equipo no está aprobado. */
+function _bloqueoPorEquipo(local, empleado, equipoId, equipoNombre) {
+  const e = _estadoEquipo(local, empleado, equipoId, equipoNombre);
+  if (e.estado === "libre" || e.estado === "aprobado") return null;
+  if (e.estado === "sinId") return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
+  return { ok: false, equipo: e.estado, equipoInfo: e, error: e.estado === "lleno" ? "Este local ya tiene sus " + EQUIPOS_MAX + " equipos." : "Este equipo todavía no está aprobado." };
+}
+
+/** Acción pública: el cliente la llama al elegir el nombre, antes de pedir el PIN. */
+function estadoEquipo(equipoId, equipoNombre, local, empleadoId) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  const empleado = empleadoId ? _empleadoPorId(empleadoId) : null;
+  const e = _estadoEquipo(local, empleado, equipoId, equipoNombre);
+  if (e.estado === "sinId") return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
+  return { ok: true, estado: e.estado, usados: e.usados || 0, max: EQUIPOS_MAX, nombre: e.nombre || "", desde: e.desde || 0 };
+}
+
+function _puedeGestionarEquipos(empleado, local) {
+  if (empleado.rol === "admin" || empleado.rol === "supervisor") return true;
+  return empleado.rol === "encargado" && String(empleado.local || "").trim() === String(local || "").trim();
+}
+
+function _equipoPublico(d) {
+  return { clave: String(d.id), nombre: d.nombre, detalle: d.detalle || "", ultimoTs: Number(d.ultimo_ts) || 0, ultimoEmpleado: d.ultimo_empleado || "", aprobadoPor: d.aprobado_por || "" };
+}
+
+function equiposLocal(local, empleado) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeGestionarEquipos(empleado, local)) return { ok: false, error: "No tenés permiso para ver los equipos de ese local." };
+  if (!_localConControlEquipos(local)) return { ok: true, controlado: false, max: EQUIPOS_MAX, aprobados: [], pendientes: [] };
+  const filas = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim());
+  return {
+    ok: true, controlado: true, max: EQUIPOS_MAX,
+    aprobados: filas.filter((d) => d.estado === "aprobado").map(_equipoPublico),
+    pendientes: filas.filter((d) => d.estado === "pendiente").map(_equipoPublico),
+  };
+}
+
+/** decision: "aprobar" (con nombre opcional), "rechazar" (un pendiente) o "quitar" (uno aprobado). */
+function equipoDecidir(clave, decision, nombre, local, empleado) {
+  if (!clave || !local) return { ok: false, error: "Faltan datos." };
+  if (!_puedeGestionarEquipos(empleado, local)) return { ok: false, error: "No tenés permiso para gestionar los equipos de ese local." };
+  if (["aprobar", "rechazar", "quitar"].indexOf(decision) === -1) return { ok: false, error: "Decisión inválida." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const filas = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim());
+    const fila = filas.filter((d) => String(d.id) === String(clave))[0];
+    if (!fila) return { ok: false, error: "No se encontró ese equipo." };
+    if (decision === "aprobar") {
+      if (fila.estado === "aprobado") return { ok: true };
+      if (filas.filter((d) => d.estado === "aprobado").length >= EQUIPOS_MAX) return { ok: false, error: "Ya hay " + EQUIPOS_MAX + " equipos aprobados. Quitá uno para poder aprobar este." };
+      const nuevoNombre = nombre ? _nombreEquipoLimpio(nombre) : fila.nombre;
+      _actualizarCrudo("Dispositivos", clave, { estado: "aprobado", nombre: nuevoNombre, aprobado_ts: Date.now(), aprobado_por: empleado.nombre });
+      _auditar("equipo_aprobado", empleado.id, empleado.nombre, "Aprobó el equipo «" + nuevoNombre + "» en " + local);
+    } else if (decision === "rechazar") {
+      if (fila.estado !== "pendiente") return { ok: false, error: "Ese pedido ya no está pendiente." };
+      _actualizarCrudo("Dispositivos", clave, { estado: "rechazado" });
+      _auditar("equipo_rechazado", empleado.id, empleado.nombre, "Rechazó el equipo «" + fila.nombre + "» en " + local);
+    } else {
+      if (fila.estado !== "aprobado") return { ok: false, error: "Ese equipo no está aprobado." };
+      _actualizarCrudo("Dispositivos", clave, { estado: "quitado" });
+      _auditar("equipo_quitado", empleado.id, empleado.nombre, "Quitó el equipo «" + fila.nombre + "» de " + local);
+    }
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function empleadosLocal(local) {
   if (!local) return { ok: false, error: "Falta el local." };
   const filas = _leerCrudo("Empleados").filter((e) =>
@@ -324,9 +449,16 @@ function loginGestion(empleadoId, clave, local) {
  *  - Empleado con pin_hash: valida contra el hash guardado.
  * Bloquea 5 minutos tras 5 intentos incorrectos seguidos.
  */
-function login(empleadoId, pin, pinConfirm, local) {
+function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre) {
   if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
   if (!_pinValido(pin)) return { ok: false, error: "El PIN tiene que ser de 4 números." };
+
+  // Control de equipos (solo en locales con Locales.control_equipos=SI): un equipo sin
+  // aprobar no llega a probar el PIN, así que tampoco suma intentos fallidos.
+  if (_localConControlEquipos(local)) {
+    const bloqueo = _bloqueoPorEquipo(local, _empleadoPorId(empleadoId), equipoId, equipoNombre);
+    if (bloqueo) return bloqueo;
+  }
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -487,7 +619,9 @@ function _datosSinCache(local, empleado) {
   // el depósito lejos); la salida es la común. Si el local ya usa «Venta del día», esa manda.
   const chocoSoloDeposito = !ventaDia && (filaLocal ? _esVerdadero(filaLocal.choco_solo_deposito) === true : false);
 
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito };
+  // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
+  const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos };
 }
 
 function _cacheKeyDatos(local) {
@@ -519,7 +653,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los

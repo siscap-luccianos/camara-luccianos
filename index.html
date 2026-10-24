@@ -322,6 +322,21 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .packAcc{grid-column:1/-1;display:flex;flex-direction:column;gap:8px;margin-top:2px}
 .packBtns{display:flex;gap:6px;flex-wrap:wrap}
 .packCajas{display:flex;gap:6px;flex-wrap:wrap}
+.eqCard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 0 10px}
+.eqCard.pend{border:1.5px solid #D9B869;background:#FFFDF7}
+.eqCupo{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px}
+.eqCupo b{font-size:1.2rem}
+.eqCupo span{font-size:.74rem;font-weight:700}
+.eqSegs{display:flex;gap:6px}
+.eqSeg{flex:1;height:8px;border-radius:999px;background:var(--line)}
+.eqSeg.on{background:var(--accent)}
+.eqSeg.full{background:var(--alert)}
+.eqFila{display:flex;align-items:center;gap:10px}
+.eqIni{flex:none;width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;color:var(--accent)}
+.eqIni.warn{background:#F1E4C4;color:#7A5410;font-size:.9rem}
+.eqNombre{width:100%;box-sizing:border-box;margin-top:8px}
+.eqBtns{display:flex;gap:8px;margin-top:10px}
+.eqBtns .btn{flex:1;min-height:44px}
 .packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:62px;padding:4px 8px;border-radius:12px;border:1.5px solid #6A9A5E;background:rgba(106,154,94,.12);color:var(--ink);line-height:1.05;font:inherit;cursor:pointer}
 .packBox.surt{border-color:#B58A4A;background:rgba(181,138,74,.14)}
 .packBox b{font-size:1.05rem;font-variant-numeric:tabular-nums}
@@ -594,6 +609,9 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .authPremium:has(.authList) .authCard{flex:1 1 auto;min-height:0}
 .authPremium .authLogo,.authPremium .authPill{flex-shrink:0}
 .authPremium .authList{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start;padding-bottom:4px}
+.authPremium .eqInfo{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:.78rem;color:#B3A395;text-align:left}
+.authPremium .eqInfo>div{display:flex;justify-content:space-between;gap:12px}
+.authPremium .eqInfo b{color:#F5F0E8;text-align:right}
 .authPremium .keypad{max-width:300px;justify-items:center}
 .authPremium .keypad button{width:78px;height:78px;min-height:0;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#F5F0E8;font-family:'Fraunces',Georgia,serif;font-size:1.7rem;font-weight:600;padding:0}
 .authPremium .keypad button.op{color:#B3A395;font-family:'Manrope',system-ui,sans-serif;font-size:.85rem;font-weight:700}
@@ -722,7 +740,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.101.0";
+const FRONTEND_VERSION = "1.102.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -735,6 +753,19 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const normalizar=s=>String(s??"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
 const uuid=()=>(crypto.randomUUID?crypto.randomUUID():"c"+Date.now()+"-"+Math.random().toString(36).slice(2));
+/** Identidad de este equipo (navegador): un id al azar guardado en el equipo y un nombre
+ *  legible ("iPhone · Safari"). Sirve para el control de equipos por local (Locales.control_equipos). */
+function equipoId(){
+  let v=""; try{ v=localStorage.getItem("equipoId")||"" }catch(e){}
+  if(!v){ v=(crypto.randomUUID?crypto.randomUUID():"e"+Date.now()+"-"+Math.random().toString(36).slice(2)); try{ localStorage.setItem("equipoId",v) }catch(e){} }
+  return v;
+}
+function nombreEquipoDetectado(){
+  const ua=navigator.userAgent||"";
+  const so=/iPhone/.test(ua)?"iPhone":/iPad/.test(ua)?"iPad":/Android/.test(ua)?"Android":/Windows/.test(ua)?"Windows":/Mac OS X|Macintosh/.test(ua)?"Mac":/Linux/.test(ua)?"Linux":"Equipo";
+  const nav=/Edg\//.test(ua)?"Edge":/OPR\//.test(ua)?"Opera":/Firefox|FxiOS/.test(ua)?"Firefox":/Chrome|CriOS/.test(ua)?"Chrome":/Safari/.test(ua)?"Safari":"Navegador";
+  return so+" · "+nav;
+}
 const ls={
   get(k,d){try{const v=localStorage.getItem(k);return v==null?d:v}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,v)}catch(e){}},
@@ -762,6 +793,7 @@ const S = {
   locales: [],
   local: null,
   sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], escanerPeso: false, ventaDia: false, chocoSoloDeposito: false,
+  controlEquipos: false, equipos: undefined, subEquipo: "empleados", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
@@ -1109,6 +1141,14 @@ async function cargarEmpleadosDeAuth(){
   S.auth.cargando = false;
   renderApp();
 }
+/** "recién", "hace 3 min", "hace 2 h" o la fecha. */
+function haceTexto(ts){
+  const m=Math.round((Date.now()-Number(ts||0))/60000);
+  if(!ts || m<1) return "recién";
+  if(m<60) return "hace "+m+" min";
+  if(m<1440) return "hace "+Math.floor(m/60)+" h";
+  return "el "+new Date(ts).toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
+}
 function iniPersona(nombre){
   return nombre.trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase();
 }
@@ -1142,7 +1182,30 @@ async function authEnviarClave(){
 }
 function authElegirEmpleado(emp){
   if(S.auth.esGestion || S.auth.codigoAdmin){ authEntrarGestion(emp); return }
-  S.auth.elegido=emp; S.auth.paso="pin"; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; renderApp();
+  S.auth.elegido=emp; S.auth.pin=""; S.auth.pin1=""; S.auth.error="";
+  const info=S.locales.find(l=>l.nombre===S.auth.local);
+  if(info && info.controlEquipos){ authChequearEquipo(emp); return }
+  S.auth.paso="pin"; renderApp();
+}
+/** Local con control de equipos: antes de pedir el PIN se pregunta si este equipo está aprobado.
+ *  Si no hay conexión con el servidor se sigue al PIN: el login lo vuelve a controlar. */
+async function authChequearEquipo(emp){
+  const a=S.auth; if(a.cargando) return;
+  a.elegido=emp; a.cargando=true; a.error=""; renderApp();
+  const r = await api("estadoEquipo", { empleadoId:emp.id, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
+  a.cargando=false;
+  if(S.auth!==a) return;
+  if(r && r.ok && (r.estado==="pendiente" || r.estado==="lleno")){ a.paso="equipo"; a.equipoInfo=r; renderApp(); return }
+  if(r && r.equipo==="sinId"){ a.error=r.error; a.elegido=null; a.paso="quien"; renderApp(); return }
+  a.paso="pin"; renderApp();
+}
+/** El login devolvió "equipo no aprobado" (o local con el cupo lleno): se muestra la pantalla de espera. */
+function authEquipoBloqueado(r){
+  const a=S.auth;
+  if(r.equipo==="sinId"){ a.error=r.error; a.pin=""; a.pin1=""; a.paso="quien"; a.elegido=null; renderApp(); return }
+  const i=r.equipoInfo||{};
+  a.paso="equipo"; a.equipoInfo={ estado:r.equipo, usados:i.usados||0, max:i.max||3, nombre:i.nombre||nombreEquipoDetectado(), desde:i.desde||Date.now() };
+  a.pin=""; a.pin1=""; renderApp();
 }
 /** Operaciones (admin/supervisor) no pide PIN — alcanza con la
  *  contraseña del local que ya se validó en el paso anterior. */
@@ -1158,6 +1221,7 @@ async function authEntrarGestion(emp){
   renderApp();
 }
 function authVolver(){
+  if(S.auth.paso==="equipo"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
   if(S.auth.paso==="pinConfirm"){ S.auth.paso="pin"; S.auth.pin=""; renderApp(); return }
   if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
   if(S.auth.paso==="quien" && !S.deviceLocal){
@@ -1190,9 +1254,10 @@ async function authSubmit(){
   const a=S.auth;
   if(a.paso==="pin"){
     a.cargando=true; a.error=""; renderApp();
-    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local });
+    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
     a.cargando=false;
     if(r && r.ok){ aplicarLogin(r); return }
+    if(r && r.equipo){ authEquipoBloqueado(r); return }
     if(r && r.primeraVez){ a.paso="pinConfirm"; a.pin1=""; renderApp(); return }
     a.error = (r&&r.error) || "No se pudo validar el PIN.";
     a.pin=""; renderApp();
@@ -1200,9 +1265,10 @@ async function authSubmit(){
   }
   if(a.paso==="pinConfirm"){
     a.cargando=true; a.error=""; renderApp();
-    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local });
+    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
     a.cargando=false;
     if(r && r.ok){ aplicarLogin(r); return }
+    if(r && r.equipo){ authEquipoBloqueado(r); return }
     a.error = (r&&r.error) || "Los PIN no coinciden. Probá de nuevo.";
     a.paso="pin"; a.pin=""; a.pin1=""; renderApp();
   }
@@ -1239,7 +1305,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || [];
-    S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -1322,7 +1388,7 @@ async function desbloquearPC(){
   S.bloqueoCargando = true; S.bloqueoError=""; renderApp();
   const r = S.esGestion
     ? await api("loginGestion", { empleadoId:S.empleado.id, clave:S.bloqueoClave, local:S.gestionLocal })
-    : await api("login", { empleadoId:S.empleado.id, pin:S.bloqueoPin, local:S.local });
+    : await api("login", { empleadoId:S.empleado.id, pin:S.bloqueoPin, local:S.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
   S.bloqueoCargando = false;
   if(r && r.ok){
     S.token = r.token; guardarSesionPC();
@@ -1778,6 +1844,20 @@ function renderAuth(){
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
         :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
+  } else if(a.paso==="equipo"){
+    const i=a.equipoInfo||{}, lleno=i.estado==="lleno", max=i.max||3, usados=i.usados||0;
+    cuerpo=`<button class="authBack" data-authback="1">Volver</button>
+      <h1>${lleno?esc(a.local||"")+" ya tiene sus "+max+" equipos":"Este equipo todavía no está aprobado"}</h1>
+      <p>${lleno?"Para sumar este, tu encargado tiene que quitar uno desde la pestaña Equipo. Después lo aprueba y vas a poder entrar.":"Avisamos a tu encargado. Cuando lo apruebe vas a poder entrar con tu PIN."}</p>
+      <div class="eqInfo">
+        <div><span>Este equipo</span><b>${esc(i.nombre||nombreEquipoDetectado())}</b></div>
+        <div><span>Local</span><b>${esc(a.local||"")}</b></div>
+        ${lleno?"":`<div><span>Pedido enviado</span><b>${esc(haceTexto(i.desde))}</b></div>`}
+        <div><span>Equipos del local</span><b${lleno?' style="color:#E8A07E"':""}>${usados} de ${max}</b></div>
+      </div>
+      ${a.cargando?`<div class="note">Verificando…</div>`:""}
+      <button class="btn" type="button" data-equipo-reintentar="1" style="width:100%" ${a.cargando?"disabled":""}>${lleno?"Ya liberaron un lugar, reintentar":"Ya lo aprobaron, reintentar"}</button>
+      <button class="btn ghost" type="button" data-equipo-otro="1" style="width:100%;background:rgba(255,255,255,.08);color:#F5F0E8;box-shadow:none;border:1px solid rgba(255,255,255,.14)">Elegir otro local</button>`;
   } else if(a.paso==="pin" || a.paso==="pinConfirm"){
     const confirmando = a.paso==="pinConfirm";
     const val = confirmando ? a.pin1 : a.pin;
@@ -2957,7 +3037,7 @@ function _teamFila(e, rolesQuePuedoCrear){
     </div>`:""}
   </div>`;
 }
-function teamView(){
+function teamViewEmpleados(){
   if(S.equipo===undefined){ S.equipo=null; S.errorEquipo=null; cargarEquipo(); }
   if(S.empleado.rol==="admin" && S.gestion===undefined){ S.gestion=null; S.errorGestion=null; cargarGestion(); }
   if(S.equipo===null){ return `<div class="note">Cargando equipo…</div>`; }
@@ -2987,6 +3067,62 @@ function teamView(){
   </form>`:""}`;
   return h;
 }
+/** Pestaña Equipo: con control de equipos activo en el local (Locales.control_equipos=SI) se parte en
+ *  Empleados | Equipos (los aparatos aprobados para entrar a la app, hasta 3). */
+function teamView(){
+  if(!S.controlEquipos) return teamViewEmpleados();
+  const tab=(k,l)=>`<button type="button" class="tabCat" role="tab" data-sub-equipo="${k}" aria-selected="${S.subEquipo===k}">${l}</button>`;
+  const tabs=`<div class="tabsCat" role="tablist" style="margin-top:0">${tab("empleados","Empleados")}${tab("equipos","Equipos"+((S.equipos&&S.equipos.pendientes&&S.equipos.pendientes.length)?" ("+S.equipos.pendientes.length+")":""))}</div>`;
+  return tabs+(S.subEquipo==="equipos"?equiposView():teamViewEmpleados());
+}
+function equiposView(){
+  if(S.equipos===undefined){ S.equipos=null; cargarEquipos(); }
+  if(S.equipos===null) return `<div class="note">Cargando equipos…</div>`;
+  const e=S.equipos;
+  if(e.error) return `<div class="empty">${esc(e.error)}</div><button class="btn ghost" type="button" data-equipos-recargar="1" style="margin-top:10px">Reintentar</button>`;
+  const max=e.max||3, usados=e.aprobados.length, lleno=usados>=max;
+  const seg=[0,1,2].slice(0,max).map(i=>`<span class="eqSeg${i<usados?(lleno?" full":" on"):""}"></span>`).join("");
+  const sigla=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase().slice(0,2)||"EQ";
+  const ultimo=d=>d.ultimoTs?`Último acceso: ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" · "+esc(d.ultimoEmpleado):""}`:"Todavía no entró";
+  return `<p class="sec" style="margin-top:6px">Equipos de ${esc(S.local)}</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Cada local puede tener hasta ${max} equipos aprobados. Un equipo nuevo queda bloqueado hasta que lo aprobás.</p>
+  <div class="eqCard"><div class="eqCupo"><b>${usados} de ${max} equipos</b><span style="color:${lleno?"var(--alert)":"var(--accent)"}">${lleno?"Cupo lleno":(max-usados===1?"Queda 1 lugar":"Quedan "+(max-usados)+" lugares")}</span></div><div class="eqSegs">${seg}</div></div>
+  ${S.equipoAviso?`<div class="note" role="status" style="margin:10px 0">${esc(S.equipoAviso)}</div>`:""}
+  ${e.pendientes.length?`<p class="sec">Bloqueados · esperando aprobación</p>`+e.pendientes.map(d=>`<div class="eqCard pend">
+    <div class="eqFila"><span class="eqIni warn">!</span><div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b><div class="meta">Intentó entrar ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" como "+esc(d.ultimoEmpleado):""}</div></div></div>
+    ${lleno?`<div class="warn" style="margin:8px 0 0">Sin lugar: ya hay ${max} equipos. Quitá uno de la lista para poder aprobar este.</div>`:`<input type="text" class="eqNombre" data-eq-nombre="${esc(d.clave)}" value="${esc(d.nombre)}" maxlength="60" aria-label="Nombre del equipo" placeholder="Nombre del equipo (ej. Tablet cámara)">`}
+    <div class="eqBtns"><button type="button" class="btn ghost" data-equipo-rechazar="${esc(d.clave)}">Rechazar</button><button type="button" class="btn" data-equipo-aprobar="${esc(d.clave)}" ${lleno?"disabled":""}>Aprobar</button></div>
+  </div>`).join(""):""}
+  <p class="sec">Autorizados</p>
+  ${e.aprobados.length?e.aprobados.map(d=>`<div class="eqCard">
+    <div class="eqFila"><span class="eqIni">${esc(sigla(d.nombre))}</span><div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b><div class="meta">${esc(d.detalle||"")}</div></div>
+      <button type="button" class="btn ghost" data-equipo-pedir-quitar="${esc(d.clave)}" style="min-height:40px">Quitar</button></div>
+    <div class="meta" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">${ultimo(d)}</div>
+    ${S.equipoConfirmar===d.clave?`<div class="warn" style="margin-top:8px">¿Quitar «${esc(d.nombre)}»? Ya no va a poder entrar y se libera un lugar. No cierra sesiones que ya estén abiertas.
+      <div class="eqBtns" style="margin-top:8px"><button type="button" class="btn ghost" data-equipo-cancelar="1">Cancelar</button><button type="button" class="btn" data-equipo-quitar="${esc(d.clave)}">Sí, quitar</button></div></div>`:""}
+  </div>`).join(""):`<div class="empty">No hay equipos autorizados. El próximo que entre quedará bloqueado hasta que lo apruebes.</div>`}
+  <p style="margin:12px 0 0;color:var(--muted);font-size:.74rem;line-height:1.5">Admin y supervisor no ocupan lugar: cuando entran por Operaciones o con el código de admin no cuentan ni necesitan aprobación.</p>`;
+}
+async function cargarEquipos(silencioso){
+  const local=S.local;
+  const r = await api("equiposLocal", {local});
+  if(S.local!==local) return;
+  if(r && r.ok && r.controlado){ S.equipos={ max:r.max, aprobados:r.aprobados, pendientes:r.pendientes }; }
+  else if(r && r.ok){ S.controlEquipos=false; S.equipos=undefined; }
+  else if(!silencioso || !S.equipos){ S.equipos={ error:(r&&r.error)||"No se pudo cargar. Probá de nuevo." }; }
+  if(S.tab==="equipo") renderApp();
+}
+async function equipoDecidir(clave, decision, nombre){
+  const r = await api("equipoDecidir", { clave, decision, nombre, local:S.local });
+  S.equipoConfirmar=null;
+  if(r && r.ok){
+    const n=((S.equipos&&[...(S.equipos.aprobados||[]),...(S.equipos.pendientes||[])].find(d=>d.clave===clave))||{}).nombre||"el equipo";
+    S.equipoAviso = decision==="aprobar" ? "Aprobaste «"+(nombre||n)+"». Ya puede entrar." : decision==="rechazar" ? "Rechazaste «"+n+"»." : "Quitaste «"+n+"». Se liberó un lugar.";
+  } else { S.equipoAviso=(r&&r.error)||"No se pudo guardar. Probá de nuevo."; }
+  await cargarEquipos();
+}
+// Con la pestaña Equipos abierta, se refresca sola para que aparezcan los pedidos nuevos.
+setInterval(()=>{ if(S.token && S.tab==="equipo" && S.subEquipo==="equipos" && S.controlEquipos && !document.hidden && !S.equipoConfirmar) cargarEquipos(true) }, 20000);
 function _equipoCacheKey(local){ return "equipoCache_"+local }
 async function cargarEquipo(){
   const local = S.local;
@@ -3291,7 +3427,7 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || [];
-  S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
   S.regs = r.registros;
   S.stock = r.stock;
   guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
@@ -3308,7 +3444,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -3544,6 +3680,15 @@ document.addEventListener("click", async e=>{
   // Admin: pasa a la vista general (catálogo para todos los locales) sin cerrar sesión.
   if(t.dataset.irOperaciones){ irAOperaciones(t.dataset.irOperaciones==="sabores" ? "sabores" : undefined); return }
   if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
+  if(t.dataset.subEquipo){ S.subEquipo=t.dataset.subEquipo; S.equipoAviso=""; S.equipoConfirmar=null; if(S.subEquipo==="equipos") S.equipos=undefined; renderApp(); return }
+  if(t.dataset.equiposRecargar){ S.equipos=undefined; renderApp(); return }
+  if(t.dataset.equipoAprobar){ const c=t.dataset.equipoAprobar, inp=[...document.querySelectorAll("input[data-eq-nombre]")].find(i=>i.dataset.eqNombre===c); t.disabled=true; equipoDecidir(c,"aprobar",inp?inp.value.trim():""); return }
+  if(t.dataset.equipoRechazar){ t.disabled=true; equipoDecidir(t.dataset.equipoRechazar,"rechazar"); return }
+  if(t.dataset.equipoPedirQuitar){ S.equipoConfirmar=t.dataset.equipoPedirQuitar; S.equipoAviso=""; renderApp(); return }
+  if(t.dataset.equipoCancelar){ S.equipoConfirmar=null; renderApp(); return }
+  if(t.dataset.equipoQuitar){ t.disabled=true; equipoDecidir(t.dataset.equipoQuitar,"quitar"); return }
+  if(t.dataset.equipoReintentar){ if(S.auth && S.auth.elegido) authChequearEquipo(S.auth.elegido); return }
+  if(t.dataset.equipoOtro){ if(S.auth){ S.auth.elegido=null; S.auth.equipoInfo=null; if(S.deviceLocal){ S.auth.paso="quien"; } else { S.auth.paso="local"; S.auth.local=null; } renderApp(); } return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
   if(t.dataset.teclaBloqueo){ teclaBloqueo(t.dataset.teclaBloqueo); return }

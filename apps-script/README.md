@@ -213,6 +213,16 @@ Dos formas de llevarla, por local, con una columna en `Locales` (valor `SI`):
 - `venta_dia` = **todo junto**: local y depósito suman en un solo stock y un responsable carga la Venta del día al cerrar (ver más arriba). Con vencimientos.
 - `choco_solo_deposito` = **solo depósito**: la chocolatería usa la salida común (lo que sale del depósito es el consumo) y no lleva vencimientos: no aparecen los campos de fecha, «Ver vencimientos» ni el semáforo. Si el local tiene las dos, manda `venta_dia`.
 
+## Control de equipos por local (`Code.gs` 1.49.0)
+
+Cada local puede tener hasta **3 equipos** (PC, tablet, celular) autorizados a entrar. Es opcional y por local:
+- Hoja nueva **`Dispositivos`** (ya creada en la planilla): `id, equipo, local, nombre, detalle, estado, solicitado_ts, aprobado_ts, aprobado_por, ultimo_ts, ultimo_empleado`. `estado` = `aprobado`, `pendiente`, `rechazado` o `quitado`.
+- Columna **`Locales.control_equipos`** (ya creada): `SI` activa el control en ese local. Hoy solo «Local prueba». **Ojo:** al activarlo en un local, todos sus equipos quedan bloqueados hasta que alguien los apruebe (el admin o supervisor desde ese local, entrando por Operaciones o con el código de admin → pestaña Equipo → Equipos).
+- Un equipo nuevo, después de elegir local y nombre y **antes del PIN**, ve «Este equipo todavía no está aprobado» (o «ya tiene sus 3 equipos» si el cupo está lleno). Un equipo bloqueado no suma intentos de PIN.
+- Aprueban encargado de ese local, supervisor y admin (pestaña **Equipo › Equipos**): aprobar (con nombre editable, ej. «Tablet cámara»), rechazar o quitar. Quitar no cierra sesiones ya abiertas. Admin y supervisor no ocupan lugar.
+- Cada aprobación, rechazo y quita queda en `Auditoria` (`equipo_aprobado`, `equipo_rechazado`, `equipo_quitado`).
+- Si se borran los datos del navegador, ese equipo aparece como uno nuevo (hay que volver a aprobarlo).
+
 ## Relevar productos (solo Operaciones, `Code.gs` 1.43.0)
 
 Pestaña **Relevar** de Operaciones (admin y supervisor): una tabla con el stock vigente de los productos que se elijan en los locales que se marquen. La acción `relevar` lee `Sabores`, `Locales`, `Stock` y `Registros` una sola vez y devuelve, por local, el mismo stock que ve ese local (último conteo + ingresos − salidas, sin anulados, últimos 60 días; los sabores de `Locales.sabores_excluidos` no vienen y se muestran como «—»).
