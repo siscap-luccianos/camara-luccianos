@@ -335,6 +335,8 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .eqIni{flex:none;width:36px;height:36px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;color:var(--accent)}
 .eqIni.warn{background:#F1E4C4;color:#7A5410;font-size:.9rem}
 .eqNombre{width:100%;box-sizing:border-box;margin-top:8px}
+.eqCodigo{border:1.5px solid var(--accent)}
+.eqCodigoNum{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:700;letter-spacing:.18em;text-align:center;padding:8px 0}
 .eqBtns{display:flex;gap:8px;margin-top:10px}
 .eqBtns .btn{flex:1;min-height:44px}
 .packBox{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:62px;padding:4px 8px;border-radius:12px;border:1.5px solid #6A9A5E;background:rgba(106,154,94,.12);color:var(--ink);line-height:1.05;font:inherit;cursor:pointer}
@@ -740,7 +742,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.102.1";
+const FRONTEND_VERSION = "1.103.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1122,19 +1124,24 @@ async function cargarEmpleadosDeAuth(){
   // que ya usamos para el stock: no hacer esperar al backend para mostrar
   // algo, y autocorregirse solo si cambió algo.
   let pintadoDeCache = false;
-  if(!S.auth.empleados.length){
+  const infoLocal = S.locales.find(l=>l.nombre===local);
+  const conControl = !!(infoLocal && infoLocal.controlEquipos) && !esGestion; // la nómina de un local con control no se guarda ni se pinta de caché
+  if(!S.auth.empleados.length && !conControl){
     try{
       const cache = ls.get(key, "");
       if(cache){ S.auth.empleados = JSON.parse(cache); pintadoDeCache = true; }
     }catch(e){}
   }
   S.auth.cargando = !pintadoDeCache; S.auth.errorCarga = ""; renderApp();
-  const r = esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local});
+  const r = esGestion ? await api("empleadosGestion", {}) : await api("empleadosLocal", {local, equipoId:equipoId()});
   if(!S.auth || S.auth.paso!=="quien" || (S.auth.esGestion||!!S.auth.codigoAdmin)!==esGestion || S.auth.local!==local) return; // se movió de pantalla mientras esperábamos
+  if(r && r.equipo==="noAprobado"){
+    S.auth.empleados=[]; S.auth.cargando=false; S.auth.paso="codigo"; S.auth.codigo=""; S.auth.error=""; renderApp(); return;
+  }
   if(r && r.ok){
     S.auth.empleados = r.empleados;
     S.auth.errorCarga = "";
-    try{ ls.set(key, JSON.stringify(r.empleados)); }catch(e){}
+    if(!conControl){ try{ ls.set(key, JSON.stringify(r.empleados)); }catch(e){} }
   } else if(!pintadoDeCache){
     S.auth.errorCarga = (r&&r.error)||"No se pudo conectar. Probá de nuevo.";
   }
@@ -1158,6 +1165,9 @@ function authElegirLocal(local){
   S.auth.local=local; S.auth.error="";
   const info=S.locales.find(l=>l.nombre===local);
   S.auth.esGestion = !!(info && info.esGestion);
+  // Local con control de equipos: no hay contraseña del local. Un equipo ya vinculado ve la nómina
+  // directo; uno nuevo pasa a escribir el código de 6 números (lo decide el servidor al cargar la nómina).
+  if(info && info.controlEquipos && !S.auth.esGestion && !S.auth.otroLocal){ S.auth.paso="quien"; S.auth.empleados=[]; cargarEmpleadosDeAuth(); return }
   if(info && info.tieneClave){ S.auth.paso="clave"; S.auth.clave=""; renderApp(); }
   else { S.auth.paso="quien"; cargarEmpleadosDeAuth(); }
 }
@@ -1220,7 +1230,44 @@ async function authEntrarGestion(emp){
   S.auth.elegido=null; S.auth.error=(r&&r.error)||"No se pudo entrar. Probá de nuevo.";
   renderApp();
 }
+/** Equipo nuevo en un local con control: escribe el código de 6 números que le dio el encargado. */
+async function authVincular(){
+  const a=S.auth; if(!a || a.cargando || (a.codigo||"").length!==6) return;
+  a.cargando=true; a.error=""; renderApp();
+  const r = await api("vincularEquipo", { local:a.local, codigo:a.codigo, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
+  a.cargando=false;
+  if(S.auth!==a) return;
+  if(r && r.ok && r.modoAdmin){
+    // Era el código de admin: entra como admin a ese local (sin vincular el equipo).
+    a.clave=a.codigo; a.codigoAdmin=true; a.esGestion=false; a.paso="quien"; a.empleados=[]; a.codigo=""; cargarEmpleadosDeAuth(); return;
+  }
+  if(r && r.ok){ a.paso="vinculado"; a.equipoInfo={ nombre:r.nombre||nombreEquipoDetectado(), usados:r.usados||0, max:r.max||3 }; a.codigo=""; renderApp(); return }
+  a.error=(r&&r.error)||"No se pudo vincular. Probá de nuevo."; a.codigo=""; renderApp();
+}
+/** "No tengo código": deja el pedido anotado para que el encargado lo apruebe desde Equipo. */
+async function authPedirAprobacion(){
+  const a=S.auth; if(!a || a.cargando) return;
+  a.cargando=true; a.error=""; renderApp();
+  const r = await api("estadoEquipo", { empleadoId:"", local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
+  a.cargando=false;
+  if(S.auth!==a) return;
+  if(r && r.ok && r.estado==="aprobado"){ a.paso="quien"; a.empleados=[]; cargarEmpleadosDeAuth(); return }
+  if(r && r.ok){ a.paso="equipo"; a.sinPerfil=true; a.equipoInfo=r; renderApp(); return }
+  a.error=(r&&r.error)||"No se pudo enviar el pedido. Probá de nuevo."; renderApp();
+}
+/** Desde la pantalla de espera sin perfil: ¿ya lo aprobaron? */
+async function authReintentarSinPerfil(){
+  const a=S.auth; if(!a || a.cargando) return;
+  a.cargando=true; renderApp();
+  const r = await api("estadoEquipoLocal", { local:a.local, equipoId:equipoId() });
+  a.cargando=false;
+  if(S.auth!==a) return;
+  if(r && r.ok && (r.estado==="aprobado" || r.estado==="libre")){ a.sinPerfil=false; a.paso="quien"; a.empleados=[]; cargarEmpleadosDeAuth(); return }
+  renderApp();
+}
 function authVolver(){
+  if(S.auth.paso==="codigo"){ S.auth.local=null; S.auth.paso="local"; S.auth.codigo=""; S.auth.error=""; renderApp(); return }
+  if(S.auth.paso==="equipo" && S.auth.sinPerfil){ S.auth.sinPerfil=false; S.auth.paso="codigo"; S.auth.codigo=""; renderApp(); return }
   if(S.auth.paso==="equipo"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
   if(S.auth.paso==="pinConfirm"){ S.auth.paso="pin"; S.auth.pin=""; renderApp(); return }
   if(S.auth.paso==="pin"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
@@ -1243,6 +1290,14 @@ function cambiarDispositivo(){
   renderApp();
 }
 async function authTecla(k){
+  if(S.auth.paso==="codigo"){
+    if(S.auth.cargando) return;
+    if(k==="borrar"){ S.auth.codigo=(S.auth.codigo||"").slice(0,-1); renderApp(); return }
+    if((S.auth.codigo||"").length>=6) return;
+    S.auth.codigo=(S.auth.codigo||"")+k; S.auth.error=""; renderApp();
+    if(S.auth.codigo.length===6) setTimeout(authVincular, 150);
+    return;
+  }
   const cur = S.auth.paso==="pinConfirm" ? "pin1" : "pin";
   if(k==="borrar"){ S.auth[cur]=S.auth[cur].slice(0,-1); renderApp(); return }
   if(S.auth[cur].length>=4) return;
@@ -1844,11 +1899,35 @@ function renderAuth(){
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
         a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
         :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
+  } else if(a.paso==="codigo"){
+    const val=a.codigo||"";
+    cuerpo=`<button class="authBack" data-authback="1">Volver</button>
+      <h1>Sumá este equipo a ${esc(a.local||"")}</h1>
+      <p>Pedile el código de 6 números a tu encargado (lo saca desde la pestaña Equipo).</p>
+      <div class="dots">${[0,1,2,3,4,5].map(i=>`<span class="${i<val.length?"on":""}"></span>`).join("")}</div>
+      ${a.cargando?`<div class="note">Verificando…</div>`:a.error?`<div class="warn">${esc(a.error)}</div>`:""}
+      <div class="keypad">
+        ${["1","2","3","4","5","6","7","8","9"].map(k=>`<button type="button" data-tecla="${k}" ${a.cargando?"disabled":""}>${k}</button>`).join("")}
+        <button type="button" class="op" data-authback="1" ${a.cargando?"disabled":""}>Volver</button>
+        <button type="button" data-tecla="0" ${a.cargando?"disabled":""}>0</button>
+        <button type="button" class="op" data-tecla="borrar" ${a.cargando?"disabled":""}>Borrar</button>
+      </div>
+      <button class="authBack" type="button" data-codigo-pedir="1" style="margin-top:12px" ${a.cargando?"disabled":""}>No tengo código — pedir que me aprueben</button>`;
+  } else if(a.paso==="vinculado"){
+    const i=a.equipoInfo||{};
+    cuerpo=`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>
+      <h1>✓ Equipo vinculado</h1>
+      <p>Este equipo ya puede entrar a ${esc(a.local||"")}. Ahora elegí tu perfil y poné tu PIN.</p>
+      <div class="eqInfo">
+        <div><span>Este equipo</span><b>${esc(i.nombre||nombreEquipoDetectado())}</b></div>
+        <div><span>Equipos del local</span><b>${i.usados||0} de ${i.max||3}</b></div>
+      </div>
+      <button class="btn" type="button" data-codigo-perfil="1" style="width:100%">Elegir mi perfil</button>`;
   } else if(a.paso==="equipo"){
     const i=a.equipoInfo||{}, lleno=i.estado==="lleno", max=i.max||3, usados=i.usados||0;
     cuerpo=`<button class="authBack" data-authback="1">Volver</button>
       <h1>${lleno?esc(a.local||"")+" ya tiene sus "+max+" equipos":"Este equipo todavía no está aprobado"}</h1>
-      <p>${lleno?"Para sumar este, tu encargado tiene que quitar uno desde la pestaña Equipo. Después lo aprueba y vas a poder entrar.":"Avisamos a tu encargado. Cuando lo apruebe vas a poder entrar con tu PIN."}</p>
+      <p>${lleno?"Para sumar este, tu encargado tiene que quitar uno desde la pestaña Equipo. Después lo aprueba y vas a poder entrar.":(a.sinPerfil?"Le avisamos a tu encargado. Cuando apruebe este equipo vas a poder elegir tu perfil. No hace falta contraseña del local.":"Avisamos a tu encargado. Cuando lo apruebe vas a poder entrar con tu PIN.")}</p>
       <div class="eqInfo">
         <div><span>Este equipo</span><b>${esc(i.nombre||nombreEquipoDetectado())}</b></div>
         <div><span>Local</span><b>${esc(a.local||"")}</b></div>
@@ -3085,9 +3164,10 @@ function equiposView(){
   const sigla=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase().slice(0,2)||"EQ";
   const ultimo=d=>d.ultimoTs?`Último acceso: ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" · "+esc(d.ultimoEmpleado):""}`:"Todavía no entró";
   return `<p class="sec" style="margin-top:6px">Equipos de ${esc(S.local)}</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} equipos aprobados. Un equipo nuevo queda bloqueado hasta que lo aprobás.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} equipos aprobados. Un equipo nuevo queda bloqueado hasta que lo aprobás o le pasás un código.</p>
   <div class="eqCard"><div class="eqCupo"><b>${usados} de ${max} equipos</b><span style="color:${lleno?"var(--alert)":"var(--accent)"}">${lleno?"Cupo lleno":(max-usados===1?"Queda 1 lugar":"Quedan "+(max-usados)+" lugares")}</span></div><div class="eqSegs">${seg}</div></div>
   ${S.equipoAviso?`<div class="note" role="status" style="margin:10px 0">${esc(S.equipoAviso)}</div>`:""}
+  ${codigoEquipoHTML(lleno)}
   ${e.pendientes.length?`<p class="sec">Bloqueados · esperando aprobación</p>`+e.pendientes.map(d=>`<div class="eqCard pend">
     <div class="eqFila"><span class="eqIni warn">!</span><div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b><div class="meta">Intentó entrar ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" como "+esc(d.ultimoEmpleado):""}</div></div></div>
     ${lleno?`<div class="warn" style="margin:8px 0 0">Sin lugar: ya hay ${max} equipos. Quitá uno de la lista para poder aprobar este.</div>`:`<input type="text" class="eqNombre" data-eq-nombre="${esc(d.clave)}" value="${esc(d.nombre)}" maxlength="60" aria-label="Nombre del equipo" placeholder="Nombre del equipo (ej. Tablet cámara)">`}
@@ -3103,11 +3183,40 @@ function equiposView(){
   </div>`).join(""):`<div class="empty">No hay equipos autorizados. El próximo que entre quedará bloqueado hasta que lo apruebes.</div>`}
   <p style="margin:12px 0 0;color:var(--muted);font-size:.74rem;line-height:1.5">Admin y supervisor no ocupan lugar: cuando entran por Operaciones o con el código de admin no cuentan ni necesitan aprobación.</p>`;
 }
+/** Botón "+ Agregar un equipo con un código" y el código a la vista (15 min, un solo uso). */
+function codigoEquipoHTML(lleno){
+  const c=S.codigoEquipo;
+  if(c && c.vence>Date.now()){
+    const hora=new Date(c.vence).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",hour12:false});
+    return `<div class="eqCard eqCodigo"><p class="sec" style="margin:0 0 6px">Código para sumar un equipo</p>
+      <div class="eqCodigoNum" id="eqCodigoNum">${esc(c.codigo.slice(0,3))} ${esc(c.codigo.slice(3))}</div>
+      <p class="meta" style="margin:6px 0 10px">Escribilo en el equipo nuevo, después de elegir <b>${esc(S.local)}</b>. Sirve una sola vez y vence en 15 minutos (a las ${hora}).</p>
+      <div class="eqBtns"><button type="button" class="btn ghost" data-codigo-copiar="1">${S.codigoCopiado?"✓ Copiado":"Copiar código"}</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Código para sumar un equipo a "+S.local+" en LogiStock: "+c.codigo+". Sirve una vez y vence en 15 minutos.")}" style="text-decoration:none;text-align:center">Mandar por WhatsApp</a></div>
+      <button type="button" class="authBack" data-codigo-cerrar="1" style="margin-top:8px;color:var(--muted)">Listo</button></div>`;
+  }
+  return `<button type="button" class="btn" data-equipo-codigo="1" style="width:100%;margin:0 0 6px" ${lleno||S.codigoCargando?"disabled":""}>${S.codigoCargando?"Generando…":"+ Agregar un equipo con un código"}</button>
+    <p class="meta" style="margin:0 0 12px">${lleno?"El cupo está lleno: quitá un equipo para poder sumar otro.":"Sin contraseña del local: el equipo nuevo escribe el código y queda aprobado."}</p>`;
+}
+async function generarCodigoEquipo(){
+  S.codigoCargando=true; S.equipoAviso=""; renderApp();
+  const r = await api("generarCodigoEquipo", { local:S.local });
+  S.codigoCargando=false;
+  if(r && r.ok){ S.codigoEquipo={ codigo:r.codigo, vence:r.vence, aprobadosAntes:(S.equipos&&S.equipos.aprobados?S.equipos.aprobados.length:0) }; S.codigoCopiado=false; }
+  else S.equipoAviso=(r&&r.error)||"No se pudo generar el código. Probá de nuevo.";
+  renderApp();
+}
 async function cargarEquipos(silencioso){
   const local=S.local;
   const r = await api("equiposLocal", {local});
   if(S.local!==local) return;
-  if(r && r.ok && r.controlado){ S.equipos={ max:r.max, aprobados:r.aprobados, pendientes:r.pendientes }; }
+  if(r && r.ok && r.controlado){
+    S.equipos={ max:r.max, aprobados:r.aprobados, pendientes:r.pendientes };
+    // Si mientras el código estaba a la vista se sumó un equipo, el código ya se usó.
+    if(S.codigoEquipo && r.aprobados.length>S.codigoEquipo.aprobadosAntes){
+      const nuevo=r.aprobados.slice().sort((a,b)=>(b.ultimoTs||0)-(a.ultimoTs||0))[0];
+      S.codigoEquipo=null; S.equipoAviso="Equipo vinculado con el código"+(nuevo?": «"+nuevo.nombre+"»":"")+". Ya está aprobado.";
+    }
+  }
   else if(r && r.ok){ S.controlEquipos=false; S.equipos=undefined; }
   else if(!silencioso || !S.equipos){ S.equipos={ error:(r&&r.error)||"No se pudo cargar. Probá de nuevo." }; }
   if(S.tab==="equipo") renderApp();
@@ -3686,9 +3795,14 @@ document.addEventListener("click", async e=>{
   if(t.dataset.equipoRechazar){ t.disabled=true; equipoDecidir(t.dataset.equipoRechazar,"rechazar"); return }
   if(t.dataset.equipoPedirQuitar){ S.equipoConfirmar=t.dataset.equipoPedirQuitar; S.equipoAviso=""; renderApp(); return }
   if(t.dataset.equipoCancelar){ S.equipoConfirmar=null; renderApp(); return }
+  if(t.dataset.equipoCodigo){ generarCodigoEquipo(); return }
+  if(t.dataset.codigoCerrar){ S.codigoEquipo=null; renderApp(); return }
+  if(t.dataset.codigoCopiar){ const c=S.codigoEquipo&&S.codigoEquipo.codigo; if(c){ try{ navigator.clipboard.writeText(c) }catch(e){} S.codigoCopiado=true; renderApp(); } return }
   if(t.dataset.equipoQuitar){ t.disabled=true; equipoDecidir(t.dataset.equipoQuitar,"quitar"); return }
-  if(t.dataset.equipoReintentar){ if(S.auth && S.auth.elegido) authChequearEquipo(S.auth.elegido); return }
-  if(t.dataset.equipoOtro){ if(S.auth){ S.auth.elegido=null; S.auth.equipoInfo=null; if(S.deviceLocal){ S.auth.paso="quien"; } else { S.auth.paso="local"; S.auth.local=null; } renderApp(); } return }
+  if(t.dataset.equipoReintentar){ if(S.auth && S.auth.sinPerfil) authReintentarSinPerfil(); else if(S.auth && S.auth.elegido) authChequearEquipo(S.auth.elegido); return }
+  if(t.dataset.codigoPedir){ authPedirAprobacion(); return }
+  if(t.dataset.codigoPerfil){ if(S.auth){ S.auth.paso="quien"; S.auth.empleados=[]; cargarEmpleadosDeAuth(); } return }
+  if(t.dataset.equipoOtro){ if(S.auth){ S.auth.elegido=null; S.auth.equipoInfo=null; if(S.auth.sinPerfil){ S.auth.sinPerfil=false; S.auth.local=null; S.auth.paso="local"; } else if(S.deviceLocal){ S.auth.paso="quien"; } else { S.auth.paso="local"; S.auth.local=null; } renderApp(); } return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
   if(t.dataset.tecla){ authTecla(t.dataset.tecla); return }
   if(t.dataset.teclaBloqueo){ teclaBloqueo(t.dataset.teclaBloqueo); return }

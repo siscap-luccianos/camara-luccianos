@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.50.0";
+const BACKEND_VERSION = "1.51.0";
 
 function doPost(e) {
   let resultado;
@@ -55,7 +55,7 @@ function doGet() {
 
 // Acciones que no requieren token (login y datos públicos no sensibles:
 // nombres de locales/empleados para armar los selectores de login).
-const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "loginAdminLocal", "verificarClaveLocal", "estadoEquipo"];
+const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "loginAdminLocal", "verificarClaveLocal", "estadoEquipo", "estadoEquipoLocal", "vincularEquipo"];
 
 function _despachar(body) {
   const accion = body.accion;
@@ -66,10 +66,12 @@ function _despachar(body) {
   }
   switch (accion) {
     case "localesActivos": return localesActivos();
-    case "empleadosLocal": return empleadosLocal(body.local);
+    case "empleadosLocal": return empleadosLocal(body.local, body.equipoId);
     case "empleadosGestion": return empleadosGestion();
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local, body.equipoId, body.equipoNombre);
     case "estadoEquipo": return estadoEquipo(body.equipoId, body.equipoNombre, body.local, body.empleadoId);
+    case "estadoEquipoLocal": return estadoEquipoLocal(body.equipoId, body.local);
+    case "vincularEquipo": return vincularEquipo(body.local, body.codigo, body.equipoId, body.equipoNombre);
     case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local);
     case "loginAdminLocal": return loginAdminLocal(body.empleadoId, body.codigo, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
@@ -103,6 +105,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
     case "equiposLocal": return equiposLocal(body.local, empleado);
     case "equipoDecidir": return equipoDecidir(body.clave, body.decision, body.nombre, body.local, empleado);
+    case "generarCodigoEquipo": return generarCodigoEquipo(body.local, empleado);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
 }
@@ -410,8 +413,109 @@ function equipoDecidir(clave, decision, nombre, local, empleado) {
   }
 }
 
-function empleadosLocal(local) {
+/* ---- Vincular un equipo con un código (sin contraseña del local) ----
+   El encargado (o supervisor/admin) genera un código de 6 números desde Equipo › Equipos.
+   Vale 15 minutos y una sola vez, y solo para ese local. Se guarda en CacheService,
+   no en la hoja. Al usarlo el equipo queda aprobado directo (si hay lugar en el cupo). */
+const VINCULO_MINUTOS = 15;
+const VINCULO_MAX_FALLOS = 5;
+const VINCULO_BLOQUEO_SEGUNDOS = 300;
+function _vinculoKey(local, codigo) { return "vinc:" + String(local || "").trim() + ":" + String(codigo); }
+
+/** "aprobado" | "pendiente" | "nuevo" para este equipo en este local. No escribe nada. */
+function _estadoSoloLectura(local, equipoId) {
+  if (!equipoId) return "nuevo";
+  const clave = _claveEquipo(equipoId, local);
+  const propia = _leerCrudo("Dispositivos").filter((d) => String(d.id) === clave)[0];
+  if (!propia) return "nuevo";
+  return propia.estado === "aprobado" ? "aprobado" : propia.estado === "pendiente" ? "pendiente" : "nuevo";
+}
+
+/** Acción pública y de solo lectura: ¿este equipo ya está vinculado a este local? */
+function estadoEquipoLocal(equipoId, local) {
   if (!local) return { ok: false, error: "Falta el local." };
+  if (!equipoId) return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
+  if (!_localConControlEquipos(local)) return { ok: true, estado: "libre" };
+  return { ok: true, estado: _estadoSoloLectura(local, equipoId), max: _maxEquipos(local) };
+}
+
+function generarCodigoEquipo(local, empleado) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeGestionarEquipos(empleado, local)) return { ok: false, error: "No tenés permiso para sumar equipos a ese local." };
+  if (!_localConControlEquipos(local)) return { ok: false, error: "Este local no tiene activado el control de equipos." };
+  const MAX = _maxEquipos(local);
+  const usados = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim() && d.estado === "aprobado").length;
+  if (usados >= MAX) return { ok: false, error: "Ya hay " + MAX + " equipos aprobados. Quitá uno para sumar otro." };
+  const cache = CacheService.getScriptCache();
+  let codigo = "";
+  for (let i = 0; i < 20; i++) {
+    const c = ("000000" + Math.floor(Math.random() * 1000000)).slice(-6);
+    if (!cache.get(_vinculoKey(local, c))) { codigo = c; break; }
+  }
+  if (!codigo) return { ok: false, error: "No se pudo generar el código. Probá de nuevo." };
+  const vence = Date.now() + VINCULO_MINUTOS * 60000;
+  cache.put(_vinculoKey(local, codigo), JSON.stringify({ porId: empleado.id, por: empleado.nombre, vence: vence }), VINCULO_MINUTOS * 60);
+  _auditar("equipo_codigo_generado", empleado.id, empleado.nombre, "Generó un código para sumar un equipo en " + local);
+  return { ok: true, codigo: codigo, vence: vence, minutos: VINCULO_MINUTOS };
+}
+
+/** Acción pública: el equipo nuevo escribe el código de 6 números, después de elegir el local.
+ *  También acepta el código de admin (entra como admin, sin vincular el equipo). */
+function vincularEquipo(local, codigo, equipoId, equipoNombre) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!equipoId) return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
+  if (!_localConControlEquipos(local)) return { ok: false, error: "Este local no usa control de equipos." };
+  const tipeado = String(codigo || "").trim();
+  if (!/^\d{6}$/.test(tipeado)) return { ok: false, error: "El código son 6 números." };
+  const cache = CacheService.getScriptCache();
+  const fKey = "vincFallos:" + String(local).trim();
+  const fallos = Number(cache.get(fKey) || 0);
+  if (fallos >= VINCULO_MAX_FALLOS) return { ok: false, error: "Demasiados intentos. Probá de nuevo en 5 minutos." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const key = _vinculoKey(local, tipeado);
+    const crudo = cache.get(key);
+    if (!crudo) {
+      // No es un código de equipo: puede ser el código de admin.
+      const adm = _verificarCodigoAdmin(tipeado);
+      if (adm.ok) return { ok: true, modoAdmin: true };
+      if (adm.bloqueado) return { ok: false, error: adm.error };
+      cache.put(fKey, String(fallos + 1), VINCULO_BLOQUEO_SEGUNDOS);
+      return { ok: false, error: "Código incorrecto o vencido." };
+    }
+    const info = JSON.parse(crudo);
+    const MAX = _maxEquipos(local);
+    const filas = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim());
+    const clave = _claveEquipo(equipoId, local);
+    const propia = filas.filter((d) => String(d.id) === clave)[0];
+    const usados = filas.filter((d) => d.estado === "aprobado").length;
+    if (!(propia && propia.estado === "aprobado")) {
+      if (usados >= MAX) return { ok: false, error: "Este local ya tiene sus " + MAX + " equipos. Pedile a tu encargado que quite uno." };
+      const ahora = Date.now();
+      const nombre = _nombreEquipoLimpio(equipoNombre);
+      if (propia) {
+        _actualizarCrudo("Dispositivos", clave, { estado: "aprobado", nombre: nombre, aprobado_ts: ahora, aprobado_por: info.por + " (código)", ultimo_ts: ahora });
+      } else {
+        _escribirCrudoConId("Dispositivos", { id: clave, equipo: String(equipoId), local: String(local).trim(), nombre: nombre, detalle: nombre, estado: "aprobado", solicitado_ts: ahora, aprobado_ts: ahora, aprobado_por: info.por + " (código)", ultimo_ts: ahora, ultimo_empleado: "" });
+      }
+      _auditar("equipo_vinculado_codigo", info.porId, info.por, "Equipo «" + nombre + "» vinculado a " + local + " con un código");
+    }
+    cache.remove(key); // de un solo uso
+    cache.remove(fKey);
+    const nuevos = usados + ((propia && propia.estado === "aprobado") ? 0 : 1);
+    return { ok: true, estado: "aprobado", usados: nuevos, max: MAX, nombre: propia && propia.estado === "aprobado" ? propia.nombre : _nombreEquipoLimpio(equipoNombre) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function empleadosLocal(local, equipoId) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  // En un local con control de equipos la nómina no se muestra hasta que el equipo está aprobado.
+  if (_localConControlEquipos(local) && _estadoSoloLectura(local, equipoId) !== "aprobado") {
+    return { ok: false, equipo: "noAprobado", error: "Este equipo todavía no está vinculado a " + local + "." };
+  }
   const filas = _leerCrudo("Empleados").filter((e) =>
     _esVerdadero(e.activo) !== false &&
     (e.rol === "colaborador" || e.rol === "encargado" || e.rol === "turno" || e.rol === "produccion") &&
