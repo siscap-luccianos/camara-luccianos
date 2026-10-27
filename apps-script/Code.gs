@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.51.0";
+const BACKEND_VERSION = "1.52.0";
 
 function doPost(e) {
   let resultado;
@@ -71,7 +71,7 @@ function _despachar(body) {
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local, body.equipoId, body.equipoNombre);
     case "estadoEquipo": return estadoEquipo(body.equipoId, body.equipoNombre, body.local, body.empleadoId);
     case "estadoEquipoLocal": return estadoEquipoLocal(body.equipoId, body.local);
-    case "vincularEquipo": return vincularEquipo(body.local, body.codigo, body.equipoId, body.equipoNombre);
+    case "vincularEquipo": return vincularEquipo(body.local, body.codigo, body.equipoId, body.equipoNombre, body.vincular);
     case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local);
     case "loginAdminLocal": return loginAdminLocal(body.empleadoId, body.codigo, body.local);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
@@ -459,9 +459,29 @@ function generarCodigoEquipo(local, empleado) {
   return { ok: true, codigo: codigo, vence: vence, minutos: VINCULO_MINUTOS };
 }
 
+/** Con el código de admin ya verificado: deja este equipo aprobado en el local (si hay cupo). */
+function _vincularConAdmin(local, equipoId, equipoNombre) {
+  const MAX = _maxEquipos(local);
+  const filas = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim());
+  const clave = _claveEquipo(equipoId, local);
+  const propia = filas.filter((d) => String(d.id) === clave)[0];
+  const usados = filas.filter((d) => d.estado === "aprobado").length;
+  const nombre = _nombreEquipoLimpio(equipoNombre);
+  if (propia && propia.estado === "aprobado") return { ok: true, estado: "aprobado", usados: usados, max: MAX, nombre: propia.nombre };
+  if (usados >= MAX) return { ok: false, error: "Este local ya tiene sus " + MAX + " equipos. Quitá uno desde Equipo › Equipos para sumar este." };
+  const ahora = Date.now();
+  if (propia) {
+    _actualizarCrudo("Dispositivos", clave, { estado: "aprobado", nombre: nombre, aprobado_ts: ahora, aprobado_por: "Admin (código)", ultimo_ts: ahora });
+  } else {
+    _escribirCrudoConId("Dispositivos", { id: clave, equipo: String(equipoId), local: String(local).trim(), nombre: nombre, detalle: nombre, estado: "aprobado", solicitado_ts: ahora, aprobado_ts: ahora, aprobado_por: "Admin (código)", ultimo_ts: ahora, ultimo_empleado: "" });
+  }
+  _auditar("equipo_vinculado_admin", "", "Admin (código)", "Equipo «" + nombre + "» vinculado a " + local + " con el código de admin");
+  return { ok: true, estado: "aprobado", usados: usados + 1, max: MAX, nombre: nombre };
+}
+
 /** Acción pública: el equipo nuevo escribe el código de 6 números, después de elegir el local.
  *  También acepta el código de admin (entra como admin, sin vincular el equipo). */
-function vincularEquipo(local, codigo, equipoId, equipoNombre) {
+function vincularEquipo(local, codigo, equipoId, equipoNombre, vincularConCodigoAdmin) {
   if (!local) return { ok: false, error: "Falta el local." };
   if (!equipoId) return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
   if (!_localConControlEquipos(local)) return { ok: false, error: "Este local no usa control de equipos." };
@@ -479,6 +499,7 @@ function vincularEquipo(local, codigo, equipoId, equipoNombre) {
     if (!crudo) {
       // No es un código de equipo: puede ser el código de admin.
       const adm = _verificarCodigoAdmin(tipeado);
+      if (adm.ok && vincularConCodigoAdmin) return _vincularConAdmin(local, equipoId, equipoNombre);
       if (adm.ok) return { ok: true, modoAdmin: true };
       if (adm.bloqueado) return { ok: false, error: adm.error };
       cache.put(fKey, String(fallos + 1), VINCULO_BLOQUEO_SEGUNDOS);

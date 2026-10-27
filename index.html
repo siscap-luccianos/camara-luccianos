@@ -742,7 +742,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.103.0";
+const FRONTEND_VERSION = "1.104.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1238,11 +1238,25 @@ async function authVincular(){
   a.cargando=false;
   if(S.auth!==a) return;
   if(r && r.ok && r.modoAdmin){
-    // Era el código de admin: entra como admin a ese local (sin vincular el equipo).
-    a.clave=a.codigo; a.codigoAdmin=true; a.esGestion=false; a.paso="quien"; a.empleados=[]; a.codigo=""; cargarEmpleadosDeAuth(); return;
+    // Era el código de admin: ofrece vincular este equipo o entrar como admin sin vincularlo.
+    a.codigoAdminTipeado=a.codigo; a.paso="adminOpcion"; a.codigo=""; a.error=""; renderApp(); return;
   }
   if(r && r.ok){ a.paso="vinculado"; a.equipoInfo={ nombre:r.nombre||nombreEquipoDetectado(), usados:r.usados||0, max:r.max||3 }; a.codigo=""; renderApp(); return }
   a.error=(r&&r.error)||"No se pudo vincular. Probá de nuevo."; a.codigo=""; renderApp();
+}
+/** Con el código de admin: vincular este equipo al local, o entrar como admin sin vincularlo. */
+async function authAdminVincular(){
+  const a=S.auth; if(!a || a.cargando) return;
+  a.cargando=true; a.error=""; renderApp();
+  const r = await api("vincularEquipo", { local:a.local, codigo:a.codigoAdminTipeado, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado(), vincular:true });
+  a.cargando=false;
+  if(S.auth!==a) return;
+  if(r && r.ok && r.estado==="aprobado"){ a.paso="vinculado"; a.equipoInfo={ nombre:r.nombre||nombreEquipoDetectado(), usados:r.usados||0, max:r.max||3 }; renderApp(); return }
+  a.error=(r&&r.error)||"No se pudo vincular. Probá de nuevo."; renderApp();
+}
+function authAdminEntrar(){
+  const a=S.auth; if(!a) return;
+  a.clave=a.codigoAdminTipeado; a.codigoAdmin=true; a.esGestion=false; a.paso="quien"; a.empleados=[]; cargarEmpleadosDeAuth();
 }
 /** "No tengo código": deja el pedido anotado para que el encargado lo apruebe desde Equipo. */
 async function authPedirAprobacion(){
@@ -1266,6 +1280,7 @@ async function authReintentarSinPerfil(){
   renderApp();
 }
 function authVolver(){
+  if(S.auth.paso==="adminOpcion"){ S.auth.paso="codigo"; S.auth.codigo=""; S.auth.error=""; renderApp(); return }
   if(S.auth.paso==="codigo"){ S.auth.local=null; S.auth.paso="local"; S.auth.codigo=""; S.auth.error=""; renderApp(); return }
   if(S.auth.paso==="equipo" && S.auth.sinPerfil){ S.auth.sinPerfil=false; S.auth.paso="codigo"; S.auth.codigo=""; renderApp(); return }
   if(S.auth.paso==="equipo"){ S.auth.elegido=null; S.auth.paso="quien"; renderApp(); return }
@@ -1913,6 +1928,14 @@ function renderAuth(){
         <button type="button" class="op" data-tecla="borrar" ${a.cargando?"disabled":""}>Borrar</button>
       </div>
       <button class="authBack" type="button" data-codigo-pedir="1" style="margin-top:12px" ${a.cargando?"disabled":""}>No tengo código — pedir que me aprueben</button>`;
+  } else if(a.paso==="adminOpcion"){
+    cuerpo=`<button class="authBack" data-authback="1">Volver</button>
+      <h1>Código de admin</h1>
+      <p>¿Qué querés hacer en ${esc(a.local||"")} con este equipo?</p>
+      ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
+      <div class="eqInfo"><div><span>Este equipo</span><b>${esc(nombreEquipoDetectado())}</b></div></div>
+      <button class="btn" type="button" data-admin-vincular="1" style="width:100%" ${a.cargando?"disabled":""}>${a.cargando?"Vinculando…":"Vincular este equipo al local"}</button>
+      <button class="btn ghost" type="button" data-admin-entrar="1" style="width:100%;background:rgba(255,255,255,.08);color:#F5F0E8;box-shadow:none;border:1px solid rgba(255,255,255,.14)" ${a.cargando?"disabled":""}>Entrar como admin, sin vincular</button>`;
   } else if(a.paso==="vinculado"){
     const i=a.equipoInfo||{};
     cuerpo=`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>
@@ -3801,6 +3824,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.equipoQuitar){ t.disabled=true; equipoDecidir(t.dataset.equipoQuitar,"quitar"); return }
   if(t.dataset.equipoReintentar){ if(S.auth && S.auth.sinPerfil) authReintentarSinPerfil(); else if(S.auth && S.auth.elegido) authChequearEquipo(S.auth.elegido); return }
   if(t.dataset.codigoPedir){ authPedirAprobacion(); return }
+  if(t.dataset.adminVincular){ authAdminVincular(); return }
+  if(t.dataset.adminEntrar){ authAdminEntrar(); return }
   if(t.dataset.codigoPerfil){ if(S.auth){ S.auth.paso="quien"; S.auth.empleados=[]; cargarEmpleadosDeAuth(); } return }
   if(t.dataset.equipoOtro){ if(S.auth){ S.auth.elegido=null; S.auth.equipoInfo=null; if(S.auth.sinPerfil){ S.auth.sinPerfil=false; S.auth.local=null; S.auth.paso="local"; } else if(S.deviceLocal){ S.auth.paso="quien"; } else { S.auth.paso="local"; S.auth.local=null; } renderApp(); } return }
   if(t.dataset.authemp){ const emp=S.auth.empleados.find(x=>String(x.id)===t.dataset.authemp); if(emp) authElegirEmpleado(emp); return }
