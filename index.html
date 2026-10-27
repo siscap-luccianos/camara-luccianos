@@ -740,7 +740,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.102.0";
+const FRONTEND_VERSION = "1.102.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -3081,11 +3081,11 @@ function equiposView(){
   const e=S.equipos;
   if(e.error) return `<div class="empty">${esc(e.error)}</div><button class="btn ghost" type="button" data-equipos-recargar="1" style="margin-top:10px">Reintentar</button>`;
   const max=e.max||3, usados=e.aprobados.length, lleno=usados>=max;
-  const seg=[0,1,2].slice(0,max).map(i=>`<span class="eqSeg${i<usados?(lleno?" full":" on"):""}"></span>`).join("");
+  const seg=Array.from({length:max},(_,k)=>k).map(i=>`<span class="eqSeg${i<usados?(lleno?" full":" on"):""}"></span>`).join("");
   const sigla=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase().slice(0,2)||"EQ";
   const ultimo=d=>d.ultimoTs?`Último acceso: ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" · "+esc(d.ultimoEmpleado):""}`:"Todavía no entró";
   return `<p class="sec" style="margin-top:6px">Equipos de ${esc(S.local)}</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Cada local puede tener hasta ${max} equipos aprobados. Un equipo nuevo queda bloqueado hasta que lo aprobás.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} equipos aprobados. Un equipo nuevo queda bloqueado hasta que lo aprobás.</p>
   <div class="eqCard"><div class="eqCupo"><b>${usados} de ${max} equipos</b><span style="color:${lleno?"var(--alert)":"var(--accent)"}">${lleno?"Cupo lleno":(max-usados===1?"Queda 1 lugar":"Quedan "+(max-usados)+" lugares")}</span></div><div class="eqSegs">${seg}</div></div>
   ${S.equipoAviso?`<div class="note" role="status" style="margin:10px 0">${esc(S.equipoAviso)}</div>`:""}
   ${e.pendientes.length?`<p class="sec">Bloqueados · esperando aprobación</p>`+e.pendientes.map(d=>`<div class="eqCard pend">

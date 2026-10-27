@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.49.0";
+const BACKEND_VERSION = "1.50.0";
 
 function doPost(e) {
   let resultado;
@@ -281,13 +281,20 @@ function loginAdminLocal(empleadoId, codigo, local) {
 
 /* ============================================================
    CONTROL DE EQUIPOS POR LOCAL (hoja Dispositivos, Locales.control_equipos=SI)
-   Cada local puede tener hasta EQUIPOS_MAX equipos aprobados. Un equipo nuevo
+   Cada local puede tener hasta EQUIPOS_MAX (3) equipos aprobados, o los de Locales.max_equipos. Un equipo nuevo
    queda "pendiente" hasta que un encargado de ese local, un supervisor o un
    admin lo aprueba; no llega a probar el PIN. Admin y supervisor no cuentan ni
    necesitan aprobación. Quitar o rechazar no cierra sesiones ya abiertas.
 ============================================================ */
 
-const EQUIPOS_MAX = 3;
+const EQUIPOS_MAX = 3; // por defecto; un local puede tener más con Locales.max_equipos (ej. 5)
+
+/** Cupo de equipos de ESTE local: Locales.max_equipos si está cargado (1 a 20), si no 3. */
+function _maxEquipos(local) {
+  const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local || "").trim())[0];
+  const n = fila ? Math.floor(Number(fila.max_equipos)) : 0;
+  return n >= 1 && n <= 20 ? n : EQUIPOS_MAX;
+}
 
 function _localConControlEquipos(local) {
   const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local || "").trim())[0];
@@ -304,7 +311,8 @@ function _nombreEquipoLimpio(n) { return String(n || "").replace(/[<>]/g, "").tr
 function _estadoEquipo(local, empleado, equipoId, equipoNombre) {
   if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return { estado: "libre" };
   if (!_localConControlEquipos(local)) return { estado: "libre" };
-  if (!equipoId) return { estado: "sinId", max: EQUIPOS_MAX };
+  const MAX = _maxEquipos(local);
+  if (!equipoId) return { estado: "sinId", max: MAX };
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
   try {
@@ -316,7 +324,7 @@ function _estadoEquipo(local, empleado, equipoId, equipoNombre) {
     const quien = empleado ? empleado.nombre : "";
     if (propia && propia.estado === "aprobado") {
       _actualizarCrudo("Dispositivos", clave, { ultimo_ts: ahora, ultimo_empleado: quien });
-      return { estado: "aprobado", usados: usados, max: EQUIPOS_MAX };
+      return { estado: "aprobado", usados: usados, max: MAX };
     }
     const detalle = _nombreEquipoLimpio(equipoNombre);
     if (propia) {
@@ -324,7 +332,7 @@ function _estadoEquipo(local, empleado, equipoId, equipoNombre) {
     } else {
       _escribirCrudoConId("Dispositivos", { id: clave, equipo: String(equipoId), local: String(local).trim(), nombre: detalle, detalle: detalle, estado: "pendiente", solicitado_ts: ahora, ultimo_ts: ahora, ultimo_empleado: quien });
     }
-    return { estado: usados >= EQUIPOS_MAX ? "lleno" : "pendiente", usados: usados, max: EQUIPOS_MAX, nombre: propia ? propia.nombre : detalle, desde: propia && propia.solicitado_ts ? Number(propia.solicitado_ts) : ahora };
+    return { estado: usados >= MAX ? "lleno" : "pendiente", usados: usados, max: MAX, nombre: propia ? propia.nombre : detalle, desde: propia && propia.solicitado_ts ? Number(propia.solicitado_ts) : ahora };
   } finally {
     lock.releaseLock();
   }
@@ -335,7 +343,7 @@ function _bloqueoPorEquipo(local, empleado, equipoId, equipoNombre) {
   const e = _estadoEquipo(local, empleado, equipoId, equipoNombre);
   if (e.estado === "libre" || e.estado === "aprobado") return null;
   if (e.estado === "sinId") return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
-  return { ok: false, equipo: e.estado, equipoInfo: e, error: e.estado === "lleno" ? "Este local ya tiene sus " + EQUIPOS_MAX + " equipos." : "Este equipo todavía no está aprobado." };
+  return { ok: false, equipo: e.estado, equipoInfo: e, error: e.estado === "lleno" ? "Este local ya tiene sus " + (e.max || EQUIPOS_MAX) + " equipos." : "Este equipo todavía no está aprobado." };
 }
 
 /** Acción pública: el cliente la llama al elegir el nombre, antes de pedir el PIN. */
@@ -344,7 +352,7 @@ function estadoEquipo(equipoId, equipoNombre, local, empleadoId) {
   const empleado = empleadoId ? _empleadoPorId(empleadoId) : null;
   const e = _estadoEquipo(local, empleado, equipoId, equipoNombre);
   if (e.estado === "sinId") return { ok: false, equipo: "sinId", error: "Recargá la app para actualizarla y volvé a intentar." };
-  return { ok: true, estado: e.estado, usados: e.usados || 0, max: EQUIPOS_MAX, nombre: e.nombre || "", desde: e.desde || 0 };
+  return { ok: true, estado: e.estado, usados: e.usados || 0, max: e.max || EQUIPOS_MAX, nombre: e.nombre || "", desde: e.desde || 0 };
 }
 
 function _puedeGestionarEquipos(empleado, local) {
@@ -360,9 +368,10 @@ function equiposLocal(local, empleado) {
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeGestionarEquipos(empleado, local)) return { ok: false, error: "No tenés permiso para ver los equipos de ese local." };
   if (!_localConControlEquipos(local)) return { ok: true, controlado: false, max: EQUIPOS_MAX, aprobados: [], pendientes: [] };
+  const MAX = _maxEquipos(local);
   const filas = _leerCrudo("Dispositivos").filter((d) => String(d.local || "").trim() === String(local).trim());
   return {
-    ok: true, controlado: true, max: EQUIPOS_MAX,
+    ok: true, controlado: true, max: MAX,
     aprobados: filas.filter((d) => d.estado === "aprobado").map(_equipoPublico),
     pendientes: filas.filter((d) => d.estado === "pendiente").map(_equipoPublico),
   };
@@ -381,7 +390,8 @@ function equipoDecidir(clave, decision, nombre, local, empleado) {
     if (!fila) return { ok: false, error: "No se encontró ese equipo." };
     if (decision === "aprobar") {
       if (fila.estado === "aprobado") return { ok: true };
-      if (filas.filter((d) => d.estado === "aprobado").length >= EQUIPOS_MAX) return { ok: false, error: "Ya hay " + EQUIPOS_MAX + " equipos aprobados. Quitá uno para poder aprobar este." };
+      const MAX = _maxEquipos(local);
+      if (filas.filter((d) => d.estado === "aprobado").length >= MAX) return { ok: false, error: "Ya hay " + MAX + " equipos aprobados. Quitá uno para poder aprobar este." };
       const nuevoNombre = nombre ? _nombreEquipoLimpio(nombre) : fila.nombre;
       _actualizarCrudo("Dispositivos", clave, { estado: "aprobado", nombre: nuevoNombre, aprobado_ts: Date.now(), aprobado_por: empleado.nombre });
       _auditar("equipo_aprobado", empleado.id, empleado.nombre, "Aprobó el equipo «" + nuevoNombre + "» en " + local);
