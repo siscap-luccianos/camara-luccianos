@@ -765,7 +765,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.106.0";
+const FRONTEND_VERSION = "1.106.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1116,9 +1116,12 @@ function refrescarLocales(){
 async function _refrescarLocales(){
   const r = await api("localesActivos", {});
   if(r && r.ok){
+    const antes = JSON.stringify(S.locales);
     S.locales = r.locales;
     ls.set("localesCache", JSON.stringify(r.locales));
     if(S.auth && S.auth.paso==="local") renderApp();
+    // Con la sesión abierta, si la lista cambió (ej. llegó el país de cada local tras un redeploy) se repinta una sola vez.
+    else if(S.empleado && antes!==JSON.stringify(r.locales)) renderApp();
   }
 }
 function cargarLocalesSiFalta(){
