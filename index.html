@@ -765,7 +765,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.106.1";
+const FRONTEND_VERSION = "1.106.2";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -3510,17 +3510,8 @@ function saboresAdminView(){
     <div class="paisPills">${["Todos",...paises].map(p=>`<button type="button" class="chip" data-pais-filtro="${esc(p)}" aria-pressed="${S.paisFiltro===p}">${esc(p)} · ${cuenta(p)}</button>`).join("")}</div>
     <p style="margin:6px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${S.paisFiltro==="Todos"?"Catálogo completo. Cada sabor dice en qué países se vende.":"Lo que ven los locales de "+esc(S.paisFiltro)+": "+lista.filter(s=>s.activo).length+" sabores. Los que quites acá dejan de aparecer en sus locales."}</p>
     <div style="margin:0 0 8px"><button type="button" class="chip" data-pais-modo="1" aria-pressed="${!!S.paisModo}">${S.paisModo?"Listo":"Elegir varios"}</button> <span style="font-size:.78rem;color:var(--muted)">para sumar o quitar varios a un país</span></div>` : "";
-  return `${pillsPais}${S.paisModo?paisBarraHTML(paises):""}<p class="sec">Sabores (${lista.length})</p>
-  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
-  <div class="rubroMin">
-    <span>Mínimo del rubro</span>
-    <input type="number" id="min-${g.clave}" min="0" step="1" placeholder="ej. 6">
-    <button type="button" class="chip" data-min-rubro="${g.clave}">Aplicar a los ${g.sabores.length}</button>
-    <button type="button" class="chip" data-min-defecto="${g.clave}">Mínimos por defecto</button>
-  </div>
-  <div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}
-  <p class="sec" style="margin-top:14px">Dar de alta un sabor nuevo</p>
-  <form class="saborRow saborForm" id="altaSaborForm">
+  const altaForm = `<p class="sec">Dar de alta un sabor nuevo</p>
+<form class="saborRow saborForm" id="altaSaborForm">
     <label class="fSab ancho"><span>Nombre</span><input type="text" name="nombre" placeholder="Nombre del sabor" required></label>
     <label class="fSab"><span>Tipo</span><select name="tipo">${Object.entries(TIPO_LABEL).map(([v,l])=>`<option value="${v}">${l}</option>`).join("")}</select></label>
     <label class="fSab"><span>Familia</span><select name="familia">${FAMILIA_ORDEN.map(f=>`<option value="${f}">${esc(FAMILIA_LABEL[f])}</option>`).join("")}</select></label>
@@ -3528,9 +3519,18 @@ function saboresAdminView(){
     <label class="fSab"><span>Stock mínimo</span><input type="number" name="minimo" value="6" min="0"></label>
     <label class="fSab"><span>Peso promedio (kg)</span><input type="number" name="peso" min="0" step="0.1"></label>
     <label class="fSab"><span>Unidades por caja</span><input type="number" name="cantidad_maestra" min="0"></label>
-    ${paisesFormHTML(null)}
+    ${paisesFormHTML(conPais && S.paisFiltro!=="Todos" ? {paises:[S.paisFiltro]} : null)}
     <div class="acciones"><button class="btn" type="submit">Agregar</button></div>
   </form>`;
+  return `${altaForm}${pillsPais}${S.paisModo?paisBarraHTML(paises):""}<p class="sec">Sabores (${lista.length})</p>
+  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
+  <div class="rubroMin">
+    <span>Mínimo del rubro</span>
+    <input type="number" id="min-${g.clave}" min="0" step="1" placeholder="ej. 6">
+    <button type="button" class="chip" data-min-rubro="${g.clave}">Aplicar a los ${g.sabores.length}</button>
+    <button type="button" class="chip" data-min-defecto="${g.clave}">Mínimos por defecto</button>
+  </div>
+  <div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}`;
 }
 async function guardarSabor(payload){
   const r = await api("adminSabor", {sabor:payload});
