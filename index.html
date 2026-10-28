@@ -375,7 +375,11 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .chkPais[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
 .paisBar{position:fixed;left:10px;right:10px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:12;background:#2A1E17;color:#F5F0E8;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 28px rgba(42,30,23,.35)}
 .paisBarTit{font-size:.84rem;font-weight:700}
-.paisBarSeg{display:flex;gap:6px}
+.paisBarSeg{display:flex;gap:6px;align-items:center}
+.paisBarLbl{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-width:52px;color:#D9CBB8}
+.paisBarSeg input{width:80px;min-height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#F5F0E8;padding:0 10px;font:inherit}
+.paisBarSeg .btn{min-height:34px;padding:0 14px}
+.paisBarTit .chip{margin-left:4px}
 .paisBar .chip{background:transparent;color:#F5F0E8;border-color:rgba(255,255,255,.3)}
 .paisBar .chip[aria-pressed=true]{background:#E3A46F;color:#2A1E17;border-color:#E3A46F}
 .paisBar .btn{width:100%}
@@ -765,7 +769,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.106.2";
+const FRONTEND_VERSION = "1.107.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1831,6 +1835,13 @@ async function etiquetarConfirmar(){
   if(r && r.ok){ S.etiq=null; toast(`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
   else { if(S.etiq){ S.etiq.enviando=false; S.etiq.confirmar=false; S.etiq.error=(r&&r.error)||"No se pudo guardar el vencimiento."; } renderApp(); }
 }
+document.addEventListener("input", e=>{
+  if(e.target && e.target.id==="minSel"){
+    S.minSelVal=e.target.value;
+    const b=document.querySelector("[data-min-sel]");
+    if(b) b.disabled=!((S.paisSel||[]).length>0 && /^\d+$/.test(String(S.minSelVal||"").trim()));
+  }
+});
 document.addEventListener("change", e=>{
   const el=e.target;
   if(!S.etiq || !el.dataset) return;
@@ -3448,14 +3459,32 @@ function paisesDeForm(fd){
   }
   return {paises:[]};
 }
-function paisBarraHTML(paises){
+function lista_visible_ids(){
+  const paises=paisesDisponibles(), f=S.paisFiltro||"Todos";
+  return (S.saboresAdmin||[]).filter(x=>!paises.length || f==="Todos" || saborEnPaisCli(x,f)).map(x=>x.id);
+}
+function paisBarraHTML(paises, visibles){
   const n=(S.paisSel||[]).length, quitar=S.paisAccion==="quitar", puede=n>0 && !!S.paisDestino;
-  return `<div class="paisBar" role="region" aria-label="Sumar o quitar sabores a un país">
-    <div class="paisBarTit">${n===0?"Tocá los sabores que querés "+(quitar?"quitar":"sumar"):n+(n===1?" sabor elegido":" sabores elegidos")+" · ¿"+(quitar?"De":"A")+" qué país?"}</div>
-    <div class="paisBarSeg"><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
+  const minOk = n>0 && /^\d+$/.test(String(S.minSelVal||"").trim());
+  const tit = n===0 ? "Tocá los sabores que querés cambiar" : n+(n===1?" sabor elegido":" sabores elegidos");
+  return `<div class="paisBar" role="region" aria-label="Cambiar varios sabores a la vez">
+    <div class="paisBarTit">${tit} <button type="button" class="chip" data-sel-todos="1">Marcar los ${visibles}</button> <button type="button" class="chip" data-sel-ninguno="1">Ninguno</button></div>
+    <div class="paisBarSeg"><span class="paisBarLbl">Mínimo</span><input type="number" id="minSel" min="0" step="1" placeholder="ej. 6" value="${esc(S.minSelVal||"")}"><button type="button" class="btn" data-min-sel="1" ${minOk?"":"disabled"}>Poner mínimo</button></div>
+    ${paises.length?`<div class="paisBarSeg"><span class="paisBarLbl">País</span><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
     <div class="paisPills">${paises.map(p=>`<button type="button" class="chip" data-pais-destino="${esc(p)}" aria-pressed="${S.paisDestino===p}">${esc(p)}</button>`).join("")}</div>
-    <button type="button" class="btn" data-pais-aplicar="1" ${puede?"":"disabled"}>${puede?(quitar?"Quitar de ":"Agregar a ")+esc(S.paisDestino):"Elegí sabores y un país"}</button>
+    <button type="button" class="btn" data-pais-aplicar="1" ${puede?"":"disabled"}>${puede?(quitar?"Quitar de ":"Agregar a ")+esc(S.paisDestino):"Elegí sabores y un país"}</button>`:""}
   </div>`;
+}
+async function minimoSeleccion(){
+  const ids=S.paisSel||[], m=Number(String(S.minSelVal||"").trim());
+  if(!ids.length || !Number.isInteger(m) || m<0) return;
+  if(!confirm(`¿Poner mínimo ${m} a ${ids.length} ${ids.length===1?"sabor":"sabores"}?`)) return;
+  const r = await api("minimoMasivo", {cambios: ids.map(id=>({id, minimo:m})), detalle:"Selección manual → "+m});
+  if(r && r.ok){
+    toast(`Listo: ${r.actualizados} ${r.actualizados===1?"sabor actualizado":"sabores actualizados"}`);
+    S.paisModo=false; S.paisSel=[]; S.paisDestino=""; S.minSelVal=""; cargarSaboresAdmin();
+  } else if(r && /Acción desconocida/.test(r.error||"")) toast("Falta repegar Code.gs y hacer Nueva implementación para cambiar mínimos en bloque.");
+  else toast((r&&r.error)||"No se pudo cambiar los mínimos.");
 }
 async function paisAplicar(){
   const ids=S.paisSel||[], pais=S.paisDestino, accion=S.paisAccion;
@@ -3508,8 +3537,8 @@ function saboresAdminView(){
   const cuenta = p => S.saboresAdmin.filter(s=>s.activo && (p==="Todos"||saborEnPaisCli(s,p))).length;
   const pillsPais = conPais ? `<p class="sec">País</p>
     <div class="paisPills">${["Todos",...paises].map(p=>`<button type="button" class="chip" data-pais-filtro="${esc(p)}" aria-pressed="${S.paisFiltro===p}">${esc(p)} · ${cuenta(p)}</button>`).join("")}</div>
-    <p style="margin:6px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${S.paisFiltro==="Todos"?"Catálogo completo. Cada sabor dice en qué países se vende.":"Lo que ven los locales de "+esc(S.paisFiltro)+": "+lista.filter(s=>s.activo).length+" sabores. Los que quites acá dejan de aparecer en sus locales."}</p>
-    <div style="margin:0 0 8px"><button type="button" class="chip" data-pais-modo="1" aria-pressed="${!!S.paisModo}">${S.paisModo?"Listo":"Elegir varios"}</button> <span style="font-size:.78rem;color:var(--muted)">para sumar o quitar varios a un país</span></div>` : "";
+    <p style="margin:6px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${S.paisFiltro==="Todos"?"Catálogo completo. Cada sabor dice en qué países se vende.":"Lo que ven los locales de "+esc(S.paisFiltro)+": "+lista.filter(s=>s.activo).length+" sabores. Los que quites acá dejan de aparecer en sus locales."}</p>`
+    : "";
   const altaForm = `<p class="sec">Dar de alta un sabor nuevo</p>
 <form class="saborRow saborForm" id="altaSaborForm">
     <label class="fSab ancho"><span>Nombre</span><input type="text" name="nombre" placeholder="Nombre del sabor" required></label>
@@ -3522,7 +3551,8 @@ function saboresAdminView(){
     ${paisesFormHTML(conPais && S.paisFiltro!=="Todos" ? {paises:[S.paisFiltro]} : null)}
     <div class="acciones"><button class="btn" type="submit">Agregar</button></div>
   </form>`;
-  return `${altaForm}${pillsPais}${S.paisModo?paisBarraHTML(paises):""}<p class="sec">Sabores (${lista.length})</p>
+  const togglePills = `<div style="margin:0 0 8px"><button type="button" class="chip" data-pais-modo="1" aria-pressed="${!!S.paisModo}">${S.paisModo?"Listo":"Elegir varios"}</button> <span style="font-size:.78rem;color:var(--muted)">para cambiar el mínimo${conPais?" o el país":""} de varios sabores a la vez</span></div>`;
+  return `${altaForm}${pillsPais}${togglePills}${S.paisModo?paisBarraHTML(paises, lista.length):""}<p class="sec">Sabores (${lista.length})</p>
   ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
   <div class="rubroMin">
     <span>Mínimo del rubro</span>
@@ -4024,6 +4054,9 @@ document.addEventListener("click", async e=>{
     else { S.paisModo=true; S.paisSel=[]; const f=S.paisFiltro||"Todos"; S.paisAccion=f==="Todos"?"agregar":"quitar"; S.paisDestino=f==="Todos"?"":f }
     renderApp(); return
   }
+  if(t.dataset.selTodos){ S.paisSel=lista_visible_ids(); renderApp(); return }
+  if(t.dataset.selNinguno){ S.paisSel=[]; renderApp(); return }
+  if(t.dataset.minSel){ await conBoton(t, ()=>minimoSeleccion()); return }
   if(t.dataset.paisTildar){ const id=t.dataset.paisTildar, l=S.paisSel||[]; S.paisSel=l.includes(id)?l.filter(x=>x!==id):[...l,id]; renderApp(); return }
   if(t.dataset.paisAccion){ S.paisAccion=t.dataset.paisAccion; renderApp(); return }
   if(t.dataset.paisDestino){ S.paisDestino=t.dataset.paisDestino; renderApp(); return }
