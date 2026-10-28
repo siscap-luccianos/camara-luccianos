@@ -375,6 +375,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .chkPais[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
 .paisBar{position:fixed;left:10px;right:10px;max-width:720px;margin:0 auto;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:12;background:#2A1E17;color:#F5F0E8;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 28px rgba(42,30,23,.35)}
 .paisBarTit{font-size:.84rem;font-weight:700;padding-right:40px}
+.notaPais ul{margin:6px 0 0;padding-left:18px;font-size:.82rem;line-height:1.5}
+.notaPais li{margin:2px 0}
+.notaPais .adv{color:var(--alert,#B3261E)}
 .paisBarX{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#F5F0E8;font-size:1rem;line-height:1;cursor:pointer}
 .paisBarSeg{display:flex;gap:6px;align-items:center}
 .paisBarLbl{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-width:52px;color:#D9CBB8}
@@ -770,7 +773,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.107.3";
+const FRONTEND_VERSION = "1.107.4";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -3561,7 +3564,14 @@ function saboresAdminView(){
     <div class="acciones"><button class="btn" type="submit">Agregar</button></div>
   </form>`;
   const togglePills = `<div style="margin:0 0 8px"><button type="button" class="chip" data-pais-modo="1" aria-pressed="${!!S.paisModo}">${S.paisModo?"Listo":"Elegir varios"}</button> <span style="font-size:.78rem;color:var(--muted)">para cambiar el mínimo${conPais?" o el país":""} de varios sabores a la vez</span></div>`;
-  return `${altaForm}${pillsPais}${togglePills}${S.paisModo?paisBarraHTML(paises, lista.length):""}<p class="sec">Sabores (${lista.length})</p>
+  const notaUso = `<div class="note notaPais"><b>Cómo usar esta pantalla</b>
+    <ul>
+      <li>Cada país arranca con <b>todo el catálogo</b>. Elegí el país en las pills de abajo.</li>
+      <li><b>Sacar un sabor solo de ese país:</b> «Elegir varios» → marcá los sabores → «Quitar de» ese país.</li>
+      <li><b>Sumar un sabor nuevo solo a ese país:</b> elegí el país y completá «Dar de alta» (ya viene marcado «Solo en…»).</li>
+      <li class="adv">⚠ <b>«Desactivar» lo apaga en TODOS los locales y países.</b> No lo uses para sacarlo de un país.</li>
+    </ul></div>`;
+  return `${notaUso}${altaForm}${pillsPais}${togglePills}${S.paisModo?paisBarraHTML(paises, lista.length):""}<p class="sec">Sabores (${lista.length})</p>
   ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
   <div class="rubroMin">
     <span>Mínimo del rubro</span>
@@ -3603,6 +3613,7 @@ document.addEventListener("change", e=>{
   if(m) m.value = MINIMO_DEFECTO_TIPO[e.target.value] ?? 6;
 });
 async function toggleSabor(s){
+  if(s.activo && !confirm(`¿Desactivar «${s.nombre}» en TODOS los locales y países?\n\nPara sacarlo solo de un país usá «Elegir varios» → «Quitar de».`)) return;
   // adminSabor() en Code.gs reemplaza el sabor ENTERO, no hace un update
   // parcial — así que hay que mandar todos los campos, aunque este botón
   // solo cambie "activo". Antes faltaban familia/cantidad_maestra acá, y
