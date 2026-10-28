@@ -770,7 +770,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.107.1";
+const FRONTEND_VERSION = "1.107.3";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2259,7 +2259,8 @@ function renderMain(){
   if(!S.local && S.tab==="relevar" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return relevarView();
   if(!S.local && S.tab!=="sabores") return `
     <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="sabores">Gestionar sabores de todos los locales</button>` : ""}</div>`;
-  if(!S.sabores.length){
+  // En Operaciones (sin local) la pestaña Sabores usa su propia lista (S.saboresAdmin): no hay que esperar los datos de ningún local.
+  if(!S.sabores.length && S.local){
     if(S.errorCarga) return `<div class="note">${esc(S.errorCarga)}<br><button class="btn ghost" id="reintentarCarga" style="margin-top:10px">Reintentar</button></div>`;
     return `<div class="note">Cargando datos de ${esc(S.local)}…</div>`;
   }
@@ -3418,7 +3419,8 @@ async function toggleSaborLocal(saborId){
 }
 async function cargarSaboresAdmin(){
   const r = await api("saboresAdmin", {});
-  if(r && r.ok){ S.saboresAdmin = r.sabores; S.errorSaboresAdmin = null; }
+  if(r && r.ok){ S.saboresAdmin = r.sabores; S.errorSaboresAdmin = null; ls.set("saboresAdminCache", JSON.stringify(r.sabores)); }
+  else if(Array.isArray(S.saboresAdmin) && S.saboresAdmin.length){ /* se queda con la lista guardada */ }
   else { S.saboresAdmin = []; S.errorSaboresAdmin = (r&&r.error) || "No se pudo conectar. Probá de nuevo."; }
   if(S.tab==="sabores") renderApp();
 }
@@ -3499,7 +3501,12 @@ async function paisAplicar(){
   else toast((r&&r.error)||"No se pudo guardar.");
 }
 function saboresAdminView(){
-  if(S.saboresAdmin===undefined){ S.saboresAdmin=null; cargarSaboresAdmin(); }
+  if(S.saboresAdmin===undefined){
+    // Muestra al toque la última lista guardada en este equipo y la refresca de fondo (si no, esperaba al servidor con la pantalla en "Cargando").
+    let cache=null; try{ cache=JSON.parse(ls.get("saboresAdminCache","null")); }catch(e){}
+    S.saboresAdmin = Array.isArray(cache) && cache.length ? cache : null;
+    cargarSaboresAdmin();
+  }
   if(S.saboresAdmin===null) return `<div class="note">Cargando sabores…</div>`;
   if(S.errorSaboresAdmin) return `<div class="note">${esc(S.errorSaboresAdmin)}</div>
     <button class="btn ghost" type="button" id="reintentarSabores" style="margin-top:10px">Reintentar</button>`;
