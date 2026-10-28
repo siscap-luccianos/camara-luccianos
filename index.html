@@ -373,8 +373,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .paisPills .chip{flex:none}
 .chkPais{flex:none;width:40px;height:40px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:#fff;font-weight:800;font-size:1.1rem}
 .chkPais[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
-.paisBar{position:fixed;left:10px;right:10px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:12;background:#2A1E17;color:#F5F0E8;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 28px rgba(42,30,23,.35)}
-.paisBarTit{font-size:.84rem;font-weight:700}
+.paisBar{position:fixed;left:10px;right:10px;max-width:720px;margin:0 auto;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:12;background:#2A1E17;color:#F5F0E8;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 28px rgba(42,30,23,.35)}
+.paisBarTit{font-size:.84rem;font-weight:700;padding-right:40px}
+.paisBarX{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#F5F0E8;font-size:1rem;line-height:1;cursor:pointer}
 .paisBarSeg{display:flex;gap:6px;align-items:center}
 .paisBarLbl{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-width:52px;color:#D9CBB8}
 .paisBarSeg input{width:80px;min-height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#F5F0E8;padding:0 10px;font:inherit}
@@ -769,7 +770,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.107.0";
+const FRONTEND_VERSION = "1.107.1";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -3468,6 +3469,7 @@ function paisBarraHTML(paises, visibles){
   const minOk = n>0 && /^\d+$/.test(String(S.minSelVal||"").trim());
   const tit = n===0 ? "Tocá los sabores que querés cambiar" : n+(n===1?" sabor elegido":" sabores elegidos");
   return `<div class="paisBar" role="region" aria-label="Cambiar varios sabores a la vez">
+    <button type="button" class="paisBarX" data-pais-modo="1" aria-label="Cerrar y salir de Elegir varios">✕</button>
     <div class="paisBarTit">${tit} <button type="button" class="chip" data-sel-todos="1">Marcar los ${visibles}</button> <button type="button" class="chip" data-sel-ninguno="1">Ninguno</button></div>
     <div class="paisBarSeg"><span class="paisBarLbl">Mínimo</span><input type="number" id="minSel" min="0" step="1" placeholder="ej. 6" value="${esc(S.minSelVal||"")}"><button type="button" class="btn" data-min-sel="1" ${minOk?"":"disabled"}>Poner mínimo</button></div>
     ${paises.length?`<div class="paisBarSeg"><span class="paisBarLbl">País</span><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
