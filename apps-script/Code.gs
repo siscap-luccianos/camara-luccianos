@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.52.0";
+const BACKEND_VERSION = "1.53.0";
 
 function doPost(e) {
   let resultado;
@@ -100,6 +100,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
     case "adminSabor": return adminSabor(body.sabor, empleado);
     case "minimoMasivo": return minimoMasivo(body.cambios, body.detalle, empleado);
+    case "saborPaisMasivo": return saborPaisMasivo(body.ids, body.pais, body.modo, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
@@ -215,6 +216,7 @@ function localesActivos() {
       nombre: l.nombre, grupo: l.grupo || "", tieneClave: !!String(l.clave || "").trim(),
       esGestion: _esVerdadero(l.operaciones) === true,
       controlEquipos: _esVerdadero(l.control_equipos) === true,
+      pais: _esVerdadero(l.operaciones) === true ? "" : _paisDeLocal(l),
     })),
   };
 }
@@ -716,6 +718,35 @@ const DATOS_CACHE_SEGUNDOS = 45; // más que POLL_MS (30s) del cliente, para que
  *  actual (un local activo acumula unas pocas centenas de filas en 60
  *  días) leer la hoja entera no tiene costo relevante, y se sigue
  *  cacheando por local (ver datos()) para no repetirlo en cada polling. */
+/* ============================================================
+   CATÁLOGO POR PAÍS
+   Cada local tiene un país (Locales.pais; vacío = Argentina). Cada sabor se vende en
+   "todos los países" (Sabores.paises vacío), menos los de Sabores.paises_excluidos, o
+   "solo en" los países de Sabores.paises. "(ninguno)" = no lo ve nadie. Un país nuevo
+   hereda solo los sabores de "todos". Solo un admin cambia esto.
+============================================================ */
+const PAIS_DEFECTO = "Argentina";
+const PAIS_NINGUNO = "(ninguno)";
+function _normPais(p) { return String(p || "").trim().toLowerCase(); }
+function _listaPaises(v) { return String(v || "").split(",").map((x) => x.trim()).filter(Boolean); }
+function _paisDeLocal(filaLocal) { return String((filaLocal && filaLocal.pais) || "").trim() || PAIS_DEFECTO; }
+function _saborEnPais(s, pais) {
+  const p = _normPais(pais);
+  if (_listaPaises(s.paises_excluidos).some((x) => _normPais(x) === p)) return false;
+  const lista = _listaPaises(s.paises);
+  if (!lista.length) return true;
+  return lista.some((x) => _normPais(x) === p);
+}
+/** "" si todos los sabores con cantidad se venden en el país de ese local; si no, el mensaje de error. */
+function _errorPaisItems(local, items, catalogo) {
+  const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const pais = _paisDeLocal(fila);
+  const porId = {};
+  catalogo.forEach((sab) => { porId[String(sab.id)] = sab; });
+  const fuera = Object.keys(items).filter((id) => (Number(items[id]) || 0) > 0 && porId[String(id)] && !_saborEnPais(porId[String(id)], pais)).map((id) => porId[String(id)].nombre);
+  return fuera.length ? "No se vende en " + pais + ": " + fuera.join(", ") + "." : "";
+}
+
 function _datosSinCache(local, empleado) {
   const limite = Date.now() - DIAS_HISTORIAL * 864e5;
   const registros = _leerCrudo("Registros")
@@ -725,8 +756,8 @@ function _datosSinCache(local, empleado) {
   const stockFilas = _leerCrudo("Stock").filter((s) => String(s.local || "").trim() === String(local).trim());
   const stock = stockFilas.length ? _stockPublico(stockFilas[0]) : null;
 
-  const sabores = _leerCrudo("Sabores")
-    .filter((s) => _esVerdadero(s.activo) !== false)
+  const saboresFilas = _leerCrudo("Sabores").filter((s) => _esVerdadero(s.activo) !== false);
+  const sabores = saboresFilas
     .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica) }))
     .sort((a, b) => a.orden - b.orden);
 
@@ -738,6 +769,10 @@ function _datosSinCache(local, empleado) {
   // se excluyó después.
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const excluidos = filaLocal ? String(filaLocal.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+  // Catálogo por país: sabores que NO se venden en el país de este local (el cliente los oculta
+  // en todas las grillas y en la pestaña Sabores del local; nombre(id) sigue resolviendo en Historial).
+  const pais = _paisDeLocal(filaLocal);
+  const fueraDePais = saboresFilas.filter((s) => !_saborEnPais(s, pais)).map((s) => String(s.id));
   // Locales.produccion=SI habilita el link "Producción" dentro de Ingreso
   // (hoy solo Unicenter) — ver registrar(), subtipo "produccion".
   const produccion = filaLocal ? _esVerdadero(filaLocal.produccion) === true : false;
@@ -756,7 +791,7 @@ function _datosSinCache(local, empleado) {
 
   // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
   const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos };
 }
 
 function _cacheKeyDatos(local) {
@@ -788,7 +823,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
@@ -840,8 +875,10 @@ function relevar(empleado) {
       });
     });
     String(l.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean).forEach((id) => { delete stock[id]; });
+    const paisLocal = _paisDeLocal(l);
+    saboresFilas.forEach((sb) => { if (!_saborEnPais(sb, paisLocal)) delete stock[String(sb.id)]; });
     locales.push({
-      nombre: nombre, grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(),
+      nombre: nombre, grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(), pais: paisLocal,
       stock: stock, conteoTs: st ? st.ts : 0, sinDatos: !st && regs.length === 0,
     });
   });
@@ -969,6 +1006,8 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const catalogoVenc = _leerCrudo("Sabores");
   const nombreVenc = {}, familiaVenc = {}, categoriaVenc = {};
   catalogoVenc.forEach((sab) => { nombreVenc[String(sab.id)] = sab.nombre; familiaVenc[String(sab.id)] = sab.familia || "vasquetas"; categoriaVenc[String(sab.id)] = sab.categoria || ""; });
+  const errPais = _errorPaisItems(local, items, catalogoVenc);
+  if (errPais) return { ok: false, error: errPais };
   const norm = _normalizarVencimientos(vencimientos, items, tipo);
   if (!norm.ok) return norm;
   const vencimientos2 = norm.vencimientos;
@@ -1532,6 +1571,10 @@ function conteo(clienteId, local, items, empleado, vencimientos) {
     Object.keys(items).forEach((id) => { items2[id] = Math.max(0, Number(items[id]) || 0); });
     // Chocolatería: vencimiento según categoría (alfajores y conitos son opcionales, el resto lo pide)
     const catalogoConteo = _leerCrudo("Sabores");
+    // Lo que no se vende en el país de este local no entra al stock: se guarda en 0.
+    const filaLocalConteo = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+    const paisConteo = _paisDeLocal(filaLocalConteo);
+    catalogoConteo.forEach((sab) => { if (items2[String(sab.id)] !== undefined && !_saborEnPais(sab, paisConteo)) items2[String(sab.id)] = 0; });
     const nombreConteo = {}, familiaConteo = {}, categoriaConteo = {};
     catalogoConteo.forEach((sab) => { nombreConteo[String(sab.id)] = sab.nombre; familiaConteo[String(sab.id)] = sab.familia || ""; categoriaConteo[String(sab.id)] = sab.categoria || ""; });
     const norm = _normalizarVencimientos(vencimientos, items2, "conteo");
@@ -1885,9 +1928,60 @@ function adminSabor(sabor, empleado) {
       peso: Number(sabor.peso) || 0, familia: sabor.familia || "vasquetas",
       cantidad_maestra: Number(sabor.cantidad_maestra) || 0,
     };
+    // Países: solo si vienen en el pedido, para que un guardado que no los manda (ej. Desactivar) no los pise.
+    if (sabor.paises !== undefined) cambios.paises = (Array.isArray(sabor.paises) ? sabor.paises : _listaPaises(sabor.paises)).join(",");
+    if (sabor.paises_excluidos !== undefined) cambios.paises_excluidos = (Array.isArray(sabor.paises_excluidos) ? sabor.paises_excluidos : _listaPaises(sabor.paises_excluidos)).join(",");
     const r = existente ? _actualizarCrudo("Sabores", sabor.id, cambios) : _escribirCrudo("Sabores", cambios);
     if (r.ok) _auditar("admin_sabor", empleado.id, empleado.nombre, "Sabor " + r.id + " (" + sabor.nombre + ")");
     return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Suma o quita varios sabores a un país de una sola vez (solo admin).
+ *  accion "agregar": el sabor pasa a venderse en ese país. "quitar": deja de venderse ahí.
+ *  Un sabor de «todos los países» se maneja con paises_excluidos; uno «solo en…» con su lista. */
+function saborPaisMasivo(ids, pais, accion, empleado) {
+  if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede cambiar los países de un sabor." };
+  pais = String(pais || "").trim();
+  if (!pais) return { ok: false, error: "Falta el país." };
+  if (accion !== "agregar" && accion !== "quitar") return { ok: false, error: "Acción inválida." };
+  if (!Array.isArray(ids) || !ids.length) return { ok: false, error: "No hay sabores elegidos." };
+  if (ids.length > 1000) return { ok: false, error: "Demasiados sabores en un solo cambio." };
+  const quiero = {};
+  ids.forEach((id) => { quiero[String(id)] = true; });
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const sheet = _sheet("Sabores");
+    const datos = sheet.getDataRange().getValues();
+    const headers = datos[0];
+    const colId = headers.indexOf("id"), colP = headers.indexOf("paises"), colE = headers.indexOf("paises_excluidos");
+    if (colId === -1 || colP === -1 || colE === -1) return { ok: false, error: "Faltan las columnas paises y paises_excluidos en la hoja Sabores." };
+    const p = _normPais(pais);
+    let cambiados = 0;
+    for (let i = 1; i < datos.length; i++) {
+      const id = String(datos[i][colId]);
+      if (!quiero[id]) continue;
+      let lista = _listaPaises(datos[i][colP]).filter((x) => x !== PAIS_NINGUNO);
+      let excl = _listaPaises(datos[i][colE]);
+      const esNinguno = _listaPaises(datos[i][colP]).indexOf(PAIS_NINGUNO) !== -1;
+      const esTodos = !esNinguno && lista.length === 0;
+      if (accion === "quitar") {
+        if (esTodos) { if (!excl.some((x) => _normPais(x) === p)) excl.push(pais); }
+        else lista = lista.filter((x) => _normPais(x) !== p);
+      } else {
+        excl = excl.filter((x) => _normPais(x) !== p);
+        if (!esTodos && !lista.some((x) => _normPais(x) === p)) lista.push(pais);
+      }
+      const quedaNinguno = !esTodos && lista.length === 0;
+      _escribirCeldaSinAdivinar(sheet.getRange(i + 1, colP + 1), _sanitizarCelda(quedaNinguno ? PAIS_NINGUNO : lista.join(",")));
+      _escribirCeldaSinAdivinar(sheet.getRange(i + 1, colE + 1), _sanitizarCelda(excl.join(",")));
+      cambiados++;
+    }
+    _auditar("sabor_pais_masivo", empleado.id, empleado.nombre, (accion === "agregar" ? "Sumó " : "Quitó ") + cambiados + " sabores " + (accion === "agregar" ? "a " : "de ") + pais);
+    return { ok: true, cambiados: cambiados };
   } finally {
     lock.releaseLock();
   }
@@ -1943,6 +2037,7 @@ function saboresAdmin(empleado) {
       id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0,
       orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", activo: _esVerdadero(s.activo) !== false,
       peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0,
+      paises: _listaPaises(s.paises), paises_excluidos: _listaPaises(s.paises_excluidos),
     }))
     .sort((a, b) => a.orden - b.orden);
   return { ok: true, sabores: sabores };

@@ -369,6 +369,19 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .saborForm .fSab.ancho{grid-column:1/-1}
 .saborForm .fSab input,.saborForm .fSab select{width:100%;max-width:none;text-transform:none;letter-spacing:0;font-size:.92rem;font-weight:500;line-height:1.2}
 .saborForm .fSab>span{min-height:2.4em;display:flex;align-items:flex-end}
+.paisPills{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.paisPills .chip{flex:none}
+.chkPais{flex:none;width:40px;height:40px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:#fff;font-weight:800;font-size:1.1rem}
+.chkPais[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
+.paisBar{position:fixed;left:10px;right:10px;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:12;background:#2A1E17;color:#F5F0E8;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 28px rgba(42,30,23,.35)}
+.paisBarTit{font-size:.84rem;font-weight:700}
+.paisBarSeg{display:flex;gap:6px}
+.paisBar .chip{background:transparent;color:#F5F0E8;border-color:rgba(255,255,255,.3)}
+.paisBar .chip[aria-pressed=true]{background:#E3A46F;color:#2A1E17;border-color:#E3A46F}
+.paisBar .btn{width:100%}
+.fPaises{grid-column:1/-1;display:flex;flex-direction:column;gap:8px}
+.fPaisesTit{font-size:.74rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.paisChks{display:flex;flex-wrap:wrap;gap:6px 14px}
 .saborForm .acciones{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .saborForm .chkSab{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--ink);margin-right:6px}
 .saborForm .chkSab input{width:18px;height:18px;min-height:0;padding:0}
@@ -752,7 +765,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.105.0";
+const FRONTEND_VERSION = "1.106.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1027,8 +1040,9 @@ function estadoSabor(id, st){
  *  catálogo completo), así un sabor que el local excluyó después de
  *  haber tenido movimientos viejos sigue mostrando su nombre real ahí. */
 function saboresDelLocalBase(){
-  if(!S.saboresExcluidos || !S.saboresExcluidos.length) return S.sabores;
-  const ex=new Set(S.saboresExcluidos);
+  // Excluidos por el propio local + los que no se venden en el país de este local (catálogo por país).
+  const ex=new Set([...(S.saboresExcluidos||[]), ...(S.saboresFuera||[])]);
+  if(!ex.size) return S.sabores;
   return S.sabores.filter(s=>!ex.has(s.id));
 }
 /** Rubros que fabrica este local en Producción (Locales.produccion_rubros). Vacío = todos. */
@@ -1384,7 +1398,7 @@ function aplicarLogin(r){
   if(r.datos && r.datos.ok){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
-    S.saboresExcluidos = r.datos.excluidos || [];
+    S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
     S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
@@ -3363,7 +3377,8 @@ function adminEnLocalReal(){
  *  editar nombre/mínimo/etc, eso sigue siendo solo-admin. */
 function saboresLocalView(){
   const ex=new Set(S.saboresExcluidos||[]);
-  const grupos=agruparPorProducto(S.sabores);
+  const fuera=new Set(S.saboresFuera||[]);
+  const grupos=agruparPorProducto(S.sabores.filter(s=>!fuera.has(s.id)));
   const fila=s=>{
     const off=ex.has(s.id);
     return `<div class="saborRow${off?" baja":""}">
@@ -3372,7 +3387,7 @@ function saboresLocalView(){
       <button type="button" class="chip" data-toggle-sabor-local="${s.id}" aria-pressed="${!off}">${off?"No lo tenemos":"Lo tenemos"}</button>
     </div>`;
   };
-  return `<p class="sec">¿Qué tiene ${esc(S.local)}?</p>
+  return `<p class="sec">¿Qué tiene ${esc(S.local)}?${S.paisLocal?` <span style="font-weight:600;color:var(--muted)">· catálogo de ${esc(S.paisLocal)}</span>`:""}</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca.</p>
   ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)}</p><div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}`;
 }
@@ -3392,6 +3407,63 @@ async function cargarSaboresAdmin(){
   else { S.saboresAdmin = []; S.errorSaboresAdmin = (r&&r.error) || "No se pudo conectar. Probá de nuevo."; }
   if(S.tab==="sabores") renderApp();
 }
+/* ---- Catálogo por país (solo admin, Operaciones) ---- */
+function paisesDisponibles(){
+  const set=new Set(); (S.locales||[]).forEach(l=>{ if(l.pais) set.add(l.pais) });
+  return [...set].sort((a,b)=> a==="Argentina"?-1 : b==="Argentina"?1 : a.localeCompare(b,"es"));
+}
+function saborEnPaisCli(s,p){
+  const n=x=>String(x||"").trim().toLowerCase();
+  if((s.paises_excluidos||[]).some(x=>n(x)===n(p))) return false;
+  const l=s.paises||[];
+  return !l.length || l.some(x=>n(x)===n(p));
+}
+function textoPaisesSabor(s){
+  const ex=s.paises_excluidos||[], l=s.paises||[];
+  if(!l.length) return ex.length ? "Todos menos "+ex.join(", ") : "Todos los países";
+  if(l.length===1 && l[0]==="(ninguno)") return "Sin país: nadie lo ve";
+  return "Solo en "+l.join(" · ");
+}
+/** "¿En qué países se vende?" dentro del alta y la edición de un sabor. */
+function paisesFormHTML(s){
+  const paises=paisesDisponibles();
+  if(!paises.length) return "";
+  const solo=!!(s && (s.paises||[]).length && !((s.paises||[]).length===1 && s.paises[0]==="(ninguno)"));
+  const marcados=new Set(solo?s.paises:[]);
+  return `<div class="fPaises"><span class="fPaisesTit">¿En qué países se vende?</span>
+    <label class="chkSab"><input type="radio" name="paisModo" value="todos" ${solo?"":"checked"}> Todos los países</label>
+    <label class="chkSab"><input type="radio" name="paisModo" value="solo" ${solo?"checked":""}> Solo en los que elija</label>
+    <div class="paisChks">${paises.map(p=>`<label class="chkSab"><input type="checkbox" name="pais" value="${esc(p)}" ${marcados.has(p)?"checked":""}> ${esc(p)}</label>`).join("")}</div></div>`;
+}
+/** Lee el selector de países del formulario. null = hay que elegir al menos uno. {} = sin cambios. */
+function paisesDeForm(fd){
+  if(!paisesDisponibles().length) return {};
+  if(fd.get("paisModo")==="solo"){
+    const l=fd.getAll("pais");
+    if(!l.length){ toast("Elegí al menos un país, o dejá «Todos los países»."); return null }
+    return {paises:l, paises_excluidos:[]};
+  }
+  return {paises:[]};
+}
+function paisBarraHTML(paises){
+  const n=(S.paisSel||[]).length, quitar=S.paisAccion==="quitar", puede=n>0 && !!S.paisDestino;
+  return `<div class="paisBar" role="region" aria-label="Sumar o quitar sabores a un país">
+    <div class="paisBarTit">${n===0?"Tocá los sabores que querés "+(quitar?"quitar":"sumar"):n+(n===1?" sabor elegido":" sabores elegidos")+" · ¿"+(quitar?"De":"A")+" qué país?"}</div>
+    <div class="paisBarSeg"><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
+    <div class="paisPills">${paises.map(p=>`<button type="button" class="chip" data-pais-destino="${esc(p)}" aria-pressed="${S.paisDestino===p}">${esc(p)}</button>`).join("")}</div>
+    <button type="button" class="btn" data-pais-aplicar="1" ${puede?"":"disabled"}>${puede?(quitar?"Quitar de ":"Agregar a ")+esc(S.paisDestino):"Elegí sabores y un país"}</button>
+  </div>`;
+}
+async function paisAplicar(){
+  const ids=S.paisSel||[], pais=S.paisDestino, accion=S.paisAccion;
+  if(!ids.length || !pais) return;
+  const r = await api("saborPaisMasivo", {ids, pais, modo:accion});
+  if(r && r.ok){
+    toast((accion==="quitar"?"Quitados de ":"Sumados a ")+pais+": "+r.cambiados);
+    S.paisModo=false; S.paisSel=[]; S.paisDestino=""; S.paisFiltro=pais; cargarSaboresAdmin();
+  } else if(r && /Acción desconocida/.test(r.error||"")) toast("Falta repegar Code.gs y hacer Nueva implementación.");
+  else toast((r&&r.error)||"No se pudo guardar.");
+}
 function saboresAdminView(){
   if(S.saboresAdmin===undefined){ S.saboresAdmin=null; cargarSaboresAdmin(); }
   if(S.saboresAdmin===null) return `<div class="note">Cargando sabores…</div>`;
@@ -3408,6 +3480,7 @@ function saboresAdminView(){
         <label class="fSab"><span>Stock mínimo</span><input type="number" name="minimo" value="${s.minimo}" min="0"></label>
         <label class="fSab"><span>Peso promedio (kg)</span><input type="number" name="peso" value="${s.peso||""}" min="0" step="0.1"></label>
         <label class="fSab"><span>Unidades por caja</span><input type="number" name="cantidad_maestra" value="${s.cantidad_maestra||""}" min="0"></label>
+        ${paisesFormHTML(s)}
         <div class="acciones">
           <label class="chkSab"><input type="checkbox" name="activo" ${s.activo?"checked":""}> Activo</label>
           <button class="btn" type="submit">Guardar</button>
@@ -3415,15 +3488,26 @@ function saboresAdminView(){
         </div>
       </form>`;
     }
+    const tild=(S.paisSel||[]).includes(s.id);
     return `<div class="saborRow${s.activo?"":" baja"}">
+      ${S.paisModo?`<button type="button" class="chkPais" data-pais-tildar="${s.id}" aria-pressed="${tild}" aria-label="Elegir ${esc(s.nombre)}">${tild?"✓":""}</button>`:""}
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div></div>
-      <button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
-      <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
+      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s))}</div>`:""}</div>
+      ${S.paisModo?"":`<button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
+      <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>`}
     </div>`;
   };
-  const grupos=agruparPorProducto(S.saboresAdmin);
-  return `<p class="sec">Sabores (${S.saboresAdmin.length})</p>
+  const paises=paisesDisponibles(), conPais=paises.length>0;
+  if(!S.paisFiltro || (S.paisFiltro!=="Todos" && !paises.includes(S.paisFiltro))) S.paisFiltro="Todos";
+  const enFiltro = s => !conPais || S.paisFiltro==="Todos" || saborEnPaisCli(s,S.paisFiltro);
+  const lista=S.saboresAdmin.filter(enFiltro);
+  const grupos=agruparPorProducto(lista);
+  const cuenta = p => S.saboresAdmin.filter(s=>s.activo && (p==="Todos"||saborEnPaisCli(s,p))).length;
+  const pillsPais = conPais ? `<p class="sec">País</p>
+    <div class="paisPills">${["Todos",...paises].map(p=>`<button type="button" class="chip" data-pais-filtro="${esc(p)}" aria-pressed="${S.paisFiltro===p}">${esc(p)} · ${cuenta(p)}</button>`).join("")}</div>
+    <p style="margin:6px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${S.paisFiltro==="Todos"?"Catálogo completo. Cada sabor dice en qué países se vende.":"Lo que ven los locales de "+esc(S.paisFiltro)+": "+lista.filter(s=>s.activo).length+" sabores. Los que quites acá dejan de aparecer en sus locales."}</p>
+    <div style="margin:0 0 8px"><button type="button" class="chip" data-pais-modo="1" aria-pressed="${!!S.paisModo}">${S.paisModo?"Listo":"Elegir varios"}</button> <span style="font-size:.78rem;color:var(--muted)">para sumar o quitar varios a un país</span></div>` : "";
+  return `${pillsPais}${S.paisModo?paisBarraHTML(paises):""}<p class="sec">Sabores (${lista.length})</p>
   ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
   <div class="rubroMin">
     <span>Mínimo del rubro</span>
@@ -3441,6 +3525,7 @@ function saboresAdminView(){
     <label class="fSab"><span>Stock mínimo</span><input type="number" name="minimo" value="6" min="0"></label>
     <label class="fSab"><span>Peso promedio (kg)</span><input type="number" name="peso" min="0" step="0.1"></label>
     <label class="fSab"><span>Unidades por caja</span><input type="number" name="cantidad_maestra" min="0"></label>
+    ${paisesFormHTML(null)}
     <div class="acciones"><button class="btn" type="submit">Agregar</button></div>
   </form>`;
 }
@@ -3553,7 +3638,7 @@ function precargarDatosCache(local){
     if(!cache) return false;
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
-    S.saboresExcluidos = d.excluidos || [];
+    S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
     S.escanerPeso = !!d.escanerPeso; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
     S.regs = d.registros; S.stock = d.stock;
     return true;
@@ -3572,7 +3657,7 @@ async function cargarDatos(){
   S.errorCarga = null;
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
-  S.saboresExcluidos = r.excluidos || [];
+  S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
   S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
   S.regs = r.registros;
   S.stock = r.stock;
@@ -3590,7 +3675,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -3930,6 +4015,16 @@ document.addEventListener("click", async e=>{
   if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual, t); return }
   if(t.dataset.eliminarEmp){ await eliminarEmpleadoDef(t.dataset.eliminarEmp, t.dataset.nombreEmp, t); return }
   if(t.dataset.editarSaborBtn){ S.editandoSaborId=t.dataset.editarSaborBtn; renderApp(); return }
+  if(t.dataset.paisFiltro){ S.paisFiltro=t.dataset.paisFiltro; S.paisSel=[]; if(S.paisModo){ S.paisAccion=S.paisFiltro==="Todos"?"agregar":"quitar"; S.paisDestino=S.paisFiltro==="Todos"?"":S.paisFiltro } renderApp(); return }
+  if(t.dataset.paisModo){
+    if(S.paisModo){ S.paisModo=false; S.paisSel=[]; S.paisDestino="" }
+    else { S.paisModo=true; S.paisSel=[]; const f=S.paisFiltro||"Todos"; S.paisAccion=f==="Todos"?"agregar":"quitar"; S.paisDestino=f==="Todos"?"":f }
+    renderApp(); return
+  }
+  if(t.dataset.paisTildar){ const id=t.dataset.paisTildar, l=S.paisSel||[]; S.paisSel=l.includes(id)?l.filter(x=>x!==id):[...l,id]; renderApp(); return }
+  if(t.dataset.paisAccion){ S.paisAccion=t.dataset.paisAccion; renderApp(); return }
+  if(t.dataset.paisDestino){ S.paisDestino=t.dataset.paisDestino; renderApp(); return }
+  if(t.dataset.paisAplicar){ await conBoton(t, ()=>paisAplicar()); return }
   if(t.dataset.minRubro){
     const v=document.getElementById("min-"+t.dataset.minRubro).value;
     if(v===""){ toast("Escribí el mínimo que querés para el rubro."); return }
@@ -4214,8 +4309,9 @@ document.addEventListener("submit", async e=>{
       const id=e.target.dataset.editarSabor;
       const actual=(S.saboresAdmin||[]).find(x=>x.id===id);
       const fd=new FormData(e.target);
+      const paisesPayload=paisesDeForm(fd); if(paisesPayload===null) return;
       await guardarSabor({
-        id, nombre:fd.get("nombre"), tipo:fd.get("tipo"), familia:fd.get("familia"), categoria:fd.get("categoria"),
+        ...paisesPayload, id, nombre:fd.get("nombre"), tipo:fd.get("tipo"), familia:fd.get("familia"), categoria:fd.get("categoria"),
         minimo:fd.get("minimo"), peso:fd.get("peso"), cantidad_maestra:fd.get("cantidad_maestra"),
         orden: actual?actual.orden:0, activo: fd.get("activo")==="on",
       });
@@ -4225,7 +4321,8 @@ document.addEventListener("submit", async e=>{
     e.preventDefault();
     await conBotonCargando(e.target, async ()=>{
       const fd=new FormData(e.target);
-      await guardarSabor({ nombre:fd.get("nombre"), tipo:fd.get("tipo"), familia:fd.get("familia"), categoria:fd.get("categoria"), minimo:fd.get("minimo"), peso:fd.get("peso"), cantidad_maestra:fd.get("cantidad_maestra") });
+      const paisesPayload=paisesDeForm(fd); if(paisesPayload===null) return;
+      await guardarSabor({ ...paisesPayload, nombre:fd.get("nombre"), tipo:fd.get("tipo"), familia:fd.get("familia"), categoria:fd.get("categoria"), minimo:fd.get("minimo"), peso:fd.get("peso"), cantidad_maestra:fd.get("cantidad_maestra") });
       e.target.reset();
     });
   }

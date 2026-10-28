@@ -225,6 +225,10 @@ Cada local puede tener hasta **3 equipos** (PC, tablet, celular) autorizados a e
 - Cada aprobación, rechazo y quita queda en `Auditoria` (`equipo_aprobado`, `equipo_rechazado`, `equipo_quitado`).
 - Si se borran los datos del navegador, ese equipo aparece como uno nuevo (hay que volver a aprobarlo).
 
+## Catálogo por país (`Code.gs` 1.53.0)
+
+Columnas (ya creadas en la planilla): `Locales.pais` (vacío = Argentina), `Sabores.paises` y `Sabores.paises_excluidos` (ids de país separados por coma; vacías = el sabor se vende en todos los países). Desde Operaciones › Sabores el admin elige en qué países se vende cada sabor, o usa «Elegir varios» para sumar/quitar muchos a un país. Un país nuevo arranca con todo el catálogo. Para abrir un país: poner su nombre en `Locales.pais` de sus locales y, en Operaciones, quitar lo que no corresponde. Requiere repegar `Code.gs` y «Nueva implementación».
+
 ## Relevar productos (solo Operaciones, `Code.gs` 1.43.0)
 
 Pestaña **Relevar** de Operaciones (admin y supervisor): una tabla con el stock vigente de los productos que se elijan en los locales que se marquen. La acción `relevar` lee `Sabores`, `Locales`, `Stock` y `Registros` una sola vez y devuelve, por local, el mismo stock que ve ese local (último conteo + ingresos − salidas, sin anulados, últimos 60 días; los sabores de `Locales.sabores_excluidos` no vienen y se muestran como «—»).
