@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.54.1";
+const BACKEND_VERSION = "1.55.0";
 
 function doPost(e) {
   let resultado;
@@ -746,6 +746,15 @@ function _pesoDeSabor(s, pais) {
   const v = clave !== undefined ? Number(porPais[clave]) : NaN;
   return v > 0 ? v : (Number(s.peso) || 0);
 }
+/** Texto de un sabor en un país: raw es un JSON {"Marruecos":"Fraise"} (Sabores.nombre_paises / categoria_paises); si el país no está, vale el general. */
+function _textoPorPais(raw, pais, general) {
+  let porPais = {};
+  try { porPais = JSON.parse(String(raw || "{}")) || {}; } catch (e) { porPais = {}; }
+  const p = _normPais(pais);
+  const clave = Object.keys(porPais).filter((k) => _normPais(k) === p)[0];
+  const v = clave !== undefined ? String(porPais[clave] || "").trim() : "";
+  return v || general;
+}
 /** "" si todos los sabores con cantidad se venden en el país de ese local; si no, el mensaje de error. */
 function _errorPaisItems(local, items, catalogo) {
   const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
@@ -769,7 +778,7 @@ function _datosSinCache(local, empleado) {
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const paisDelLocal = _paisDeLocal(filaLocal);
   const sabores = saboresFilas
-    .map((s) => ({ id: String(s.id), nombre: s.nombre, tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: s.categoria || "Cremas", peso: _pesoDeSabor(s, paisDelLocal), familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica) }))
+    .map((s) => ({ id: String(s.id), nombre: _textoPorPais(s.nombre_paises, paisDelLocal, s.nombre), tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: _textoPorPais(s.categoria_paises, paisDelLocal, s.categoria || "Cremas"), peso: _pesoDeSabor(s, paisDelLocal), familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica) }))
     .sort((a, b) => a.orden - b.orden);
 
   // Sabores que ESTE local marcó que no tiene (ej. Baldes en un local que
