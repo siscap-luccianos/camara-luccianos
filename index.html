@@ -374,6 +374,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .chkPais{flex:none;width:40px;height:40px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:#fff;font-weight:800;font-size:1.1rem}
 .chkPais[aria-pressed=true]{background:var(--accent);border-color:var(--accent)}
 .paisBar{position:fixed;left:10px;right:10px;max-width:720px;margin:0 auto;bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:12;background:#2A1E17;color:#F5F0E8;border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 28px rgba(42,30,23,.35)}
+.unitBtn{min-width:92px;min-height:44px;padding:0 14px;border-radius:12px;border:2px solid var(--accent);background:var(--surface);color:var(--ink);font:inherit;font-weight:800;font-size:1.1rem;cursor:pointer}
+.unitBtn small{font-size:.7rem;font-weight:700;opacity:.8}
+.unitBtn.has{background:var(--accent);color:var(--accent-ink)}
 .paisBarTit{font-size:.84rem;font-weight:700;padding-right:40px}
 .notaPais ul{margin:6px 0 0;padding-left:18px;font-size:.82rem;line-height:1.5}
 .notaPais li{margin:2px 0}
@@ -773,7 +776,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.107.4";
+const FRONTEND_VERSION = "1.108.0";
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -2730,6 +2733,12 @@ function gridProduccion(st){
   const list=listaFiltrada(st);
   const row=s=>{
     const q=cart[s.id]||0, k=kilos[s.id]||"";
+    // Icepops: se cuentan por unidad, sin kilos. Se toca el número y se abre el pad (igual que «¿Cuánto pesa?», sin coma).
+    if(grupoProductoDe(s)==="icepops") return `<div class="row">
+      ${plateHTML(s.id)}
+      <div class="nm">${esc(s.nombre)}${s.cantidad_maestra?`<div class="meta">Caja de ${s.cantidad_maestra}</div>`:""}</div>
+      <button type="button" class="unitBtn${q?" has":""}" data-uni="${s.id}" aria-label="Unidades fabricadas de ${esc(s.nombre)}">${q?q+" <small>unid.</small>":"Tocar"}</button>
+    </div>`;
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}${s.peso?`<div class="meta">Peso promedio: ${s.peso.toLocaleString("es-AR")} kg / unidad</div>`:""}</div>
@@ -2738,11 +2747,12 @@ function gridProduccion(st){
         <div class="stepper"><button type="button" data-proddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-prodinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>
     </div>`};
+  const esIce=(S.filtroFamilia||"vasquetas")==="icepops";
   return `<button class="btn produccion" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>
   <p class="sec" style="margin-top:6px">Producción</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Por sabor, cargá los kilos que se fabricaron y cuántas vasquetas resultaron de ese lote — son dos datos sueltos, no se calcula uno a partir del otro.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${esIce?"Los Icepops se cuentan por unidad: tocá el número de cada sabor y escribí cuántas se fabricaron.":"Por sabor, cargá los kilos que se fabricaron y cuántas vasquetas resultaron de ese lote — son dos datos sueltos, no se calcula uno a partir del otro."}</p>
   ${chipFiltros()}
-  <p class="sec" style="margin-top:16px">Kilos fabricados y vasquetas resultantes</p>
+  <p class="sec" style="margin-top:16px">${esIce?"Unidades fabricadas":"Kilos fabricados y vasquetas resultantes"}</p>
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
@@ -3428,6 +3438,12 @@ async function cargarSaboresAdmin(){
   if(S.tab==="sabores") renderApp();
 }
 /* ---- Catálogo por país (solo admin, Operaciones) ---- */
+/** Peso promedio que se muestra en la lista: con un país elegido en las pills, el de ese país si lo tiene. */
+function pesoMostrado(s){
+  const f=S.paisFiltro, pp=s.peso_paises||{};
+  if(f && f!=="Todos" && Number(pp[f])>0) return ` · ${pp[f]} kg prom. en ${esc(f)}`;
+  return s.peso?` · ${s.peso} kg prom.`:"";
+}
 function paisesDisponibles(){
   const set=new Set(); (S.locales||[]).forEach(l=>{ if(l.pais) set.add(l.pais) });
   return [...set].sort((a,b)=> a==="Argentina"?-1 : b==="Argentina"?1 : a.localeCompare(b,"es"));
@@ -3536,7 +3552,7 @@ function saboresAdminView(){
     return `<div class="saborRow${s.activo?"":" baja"}">
       ${S.paisModo?`<button type="button" class="chkPais" data-pais-tildar="${s.id}" aria-pressed="${tild}" aria-label="Elegir ${esc(s.nombre)}">${tild?"✓":""}</button>`:""}
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(s.categoria)} · mín. ${s.minimo}${s.peso?" · "+s.peso+" kg prom.":""}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s))}</div>`:""}</div>
+      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(s.categoria)} · mín. ${s.minimo}${pesoMostrado(s)}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s))}</div>`:""}</div>
       ${S.paisModo?"":`<button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
       <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>`}
     </div>`;
@@ -4107,6 +4123,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.uni){ abrirUnidades(t.dataset.uni); return }
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
@@ -4763,6 +4780,62 @@ function apagarCamara(){
   const v=document.getElementById("escVideo"); if(v) v.srcObject=null;
   e.camara=false; renderEscaner();
 }
+
+/* ---- Unidades de Icepops en Producción: pad numérico (sin coma) ---- */
+function abrirUnidades(id){
+  if(S.uniDlg) return;
+  const s=S.saboresPorId[String(id)]; if(!s) return;
+  S.uniDlg={id:String(id)};
+  const actual=S.cart.produccion[id]||0;
+  const ov=document.createElement("div"); ov.id="uniOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="uniTit">
+    <p class="mantTit" id="uniTit">¿Cuántas unidades?</p>
+    <p class="mantSub">${esc(s.nombre)}${s.cantidad_maestra?` · caja de ${s.cantidad_maestra}`:""}</p>
+    <input type="text" id="uniNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" placeholder="0" value="${actual||""}" aria-label="Unidades fabricadas">
+    <div class="kgPad" role="group" aria-label="Teclado numérico">
+      ${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-uni-tecla="${k}" aria-label="${k==="C"?"borrar todo":k==="⌫"?"borrar":k}">${k==="C"?"Borrar":k}</button>`).join("")}
+    </div>
+    ${s.cantidad_maestra?`<button type="button" class="btn ghost" data-uni-caja style="margin:8px 0 0;width:100%">+1 caja · ${s.cantidad_maestra} unidades</button>`:""}
+    <div class="mantAcc" style="margin-top:10px">
+      <button type="button" class="btn ghost" data-uni-cancel>Cancelar</button>
+      <button type="button" class="btn" data-uni-listo>Listo</button>
+    </div>
+  </div>`;
+  ov.addEventListener("click", e=>{
+    if(e.target===ov){ cerrarUnidades(); return }
+    const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.uniCancel!==undefined) cerrarUnidades();
+    else if(b.dataset.uniListo!==undefined) listoUnidades();
+    else if(b.dataset.uniCaja!==undefined) teclaUnidades("+caja");
+    else if(b.dataset.uniTecla!==undefined) teclaUnidades(b.dataset.uniTecla);
+  });
+  ov.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ e.preventDefault(); listoUnidades(); return }
+    if(/^[0-9]$/.test(e.key)){ e.preventDefault(); teclaUnidades(e.key) }
+    else if(e.key==="Backspace"||e.key==="Delete"){ e.preventDefault(); teclaUnidades("⌫") }
+  });
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const i=document.getElementById("uniNum"); if(i) i.focus() },50);
+}
+function cerrarUnidades(){ const ov=document.getElementById("uniOv"); if(ov) ov.remove(); S.uniDlg=null }
+/** Pad de unidades: solo enteros, hasta 4 cifras; «+caja» suma la caja del sabor. */
+function teclaUnidades(k){
+  const inp=document.getElementById("uniNum"), d=S.uniDlg; if(!inp||!d) return;
+  let v=inp.value;
+  if(k==="⌫") v=v.slice(0,-1);
+  else if(k==="C") v="";
+  else if(k==="+caja"){ const c=(S.saboresPorId[d.id]||{}).cantidad_maestra||0; v=String(Math.min(9999,(parseInt(v||"0",10)||0)+c)); }
+  else if(v.length<4) v=(v==="0"?"":v)+k;
+  inp.value=v;
+}
+function listoUnidades(){
+  const inp=document.getElementById("uniNum"), d=S.uniDlg; if(!inp||!d) return;
+  const n=parseInt(inp.value||"0",10)||0, c=S.cart.produccion;
+  if(n>0) c[d.id]=n; else delete c[d.id];
+  S.confirm=false;
+  cerrarUnidades(); renderApp();
+}
+document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.uniDlg){ cerrarUnidades() } });
 
 /* ---- Kilos a mano: al tocar un sabor en un local piloto ---- */
 function abrirKilos(id,c){
