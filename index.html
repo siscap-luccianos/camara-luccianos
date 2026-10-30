@@ -381,6 +381,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .notaPais ul{margin:6px 0 0;padding-left:18px;font-size:.82rem;line-height:1.5}
 .notaPais li{margin:2px 0}
 .notaPais .adv{color:var(--alert,#B3261E)}
+.paisBarFijo{margin:0;font-size:.85rem}
 .paisBarX{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#F5F0E8;font-size:1rem;line-height:1;cursor:pointer}
 .paisBarSeg{display:flex;gap:6px;align-items:center}
 .paisBarLbl{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-width:52px;color:#D9CBB8}
@@ -766,7 +767,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.110.1";
+const FRONTEND_VERSION = "1.110.2";
 const GRUPOS_PAD=["icepops","chocolateria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
@@ -3484,7 +3485,9 @@ function paisBarraHTML(paises, visibles){
     <div class="paisBarTit">${tit} <button type="button" class="chip" data-sel-todos="1">Marcar los ${visibles}</button> <button type="button" class="chip" data-sel-ninguno="1">Ninguno</button></div>
     <div class="paisBarSeg"><span class="paisBarLbl">Mínimo</span><input type="number" id="minSel" min="0" step="1" placeholder="ej. 6" value="${esc(S.minSelVal||"")}"><button type="button" class="btn" data-min-sel="1" ${minOk?"":"disabled"}>Poner mínimo</button></div>
     ${paises.length?`<div class="paisBarSeg"><span class="paisBarLbl">País</span><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
-    <div class="paisPills">${paises.map(p=>`<button type="button" class="chip" data-pais-destino="${esc(p)}" aria-pressed="${S.paisDestino===p}">${esc(p)}</button>`).join("")}</div>
+    ${S.paisFiltro&&S.paisFiltro!=="Todos"
+      ?`<p class="paisBarFijo">País: <b>${esc(S.paisFiltro)}</b> (el que elegiste arriba en «País»)</p>`
+      :`<div class="paisPills">${paises.map(p=>`<button type="button" class="chip" data-pais-destino="${esc(p)}" aria-pressed="${S.paisDestino===p}">${esc(p)}</button>`).join("")}</div>`}
     <button type="button" class="btn" data-pais-aplicar="1" ${puede?"":"disabled"}>${puede?(quitar?"Quitar de ":"Agregar a ")+esc(S.paisDestino):"Elegí sabores y un país"}</button>`:""}
   </div>`;
 }
