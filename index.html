@@ -766,7 +766,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.110.0";
+const FRONTEND_VERSION = "1.110.1";
+const GRUPOS_PAD=["icepops","chocolateria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -4533,7 +4534,6 @@ let _renderProgramado=false;
    Tocar el producto abre el pad (a pedido de Gabi 30/10/2026): se escribe cuántas unidades
    van en total, Enter y queda en la salida. Vasquetas, baldes y gluten free siguen sumando
    de a una al tocar; cuando se carguen por kilo van a usar el mismo pad. */
-const GRUPOS_PAD=["icepops","chocolateria"];
 function usaPad(id){ const s=S.saboresPorId[String(id)]; return !!s && GRUPOS_PAD.includes(grupoProductoDe(s)) }
 function maxPad(id,c){ return c==="desperdicio" ? (stockMap()[id]||0) : vendibleDe(id) }
 function abrirCantidad(id,c){
