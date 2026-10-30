@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.55.0";
+const BACKEND_VERSION = "1.56.0";
 
 function doPost(e) {
   let resultado;
@@ -99,6 +99,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "cambiarRolEmpleado": return cambiarRolEmpleado(body.empleadoId, body.rol, empleado);
     case "empleadosAdmin": return empleadosAdmin(body.local, empleado);
     case "adminSabor": return adminSabor(body.sabor, empleado);
+    case "eliminarSabor": return eliminarSabor(body.saborId, empleado);
     case "minimoMasivo": return minimoMasivo(body.cambios, body.detalle, empleado);
     case "saborPaisMasivo": return saborPaisMasivo(body.ids, body.pais, body.modo, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
@@ -1958,6 +1959,33 @@ function adminSabor(sabor, empleado) {
   }
 }
 
+/** Borra de verdad un sabor que nunca se usó (creado por error o de prueba). Solo admin.
+ *  Si ya tiene movimientos o figura en algún conteo se rechaza: borrarlo rompería el historial
+ *  (los movimientos viejos quedarían sin nombre); en ese caso se desactiva o se saca del país. */
+function eliminarSabor(saborId, empleado) {
+  if (empleado.rol !== "admin") return { ok: false, error: "Solo un administrador puede eliminar sabores." };
+  const id = String(saborId || "").trim();
+  if (!id) return { ok: false, error: "Falta el sabor." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const sabor = _leerCrudo("Sabores").filter((s) => String(s.id) === id)[0];
+    if (!sabor) return { ok: false, error: "No se encontró ese sabor." };
+    const enItems = (texto) => {
+      let o = {};
+      try { o = JSON.parse(String(texto || "{}")) || {}; } catch (e) { o = {}; }
+      return Object.prototype.hasOwnProperty.call(o, id);
+    };
+    const usado = _leerCrudo("Registros").some((r) => enItems(r.items)) || _leerCrudo("Stock").some((f) => enItems(f.base));
+    if (usado) return { ok: false, error: "«" + sabor.nombre + "» ya tiene movimientos o conteos cargados: si lo borrás se rompe el historial. Desactivalo, o sacalo del país con «Elegir varios»." };
+    const r = _eliminarCrudo("Sabores", id);
+    if (r.ok) _auditar("eliminar_sabor", empleado.id, empleado.nombre, "Sabor " + id + " (" + sabor.nombre + ") eliminado");
+    return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /** Suma o quita varios sabores a un país de una sola vez (solo admin).
  *  accion "agregar": el sabor pasa a venderse en ese país. "quitar": deja de venderse ahí.
  *  Un sabor de «todos los países» se maneja con paises_excluidos; uno «solo en…» con su lista. */
@@ -2058,6 +2086,8 @@ function saboresAdmin(empleado) {
       peso: Number(s.peso) || 0, familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0,
       paises: _listaPaises(s.paises), paises_excluidos: _listaPaises(s.paises_excluidos),
       peso_paises: (function () { try { return JSON.parse(String(s.peso_paises || "{}")) || {}; } catch (e) { return {}; } })(),
+      nombre_paises: (function () { try { return JSON.parse(String(s.nombre_paises || "{}")) || {}; } catch (e) { return {}; } })(),
+      categoria_paises: (function () { try { return JSON.parse(String(s.categoria_paises || "{}")) || {}; } catch (e) { return {}; } })(),
     }))
     .sort((a, b) => a.orden - b.orden);
   return { ok: true, sabores: sabores };

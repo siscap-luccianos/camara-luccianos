@@ -767,7 +767,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.110.3";
+const FRONTEND_VERSION = "1.110.5";
 const GRUPOS_PAD=["icepops","chocolateria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
@@ -3445,7 +3445,14 @@ function saborEnPaisCli(s,p){
   const l=s.paises||[];
   return !l.length || l.some(x=>n(x)===n(p));
 }
+/** Con un país elegido arriba, la lista muestra el nombre y la categoría que ese país usa (Sabores.nombre_paises / categoria_paises). */
+function textoDePais(s,campo){
+  const f=S.paisFiltro, m=s[campo+"_paises"]||{};
+  return (f && f!=="Todos" && m[f]) ? m[f] : s[campo];
+}
 function textoPaisesSabor(s){
+  const f=S.paisFiltro;
+  if(f && f!=="Todos" && saborEnPaisCli(s,f)) return "Se vende en "+f;
   const ex=s.paises_excluidos||[], l=s.paises||[];
   if(!l.length) return ex.length ? "Todos menos "+ex.join(", ") : "Todos los países";
   if(l.length===1 && l[0]==="(ninguno)") return "Sin país: nadie lo ve";
@@ -3545,9 +3552,10 @@ function saboresAdminView(){
     return `<div class="saborRow${s.activo?"":" baja"}">
       ${S.paisModo?`<button type="button" class="chkPais" data-pais-tildar="${s.id}" aria-pressed="${tild}" aria-label="Elegir ${esc(s.nombre)}">${tild?"✓":""}</button>`:""}
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(s.nombre)}<div class="meta">${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(s.categoria)} · mín. ${s.minimo}${pesoMostrado(s)}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s))}</div>`:""}</div>
+      <div class="nm" style="flex:1">${esc(textoDePais(s,"nombre"))}<div class="meta">${textoDePais(s,"nombre")!==s.nombre?`Acá se llama «${esc(s.nombre)}» · `:""}${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(textoDePais(s,"categoria"))} · mín. ${s.minimo}${pesoMostrado(s)}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s))}</div>`:""}</div>
       ${S.paisModo?"":`<button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
-      <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>`}
+      <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
+      <button type="button" class="chip" data-eliminar-sabor="${s.id}">Eliminar</button>`}
     </div>`;
   };
   const paises=paisesDisponibles(), conPais=paises.length>0;
@@ -3594,6 +3602,16 @@ async function guardarSabor(payload){
   const r = await api("adminSabor", {sabor:payload});
   if(r && r.ok){ toast("Sabor guardado"); S.editandoSaborId=null; cargarSaboresAdmin(); }
   else toast((r&&r.error)||"No se pudo guardar el sabor.");
+}
+async function eliminarSabor(s){
+  if(!confirm(`¿Eliminar «${s.nombre}» para siempre?\n\nSolo se puede si nunca se usó (si ya tiene movimientos, usá «Desactivar»).`)) return;
+  const r = await api("eliminarSabor", {saborId:s.id});
+  if(r && r.ok){
+    toast("Sabor eliminado");
+    S.saboresAdmin=(S.saboresAdmin||[]).filter(x=>x.id!==s.id); ls.set("saboresAdminCache", JSON.stringify(S.saboresAdmin));
+    renderApp(); cargarSaboresAdmin();
+  } else if(r && /Acción desconocida/.test(r.error||"")) toast("Falta repegar Code.gs 1.56.0 y hacer Nueva implementación.");
+  else toast((r&&r.error)||"No se pudo eliminar.");
 }
 /** Mínimo por defecto según el tipo del sabor. Son los mismos valores que
  *  ya tiene la planilla. El formulario de alta lo propone solo al elegir el
@@ -4097,6 +4115,11 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.minDefecto){ cambiarMinimosRubro(t.dataset.minDefecto, null); return }
   if(t.dataset.cancelarSabor){ S.editandoSaborId=null; renderApp(); return }
+  if(t.dataset.eliminarSabor){
+    const s=(S.saboresAdmin||[]).find(x=>x.id===t.dataset.eliminarSabor);
+    if(s) await conBoton(t, ()=>eliminarSabor(s));
+    return;
+  }
   if(t.dataset.toggleSabor){
     const s=(S.saboresAdmin||[]).find(x=>x.id===t.dataset.toggleSabor);
     if(s) await conBoton(t, ()=>toggleSabor(s));
