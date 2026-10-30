@@ -381,7 +381,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .notaPais ul{margin:6px 0 0;padding-left:18px;font-size:.82rem;line-height:1.5}
 .notaPais li{margin:2px 0}
 .notaPais .adv{color:var(--alert,#B3261E)}
-.paisBarFijo{margin:0;font-size:.85rem}
+.paisTit{margin-top:26px;padding:8px 12px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-size:.95rem;letter-spacing:.04em}
 .paisBarX{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#F5F0E8;font-size:1rem;line-height:1;cursor:pointer}
 .paisBarSeg{display:flex;gap:6px;align-items:center}
 .paisBarLbl{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;min-width:52px;color:#D9CBB8}
@@ -767,7 +767,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.110.5";
+const FRONTEND_VERSION = "1.111.1";
 const GRUPOS_PAD=["icepops","chocolateria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
@@ -3430,8 +3430,8 @@ async function cargarSaboresAdmin(){
 }
 /* ---- Catálogo por país (solo admin, Operaciones) ---- */
 /** Peso promedio que se muestra en la lista: con un país elegido en las pills, el de ese país si lo tiene. */
-function pesoMostrado(s){
-  const f=S.paisFiltro, pp=s.peso_paises||{};
+function pesoMostrado(s,pais){
+  const f=pais||paisUnico()||"Todos", pp=s.peso_paises||{};
   if(f && f!=="Todos" && Number(pp[f])>0) return ` · ${pp[f]} kg prom. en ${esc(f)}`;
   return s.peso?` · ${s.peso} kg prom.`:"";
 }
@@ -3446,13 +3446,19 @@ function saborEnPaisCli(s,p){
   return !l.length || l.some(x=>n(x)===n(p));
 }
 /** Con un país elegido arriba, la lista muestra el nombre y la categoría que ese país usa (Sabores.nombre_paises / categoria_paises). */
-function textoDePais(s,campo){
-  const f=S.paisFiltro, m=s[campo+"_paises"]||{};
-  return (f && f!=="Todos" && m[f]) ? m[f] : s[campo];
+function textoDePais(s,campo,pais){
+  const f=pais||paisUnico(), m=s[campo+"_paises"]||{};
+  return (f && m[f]) ? m[f] : s[campo];
 }
-function textoPaisesSabor(s){
-  const f=S.paisFiltro;
-  if(f && f!=="Todos" && saborEnPaisCli(s,f)) return "Se vende en "+f;
+/** Países elegidos arriba en «País» (se pueden tocar varios). Vacío = el catálogo completo. */
+function filtroPaises(){ const d=paisesDisponibles(); return (Array.isArray(S.paisFiltro)?S.paisFiltro:[]).filter(p=>d.includes(p)) }
+function paisUnico(){ const f=filtroPaises(); return f.length===1?f[0]:"" }
+function enFiltroPais(s){ const f=filtroPaises(); return !f.length || f.some(p=>saborEnPaisCli(s,p)) }
+function textoPaisesSabor(s,pais){
+  if(pais) return "Se vende en "+pais;
+  const f=filtroPaises();
+  if(f.length===1 && saborEnPaisCli(s,f[0])) return "Se vende en "+f[0];
+  if(f.length>1) return f.map(p=>p+(saborEnPaisCli(s,p)?" ✓":" —")).join("  ·  ");
   const ex=s.paises_excluidos||[], l=s.paises||[];
   if(!l.length) return ex.length ? "Todos menos "+ex.join(", ") : "Todos los países";
   if(l.length===1 && l[0]==="(ninguno)") return "Sin país: nadie lo ve";
@@ -3480,8 +3486,8 @@ function paisesDeForm(fd){
   return {paises:[]};
 }
 function lista_visible_ids(){
-  const paises=paisesDisponibles(), f=S.paisFiltro||"Todos";
-  return (S.saboresAdmin||[]).filter(x=>!paises.length || f==="Todos" || saborEnPaisCli(x,f)).map(x=>x.id);
+  const paises=paisesDisponibles();
+  return (S.saboresAdmin||[]).filter(x=>!paises.length || enFiltroPais(x)).map(x=>x.id);
 }
 function paisBarraHTML(paises, visibles){
   const n=(S.paisSel||[]).length, quitar=S.paisAccion==="quitar", puede=n>0 && !!S.paisDestino;
@@ -3491,10 +3497,8 @@ function paisBarraHTML(paises, visibles){
     <button type="button" class="paisBarX" data-pais-modo="1" aria-label="Cerrar y salir de Elegir varios">✕</button>
     <div class="paisBarTit">${tit} <button type="button" class="chip" data-sel-todos="1">Marcar los ${visibles}</button> <button type="button" class="chip" data-sel-ninguno="1">Ninguno</button></div>
     <div class="paisBarSeg"><span class="paisBarLbl">Mínimo</span><input type="number" id="minSel" min="0" step="1" placeholder="ej. 6" value="${esc(S.minSelVal||"")}"><button type="button" class="btn" data-min-sel="1" ${minOk?"":"disabled"}>Poner mínimo</button></div>
-    ${paises.length?`<div class="paisBarSeg"><span class="paisBarLbl">País</span><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
-    ${S.paisFiltro&&S.paisFiltro!=="Todos"
-      ?`<p class="paisBarFijo">País: <b>${esc(S.paisFiltro)}</b> (el que elegiste arriba en «País»)</p>`
-      :`<div class="paisPills">${paises.map(p=>`<button type="button" class="chip" data-pais-destino="${esc(p)}" aria-pressed="${S.paisDestino===p}">${esc(p)}</button>`).join("")}</div>`}
+    ${paises.length?`<div class="paisBarSeg"><span class="paisBarLbl">Aplicar</span><button type="button" class="chip" data-pais-accion="agregar" aria-pressed="${!quitar}">Agregar a</button><button type="button" class="chip" data-pais-accion="quitar" aria-pressed="${quitar}">Quitar de</button></div>
+    <div class="paisPills">${paises.map(p=>`<button type="button" class="chip" data-pais-destino="${esc(p)}" aria-pressed="${S.paisDestino===p}">${esc(p)}</button>`).join("")}</div>
     <button type="button" class="btn" data-pais-aplicar="1" ${puede?"":"disabled"}>${puede?(quitar?"Quitar de ":"Agregar a ")+esc(S.paisDestino):"Elegí sabores y un país"}</button>`:""}
   </div>`;
 }
@@ -3515,7 +3519,7 @@ async function paisAplicar(){
   const r = await api("saborPaisMasivo", {ids, pais, modo:accion});
   if(r && r.ok){
     toast((accion==="quitar"?"Quitados de ":"Sumados a ")+pais+": "+r.cambiados);
-    S.paisModo=false; S.paisSel=[]; S.paisDestino=""; S.paisFiltro=pais; cargarSaboresAdmin();
+    S.paisModo=false; S.paisSel=[]; S.paisDestino=""; S.paisFiltro=[pais]; cargarSaboresAdmin();
   } else if(r && /Acción desconocida/.test(r.error||"")) toast("Falta repegar Code.gs y hacer Nueva implementación.");
   else toast((r&&r.error)||"No se pudo guardar.");
 }
@@ -3530,7 +3534,7 @@ function saboresAdminView(){
   if(S.errorSaboresAdmin) return `<div class="note">${esc(S.errorSaboresAdmin)}</div>
     <button class="btn ghost" type="button" id="reintentarSabores" style="margin-top:10px">Reintentar</button>`;
   const opcionesCategoria = cat => CATEGORIAS_ORDEN.map(c=>`<option value="${esc(c)}" ${cat===c?"selected":""}>${esc(c)}</option>`).join("");
-  const fila = s => {
+  const fila = (s,pais) => {
     if(S.editandoSaborId===s.id){
       return `<form class="saborRow saborForm" data-editar-sabor="${s.id}">
         <label class="fSab ancho"><span>Nombre</span><input type="text" name="nombre" value="${esc(s.nombre)}" required></label>
@@ -3552,21 +3556,20 @@ function saboresAdminView(){
     return `<div class="saborRow${s.activo?"":" baja"}">
       ${S.paisModo?`<button type="button" class="chkPais" data-pais-tildar="${s.id}" aria-pressed="${tild}" aria-label="Elegir ${esc(s.nombre)}">${tild?"✓":""}</button>`:""}
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(textoDePais(s,"nombre"))}<div class="meta">${textoDePais(s,"nombre")!==s.nombre?`Acá se llama «${esc(s.nombre)}» · `:""}${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(textoDePais(s,"categoria"))} · mín. ${s.minimo}${pesoMostrado(s)}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s))}</div>`:""}</div>
+      <div class="nm" style="flex:1">${esc(textoDePais(s,"nombre",pais))}<div class="meta">${textoDePais(s,"nombre",pais)!==s.nombre?`Acá se llama «${esc(s.nombre)}» · `:""}${esc(TIPO_LABEL[s.tipo]||TIPO_LABEL.v)} · ${esc(FAMILIA_LABEL[s.familia]||FAMILIA_LABEL.vasquetas)} · ${esc(textoDePais(s,"categoria",pais))} · mín. ${s.minimo}${pesoMostrado(s,pais)}${s.cantidad_maestra?" · caja de "+s.cantidad_maestra:""}${s.activo?"":" · inactivo"}</div>${conPais?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(textoPaisesSabor(s,pais))}</div>`:""}</div>
       ${S.paisModo?"":`<button type="button" class="chip" data-editar-sabor-btn="${s.id}">Editar</button>
       <button type="button" class="chip" data-toggle-sabor="${s.id}">${s.activo?"Desactivar":"Reactivar"}</button>
       <button type="button" class="chip" data-eliminar-sabor="${s.id}">Eliminar</button>`}
     </div>`;
   };
   const paises=paisesDisponibles(), conPais=paises.length>0;
-  if(!S.paisFiltro || (S.paisFiltro!=="Todos" && !paises.includes(S.paisFiltro))) S.paisFiltro="Todos";
-  const enFiltro = s => !conPais || S.paisFiltro==="Todos" || saborEnPaisCli(s,S.paisFiltro);
+  S.paisFiltro=filtroPaises();
+  const enFiltro = s => !conPais || enFiltroPais(s);
   const lista=S.saboresAdmin.filter(enFiltro);
-  const grupos=agruparPorProducto(lista);
   const cuenta = p => S.saboresAdmin.filter(s=>s.activo && (p==="Todos"||saborEnPaisCli(s,p))).length;
   const pillsPais = conPais ? `<p class="sec">País</p>
-    <div class="paisPills">${["Todos",...paises].map(p=>`<button type="button" class="chip" data-pais-filtro="${esc(p)}" aria-pressed="${S.paisFiltro===p}">${esc(p)} · ${cuenta(p)}</button>`).join("")}</div>
-    <p style="margin:6px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${S.paisFiltro==="Todos"?"Catálogo completo. Cada sabor dice en qué países se vende.":"Lo que ven los locales de "+esc(S.paisFiltro)+": "+lista.filter(s=>s.activo).length+" sabores. Los que quites acá dejan de aparecer en sus locales."}</p>`
+    <div class="paisPills">${["Todos",...paises].map(p=>`<button type="button" class="chip" data-pais-filtro="${esc(p)}" aria-pressed="${p==="Todos"?!S.paisFiltro.length:S.paisFiltro.includes(p)}">${esc(p)} · ${cuenta(p)}</button>`).join("")}</div>
+    <p style="margin:6px 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${!S.paisFiltro.length?"Catálogo completo. Tocá uno o varios países para ver solo lo que se vende en cada uno.":S.paisFiltro.length===1?"Lo que ven los locales de "+esc(S.paisFiltro[0])+": "+lista.filter(s=>s.activo).length+" sabores. Los que quites acá dejan de aparecer en sus locales.":"Lo que se vende en "+esc(S.paisFiltro.join(" o "))+": "+lista.filter(s=>s.activo).length+" sabores. Abajo, una lista por país."}</p>`
     : "";
   const altaForm = `<p class="sec">Dar de alta un sabor nuevo</p>
 <form class="saborRow saborForm" id="altaSaborForm">
@@ -3577,7 +3580,7 @@ function saboresAdminView(){
     <label class="fSab"><span>Stock mínimo</span><input type="number" name="minimo" value="6" min="0"></label>
     <label class="fSab"><span>Peso promedio (kg)</span><input type="number" name="peso" min="0" step="0.1"></label>
     <label class="fSab"><span>Unidades por caja</span><input type="number" name="cantidad_maestra" min="0"></label>
-    ${paisesFormHTML(conPais && S.paisFiltro!=="Todos" ? {paises:[S.paisFiltro]} : null)}
+    ${paisesFormHTML(conPais && S.paisFiltro.length ? {paises:S.paisFiltro} : null)}
     <div class="acciones"><button class="btn" type="submit">Agregar</button></div>
   </form>`;
   const togglePills = `<div style="margin:0 0 8px"><button type="button" class="chip" data-pais-modo="1" aria-pressed="${!!S.paisModo}">${S.paisModo?"Listo":"Elegir varios"}</button> <span style="font-size:.78rem;color:var(--muted)">para cambiar el mínimo${conPais?" o el país":""} de varios sabores a la vez</span></div>`;
@@ -3588,15 +3591,20 @@ function saboresAdminView(){
       <li><b>Sumar un sabor nuevo solo a ese país:</b> elegí el país y completá «Dar de alta» (ya viene marcado «Solo en…»).</li>
       <li class="adv">⚠ <b>«Desactivar» lo apaga en TODOS los locales y países.</b> No lo uses para sacarlo de un país.</li>
     </ul></div>`;
-  return `${notaUso}${altaForm}${pillsPais}${togglePills}${S.paisModo?paisBarraHTML(paises, lista.length):""}<p class="sec">Sabores (${lista.length})</p>
-  ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
-  <div class="rubroMin">
+  const bloques = (lst, pais) => agruparPorProducto(lst).map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)} (${g.sabores.length})</p>
+  ${pais?"":`<div class="rubroMin">
     <span>Mínimo del rubro</span>
     <input type="number" id="min-${g.clave}" min="0" step="1" placeholder="ej. 6">
     <button type="button" class="chip" data-min-rubro="${g.clave}">Aplicar a los ${g.sabores.length}</button>
     <button type="button" class="chip" data-min-defecto="${g.clave}">Mínimos por defecto</button>
-  </div>
-  <div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}`;
+  </div>`}
+  <div class="rows">${g.sabores.map(x=>fila(x,pais)).join("")}</div>`).join("");
+  // Con 2 o más países elegidos: una lista por país, una debajo de la otra, cada una separada por rubro.
+  const varios = conPais && S.paisFiltro.length>1;
+  const cuerpo = varios
+    ? S.paisFiltro.map(p=>{ const l=S.saboresAdmin.filter(x=>saborEnPaisCli(x,p)); return `<p class="sec paisTit">${esc(p)} · ${l.length} ${l.length===1?"sabor":"sabores"}</p>${bloques(l,p)}`; }).join("")
+    : `<p class="sec">Sabores (${lista.length})</p>${bloques(lista,"")}`;
+  return `${notaUso}${altaForm}${pillsPais}${togglePills}${S.paisModo?paisBarraHTML(paises, lista.length):""}${cuerpo}`;
 }
 async function guardarSabor(payload){
   const r = await api("adminSabor", {sabor:payload});
@@ -4095,10 +4103,16 @@ document.addEventListener("click", async e=>{
   if(t.dataset.editarNombreEmp){ await editarNombreEmpleado(t.dataset.editarNombreEmp, t.dataset.nombreActual, t); return }
   if(t.dataset.eliminarEmp){ await eliminarEmpleadoDef(t.dataset.eliminarEmp, t.dataset.nombreEmp, t); return }
   if(t.dataset.editarSaborBtn){ S.editandoSaborId=t.dataset.editarSaborBtn; renderApp(); return }
-  if(t.dataset.paisFiltro){ S.paisFiltro=t.dataset.paisFiltro; S.paisSel=[]; if(S.paisModo){ S.paisAccion=S.paisFiltro==="Todos"?"agregar":"quitar"; S.paisDestino=S.paisFiltro==="Todos"?"":S.paisFiltro } renderApp(); return }
+  if(t.dataset.paisFiltro){
+    const p=t.dataset.paisFiltro, f=filtroPaises();
+    S.paisFiltro = p==="Todos" ? [] : (f.includes(p) ? f.filter(x=>x!==p) : [...f,p]);
+    S.paisSel=[];
+    if(S.paisModo && filtroPaises().length<2){ const u=paisUnico(); S.paisAccion=u?"quitar":"agregar"; S.paisDestino=u }
+    renderApp(); return
+  }
   if(t.dataset.paisModo){
     if(S.paisModo){ S.paisModo=false; S.paisSel=[]; S.paisDestino="" }
-    else { S.paisModo=true; S.paisSel=[]; const f=S.paisFiltro||"Todos"; S.paisAccion=f==="Todos"?"agregar":"quitar"; S.paisDestino=f==="Todos"?"":f }
+    else { S.paisModo=true; S.paisSel=[]; const u=paisUnico(); S.paisAccion=u?"quitar":"agregar"; S.paisDestino=u }
     renderApp(); return
   }
   if(t.dataset.selTodos){ S.paisSel=lista_visible_ids(); renderApp(); return }
