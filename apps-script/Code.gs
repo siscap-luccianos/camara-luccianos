@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.54.0";
+const BACKEND_VERSION = "1.54.1";
 
 function doPost(e) {
   let resultado;
@@ -2232,7 +2232,9 @@ function _proximoId(sheet) {
   const clave = "proximoId_" + sheet.getName();
   const maxGuardado = Number(props.getProperty(clave)) || 0;
   let maxActual = maxGuardado;
-  if (!maxGuardado) {
+  // Registros y Auditoria acumulan miles de filas: ahí se confía en el contador guardado. En Sabores y
+  // Empleados (chicas) se vuelve a mirar el mayor id real, porque a veces se cargan filas a mano en la planilla.
+  if (!maxGuardado || ["Sabores", "Empleados"].indexOf(sheet.getName()) !== -1) {
     // Primera vez que esta hoja pide un id: todavía no hay nada guardado en
     // Script Properties, así que la escaneamos una única vez para arrancar
     // el correlativo. De ahí en más ya queda guardado acá y no hace falta
