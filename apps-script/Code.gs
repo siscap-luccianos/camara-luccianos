@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.56.0";
+const BACKEND_VERSION = "1.57.0";
 
 function doPost(e) {
   let resultado;
@@ -105,6 +105,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
+    case "guardarProduccionSabores": return guardarProduccionSabores(body.local, body.ids, empleado);
     case "equiposLocal": return equiposLocal(body.local, empleado);
     case "equipoDecidir": return equipoDecidir(body.clave, body.decision, body.nombre, body.local, empleado);
     case "generarCodigoEquipo": return generarCodigoEquipo(body.local, empleado);
@@ -799,6 +800,10 @@ function _datosSinCache(local, empleado) {
   // Locales.produccion_rubros: qué rubros fabrica este local (ids separados por
   // coma: vasquetas, baldes, icepops, chocolateria, glutenfree). Vacío = todos.
   const produccionRubros = filaLocal ? _rubrosProduccion(filaLocal.produccion_rubros) : [];
+  // Locales.produccion_sabores: qué sabores fabrica este local (ids separados por coma). Vacío = todos
+  // los del rubro. Es independiente de sabores_excluidos («Lo tenemos»): un sabor que se produce sigue
+  // en Producción, Salida y Stock aunque el local no lo reciba por remito.
+  const produccionSabores = (produccion && filaLocal) ? _idsLista(filaLocal.produccion_sabores) : [];
   // Locales.escaner_peso=SI habilita, en Salida, el escaneo del código de barras
   // del rótulo de fábrica (peso por vasqueta). Piloto: hoy solo "Local prueba".
   const escanerPeso = filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false;
@@ -811,7 +816,7 @@ function _datosSinCache(local, empleado) {
 
   // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
   const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos };
 }
 
 function _cacheKeyDatos(local) {
@@ -843,7 +848,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
@@ -978,6 +983,11 @@ function _grupoProducto(sab) {
   if (f === "icepops" || f === "chocolateria" || f === "glutenfree") return f;
   return "vasquetas";
 }
+/** Lista de ids separados por coma ("12,13") -> ["12","13"]. */
+function _idsLista(valor) {
+  return String(valor === undefined || valor === null ? "" : valor).split(",").map((x) => x.trim()).filter(Boolean);
+}
+
 /** Lista de rubros de Locales.produccion_rubros ("vasquetas,baldes"); [] = todos. */
 function _rubrosProduccion(valor) {
   const validos = ["vasquetas", "baldes", "icepops", "chocolateria", "glutenfree"];
@@ -1104,6 +1114,16 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       const fuera = Object.keys(items).filter((id) => porId[String(id)] && rubrosOk.indexOf(_grupoProducto(porId[String(id)])) === -1);
       if (fuera.length) {
         return { ok: false, error: "Este local no produce: " + fuera.map((id) => porId[String(id)].nombre).join(", ") + "." };
+      }
+    }
+    // Y, si el local eligió qué sabores fabrica (Locales.produccion_sabores), solo esos.
+    const saboresOk = _idsLista(filaLocalProd.produccion_sabores);
+    if (saboresOk.length) {
+      const noProduce = Object.keys(items).filter((id) => saboresOk.indexOf(String(id)) === -1);
+      if (noProduce.length) {
+        const porId2 = {};
+        catalogoVenc.forEach((sab) => { porId2[String(sab.id)] = sab; });
+        return { ok: false, error: "Este local no produce: " + noProduce.map((id) => (porId2[String(id)] ? porId2[String(id)].nombre : id)).join(", ") + "." };
       }
     }
   }
@@ -2134,6 +2154,48 @@ function adminLocal(local, empleado) {
  *  hay local elegido). Guarda en Locales.sabores_excluidos
  *  (ids separados por coma); si esa columna todavía no existe en la
  *  hoja, avisa en vez de fallar silencioso. */
+/** Guarda qué sabores fabrica un local (Locales.produccion_sabores). Misma regla de permisos que
+ *  toggleSaborLocal: Responsable de ese local o admin. Solo en locales con Producción activada. */
+function guardarProduccionSabores(local, ids, empleado) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  const esResponsableDeEse = empleado.rol === "encargado" && String(empleado.local || "").trim() === String(local).trim();
+  if (!esResponsableDeEse && empleado.rol !== "admin") {
+    return { ok: false, error: "Solo el responsable de ese local o un admin dentro de ese local puede ajustar esto." };
+  }
+  const lista = Array.isArray(ids) ? ids.map((x) => String(x).trim()).filter(Boolean) : [];
+  const unicos = lista.filter((x, i) => lista.indexOf(x) === i);
+  if (!unicos.length) return { ok: false, error: "Dejá al menos un sabor que producís." };
+  const validos = {};
+  _leerCrudo("Sabores").forEach((s) => { validos[String(s.id)] = true; });
+  const raros = unicos.filter((x) => !validos[x]);
+  if (raros.length) return { ok: false, error: "Hay sabores que no existen: " + raros.join(", ") + "." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const sheet = _sheet("Locales");
+    const filas = sheet.getDataRange().getValues();
+    const headers = filas[0];
+    const colNombre = headers.indexOf("nombre");
+    const colProd = headers.indexOf("produccion_sabores");
+    if (colProd === -1) {
+      return { ok: false, error: "Falta la columna 'produccion_sabores' en la hoja Locales — hay que agregarla (ver apps-script/README.md)." };
+    }
+    let idx = -1;
+    for (let i = 1; i < filas.length; i++) if (String(filas[i][colNombre]).trim() === String(local).trim()) { idx = i; break; }
+    if (idx === -1) return { ok: false, error: "No se encontró ese local." };
+    const colProduccion = headers.indexOf("produccion");
+    if (colProduccion === -1 || _esVerdadero(filas[idx][colProduccion]) !== true) {
+      return { ok: false, error: "Este local no tiene Producción activada." };
+    }
+    _escribirCeldaSinAdivinar(sheet.getRange(idx + 1, colProd + 1), unicos.join(","));
+    _invalidarCacheDatos(local);
+    _auditar("produccion_sabores", empleado.id, empleado.nombre, "Sabores que produce " + local + ": " + unicos.join(","));
+    return { ok: true, ids: unicos };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function toggleSaborLocal(saborId, local, empleado) {
   if (!saborId) return { ok: false, error: "Falta el sabor." };
   if (!local) return { ok: false, error: "Falta el local." };

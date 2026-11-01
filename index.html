@@ -767,7 +767,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.111.1";
+const FRONTEND_VERSION = "1.112.0";
 const GRUPOS_PAD=["icepops","chocolateria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
@@ -820,8 +820,8 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], escanerPeso: false, ventaDia: false, chocoSoloDeposito: false,
-  controlEquipos: false, equipos: undefined, subEquipo: "empleados", equipoAviso: "", equipoConfirmar: null,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, ventaDia: false, chocoSoloDeposito: false,
+  controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
@@ -1044,24 +1044,46 @@ function estadoSabor(id, st){
  *  haber tenido movimientos viejos sigue mostrando su nombre real ahí. */
 function saboresDelLocalBase(){
   // Excluidos por el propio local + los que no se venden en el país de este local (catálogo por país).
-  const ex=new Set([...(S.saboresExcluidos||[]), ...(S.saboresFuera||[])]);
+  // Un sabor que el local produce (Locales.produccion_sabores) nunca se oculta por «No lo tenemos»:
+  // la producción entra al stock y tiene que verse en Salida, Stock, Conteo y Pedido.
+  const ex=new Set([...(S.saboresExcluidos||[]).map(String).filter(id=>!esProducido(id)), ...(S.saboresFuera||[]).map(String)]);
   if(!ex.size) return S.sabores;
-  return S.sabores.filter(s=>!ex.has(s.id));
+  return S.sabores.filter(s=>!ex.has(String(s.id)));
 }
+/** Solo lo que el local recibe por remito («Lo tenemos»): lo usa el Ingreso con remito. */
+function saboresTenemos(){
+  const ex=new Set([...(S.saboresExcluidos||[]), ...(S.saboresFuera||[])].map(String));
+  if(!ex.size) return S.sabores;
+  return S.sabores.filter(s=>!ex.has(String(s.id)));
+}
+/** Lista de sabores que fabrica el local (Locales.produccion_sabores), o null si no se eligió (= todo el rubro). */
+function produccionSaboresSet(){
+  return (S.produccionLocal && (S.produccionSabores||[]).length) ? new Set(S.produccionSabores.map(String)) : null;
+}
+function esProducido(id){ const p=produccionSaboresSet(); return !!(p && p.has(String(id))) }
 /** Rubros que fabrica este local en Producción (Locales.produccion_rubros). Vacío = todos. */
 function rubrosProduccion(){
   const todos=GRUPO_PRODUCTO_ORDEN;
   const r=(S.produccionRubros||[]).filter(g=>todos.includes(g));
   return r.length?r:todos;
 }
+/** Sabores que se ofrecen en la pantalla de Producción. */
+function saboresProduccion(){
+  const prod=produccionSaboresSet();
+  const fuera=new Set((S.saboresFuera||[]).map(String));
+  if(prod) return S.sabores.filter(s=>prod.has(String(s.id)) && !fuera.has(String(s.id)));
+  // Sin lista elegida: todo el rubro que el local fabrica, como siempre.
+  const base=saboresTenemos();
+  if(!(S.produccionRubros||[]).length) return base;
+  const ok=new Set(rubrosProduccion());
+  return base.filter(s=>ok.has(grupoProductoDe(s)));
+}
 function saboresDelLocal(){
-  const base=saboresDelLocalBase();
-  // En la pantalla de Producción solo se ofrecen los rubros que ese local fabrica.
-  if(S.modoProduccion && S.tab==="ingreso" && (S.produccionRubros||[]).length){
-    const ok=new Set(rubrosProduccion());
-    return base.filter(s=>ok.has(grupoProductoDe(s)));
-  }
-  return base;
+  // Pantalla de Producción: solo lo que el local fabrica.
+  if(S.modoProduccion && S.tab==="ingreso") return saboresProduccion();
+  // Ingreso con remito: solo lo que el local recibe. Salida, Stock, Conteo, Pedido, Devolución: tiene o produce.
+  if(S.tab==="ingreso" && !S.modoDevolucion && produccionSaboresSet()) return saboresTenemos();
+  return saboresDelLocalBase();
 }
 function alertas(st){ return saboresDelLocalBase().filter(s=>estadoSabor(s.id,st)) }
 
@@ -1405,12 +1427,12 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
-    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || [];
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
     // que no se pierda este primer dato ya recibido.
-    guardarDatosCache(S.local, {sabores:r.datos.sabores, excluidos:r.datos.excluidos||[], produccion:!!r.datos.produccion, produccionRubros:r.datos.produccionRubros||[], registros:r.datos.registros, stock:r.datos.stock});
+    guardarDatosCache(S.local, {sabores:r.datos.sabores, excluidos:r.datos.excluidos||[], produccion:!!r.datos.produccion, produccionRubros:r.datos.produccionRubros||[], produccionSabores:r.datos.produccionSabores||[], registros:r.datos.registros, stock:r.datos.stock});
   } else {
     cargarDatos();
   }
@@ -2805,7 +2827,9 @@ function stockViewGeneral(st){
 function stockViewPedido(st){
   const s7=salidasDias(7);
   const tendencia=tendenciaSemanas();
-  const sabores=saboresDelLocal();
+  // En un local que produce, lo que fabrica no se pide a fábrica: va aparte, en «A producir».
+  const aProducir=saboresDelLocal().filter(s=>esProducido(s.id));
+  const sabores=saboresDelLocal().filter(s=>!esProducido(s.id));
   // Un rubro por vez (carrusel): Vasquetas, Baldes, Icepops, Chocolatería, Gluten Free
   const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>sabores.some(s=>grupoProductoDe(s)===g));
   const rubroActivo=grupos.includes(S.filtroFamilia)?S.filtroFamilia:(grupos[0]||"vasquetas");
@@ -2859,6 +2883,14 @@ function stockViewPedido(st){
     </button>`;
 
   const lista=delRubro(rubroActivo);
+  const totalProducir=aProducir.reduce((a,s)=>a+pedidoDe(s),0);
+  const bloqueProducir = aProducir.length ? `<p class="sec" style="margin:18px 0 4px">A producir</p>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${totalProducir} ${totalProducir===1?"unidad":"unidades"} · lo que ${esc(S.local)} fabrica. Es un aviso interno, no va a fábrica.</p>
+  <div class="pedTabla">
+    <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Producir</span></div>
+    ${aProducir.map(sabor).join("")}
+  </div>
+  <button type="button" class="btn ghost" id="copiarProducir" style="width:100%;margin-top:10px">Copiar lista para producción</button>` : "";
   return `<button type="button" class="ctaCard glass" id="volverPedido" style="margin-bottom:12px" aria-label="Volver a Stock">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span class="tx"><b>Volver a Stock</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} para pedir en ${grupos.length} ${grupos.length===1?"rubro":"rubros"}</span></span>
@@ -2875,18 +2907,28 @@ function stockViewPedido(st){
   <div class="pedTabla">
     <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Pedir</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
-  </div>`;
+  </div>${bloqueProducir}`;
 }
 
 /** Pedido sugerido agrupado por rubro (Vasquetas, Baldes, Icepops, Chocolatería,
  *  Gluten Free), solo con sabores que tienen algo para pedir. Decidido por Gabi
  *  21/10/2026: un rubro = un pedido aparte, con su texto para copiar o WhatsApp. */
 function pedidoPorRubro(st){
-  const sabores=saboresDelLocal();
+  const sabores=saboresDelLocal().filter(s=>!esProducido(s.id));
   return GRUPO_PRODUCTO_ORDEN.map(g=>{
     const lineas=sabores.filter(s=>grupoProductoDe(s)===g).map(s=>({nombre:s.nombre, ped:pedidoSugerido(s.id,st)})).filter(l=>l.ped>0);
     return {grupo:g, label:GRUPO_PRODUCTO_LABEL[g]||g, lineas, total:lineas.reduce((a,l)=>a+l.ped,0)};
   }).filter(r=>r.lineas.length);
+}
+/** Lo que el local produce y hay que fabricar, por rubro (aviso interno, no se manda a fábrica). */
+function pedidoProducir(st){
+  return saboresDelLocal().filter(s=>esProducido(s.id)).map(s=>({nombre:s.nombre, grupo:grupoProductoDe(s), ped:pedidoSugerido(s.id,st)})).filter(l=>l.ped>0);
+}
+function textoProducir(lineas){
+  const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
+  const total=lineas.reduce((a,l)=>a+l.ped,0);
+  const porGrupo=GRUPO_PRODUCTO_ORDEN.map(g=>({g, ls:lineas.filter(l=>l.grupo===g)})).filter(x=>x.ls.length);
+  return `*A producir – ${S.local}*\n${fecha}\n\n${porGrupo.map(x=>`_${GRUPO_PRODUCTO_LABEL[x.g]||x.g}_\n${x.ls.map(l=>`- ${l.nombre}: ${l.ped}`).join("\n")}`).join("\n\n")}\n\n*Total: ${total} ${total===1?"unidad":"unidades"}*`;
 }
 function textoPedidoRubro(r){
   const fecha=new Date().toLocaleDateString("es-AR",{day:"2-digit",month:"2-digit"});
@@ -2895,7 +2937,8 @@ function textoPedidoRubro(r){
 function stockViewResumen(st){
   const rubros=pedidoPorRubro(st);
   const total=rubros.reduce((a,r)=>a+r.total,0), sabores=rubros.reduce((a,r)=>a+r.lineas.length,0);
-  const sinPedido=GRUPO_PRODUCTO_ORDEN.filter(g=>!rubros.some(r=>r.grupo===g) && saboresDelLocal().some(s=>grupoProductoDe(s)===g)).map(g=>GRUPO_PRODUCTO_LABEL[g]);
+  const sinPedido=GRUPO_PRODUCTO_ORDEN.filter(g=>!rubros.some(r=>r.grupo===g) && saboresDelLocal().some(s=>grupoProductoDe(s)===g && !esProducido(s.id))).map(g=>GRUPO_PRODUCTO_LABEL[g]);
+  const producir=pedidoProducir(st), totalProducir=producir.reduce((a,l)=>a+l.ped,0);
   return `<button type="button" class="ctaCard glass" id="volverResumen" style="margin-bottom:14px" aria-label="Volver a revisar el pedido">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span class="tx"><b>Volver a revisar</b><span>${total} ${total===1?"unidad":"unidades"} en ${rubros.length} ${rubros.length===1?"rubro":"rubros"}</span></span>
@@ -2910,6 +2953,12 @@ function stockViewResumen(st){
         <a class="btn wa" href="${"https://wa.me/?text="+encodeURIComponent(textoPedidoRubro(r))}" target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>`).join("")}</div>`:`<div class="empty">No hay nada para pedir hoy.</div>`}
+  ${producir.length?`<div class="rubroCard" style="margin-top:10px">
+      <div class="rubroHead"><b>A producir</b><span>${producir.length} ${producir.length===1?"sabor":"sabores"} · ${totalProducir} uds</span></div>
+      <div class="rubroLineas">${producir.map(l=>`<div class="rubroLinea"><span>${esc(l.nombre)}</span><b>${l.ped}</b></div>`).join("")}</div>
+      <p style="margin:6px 0 0;color:var(--muted);font-size:.78rem">Aviso interno para el laboratorio: no va a fábrica.</p>
+      <div class="rubroBtns"><button type="button" class="btn ghost" id="copiarProducir">Copiar</button></div>
+    </div>`:""}
   <div class="rubroTotal">Total a pedir: <b>${total} uds</b> · ${sabores} ${sabores===1?"sabor":"sabores"} · ${rubros.length} ${rubros.length===1?"rubro":"rubros"}</div>
   ${rubros.length?`<button type="button" class="btn" id="copiarTodo" style="width:100%;margin-top:10px">Copiar todo el pedido</button>`:""}
   ${sinPedido.length?`<p style="margin:10px 0 0;color:var(--muted);font-size:.8rem;text-align:center">Sin nada para pedir: ${esc(sinPedido.join(", "))}.</p>`:""}`;
@@ -3395,28 +3444,71 @@ function adminEnLocalReal(){
  *  datos(), no hace falta pedir nada aparte) con un interruptor por
  *  sabor para prender/apagar si SU local lo tiene — nada de crear,
  *  editar nombre/mínimo/etc, eso sigue siendo solo-admin. */
+/** Sabores que se pueden marcar como «Lo producimos»: los de los rubros que el local fabrica y que se venden en su país. */
+function candidatosProduccion(){
+  const fuera=new Set((S.saboresFuera||[]).map(String)), ok=new Set(rubrosProduccion());
+  return S.sabores.filter(s=>!fuera.has(String(s.id)) && ok.has(grupoProductoDe(s)));
+}
+/** Conjunto efectivo de «Lo producimos»: la lista elegida, o todos los candidatos si todavía no se eligió. */
+function produccionEfectiva(){
+  const cand=candidatosProduccion().map(s=>String(s.id));
+  const elegida=(S.produccionSabores||[]).map(String);
+  return new Set(elegida.length?elegida:cand);
+}
 function saboresLocalView(){
-  const ex=new Set(S.saboresExcluidos||[]);
-  const fuera=new Set(S.saboresFuera||[]);
-  const grupos=agruparPorProducto(S.sabores.filter(s=>!fuera.has(s.id)));
+  const ex=new Set((S.saboresExcluidos||[]).map(String));
+  const fuera=new Set((S.saboresFuera||[]).map(String));
+  const modo = S.produccionLocal && S.subSabLocal==="produce" ? "produce" : "tenemos";
+  const prod=produccionEfectiva();
+  const lista = modo==="produce" ? candidatosProduccion() : S.sabores.filter(s=>!fuera.has(String(s.id)));
+  const grupos=agruparPorProducto(lista);
   const fila=s=>{
-    const off=ex.has(s.id);
+    const id=String(s.id);
+    if(modo==="produce"){
+      const on=prod.has(id);
+      return `<div class="saborRow${on?"":" baja"}">
+      ${plateHTML(s.id)}
+      <div class="nm" style="flex:1">${esc(s.nombre)}${ex.has(id)?` <span class="badge warn">no lo recibimos</span>`:""}</div>
+      <button type="button" class="chip" data-toggle-sabor-prod="${s.id}" aria-pressed="${on}">${on?"Lo producimos":"No lo producimos"}</button>
+    </div>`;
+    }
+    const off=ex.has(id);
     return `<div class="saborRow${off?" baja":""}">
       ${plateHTML(s.id)}
-      <div class="nm" style="flex:1">${esc(s.nombre)}</div>
+      <div class="nm" style="flex:1">${esc(s.nombre)}${off&&esProducido(id)?` <span class="badge warn">lo producimos</span>`:""}</div>
       <button type="button" class="chip" data-toggle-sabor-local="${s.id}" aria-pressed="${!off}">${off?"No lo tenemos":"Lo tenemos"}</button>
     </div>`;
   };
-  return `<p class="sec">¿Qué tiene ${esc(S.local)}?${S.paisLocal?` <span style="font-weight:600;color:var(--muted)">· catálogo de ${esc(S.paisLocal)}</span>`:""}</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca.</p>
+  const selector = S.produccionLocal ? `<div class="segCh" role="group" aria-label="Qué configurás" style="display:flex;gap:6px;margin:0 0 10px">
+      <button type="button" class="chip" data-sub-sab-local="tenemos" aria-pressed="${modo==="tenemos"}">Lo tenemos</button>
+      <button type="button" class="chip" data-sub-sab-local="produce" aria-pressed="${modo==="produce"}">Lo producimos</button>
+    </div>` : "";
+  const ayuda = modo==="produce"
+    ? `Marcá lo que ${esc(S.local)} fabrica. En Producción solo aparece eso, aunque «Lo tenemos» esté apagado. Si no elegís nada, Producción ofrece todo el rubro. Lo que producís no va al pedido a fábrica: sale en «A producir».`
+    : `Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca.${S.produccionLocal?" Lo que el local produce sigue apareciendo en Salida, Stock y Producción.":""}`;
+  return `<p class="sec">${modo==="produce"?"¿Qué produce":"¿Qué tiene"} ${esc(S.local)}?${S.paisLocal?` <span style="font-weight:600;color:var(--muted)">· catálogo de ${esc(S.paisLocal)}</span>`:""}</p>
+  ${selector}
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${ayuda}</p>
   ${grupos.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.grupo)}</p><div class="rows">${g.sabores.map(fila).join("")}</div>`).join("")}`;
+}
+async function toggleSaborProduccion(saborId){
+  const id=String(saborId), set=produccionEfectiva();
+  if(set.has(id)) set.delete(id); else set.add(id);
+  if(!set.size){ toast("Dejá al menos un sabor que producís."); return }
+  const r = await api("guardarProduccionSabores", {local:S.local, ids:[...set]});
+  if(r && r.ok){
+    S.produccionSabores = (r.ids||[...set]).map(String);
+    toast(set.has(id)?"Lo producimos":"Ya no lo producimos");
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    renderApp();
+  } else toast((r&&r.error)||"No se pudo ajustar.");
 }
 async function toggleSaborLocal(saborId){
   const r = await api("toggleSaborLocal", {saborId, local:S.local});
   if(r && r.ok){
     S.saboresExcluidos = r.excluido
       ? [...new Set([...(S.saboresExcluidos||[]), saborId])]
-      : (S.saboresExcluidos||[]).filter(id=>id!==saborId);
+      : (S.saboresExcluidos||[]).filter(id=>String(id)!==String(saborId));
     toast(r.excluido?"Desactivado":"Activado");
     renderApp();
   } else toast((r&&r.error)||"No se pudo ajustar.");
@@ -3727,7 +3819,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
-    S.escanerPeso = !!d.escanerPeso; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || [];
+    S.escanerPeso = !!d.escanerPeso; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -3746,10 +3838,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
-  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || [];
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
   S.regs = r.registros;
   S.stock = r.stock;
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -3763,7 +3855,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -3793,7 +3885,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: payload.fecha ? tsVentaDe(payload.fecha) : Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -3860,7 +3952,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
@@ -4140,6 +4232,8 @@ document.addEventListener("click", async e=>{
     return;
   }
   if(t.dataset.toggleSaborLocal){ await conBoton(t, ()=>toggleSaborLocal(t.dataset.toggleSaborLocal)); return }
+  if(t.dataset.toggleSaborProd){ await conBoton(t, ()=>toggleSaborProduccion(t.dataset.toggleSaborProd)); return }
+  if(t.dataset.subSabLocal){ S.subSabLocal=t.dataset.subSabLocal; renderApp(); return }
 
   if(t.dataset.familia){
     // Tocar la familia activa despliega/cierra sus subcategorías; tocar otra la activa y la despliega
@@ -4221,6 +4315,12 @@ document.addEventListener("click", async e=>{
   if(t.id==="copiarTodo"){
     const texto=pedidoPorRubro(stockMap()).map(textoPedidoRubro).join("\n\n");
     try{ await navigator.clipboard.writeText(texto); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); }
+    return;
+  }
+  if(t.id==="copiarProducir"){
+    const l=pedidoProducir(stockMap());
+    if(!l.length){ toast("No hay nada para producir hoy."); return }
+    try{ await navigator.clipboard.writeText(textoProducir(l)); toast("Copiado"); }catch(e){ toast("No se pudo copiar"); }
     return;
   }
   if(t.dataset.copiarRubro){
