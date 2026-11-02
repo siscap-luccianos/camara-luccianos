@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.57.0";
+const BACKEND_VERSION = "1.58.0";
 
 function doPost(e) {
   let resultado;
@@ -57,6 +57,31 @@ function doGet() {
 // nombres de locales/empleados para armar los selectores de login).
 const ACCIONES_PUBLICAS = ["localesActivos", "empleadosLocal", "empleadosGestion", "login", "loginGestion", "loginAdminLocal", "verificarClaveLocal", "estadoEquipo", "estadoEquipoLocal", "vincularEquipo"];
 
+/* ============================================================
+   LÍMITE DE INTENTOS (CacheService) — frena la fuerza bruta en las acciones
+   públicas (contraseña de local, Operaciones). Es por local, no por persona:
+   Apps Script no deja ver la IP de quien llama.
+============================================================ */
+function _rlBloqueado(clave, max) {
+  return Number(CacheService.getScriptCache().get("rl:" + clave) || 0) >= max;
+}
+function _rlFallo(clave, ventanaSeg) {
+  const cache = CacheService.getScriptCache();
+  cache.put("rl:" + clave, String(Number(cache.get("rl:" + clave) || 0) + 1), ventanaSeg);
+}
+function _rlLimpiar(clave) { CacheService.getScriptCache().remove("rl:" + clave); }
+/** Cuenta un uso (no un fallo) y devuelve true si ya superó el máximo de la ventana. */
+function _rlUso(clave, max, ventanaSeg) {
+  const cache = CacheService.getScriptCache();
+  const n = Number(cache.get("rl:" + clave) || 0);
+  if (n >= max) return true;
+  cache.put("rl:" + clave, String(n + 1), ventanaSeg);
+  return false;
+}
+const CLAVE_LOCAL_MAX_FALLOS = 8, CLAVE_LOCAL_VENTANA = 600;     // contraseña de un local: 8 fallos, 10 min
+const GESTION_MAX_FALLOS = 6, GESTION_VENTANA = 900;             // Operaciones: 6 fallos, 15 min
+const REMITO_MAX_POR_HORA = 40, REMITO_MAX_CHARS = 6000000;      // lector de remitos (cuesta plata)
+
 function _despachar(body) {
   const accion = body.accion;
   if (ACCIONES_PUBLICAS.indexOf(accion) === -1) {
@@ -67,7 +92,7 @@ function _despachar(body) {
   switch (accion) {
     case "localesActivos": return localesActivos();
     case "empleadosLocal": return empleadosLocal(body.local, body.equipoId);
-    case "empleadosGestion": return empleadosGestion();
+    case "empleadosGestion": return empleadosGestion(body.local, body.clave);
     case "login": return login(body.empleadoId, body.pin, body.pinConfirm, body.local, body.equipoId, body.equipoNombre);
     case "estadoEquipo": return estadoEquipo(body.equipoId, body.equipoNombre, body.local, body.empleadoId);
     case "estadoEquipoLocal": return estadoEquipoLocal(body.equipoId, body.local);
@@ -148,9 +173,16 @@ function _finDeJornada(desde) {
  *  cierre de la jornada comercial (7am a 3am), no un tope fijo de
  *  horas — así nadie queda desconectado a mitad de turno. */
 function _emitirToken(empleadoId) {
+  SpreadsheetApp.flush(); // por si el PIN se acaba de crear en este mismo pedido
   const expira = _finDeJornada(Date.now());
-  const payloadB64 = Utilities.base64EncodeWebSafe(String(empleadoId) + "|" + expira);
+  const payloadB64 = Utilities.base64EncodeWebSafe(String(empleadoId) + "|" + expira + "|" + _versionSesion(_empleadoPorId(empleadoId)));
   return payloadB64 + "." + _firmar(payloadB64);
+}
+
+/** Marca de la sesión atada al PIN guardado: si el PIN se resetea o cambia, los tokens
+ *  que ya estaban emitidos dejan de valer (antes seguían vivos hasta el cierre de la jornada). */
+function _versionSesion(empleado) {
+  return _firmar("v|" + String((empleado && empleado.pin_hash) || "")).slice(0, 10);
 }
 
 function _verificarSesion(token) {
@@ -163,10 +195,11 @@ function _verificarSesion(token) {
   let decodificado;
   try { decodificado = Utilities.newBlob(Utilities.base64DecodeWebSafe(payloadB64)).getDataAsString(); }
   catch (err) { return { ok: false, sesionInvalida: true, error: "Token inválido." }; }
-  const sep = decodificado.lastIndexOf("|");
-  if (sep === -1) return { ok: false, sesionInvalida: true, error: "Token inválido." };
-  const empleadoId = decodificado.substring(0, sep);
-  const expira = Number(decodificado.substring(sep + 1));
+  const campos = decodificado.split("|");
+  if (campos.length < 2 || campos.length > 3) return { ok: false, sesionInvalida: true, error: "Token inválido." };
+  const empleadoId = campos[0];
+  const expira = Number(campos[1]);
+  const version = campos[2]; // los tokens emitidos antes de la 1.58.0 no lo traen: valen hasta que venzan
   if (!empleadoId || !expira || Date.now() > expira) {
     return { ok: false, sesionInvalida: true, error: "Tu sesión expiró. Volvé a ingresar tu PIN." };
   }
@@ -174,6 +207,9 @@ function _verificarSesion(token) {
   const empleado = _empleadoPorId(empleadoId);
   if (!empleado || _esVerdadero(empleado.activo) === false) {
     return { ok: false, sesionInvalida: true, error: "Tu acceso ya no está activo." };
+  }
+  if (version !== undefined && version !== _versionSesion(empleado)) {
+    return { ok: false, sesionInvalida: true, error: "Tu PIN cambió. Volvé a ingresar." };
   }
   return { ok: true, empleado: empleado };
 }
@@ -235,7 +271,9 @@ function verificarClaveLocal(local, clave) {
   const claveGuardada = String(fila.clave || "").trim();
   if (!claveGuardada) return { ok: true }; // este local no tiene clave configurada
   const tipeada = String(clave || "").trim();
-  if (tipeada === claveGuardada) return { ok: true };
+  const rlKey = "clave:" + String(local).trim();
+  const bloqueado = _rlBloqueado(rlKey, CLAVE_LOCAL_MAX_FALLOS);
+  if (!bloqueado && tipeada === claveGuardada) { _rlLimpiar(rlKey); return { ok: true }; }
   // El código de admin (6 dígitos) también abre cualquier local, en lugar
   // de su contraseña. Solo se prueba si lo tipeado tiene pinta de código.
   if (/^\d{6}$/.test(tipeada)) {
@@ -243,6 +281,9 @@ function verificarClaveLocal(local, clave) {
     if (adm.ok) return { ok: true, modoAdmin: true };
     if (adm.bloqueado) return { ok: false, error: adm.error };
   }
+  // El código de admin se prueba antes de este corte para que nadie pueda dejar a un admin afuera.
+  if (bloqueado) return { ok: false, error: "Demasiados intentos con la contraseña de este local. Probá de nuevo en 10 minutos." };
+  _rlFallo(rlKey, CLAVE_LOCAL_VENTANA);
   return { ok: false, error: "Contraseña incorrecta." };
 }
 
@@ -548,7 +589,29 @@ function empleadosLocal(local, equipoId) {
   return { ok: true, empleados: filas.map((e) => ({ id: e.id, nombre: e.nombre, rol: e.rol })) };
 }
 
-function empleadosGestion() {
+/** Quién puede ver la lista de admin/supervisores: solo quien ya tiene la contraseña de Operaciones
+ *  (o el código de admin). Antes la lista era pública y cualquiera podía ver sus nombres e ids. */
+function _claveGestionValida(local, clave) {
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
+  if (!filaLocal) return { ok: false, error: "No se encontró el local." };
+  const rlKey = "gestion:" + String(local).trim();
+  const bloqueado = _rlBloqueado(rlKey, GESTION_MAX_FALLOS);
+  const tipeada = String(clave || "").trim();
+  const claveGuardada = String(filaLocal.clave || "").trim();
+  if (!bloqueado && tipeada && _esVerdadero(filaLocal.operaciones) === true && claveGuardada && tipeada === claveGuardada) { _rlLimpiar(rlKey); return { ok: true }; }
+  if (/^\d{6}$/.test(tipeada)) {
+    const adm = _verificarCodigoAdmin(tipeada);
+    if (adm.ok) { _rlLimpiar(rlKey); return { ok: true }; }
+    if (adm.bloqueado) return { ok: false, error: adm.error };
+  }
+  if (bloqueado) return { ok: false, error: "Demasiados intentos. Probá de nuevo en 15 minutos." };
+  _rlFallo(rlKey, GESTION_VENTANA);
+  return { ok: false, error: "Contraseña incorrecta." };
+}
+
+function empleadosGestion(local, clave) {
+  const v = _claveGestionValida(local, clave);
+  if (!v.ok) return v;
   const filas = _leerCrudo("Empleados").filter((e) =>
     _esVerdadero(e.activo) !== false && (e.rol === "admin" || e.rol === "supervisor"));
   return { ok: true, empleados: filas.map((e) => ({ id: e.id, nombre: e.nombre, rol: e.rol })) };
@@ -570,9 +633,16 @@ function loginGestion(empleadoId, clave, local) {
   if (!claveGuardada) {
     return { ok: false, error: "Operaciones no tiene una contraseña configurada todavía — hay que cargarla en la columna 'clave' de la hoja Locales." };
   }
+  const rlKey = "gestion:" + String(local).trim();
+  if (_rlBloqueado(rlKey, GESTION_MAX_FALLOS)) {
+    _auditar("gestion_bloqueada", String(empleadoId), "", "Operaciones bloqueada por intentos fallidos");
+    return { ok: false, error: "Demasiados intentos. Probá de nuevo en 15 minutos." };
+  }
   if (String(clave || "").trim() !== claveGuardada) {
+    _rlFallo(rlKey, GESTION_VENTANA);
     return { ok: false, error: "Contraseña incorrecta." };
   }
+  _rlLimpiar(rlKey);
   const empleado = _empleadoPorId(empleadoId);
   if (!empleado) return { ok: false, error: "No se encontró ese empleado." };
   if (_esVerdadero(empleado.activo) === false) return { ok: false, error: "Ese usuario está dado de baja." };
@@ -1443,6 +1513,10 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!fotoBase64) return { ok: false, error: "Falta la foto." };
+  if (String(fotoBase64).length > REMITO_MAX_CHARS) return { ok: false, error: "La foto es demasiado pesada. Sacala de nuevo." };
+  if (_rlUso("remito:" + empleado.id, REMITO_MAX_POR_HORA, 3600)) {
+    return { ok: false, error: "Ya leíste muchos remitos en esta hora. Probá de nuevo más tarde." };
+  }
 
   const sabores = _leerCrudo("Sabores")
     .filter((s) => _esVerdadero(s.activo) !== false)
