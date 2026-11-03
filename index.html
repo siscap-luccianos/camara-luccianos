@@ -769,7 +769,9 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.114.0";
+const FRONTEND_VERSION = "1.114.1";
+/** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
+function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
@@ -2589,7 +2591,7 @@ function lectorRemitoView(){
     const dudoso=it.saborId && it.confianza==="media" && !it.ignorar;
     return `<div class="row${flag?" flag":""}">
       ${it.saborId?plateHTML(it.saborId):`<span class="plate" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--warn);font-weight:800">?</span>`}
-      <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${it.saborId&&!it.ignorar?`<div class="meta">El remito dice: ${esc((it.nombreDetectado||"").split(" - ").pop())}${it.repetido?` — <b style="color:var(--alert)">otro renglón del remito quedó en este mismo sabor, revisá cuál es cuál</b>`:""}</div>`:""}${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo. ${it.bultos} bulto${it.bultos===1?"":"s"} en el remito — elegí el sabor para calcular la cantidad real, o cargala a mano.</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:dudoso?`<div class="meta">Lo matcheamos por parecido con "${esc(it.nombreDetectado)}" — revisá que sea el sabor correcto.</div>`:""}</div>
+      <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${it.saborId&&!it.ignorar?`<div class="meta">El remito dice: ${esc(nombreSinSeccion(it.nombreDetectado))}${it.repetido?` — <b style="color:var(--alert)">otro renglón del remito quedó en este mismo sabor, revisá cuál es cuál</b>`:""}</div>`:""}${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo. ${it.bultos} bulto${it.bultos===1?"":"s"} en el remito — elegí el sabor para calcular la cantidad real, o cargala a mano.</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:dudoso?`<div class="meta">Lo matcheamos por parecido con "${esc(it.nombreDetectado)}" — revisá que sea el sabor correcto.</div>`:""}</div>
       <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
       ${flag||it.ignorar||dudoso?`<div class="flagPick"><select data-remito-elegir="${i}">
         <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>

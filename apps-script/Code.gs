@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.60.1";
+const BACKEND_VERSION = "1.60.2";
 
 function doPost(e) {
   let resultado;
@@ -1307,7 +1307,7 @@ function _normalizar(s) {
  *  compartir esas dos palabras. Si el filtro combinado no deja
  *  candidatos, se afloja a solo familia, y si tampoco deja, a todo el
  *  catálogo — mejor buscar más ancho que no encontrar nada. */
-function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEsperada) {
+function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEsperada, estricto) {
   // Los sabores Sin Gluten se llaman "<nombre> (Gluten Free)" en el catálogo,
   // pero en el remito ya llegan limpios de esa marca (nosotros le pedimos a
   // la IA que saque "LIBRE DE GLUTEN" del nombre) — comparar tal cual hacía
@@ -1348,7 +1348,12 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEspe
     // 2) uno contiene al otro (ej. "pistacchio" vs "pistacchio 100% vegetal")
     mejor = lista.find((s) => {
       const ns = limpiar(s.nombre);
-      return ns.length > 3 && (norm.indexOf(ns) !== -1 || ns.indexOf(norm) !== -1);
+      if (ns.length <= 3) return false;
+      if (ns.indexOf(norm) !== -1) return true;
+      // El nombre del catálogo está dentro de lo leído: solo vale si cubre buena parte de lo leído. Si no,
+      // "ALFAJOR DE PISTACCHIO LUCCIANOS" caía en la vasqueta "Pistacchio" por contenerla (cubre 1 de 3 palabras).
+      if (norm.indexOf(ns) !== -1) return ns.split(" ").length / norm.split(" ").length >= 0.5;
+      return false;
     });
     if (mejor) return { sabor: mejor, confianza: "media" };
     // 3) comparten la mayoría de las palabras (similitud de Jaccard: comunes
@@ -1389,13 +1394,37 @@ function _matchearSabor(nombreDetectado, sabores, familiaEsperada, categoriaEspe
   // nunca aparecía: la IA etiqueta esa sección como "Mini Icepops", que sí
   // tiene candidatos (los Mini de siempre), así que nunca se ensanchaba a
   // buscar en el resto de Icepops donde Minion sí está.
-  return intentar(porCategoria, true) || intentar(porFamilia, false) || intentar(sabores, false);
+  // "estricto": el renglón viene de una sección conocida del remito, así que no se ensancha a todo el catálogo
+  // (mejor dejarlo sin identificar que asignarle un sabor de otro rubro).
+  return intentar(porCategoria, true) || intentar(porFamilia, false) || (estricto ? null : intentar(sabores, false));
 }
 
 /** Nombre del renglón sin el encabezado de sección: "ICE POPS BAÑADOS - OLI KING" -> "OLI KING". */
 function _nombreDeRenglon(nombre) {
   const partes = String(nombre || "").split(" - ");
-  return partes[partes.length - 1];
+  // Solo se saca el primer tramo si es un encabezado de sección. Hay productos con " - " en el propio nombre
+  // ("SELECCION 10 - COPA AMERICA", "SORBETE DARK 72% - LIBRE DE GLUTEN - 100% VEGETAL") y no hay que cortarlos.
+  if (partes.length > 1 && _seccionDeRenglon(nombre)) return partes.slice(1).join(" - ");
+  return String(nombre || "");
+}
+
+/** Sección del remito a la que pertenece un renglón, según su encabezado ("ICE POPS BAÑADOS - OLI KING").
+ *  Devuelve { familia, categoria } (categoria vacía si la sección no la define) o null si no se reconoce. */
+function _seccionDeRenglon(nombre) {
+  const partes = String(nombre || "").split(" - ");
+  if (partes.length < 2) return null;
+  const n = _normalizar(partes[0]);
+  if (/^sabores$/.test(n)) return { familia: "vasquetas", categoria: "" };
+  if (/^sin gluten/.test(n)) return { familia: "glutenfree", categoria: "" };
+  if (/^ice pops? mini/.test(n)) return { familia: "icepops", categoria: "Mini Icepops" };
+  if (/^ice pops? frutales/.test(n)) return { familia: "icepops", categoria: "Fruta" };
+  if (/^ice pops? sin banar/.test(n)) return { familia: "icepops", categoria: "Crema" };
+  if (/^ice pops? banados/.test(n)) return { familia: "icepops", categoria: "Bañados" };
+  if (/^ice pops? luxury/.test(n)) return { familia: "icepops", categoria: "Luxury" };
+  if (/^cannolis?$/.test(n)) return { familia: "icepops", categoria: "Cannoli" };
+  if (/^mi villano favorito/.test(n)) return { familia: "icepops", categoria: "" };
+  if (/^(chocolates|alfajores|conitos|squares|envasado en frasco|lata carrusel|envases y packaging)$/.test(n)) return { familia: "chocolateria", categoria: "" };
+  return null;
 }
 
 /** Parecido entre lo que se leyó en el remito y el nombre de un sabor del catálogo (0 a 1):
@@ -1602,7 +1631,17 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
       if (otro) { sabor = otro; confianza = "media"; }
     }
     if (!sabor) {
-      const m = _matchearSabor(it.nombre, sabores);
+      // Respaldo por texto cuando la IA no eligió sabor: acotado por la sección del remito (si se reconoce),
+      // para que "ALFAJOR DE NUEZ" de SABORES no caiga en un Cannoli ni "CHANTILLY & CROCANTE" en un Balde.
+      const sec = _seccionDeRenglon(it.nombre);
+      let m;
+      if (sec) {
+        const esBalde = /balde/i.test(String(it.nombre || ""));
+        const candidatos = sec.familia === "vasquetas" ? sabores.filter((x) => (x.tipo === "b") === esBalde) : sabores;
+        m = _matchearSabor(_nombreDeRenglon(it.nombre), candidatos, sec.familia, sec.categoria, true);
+      } else {
+        m = _matchearSabor(it.nombre, sabores);
+      }
       if (m) { sabor = m.sabor; confianza = m.confianza; }
     }
     // La multiplicación por el tamaño de la caja la hacemos acá con el
