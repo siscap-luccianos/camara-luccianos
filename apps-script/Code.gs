@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.60.0";
+const BACKEND_VERSION = "1.60.1";
 
 function doPost(e) {
   let resultado;
@@ -1499,7 +1499,10 @@ function _leerRemitoConIA(fotoBase64, mimeType, sabores) {
     // gasta TODO max_tokens pensando, sin dejar nada para el JSON de
     // respuesta (quedaba un bloque "thinking" vacío y sin texto). Esta tarea
     // es transcribir/matchear contra el catálogo, no hace falta que delibere.
-    thinking: { type: "between_tools" },
+    // Haiku 5.5 no respeta "between_tools": piensa igual y puede gastar todo max_tokens sin devolver texto (visto en
+    // una prueba real, bloque "thinking" vacío y stop_reason max_tokens). Con Haiku se apaga explícitamente
+    // ({"type":"disabled"} vale con effort "high" o menos, que es el default).
+    thinking: /haiku/i.test(modelo) ? { type: "disabled" } : { type: "between_tools" },
     messages: [{
       role: "user",
       content: [
