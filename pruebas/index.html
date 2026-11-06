@@ -492,6 +492,14 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .escMsg.err{background:var(--alert-soft);color:var(--alert)}
 .escLista{display:flex;flex-direction:column;gap:6px;font-size:.88rem}
 .escMsg.warn{background:#F2B400;color:#2A2118}
+.accGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.accGrid.impar .accTile:last-child{grid-column:1/-1}
+.accTile{display:flex;flex-direction:column;gap:2px;justify-content:center;text-align:left;min-height:64px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
+.accTile b{font-size:.95rem;line-height:1.2}
+.accTile small{font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.25}
+.accTile.m{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.accTile.m small{color:inherit;opacity:.85}
+.accTile:active{transform:scale(.98)}
 .escLista div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .escLista .escRow{align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--surface)}
 .escLista .escRow.dup{background:#FFF1D6;border-color:#E0A93B;color:#2A2118}
@@ -833,7 +841,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.119.0";
+const FRONTEND_VERSION = "1.120.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2502,15 +2510,23 @@ function gridSalida(st){
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
-  <button type="button" class="btn desperdicio" id="irDesperdicio" style="margin-bottom:12px">Desperdicio</button>
-  ${S.ventaDia&&S.empleado.rol!=="colaborador"?`<button type="button" class="btn produccion" id="irVentaDia" style="margin-bottom:12px">Salida de chocolatería</button>`:""}
-  ${S.ventaDia?`<p style="margin:-4px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:""}
-  ${S.escanerPeso?`<button type="button" class="btn escaner" id="irEscaner" style="margin-bottom:12px">Escanear vasqueta</button>${resumenPesosHTML("salida")}`:""}
-  ${S.chocoSoloDeposito?"":`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`}
+  ${accionesSalidaHTML()}
+  ${S.escanerPeso?resumenPesosHTML("salida"):""}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">${GRUPOS_PAD.includes(S.filtroFamilia)?"Tocá un producto y escribí cuántas unidades":"Tocá un sabor para sumar una unidad"}</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
+}
+/** Acciones de arriba de Salida: tarjetas del mismo tamaño en grilla 2×2, cada una con una línea que explica para qué sirve;
+ *  solo «Escanear vasqueta» se destaca (mock 7B aprobado por Gabi 06/11/2026). */
+function accionesSalidaHTML(){
+  const t=[];
+  if(S.escanerPeso) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
+  t.push(`<button type="button" class="accTile" id="irDesperdicio"><b>Desperdicio</b><small>roto, caído, vencido</small></button>`);
+  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(`<button type="button" class="accTile" id="irVentaDia"><b>Salida de chocolatería</b><small>venta, gift card, baja…</small></button>`);
+  if(!S.chocoSoloDeposito) t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>lotes por vencer</small></button>`);
+  const grilla=`<div class="accGrid${t.length%2?" impar":""}">${t.join("")}</div>`;
+  return grilla+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
 }
 function gridDesperdicio(st){
   const cart=S.cart.desperdicio;
