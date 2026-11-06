@@ -841,7 +841,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.120.0";
+const FRONTEND_VERSION = "1.120.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1121,10 +1121,13 @@ function inicioDeHoy(){
 /** Por sabor, cuánto sacó hoy esta persona y todavía no devolvió (neto de
  *  las devoluciones de hoy ya guardadas) — es lo que puede devolver ahora
  *  en la pantalla de Devolución. Sabores en 0 no aparecen ahí. */
+/** Desde cuándo cuenta lo que se puede devolver: hoy, pero nunca antes del último conteo físico
+ *  (un conteo reemplaza el stock: lo que salió antes ya no tiene nada que volver a la cámara). */
+function desdeDevolucion(){ return Math.max(inicioDeHoy(), (S.stock&&+S.stock.ts)||0) }
 function pendienteDevolucionHoy(){
-  const desde=inicioDeHoy(), sacado={}, devuelto={};
+  const desde=desdeDevolucion(), sacado={}, devuelto={};
   for(const r of regsActivos()){
-    if(r.ts<desde || String(r.empleadoId)!==String(S.empleado.id)) continue;
+    if(r.ts<=desde || String(r.empleadoId)!==String(S.empleado.id)) continue;
     if(r.tipo==="salida" && !r.subtipo) for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
     else if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,q] of Object.entries(r.items||{})) devuelto[id]=(devuelto[id]||0)+(+q||0);
   }
@@ -1135,8 +1138,8 @@ function pendienteDevolucionHoy(){
 /** Kilos reales: por vasqueta que esta persona sacó hoy y todavía no devolvió, el peso con que salió.
  *  {id:{pesos:[kg…], sinPeso:n}} — «sinPeso» son las que salieron sin peso registrado (antes de pesar) y se escriben a mano. */
 function pesosPendientesDev(){
-  const desde=inicioDeHoy(), pend=pendienteDevolucionHoy(), tomadas={}, out={};
-  const regs=regsActivos().filter(r=>r.ts>=desde && String(r.empleadoId)===String(S.empleado.id)).sort((a,b)=>a.ts-b.ts);
+  const desde=desdeDevolucion(), pend=pendienteDevolucionHoy(), tomadas={}, out={};
+  const regs=regsActivos().filter(r=>r.ts>desde && String(r.empleadoId)===String(S.empleado.id)).sort((a,b)=>a.ts-b.ts);
   for(const r of regs){
     if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})) (tomadas[id]=tomadas[id]||[]).push(...a);
   }
