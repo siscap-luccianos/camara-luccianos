@@ -126,6 +126,16 @@ html .timerInact.urgente{color:#F2C879}
 .ayCard{border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:12px 14px}
 .ayCard b{display:block;font-size:.98rem;margin-bottom:2px}
 .ayCard p{margin:0;font-size:.84rem;line-height:1.4;color:var(--muted);font-weight:600}
+.ayLista{display:flex;flex-direction:column;gap:8px}
+.ayTema{border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);overflow:hidden}
+.ayTema.abierto{border-color:var(--accent)}
+.ayTemaBtn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;background:none;border:0;color:inherit;font:inherit;font-weight:800;font-size:.95rem;text-align:left;cursor:pointer}
+.ayTemaBtn small{display:block;font-size:.72rem;color:var(--muted);font-weight:600;margin-top:1px}
+.ayMas{color:var(--accent);font-size:1.2rem;font-weight:800;flex:none}
+.ayTemaCuerpo{padding:0 14px 14px}
+.ayPasos{margin:0;padding-left:20px;font-size:.84rem;line-height:1.5;font-weight:600}
+.ayPasos li{margin-bottom:5px}
+.ayNota{margin-top:8px;padding:8px 10px;border-radius:10px;background:#FFF1D6;color:#7A4B00;font-size:.8rem;font-weight:700;line-height:1.4}
 .ayTag{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:3px 9px;margin-bottom:6px}
 .ayTag.a{background:#E8EFE6;color:#1E4D2B}.ayTag.b{background:#FFF1D6;color:#7A4B00}.ayTag.c{background:#E3EEF7;color:#0B5D8F}
 .btnTema{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--glass-line);background:rgba(255,255,255,.09);color:var(--header-ink);font-weight:700;font-size:.76rem}
@@ -849,7 +859,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.121.0";
+const FRONTEND_VERSION = "1.122.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -5304,27 +5314,75 @@ function listoKilos(){
   cerrarKilos();
 }
 document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.kilosDlg){ cerrarKilos() } });
-/* ---- Ayuda fija («?» en la cabecera): qué usar según lo que pasó ---- */
+/* ---- Ayuda fija («?» en la cabecera): índice de temas, cada uno se despliega con sus pasos ---- */
+function ayudaTemas(){
+  const rol=S.empleado&&S.empleado.rol, colab=rol==="colaborador";
+  const li=a=>`<ol class="ayPasos">${a.map(x=>`<li>${x}</li>`).join("")}</ol>`;
+  const nota=t=>`<div class="ayNota">${t}</div>`;
+  const T=[];
+  T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
+    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después."}</p></div>
+    <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
+    <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
+  if(S.escanerPeso) T.push({id:"escaner", titulo:"Cómo usar el escáner", sub:"Sacar vasquetas con su peso real", html:li([
+    "En Salida tocá <b>Escanear vasqueta</b>.",
+    "Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real.",
+    "Si suena triple y sale <b>amarillo</b>, ese código ya se escaneó. Si fue un error, tocá la <b>✕</b> de esa fila para quitar solo esa vasqueta.",
+    "Si un rótulo no se lee: cerrá, tocá el sabor y escribí cuánto pesa (con coma, ej. 3,40). Con «Agregar otra» cargás varias seguidas.",
+    "Revisá el total de abajo y tocá <b>Confirmar salida</b>."])+nota("Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran.")});
+  if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Salida de chocolatería", sub:"Venta del día, gift card, sin cargo y baja", html:li([
+    "En este local la chocolatería <b>no se saca por la Salida común</b>: se carga en <b>Salida de chocolatería</b>.",
+    "Elegí el tipo: <b>Venta del día</b> (lo que dice la caja al cerrar), <b>Gift card</b>, <b>Sin cargo</b> (regalo, evento o muestra: pide motivo) o <b>Baja</b> (por vencimiento, o transferencia a otro local: pide el destino).",
+    "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
+    "Alfajores: botones <b>+1, x5, x6, x10</b> y los <b>mix</b> (surtidos). Conitos: <b>+1</b> y <b>x6</b>. Minis: solo <b>+1</b>. Abajo de cada producto ves de dónde vino cada cantidad; tocá una caja para quitarla.",
+    "Lo que recibís de otro local se carga en Ingreso › <b>Transferencia recibida</b>."])+nota("Si te equivocaste, anulalo desde Historial y cargalo de nuevo.")});
+  if(!S.chocoSoloDeposito) T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
+    "En Salida tocá <b>Ver vencimientos</b>: lista cada lote de chocolatería con su fecha.",
+    "El semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días. Los filtros de arriba muestran solo un color o los que no tienen fecha.",
+    "Al sacar, sale primero el lote que vence antes. Lo vencido no se puede vender.",
+    colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock con el motivo ya cargado.",
+    colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b> la completa: te propone la fecha según la vida útil del producto y se puede cambiar; elegís cuántas unidades."])+nota("Las latas no tienen vencimiento.")});
+  if(!colab) T.push({id:"conteo", titulo:"Conteo físico", sub:"Cómo recontar sin errores", html:li([
+    "Entrá a Stock › <b>Conteo físico</b>.",
+    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente, como en una planilla. Las cajas se suman con <b>+1 caja</b>.",
+    "Tip: antes de empezar, poné <b>0</b> en «Poner el mismo número en todos». Así un sabor que te olvidás queda en 0 bien visible, en vez de arrastrar un número viejo.",
+    S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Guardá el conteo cuando termines."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
+  if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
+    "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
+    "Revisá lo que leyó: los renglones en <b>amarillo</b> con «?» son los que no pudo identificar; elegí el sabor a mano o ignorá el renglón. Las cantidades se pueden corregir.",
+    "Si el remito tiene más de una hoja, tocá <b>+ Agregar otra página</b>.",
+    S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
+    "Tocá <b>Cargar al carrito de ingreso</b> y después <b>Confirmar ingreso</b>."])+nota("Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo».")});
+  if(!colab) T.push({id:"pedido", titulo:"Pedido sugerido", sub:"Cuánto pedir y cómo mandarlo", html:li([
+    "Entrá a Stock › <b>Pedido sugerido</b>.",
+    "Elegí en cuántos días llega la próxima entrega (2, 3, 4, 7, 15, 21 o 30). Lo recuerda para este local.",
+    "Cada rubro muestra qué hay hoy y cuánto pedir según lo que salió. Tocá un sabor para ver las últimas 3 semanas. Con − y + ajustás la cantidad.",
+    "Tocá <b>Ver resumen para enviar</b>: ahí copiás el pedido por rubro, mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
+  return T;
+}
+function renderAyuda(){
+  const ov=document.getElementById("ayudaOv"); if(!ov) return;
+  const T=ayudaTemas(), abierto=S.ayudaTema;
+  ov.querySelector("#ayLista").innerHTML=T.map(t=>`<div class="ayTema${abierto===t.id?" abierto":""}">
+    <button type="button" class="ayTemaBtn" data-ay-tema="${t.id}" aria-expanded="${abierto===t.id}"><span>${t.titulo}<small>${t.sub}</small></span><span class="ayMas">${abierto===t.id?"−":"+"}</span></button>
+    ${abierto===t.id?`<div class="ayTemaCuerpo">${t.html}</div>`:""}</div>`).join("");
+}
 function abrirAyuda(){
   if(document.getElementById("ayudaOv")) return;
-  const rol=S.empleado&&S.empleado.rol, colab=rol==="colaborador";
-  const anular = colab
-    ? "Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado."
-    : "Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después.";
-  const devol = colab ? "Está en la pestaña Devolución." : "Está en Ingreso › Devolución.";
+  S.ayudaTema="quepaso";
   const ov=document.createElement("div"); ov.id="ayudaOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="ayTit">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><p class="mantTit" id="ayTit" style="margin:0">¿Cómo se usa?</p><button type="button" class="btn ghost" data-ay-cerrar aria-label="Cerrar" style="min-height:34px;padding:0 12px">✕</button></div>
-    <p class="mantSub">Cada cosa tiene su lugar. Elegí según lo que pasó:</p>
-    <div class="ayCards">
-      <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${anular}</p></div>
-      <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
-      <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${devol} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div>
-    </div>
+    <p class="mantSub">Tocá un tema para leerlo. Solo ves los que tu local usa.</p>
+    <div class="ayLista" id="ayLista"></div>
     <div class="mantAcc"><button type="button" class="btn" data-ay-cerrar>Entendido</button></div>
   </div>`;
-  ov.addEventListener("click", e=>{ if(e.target===ov || e.target.closest("[data-ay-cerrar]")) cerrarAyuda() });
+  ov.addEventListener("click", e=>{
+    if(e.target===ov || e.target.closest("[data-ay-cerrar]")){ cerrarAyuda(); return }
+    const b=e.target.closest("[data-ay-tema]"); if(b){ S.ayudaTema = S.ayudaTema===b.dataset.ayTema ? null : b.dataset.ayTema; renderAyuda() }
+  });
   document.body.appendChild(ov);
+  renderAyuda();
 }
 function cerrarAyuda(){ const ov=document.getElementById("ayudaOv"); if(ov) ov.remove() }
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrarAyuda() });
