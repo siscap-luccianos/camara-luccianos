@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.60.2";
+const BACKEND_VERSION = "1.61.0";
 
 function doPost(e) {
   let resultado;
@@ -112,7 +112,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "relevar": return relevar(empleado);
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
-    case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos);
+    case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
@@ -876,7 +876,10 @@ function _datosSinCache(local, empleado) {
   const produccionSabores = (produccion && filaLocal) ? _idsLista(filaLocal.produccion_sabores) : [];
   // Locales.escaner_peso=SI habilita, en Salida, el escaneo del código de barras
   // del rótulo de fábrica (peso por vasqueta). Piloto: hoy solo "Local prueba".
-  const escanerPeso = filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false;
+  // Locales.kilos_reales=SI: los kilos de las vasquetas son reales (remito, conteo y peso al sacar),
+  // sin peso promedio. Implica el peso por vasqueta al sacar (pad «¿Cuánto pesa?» y escáner).
+  const kilosReales = filaLocal ? _esVerdadero(filaLocal.kilos_reales) === true : false;
+  const escanerPeso = kilosReales || (filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false);
   // Locales.venta_dia=SI habilita, en Salida, "Venta del día" (chocolatería): una
   // salida con lo que dice la caja al cerrar. Piloto: hoy solo "Local prueba".
   const ventaDia = filaLocal ? _esVerdadero(filaLocal.venta_dia) === true : false;
@@ -886,7 +889,7 @@ function _datosSinCache(local, empleado) {
 
   // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
   const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos, kilosReales: kilosReales };
 }
 
 function _cacheKeyDatos(local) {
@@ -918,7 +921,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
@@ -1118,8 +1121,24 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const pesos2 = normPesos.pesos;
   if (Object.keys(pesos2).length) {
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-    if (!filaLocalPeso || _esVerdadero(filaLocalPeso.escaner_peso) !== true) return { ok: false, error: "Este local no tiene el escáner de peso activado." };
+    if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true)) return { ok: false, error: "Este local no tiene el escáner de peso activado." };
     if (tipo !== "salida" || (subtipo && subtipo !== "desperdicio")) return { ok: false, error: "El peso por vasqueta solo se carga en una salida o un desperdicio." };
+  }
+  // Kilos reales (Locales.kilos_reales=SI): solo vasquetas (tipo "v" de la familia vasquetas; no baldes, ni granella/crumble).
+  // Cada vasqueta que sale se pesa y todo ingreso (remito, devolución, producción) trae los kilos totales del sabor.
+  const filaLocalKilos = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  if (filaLocalKilos && _esVerdadero(filaLocalKilos.kilos_reales) === true && ["venta", "giftcard", "sincargo", "baja", "transferencia"].indexOf(subtipo) === -1) {
+    const vasquetasK = Object.keys(items).filter((id) => {
+      const sab = catalogoVenc.filter((x) => String(x.id) === String(id))[0];
+      return sab && String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas" && (Number(items[id]) || 0) > 0;
+    });
+    if (tipo === "salida") {
+      const sinPeso = vasquetasK.filter((id) => ((pesos2[id] || []).length) !== (Number(items[id]) || 0));
+      if (sinPeso.length) return { ok: false, error: "Falta pesar cada vasqueta de: " + sinPeso.map((id) => nombreVenc[String(id)] || ("Sabor " + id)).join(", ") + "." };
+    } else {
+      const sinKilos = vasquetasK.filter((id) => !(Number((kilos || {})[id]) > 0));
+      if (sinKilos.length) return { ok: false, error: "Faltan los kilos totales de: " + sinKilos.map((id) => nombreVenc[String(id)] || ("Sabor " + id)).join(", ") + "." };
+    }
   }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
@@ -1516,7 +1535,7 @@ function _leerRemitoConIA(fotoBase64, mimeType, sabores) {
   const clave = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
   if (!clave) throw new Error("Falta configurar ANTHROPIC_API_KEY en Propiedades del script (ver apps-script/README.md).");
 
-  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\", \"CHOCOLATES\", \"ALFAJORES\", \"CONITOS\", \"SQUARES\" y \"ENVASADO EN FRASCO\" (solo los renglones de AVELLA) y los renglones \"LATA CARRUSEL\" aunque estén bajo \"ENVASES Y PACKAGING\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Geladot's, Pastelería, Envases y Packaging (salvo las LATA CARRUSEL), Utensillos, Varios, Envasado en Frasco (salvo las AVELLA), Cafés, Salsas y Variegatos, Insumos, \\\"BALDES Y VASQUETAS\\\" (esa sección son envases vacíos, no sabores), Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nDENTRO de la sección \\\"SABORES\\\", algunos renglones vienen agrupados bajo un sub-encabezado \\\"BALDES\\\" (o el nombre del renglón arranca con \\\"BALDES -\\\" y/o termina en \\\"- BALDE\\\") — es el mismo sabor que una vasqueta pero vendido en formato balde. Esos renglones los tenés que matchear contra el bloque \\\"BALDES\\\" del catálogo de abajo, NUNCA contra \\\"SABORES (vasquetas)\\\" aunque el nombre sea parecido o igual al de una vasqueta — son productos de catálogo distintos.\n\nMás abajo te paso el catálogo completo de sabores que tenemos cargados, con su ID. Para cada renglón de esas secciones:\n- Id: elegí, del catálogo de abajo, el sabor que corresponda a ese renglón, y poné su ID tal cual. Usá criterio: el nombre en el remito puede venir abreviado, con errores de tipeo, en otro orden, con palabras de más o de menos, o nombrado distinto a como está en el catálogo (ej. el remito puede decir \"Sorbete Dark 72%\" para lo que el catálogo tiene como \"Vegan 72%\", o \"Luxury Jameson Negro\" para \"Jameson Icepop\") — el objetivo es identificar el PRODUCTO real, no encontrar coincidencia exacta de texto. Prestá mucha atención a en qué sección del remito está el renglón: varios sabores se llaman igual en categorías distintas del catálogo (ej. \"Pistacchio\" existe como vasqueta, como Icepop Luxury y como Cannoli — son cajas y productos distintos) y el catálogo te muestra la categoría de cada uno para que elijas el que corresponde a la sección donde estás leyendo. Si de verdad no hay ningún sabor del catálogo que corresponda (por ejemplo un producto nuevo o de edición limitada que todavía no cargamos), dejá el id vacío — no inventes ni fuerces un match que no corresponde. EXCEPCIÓN para CHOCOLATES, ALFAJORES, CONITOS, SQUARES, AVELLA y LATA CARRUSEL: si el producto no está en el catálogo de CHOCOLATERÍA, NO lo transcribas (omitilo del JSON). Equivalencias confirmadas (nombre en el remito = producto del catálogo): ALFAJOR DE NUEZ = Alfajor Blanco & Nuez; ALFAJOR DE CHOCOLATE BLANCO = Alfajor Blanco; ALFAJOR DE CHOCOLATE SEMIAMARGO = Alfajor Semiamargo; ALFAJOR DE PISTACCHIO = Alfajor Pistacchio; ALFAJOR DARK = Alfajor Dark; ALFAJOR PINK = Alfajor Frutos Rojos; CONITO PINK = Conito Frutos Rojos; CONITO DE PISTACCHIO = Conito Pistacchio; CHOCOLATE DARK = Chocolate Dark 70%; CHOCOLATE CON LECHE CON DDL = Chocolate con Leche con Dulce de Leche; CHOCOLATE SEMIAMARGO CON AVELLANAS ENTERAS = Chocolate 54% con Avellanas; CHOCOLATE SEMIAMARGO DUBAI = Tableta Dubai Semiamargo; CHOCOLATE CON LECHE DUBAI = Tableta Dubai con Leche; CHOCOLATE PISTACCHIO DUBAI = Tableta Dubai Pistacchio; LATA CARRUSEL ROJA = Lata Carrusel Bordó (Clásica); LATA CARRUSEL CLÁSICA = Lata Carrusel Bordó (Clásica); LATA CARRUSEL NEGRA = Lata Carrusel Negra (Dark); LATA CARRUSEL DARK = Lata Carrusel Negra (Dark); LATA CARRUSEL VERDE = Lata Carrusel Verde (Pistacho).\n- Nombre: igual escribí el nombre del renglón tal cual lo ves en la foto (incluso si encontraste el id) — lo necesitamos para poder revisar a mano los que no matcheen.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO mires la columna \"Kg/Unidad\" ni hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n\nOJO con renglones consecutivos que arrancan con la misma palabra pero son productos distintos (ej. \\\"Oli Chocolate Platino\\\", \\\"Oli Dolca\\\" y \\\"Oli King\\\" son 3 sabores distintos del catálogo que a veces aparecen uno debajo del otro) — leé el nombre COMPLETO de cada renglón por separado, nunca asumas que dos renglones parecidos son el mismo producto, y nunca repitas o copies el número de bultos de un renglón vecino: cada renglón tiene su propio número en su propia fila, aunque el nombre se vea casi igual al de arriba o abajo. Lo mismo pasa con \"Double Chocolate & Chocolate\" y \"Double Chocolate & King\" (dos Icepops Luxury distintos). Regla de control antes de contestar: dos renglones con nombre distinto NUNCA pueden tener el mismo id, y cada renglón del remito es un item aparte del JSON (no junten ni repitan renglones).\n\nTambién fijate si se ve el número de remito y la fecha. Al pie del remito, en el recuadro \"Bultos:\", suele haber un resumen tipo \"Palitos=80 Sabores=397 Baldes=5 Pastelería=103 Chocolates=...\" — Sabores y Baldes son los totales de bultos que declaró la fábrica para cada uno, para controlar que no se perdió ningún renglón (el de Palitos no lo necesitamos — esa parte del recuadro no es confiable, no la uses para nada). Buscá ese recuadro y decime los números de \"Sabores\" y de \"Baldes\" tal cual figuran ahí — si no se ve ese recuadro o no tiene alguno de esos campos, dejalo vacío, no inventes un número.\n\nContestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"bultosDeclaradosSabores\":<número entero del recuadro \\\"Bultos:\\\" junto a \\\"Sabores\\\", o vacío>,\"bultosDeclaradosBaldes\":<número entero del recuadro \\\"Bultos:\\\" junto a \\\"Baldes\\\", o vacío>,\"items\":[{\"id\":\"<id del catálogo, o vacío si ninguno corresponde>\",\"nombre\":\"<nombre tal cual aparece en el remito>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>}]}\n\nCATÁLOGO:\n" + _catalogoParaPrompt(sabores);
+  const prompt = "Esta es la foto de un remito de productos Lucciano's. Quiero SOLO los renglones que están bajo alguno de estos encabezados de sección: \"SABORES\", \"SIN GLUTEN\", cualquiera que empiece con \"ICE POPS\" (incluye ICE POPS FRUTALES, ICE POPS BAÑADOS, ICE POPS SIN BAÑAR, ICE POPS LUXURY, ICE POPS MINI) y \"CANNOLIS\", \"CHOCOLATES\", \"ALFAJORES\", \"CONITOS\", \"SQUARES\" y \"ENVASADO EN FRASCO\" (solo los renglones de AVELLA) y los renglones \"LATA CARRUSEL\" aunque estén bajo \"ENVASES Y PACKAGING\". También incluí cualquier sección de Mini Icepops aunque tenga un nombre promocional distinto (ej. un tie-in con una película o un evento, como \"MI VILLANO FAVORITO\") — se reconoce porque aparece en el mismo lugar que ICE POPS MINI (después de ICE POPS LUXURY, antes de CANNOLIS) y tiene el mismo formato de columnas. Ignorá todo el resto: Geladot's, Pastelería, Envases y Packaging (salvo las LATA CARRUSEL), Utensillos, Varios, Envasado en Frasco (salvo las AVELLA), Cafés, Salsas y Variegatos, Insumos, \\\"BALDES Y VASQUETAS\\\" (esa sección son envases vacíos, no sabores), Bienes de Uso, y cualquier otra sección que no sea claramente una de las listadas arriba.\n\nDENTRO de la sección \\\"SABORES\\\", algunos renglones vienen agrupados bajo un sub-encabezado \\\"BALDES\\\" (o el nombre del renglón arranca con \\\"BALDES -\\\" y/o termina en \\\"- BALDE\\\") — es el mismo sabor que una vasqueta pero vendido en formato balde. Esos renglones los tenés que matchear contra el bloque \\\"BALDES\\\" del catálogo de abajo, NUNCA contra \\\"SABORES (vasquetas)\\\" aunque el nombre sea parecido o igual al de una vasqueta — son productos de catálogo distintos.\n\nMás abajo te paso el catálogo completo de sabores que tenemos cargados, con su ID. Para cada renglón de esas secciones:\n- Id: elegí, del catálogo de abajo, el sabor que corresponda a ese renglón, y poné su ID tal cual. Usá criterio: el nombre en el remito puede venir abreviado, con errores de tipeo, en otro orden, con palabras de más o de menos, o nombrado distinto a como está en el catálogo (ej. el remito puede decir \"Sorbete Dark 72%\" para lo que el catálogo tiene como \"Vegan 72%\", o \"Luxury Jameson Negro\" para \"Jameson Icepop\") — el objetivo es identificar el PRODUCTO real, no encontrar coincidencia exacta de texto. Prestá mucha atención a en qué sección del remito está el renglón: varios sabores se llaman igual en categorías distintas del catálogo (ej. \"Pistacchio\" existe como vasqueta, como Icepop Luxury y como Cannoli — son cajas y productos distintos) y el catálogo te muestra la categoría de cada uno para que elijas el que corresponde a la sección donde estás leyendo. Si de verdad no hay ningún sabor del catálogo que corresponda (por ejemplo un producto nuevo o de edición limitada que todavía no cargamos), dejá el id vacío — no inventes ni fuerces un match que no corresponde. EXCEPCIÓN para CHOCOLATES, ALFAJORES, CONITOS, SQUARES, AVELLA y LATA CARRUSEL: si el producto no está en el catálogo de CHOCOLATERÍA, NO lo transcribas (omitilo del JSON). Equivalencias confirmadas (nombre en el remito = producto del catálogo): ALFAJOR DE NUEZ = Alfajor Blanco & Nuez; ALFAJOR DE CHOCOLATE BLANCO = Alfajor Blanco; ALFAJOR DE CHOCOLATE SEMIAMARGO = Alfajor Semiamargo; ALFAJOR DE PISTACCHIO = Alfajor Pistacchio; ALFAJOR DARK = Alfajor Dark; ALFAJOR PINK = Alfajor Frutos Rojos; CONITO PINK = Conito Frutos Rojos; CONITO DE PISTACCHIO = Conito Pistacchio; CHOCOLATE DARK = Chocolate Dark 70%; CHOCOLATE CON LECHE CON DDL = Chocolate con Leche con Dulce de Leche; CHOCOLATE SEMIAMARGO CON AVELLANAS ENTERAS = Chocolate 54% con Avellanas; CHOCOLATE SEMIAMARGO DUBAI = Tableta Dubai Semiamargo; CHOCOLATE CON LECHE DUBAI = Tableta Dubai con Leche; CHOCOLATE PISTACCHIO DUBAI = Tableta Dubai Pistacchio; LATA CARRUSEL ROJA = Lata Carrusel Bordó (Clásica); LATA CARRUSEL CLÁSICA = Lata Carrusel Bordó (Clásica); LATA CARRUSEL NEGRA = Lata Carrusel Negra (Dark); LATA CARRUSEL DARK = Lata Carrusel Negra (Dark); LATA CARRUSEL VERDE = Lata Carrusel Verde (Pistacho).\n- Nombre: igual escribí el nombre del renglón tal cual lo ves en la foto (incluso si encontraste el id) — lo necesitamos para poder revisar a mano los que no matcheen.\n- Bultos: el número de la columna \"Cantidad/Bultos\" (la de más a la izquierda), tal cual aparece escrito. NO hagas ninguna cuenta ni multiplicación — nosotros ya sabemos cuánto trae cada caja cerrada de cada sabor, vos solo transcribí el número de bultos tal cual está.\n- Kilos: SOLO para los renglones de la sección \"SABORES\" que son vasquetas (no baldes, no Icepops, no chocolatería): el número de la columna \"KG/Unidad\" tal cual aparece, que en esos renglones es UN solo número con el peso total del renglón en kilos (ej. 18.67). Usá punto decimal. Para cualquier otro renglón, o si no se lee, dejalo vacío (null) — no calcules ni inventes.\n\nOJO con renglones consecutivos que arrancan con la misma palabra pero son productos distintos (ej. \\\"Oli Chocolate Platino\\\", \\\"Oli Dolca\\\" y \\\"Oli King\\\" son 3 sabores distintos del catálogo que a veces aparecen uno debajo del otro) — leé el nombre COMPLETO de cada renglón por separado, nunca asumas que dos renglones parecidos son el mismo producto, y nunca repitas o copies el número de bultos de un renglón vecino: cada renglón tiene su propio número en su propia fila, aunque el nombre se vea casi igual al de arriba o abajo. Lo mismo pasa con \"Double Chocolate & Chocolate\" y \"Double Chocolate & King\" (dos Icepops Luxury distintos). Regla de control antes de contestar: dos renglones con nombre distinto NUNCA pueden tener el mismo id, y cada renglón del remito es un item aparte del JSON (no junten ni repitan renglones).\n\nTambién fijate si se ve el número de remito y la fecha. Al pie del remito, en el recuadro \"Bultos:\", suele haber un resumen tipo \"Palitos=80 Sabores=397 Baldes=5 Pastelería=103 Chocolates=...\" — Sabores y Baldes son los totales de bultos que declaró la fábrica para cada uno, para controlar que no se perdió ningún renglón (el de Palitos no lo necesitamos — esa parte del recuadro no es confiable, no la uses para nada). Buscá ese recuadro y decime los números de \"Sabores\" y de \"Baldes\" tal cual figuran ahí — si no se ve ese recuadro o no tiene alguno de esos campos, dejalo vacío, no inventes un número.\n\nContestá ÚNICAMENTE con este JSON, sin texto alrededor:\n{\"remito\":\"<número o vacío>\",\"fecha\":\"<DD/MM/AAAA o vacío>\",\"bultosDeclaradosSabores\":<número entero del recuadro \\\"Bultos:\\\" junto a \\\"Sabores\\\", o vacío>,\"bultosDeclaradosBaldes\":<número entero del recuadro \\\"Bultos:\\\" junto a \\\"Baldes\\\", o vacío>,\"items\":[{\"id\":\"<id del catálogo, o vacío si ninguno corresponde>\",\"nombre\":\"<nombre tal cual aparece en el remito>\",\"bultos\":<número entero tal cual aparece en \\\"Cantidad/Bultos\\\", sin multiplicar>,\"kilos\":<número con decimales de \\\"KG/Unidad\\\" solo para vasquetas de SABORES, o null>}]}\n\nCATÁLOGO:\n" + _catalogoParaPrompt(sabores);
 
   // Modelo del lector: por defecto Haiku 5.5 (unas 20 veces más barato que Sonnet 5.5). Para volver a Sonnet
   // sin redeploy: Propiedades del script → REMITO_MODELO = claude-sonnet-5-5.
@@ -1617,6 +1636,7 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
   let bultosLeidosSabores = 0, bultosLeidosBaldes = 0, bultosLeidosPalitos = 0;
   const items = (leido.items || []).map((it) => {
     const bultos = Math.max(0, Number(it.bultos) || 0);
+    const kilosLeidos = Math.round((Number(String(it.kilos == null ? "" : it.kilos).replace(",", ".")) || 0) * 100) / 100;
     // La IA ya matchea cada renglón contra el catálogo que le pasamos
     // (tiene la foto Y el catálogo juntos, mucho mejor criterio que
     // cualquier fórmula de parecido de texto). Si por algún motivo no
@@ -1660,6 +1680,7 @@ function leerRemito(fotoBase64, mimeType, local, empleado) {
       nombreDetectado: it.nombre,
       cantidad: cantidad,
       bultos: bultos, // el frontend la necesita para recalcular si el empleado corrige el sabor a mano
+      kilos: (sabor && String(sabor.tipo || "v") === "v" && String(sabor.familia || "vasquetas") === "vasquetas" && kilosLeidos > 0) ? kilosLeidos : null, // peso total del renglón (solo vasquetas)
       saborId: sabor ? sabor.id : null,
       nombreSabor: sabor ? sabor.nombre : null,
       confianza: confianza,
@@ -1771,7 +1792,7 @@ function etiquetar(clienteId, local, items, vencimientos, empleado) {
   }
 }
 
-function conteo(clienteId, local, items, empleado, vencimientos) {
+function conteo(clienteId, local, items, empleado, vencimientos, kilos) {
   if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -1797,12 +1818,20 @@ function conteo(clienteId, local, items, empleado, vencimientos) {
     const norm = _normalizarVencimientos(vencimientos, items2, "conteo");
     if (!norm.ok) return norm;
     const vencimientos2 = norm.vencimientos;
+    // Kilos reales: en un conteo, cada vasqueta contada trae el peso total del sabor (Registros.kilos).
+    const kilosConteo = {};
+    Object.keys(kilos || {}).forEach((id) => { const k = Number(kilos[id]) || 0; if (k > 0 && items2[id] !== undefined) kilosConteo[id] = Math.round(k * 100) / 100; });
+    if (filaLocalConteo && _esVerdadero(filaLocalConteo.kilos_reales) === true) {
+      const faltan = catalogoConteo.filter((sab) => String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas" && (items2[String(sab.id)] || 0) > 0 && !kilosConteo[String(sab.id)]).map((sab) => sab.nombre);
+      if (faltan.length) return { ok: false, error: "Faltan los kilos totales de: " + faltan.join(", ") + "." };
+    }
     const total = _totalItems(items2);
     const ts = Date.now();
 
     _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: "conteo", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(items2), total: total, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "",
+      kilos: Object.keys(kilosConteo).length ? JSON.stringify(kilosConteo) : "",
       vencimientos: Object.keys(vencimientos2).length ? JSON.stringify(vencimientos2) : "",
     });
 
