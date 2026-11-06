@@ -267,6 +267,10 @@ select{max-width:220px}
 .card{position:relative;display:flex;flex-direction:column}
 .card>.pick{flex:1 1 auto}
 .lotesFull{grid-column:1/-1;padding:0 0 10px}
+.kgFila{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem;font-weight:700}
+.kgFila input{width:96px;height:40px;text-align:center;border:1.5px solid var(--accent);border-radius:12px;font:800 1rem inherit;background:#fff;color:var(--ink)}
+.right .kgIn{width:78px;height:41px;text-align:center;border:1.5px solid var(--accent);border-radius:12px;font:800 1rem inherit;background:#fff;color:var(--ink);margin-left:6px}
+.kgFila .kgAv{flex-basis:100%;color:var(--warn);font-weight:700;font-size:.78rem}
 .lotesPanel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
 .lpHead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 10px;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .lpEstado{font-size:.8rem;font-weight:800;letter-spacing:0;text-transform:none}
@@ -809,7 +813,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.117.0";
+const FRONTEND_VERSION = "1.118.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -864,7 +868,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, ventaDia: false, chocoSoloDeposito: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, kilosReales: false, kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
   controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
@@ -1011,6 +1015,33 @@ function stockMapHasta(hasta){
   return m;
 }
 function stockMap(){ return stockMapHasta(Date.now()) }
+/* ============================================================
+   KILOS REALES EN CÁMARA (Locales.kilos_reales=SI, solo vasquetas)
+   Entran con el remito (o a mano) y con el conteo, salen pesando cada vasqueta.
+   No hay peso promedio: un sabor sin kilos cargados queda en null («sin kilos cargados»).
+============================================================ */
+function esVasquetaKilos(id){ const s=S.saboresPorId[String(id)]; return !!(S.kilosReales && s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas") }
+function kilosNum(v){ return parseFloat(String(v==null?"":v).replace(",","."))||0 }
+function kilosMap(){
+  const out={}; if(!S.kilosReales) return out;
+  const base=(S.stock&&S.stock.base)||{}, bts=(S.stock&&S.stock.ts)||0;
+  const rec=bts?regsActivos().find(r=>r.tipo==="conteo" && r.ts===bts):null, kb=(rec&&rec.kilos)||{};
+  S.sabores.forEach(s=>{ if(!esVasquetaKilos(s.id)) return;
+    out[s.id] = !bts ? 0 : (+kb[s.id]>0 ? +kb[s.id] : (+base[s.id]>0 ? null : 0)); });
+  for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts) continue;
+    if(r.tipo!=="ingreso" && r.tipo!=="salida") continue;
+    for(const [id,q] of Object.entries(r.items||{})){ if(!(id in out) || out[id]===null || !(+q>0)) continue;
+      if(r.tipo==="ingreso"){ const k=+((r.kilos||{})[id])||0; out[id] = k>0 ? out[id]+k : null }
+      else { const pe=(r.pesos||{})[id]||[]; out[id] = pe.length>=+q ? out[id]-pe.reduce((a,b)=>a+b,0) : null } } }
+  Object.keys(out).forEach(id=>{ if(out[id]!==null) out[id]=Math.max(0,Math.round(out[id]*100)/100) });
+  return out;
+}
+/** Campo «kilos totales» bajo un renglón de ingreso/devolución (solo vasquetas, solo en locales con kilos reales). */
+function kilosFilaHTML(id,q){
+  if(!esVasquetaKilos(id) || !(q>0)) return "";
+  const v=S.kilosProduccion[id]||"", kg=kilosNum(v), por=kg>0?kg/q:0, raro=kg>0 && (por<2 || por>6);
+  return `<div class="lotesFull"><div class="kgFila"><label for="kg-${id}">Kilos totales de ${q} ${unidad(id,q)}</label><input type="text" inputmode="decimal" id="kg-${id}" data-kilos="${id}" value="${esc(v)}" placeholder="0,00"> kg${raro?`<span class="kgAv">Ojo: da ${fmtKg(por)} kg por vasqueta — revisá los kilos.</span>`:""}</div></div>`;
+}
 /** Jornada operativa: el día de trabajo arranca a las 04:00, así que lo que se
  *  carga entre 00:00 y 04:00 cuenta en la jornada del día anterior. El ts real
  *  de cada movimiento no cambia; solo cambia cómo se agrupa por día/semana/mes. */
@@ -1472,7 +1503,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
-    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.kilosReales = !!r.datos.kilosReales; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -1916,7 +1947,7 @@ document.addEventListener("change", e=>{
 });
 function iniciarConteo(){
   const st=stockMap();
-  S.conteo={}; S.vencConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+  S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
   Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
   S.confirm=false; renderApp();
 }
@@ -2640,6 +2671,7 @@ function lectorRemitoView(){
       ${it.saborId?plateHTML(it.saborId):`<span class="plate" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--warn);font-weight:800">?</span>`}
       <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${it.saborId&&!it.ignorar?`<div class="meta">El remito dice: ${esc(nombreSinSeccion(it.nombreDetectado))}${it.repetido?` — <b style="color:var(--alert)">otro renglón del remito quedó en este mismo sabor, revisá cuál es cuál</b>`:""}</div>`:""}${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo. ${it.bultos} bulto${it.bultos===1?"":"s"} en el remito — elegí el sabor para calcular la cantidad real, o cargala a mano.</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:dudoso?`<div class="meta">Lo matcheamos por parecido con "${esc(it.nombreDetectado)}" — revisá que sea el sabor correcto.</div>`:""}</div>
       <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
+      ${(S.kilosReales && it.saborId && !it.ignorar && esVasquetaKilos(it.saborId))?(()=>{ const kg=+it.kilos||0, por=(kg>0&&it.cantidad>0)?kg/it.cantidad:0; return `<div class="lotesFull"><div class="kgFila"><label for="rkg-${i}">Kilos del renglón</label><input type="text" id="rkg-${i}" inputmode="decimal" data-remito-kg="${i}" value="${kg>0?esc(String(kg).replace(".",",")):""}" placeholder="0,00"> kg${!(kg>0)?`<span class="kgAv">No se leyeron los kilos: escribilos a mano.</span>`:(por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta — revisá cantidad y kilos.</span>`:""}</div></div>` })():""}
       ${flag||it.ignorar||dudoso?`<div class="flagPick"><select data-remito-elegir="${i}">
         <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>
         ${gruposParaSelectSabor().map(g=>`<optgroup label="${esc(g.label)}">${g.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("")}
@@ -2687,7 +2719,7 @@ function lectorRemitoView(){
   const bultosCmp = (vasquetasLinea||baldesLinea||palitosLinea) ? `<div class="note">${vasquetasLinea}${baldesLinea}${palitosLinea}</div>` : "";
   const paginasTxt = lr.paginasLeidas===1?"1 página cargada":`${lr.paginasLeidas} páginas cargadas`;
   return `<p class="sec">Detectado en el remito</p>
-  <div class="remitoResumen">${paginasTxt} · ${lr.items.length} renglones, ${total} unidades en total.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
+  <div class="remitoResumen">${paginasTxt} · ${lr.items.length} renglones, ${total} unidades en total${S.kilosReales?` · ${fmtKg(lr.items.reduce((a,it)=>a+((!it.ignorar&&it.saborId&&esVasquetaKilos(it.saborId))?(+it.kilos||0):0),0))} kg de vasquetas`:""}.${sinResolver?` ${sinResolver} sin resolver — elegí el sabor o ignorá el renglón antes de cargar.`:""}</div>
   ${lr.remitos.length?`<p class="lede" style="margin:8px 0 0;color:var(--muted)">N° de remito detectado: <b style="color:var(--ink)">${esc(lr.remitos.join(" + "))}</b></p>`:""}
   ${bultosCmp}
   ${gruposItems.map(g=>`<p class="sec" style="margin-top:14px">${esc(g.label)}${g.label==="Sin identificar"?` (${g.indices.length})`:""}</p><div class="rows">${g.indices.map(i=>fila(lr.items[i],i)).join("")}</div>`).join("")}
@@ -2751,6 +2783,7 @@ function gridIngreso(st){
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
     ${usaLotes(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
+    ${kilosFilaHTML(s.id,q)}
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
@@ -2780,6 +2813,7 @@ function gridDevolucion(st){
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">Pendiente de devolver: ${max} ${unidad(s.id,max)}</div></div>
       <div class="stepper"><button type="button" data-ddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-dinc="${s.id}" data-max="${max}" aria-label="Sumar">+</button></div>
+      ${kilosFilaHTML(s.id,q)}
     </div>`};
   return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
@@ -2829,12 +2863,14 @@ function stockView(st){
 }
 function stockViewGeneral(st){
   const al=alertas(st);
-  let kgTotal=0;
+  let kgTotal=0, kgReal=0, sinKilos=0;
+  const km=S.kilosReales?kilosMap():null;
   const filas=S.sabores.map(s=>{
     const s7=salidasDias(7);
     const cov = (s7[s.id]||0)>0 ? (st[s.id]/((s7[s.id]||0)/7)) : (st[s.id]>0?99:0);
     const ed=estadoSabor(s.id,st);
-    if(s.peso) kgTotal += (st[s.id]||0)*s.peso;
+    if(km && s.id in km){ if(km[s.id]===null){ if((st[s.id]||0)>0) sinKilos++ } else kgReal+=km[s.id] }
+    else if(s.peso) kgTotal += (st[s.id]||0)*s.peso;
     return {s, cov, ed};
   });
   const s7=salidasDias(7), consumoSemanal=Math.round(Object.values(s7).reduce((a,b)=>a+b,0));
@@ -2854,14 +2890,15 @@ function stockViewGeneral(st){
     const {s,cov,ed}=f;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}${ed?` <span class="badge ${ed.cls}" style="margin:0 0 0 2px">${ed.label}</span>`:""}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${(km&&s.id in km)?(km[s.id]===null?` · <b style="color:var(--warn)">sin kilos cargados</b>`:` · <b>${fmtKg(km[s.id])} kg</b>`):s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}${ed?` <span class="badge ${ed.cls}" style="margin:0 0 0 2px">${ed.label}</span>`:""}</div></div>
       <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>
     </div>`};
 
   return `<div class="kpis">
     <div class="kpi"><span class="lbl">Sabores en alerta</span><span class="val${al.length?" crit":""}">${al.length}</span><span class="sub">${al.length?al.slice(0,4).map(s=>esc(s.nombre)).join(" · ")+(al.length>4?" …":""):"Todo en orden"}</span></div>
     <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
-    ${kgTotal>0?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
+    ${km?`<div class="kpi"><span class="lbl">Kilos de helado en cámara</span><span class="val">${fmtKg(kgReal)} kg</span><span class="sub">${sinKilos?`${sinKilos} ${sinKilos===1?"sabor sin kilos cargados":"sabores sin kilos cargados"}: se cargan con un conteo con kilos`:"Lo que entró menos lo que salió, pesado"}</span></div>`:""}
+    ${(!km&&kgTotal>0)?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
   ${puedePedido?`<button type="button" class="ctaCard glass" id="verPedidoBtn" style="margin-top:12px" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
     <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="#7A3E1D" stroke-width="2.2" stroke-linecap="round"/></svg></span>
@@ -3020,7 +3057,7 @@ function stockViewConteo(){
   const cont=S.conteo;
   const list=listaFiltrada(stockMap());
   const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div></div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"></div>${usaLotes(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
@@ -3108,7 +3145,7 @@ function filaMovimiento(r){
   const total=filtra ? entradas.reduce((a,[,q])=>a+(+q||0),0) : r.total;
   const it=entradas.map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
-    const kg=r.subtipo==="produccion"&&r.kilos&&r.kilos[id];
+    const kg=(r.subtipo==="produccion"||S.kilosReales)&&r.kilos&&r.kilos[id];
     const vto=textoVencRegistro(r,id);
     const grupo=etiquetaProductoDe(S.saboresPorId[id]||{});
     const pe=r.pesos&&r.pesos[id], peTxt=pe&&pe.length?` (${pe.map(fmtKg).join(" · ")} kg${pe.length<+q?`, ${pe.length} de ${q} pesadas`:""})`:"";
@@ -3556,7 +3593,7 @@ async function toggleSaborProduccion(saborId){
   if(r && r.ok){
     S.produccionSabores = (r.ids||[...set]).map(String);
     toast(set.has(id)?"Lo producimos":"Ya no lo producimos");
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     renderApp();
   } else toast((r&&r.error)||"No se pudo ajustar.");
 }
@@ -3822,10 +3859,11 @@ function renderBar(){
   let visible=false;
   if(S.tab==="stock" && S.conteo){
     visible=true;
-    const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id]));
+    const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id])).concat(S.kilosReales?Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[]);
+    const faltaKgC=S.kilosReales?Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)).length:0;
     inn.innerHTML = S.confirm
       ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
-      : `<div class="sum">Revisá los números y guardá.${faltaVencC.length?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length} ${faltaVencC.length===1?"producto":"productos"} para guardar el conteo.</div>`:""}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Guardar conteo</button>`;
+      : `<div class="sum">Revisá los números y guardá.${faltaKgC?`<div class="warn">Faltan los kilos totales de ${faltaKgC} ${faltaKgC===1?"sabor":"sabores"} para guardar el conteo.</div>`:""}${(faltaVencC.length-faltaKgC)>0?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length-faltaKgC} ${(faltaVencC.length-faltaKgC)===1?"producto":"productos"} para guardar el conteo.</div>`:""}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Guardar conteo</button>`;
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
     const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia";
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
@@ -3839,19 +3877,23 @@ function renderBar(){
       const kilosDe=id=>parseFloat(String(S.kilosProduccion[id]||"").replace(",","."))||0;
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
       const conPeso=(cartKey==="salida"||cartKey==="desperdicio"), kgEscan=conPeso?sumaPesos(cartKey):0, nEscan=conPeso?cantPesos(cartKey):0;
+      // Kilos reales: cada vasqueta que sale se pesa; todo ingreso de vasquetas trae sus kilos totales.
+      const faltaKilos = !S.kilosReales ? [] : conPeso ? ent.filter(([id,q])=>esVasquetaKilos(id) && ((pesosDe(cartKey)[id]||[]).length<q)) : (cartKey==="ingreso"&&!enTransfIn||enDevolucion||enProduccion) ? ent.filter(([id])=>esVasquetaKilos(id) && !(kilosNum(S.kilosProduccion[id])>0)) : [];
+      const avisoKilos = faltaKilos.length ? `<div class="warn">${conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "";
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" && !enTransfIn ? remitoDuplicado(S.remito, S.local) : null;
         inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}${enVenta?`<br>${subtipoChoco()==="venta"?`Venta del <b>${fechaVentaTexto(fechaVentaEfectiva())}</b>`:`<b>${esc(motivoChoco())}</b>`}`:""}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${kgEscan>0?`<br>Con peso: ${nEscan} · <b>${fmtKg(kgEscan)} kg</b>`:""}
+          ${avisoKilos}
           ${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior.</div>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
-          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
+          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
-          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
   }
@@ -3876,7 +3918,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
-    S.escanerPeso = !!d.escanerPeso; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
+    S.escanerPeso = !!d.escanerPeso; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -3895,10 +3937,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
-  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.kilosReales = !!r.kilosReales; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
   S.regs = r.registros;
   S.stock = r.stock;
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -3942,7 +3984,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: payload.fecha ? tsVentaDe(payload.fecha) : Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -3957,7 +3999,7 @@ async function guardarMovimiento(){
       if(tipo==="ingreso"&&!enDevolucion&&!enProduccion){ const v=valorVencimiento("ing:"+id, S.vencimientos[id], items[id]); if(v) venc[id]=v }
       else if(tipo==="salida"&&!enVenta&&S.lotePick[id]) venc[id]=S.lotePick[id];
     }
-    const kilos={}; if(enProduccion) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
+    const kilos={}; if(enProduccion || (S.kilosReales && tipo==="ingreso" && !enTransfIn)) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const pesosEnv={};
     if(tipo==="salida"&&!enVenta) for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
@@ -3967,7 +4009,7 @@ async function guardarMovimiento(){
       subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? subtipoChoco() : enTransfIn ? "transferencia" : undefined,
       motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : enTransfIn ? "Transferencia de "+S.remito.trim() : undefined,
       fecha: enVenta && chocoConFecha() && S.fechaVenta ? S.fechaVenta : undefined,
-      kilos: enProduccion && Object.keys(kilos).length ? kilos : undefined,
+      kilos: Object.keys(kilos).length ? kilos : undefined,
       vencimientos: Object.keys(venc).length ? venc : undefined,
       pesos: Object.keys(pesosEnv).length ? pesosEnv : undefined};
     const r = await api("registrar", payload);
@@ -3997,11 +4039,12 @@ async function guardarConteo(){
   const clienteId=uuid();
   const vencimientos={};
   for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
-  const payload={clienteId, local:S.local, items, vencimientos};
+  const kilosC={}; if(S.kilosReales) for(const id of Object.keys(items)){ if(items[id]>0 && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(k>0) kilosC[id]=k } }
+  const payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined};
   const r = await api("conteo", payload);
   if(r && r.ok){
     toast("Conteo guardado");
-    S.conteo=null; S.confirm=false; S.vencConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+    S.conteo=null; S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     await cargarDatos();
   } else if(r && r.offline){
     colaAgregar("conteo", payload);
@@ -4009,7 +4052,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
@@ -4333,7 +4376,8 @@ document.addEventListener("click", async e=>{
   if(t.id==="remitoCargar"){
     const lr=S.lectorRemito;
     let sumados=0;
-    lr.items.forEach(it=>{ if(it.saborId && !it.ignorar && it.cantidad>0){ S.cart.ingreso[it.saborId]=(S.cart.ingreso[it.saborId]||0)+it.cantidad; sumados++ } });
+    lr.items.forEach(it=>{ if(it.saborId && !it.ignorar && it.cantidad>0){ S.cart.ingreso[it.saborId]=(S.cart.ingreso[it.saborId]||0)+it.cantidad; sumados++;
+      if(esVasquetaKilos(it.saborId) && +it.kilos>0){ const t=Math.round((kilosNum(S.kilosProduccion[it.saborId])+(+it.kilos))*100)/100; S.kilosProduccion[it.saborId]=String(t).replace(".",","); } } });
     // Si ningún renglón tenía cantidad > 0 (ej. la IA no pudo leer el número
     // de bultos de ninguno), antes se cerraba el lector igual y el carrito
     // quedaba vacío sin ningún aviso — parecía que el botón "no hacía nada".
@@ -4481,6 +4525,8 @@ document.addEventListener("input", e=>{
   }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.dataset.kc){ S.kilosConteo[e.target.dataset.kc]=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.dataset.remitoKg!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoKg].kilos=kilosNum(e.target.value)||null }
   if(e.target.dataset.loteF!==undefined || e.target.dataset.loteC!==undefined){ setLoteExtra(e.target); renderBar() }
 });
 document.addEventListener("change", e=>{
@@ -4830,7 +4876,7 @@ function resumenPesosHTML(c){
   const n=cantPesos(c); if(!n) return "";
   return `<p class="pesosResumen">Con peso: <b>${n}</b> · <b>${fmtKg(sumaPesos(c))} kg</b></p>`;
 }
-function esPesable(id){ const s=S.saboresPorId[String(id)]; return !!(S.escanerPeso && s && s.tipo!=="k" && GRUPOS_PESABLES.includes(grupoProductoDe(s))) } // tipo "k" (kilos): el número ya es el peso, no se pesa vasqueta por vasqueta
+function esPesable(id){ const s=S.saboresPorId[String(id)]; if(S.kilosReales) return esVasquetaKilos(id); return !!(S.escanerPeso && s && s.tipo!=="k" && GRUPOS_PESABLES.includes(grupoProductoDe(s))) } // tipo "k" (kilos): el número ya es el peso, no se pesa vasqueta por vasqueta
 function disponibleParaPesar(id,c){
   const ya=S.cart[c][id]||0;
   return c==="desperdicio" ? Math.max(0,(stockMap()[id]||0)-ya) : Math.max(0,vendibleDe(id)-ya);
@@ -5027,7 +5073,7 @@ function abrirKilos(id,c){
   if(S.kilosDlg) return;
   if(disponibleParaPesar(id,c)<=0){ toast(c==="desperdicio"?"No queda más stock para marcar como desperdicio.":"No hay stock de ese sabor."); return }
   S.kilosDlg={id:String(id), c, cargadas:[]};
-  const s=S.saboresPorId[String(id)], ref=Number(s.peso)||0;
+  const s=S.saboresPorId[String(id)], ref=S.kilosReales?0:(Number(s.peso)||0); // con kilos reales no hay peso promedio de referencia
   const ov=document.createElement("div"); ov.id="kilosOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="kgTit">
     <p class="mantTit" id="kgTit">¿Cuánto pesa?</p>

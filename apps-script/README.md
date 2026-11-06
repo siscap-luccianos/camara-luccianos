@@ -244,3 +244,15 @@ Pestaña **Relevar** de Operaciones (admin y supervisor): una tabla con el stock
 - **Error de CORS / fetch falla** → confirmá que el deploy tiene acceso "Cualquier usuario" (no "Solo yo" ni "Cualquiera con cuenta de Google en tu organización"), y que `index.html` manda el `Content-Type: text/plain;charset=utf-8` (ya viene así en el código — si lo tocaste, revisalo).
 - **Los cambios que subiste no se ven** → te falta crear una "Nueva versión" de la implementación (ver "Cada vez que actualices el código" arriba). Pegar código no alcanza.
 - **"PIN bloqueado por intentos incorrectos"** → esperar los 5 minutos, o pedirle a un admin/supervisor/encargado que use "Resetear PIN" desde la app (vuelve a pedirlo en el próximo ingreso).
+
+
+## 10. Kilos reales en cámara (`Locales.kilos_reales`)
+
+Opcional y por local (hoy solo «Local prueba»). Agregá la columna `kilos_reales` a la hoja `Locales` y poné `SI` en el local que lo use.
+
+- Solo **vasquetas** (tipo `v`, familia vasquetas): no baldes, ni granella/crumble (tipo `k`, que ya son kilos), ni Icepops ni chocolatería.
+- **Ingreso** (remito, devolución, producción): cada vasqueta trae los **kilos totales** del sabor (columna «KG/Unidad» del remito; el lector la lee y se puede corregir). Se guardan en `Registros.kilos`.
+- **Conteo físico:** pide unidades y kilos totales por sabor; los kilos van en `Registros.kilos` del registro de conteo.
+- **Salida y desperdicio:** cada vasqueta se pesa (escáner del rótulo o «¿Cuánto pesa?», `Registros.pesos`); el servidor rechaza una salida con menos pesos que vasquetas. Activa también el pad de peso (equivale a `escaner_peso=SI`).
+- Kilos en cámara = base del último conteo + kilos de los ingresos − pesos de las salidas. Un sabor sin kilos cargados se muestra como «sin kilos cargados» (no hay peso promedio).
+- `BACKEND_VERSION` 1.61.0: `datos()` devuelve `kilosReales`; `registrar()` y `conteo()` validan; el lector de remitos devuelve `kilos` por renglón.
