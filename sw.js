@@ -9,7 +9,7 @@
 // Subir una versión nueva: cambiar CACHE_VERSION junto con FRONTEND_VERSION
 // en index.html (no hace falta que sea el mismo número, alcanza con que
 // cambie) — así el navegador descarta la caché vieja sola.
-const CACHE_VERSION = "logistock-shell-v1.115.0";
+const CACHE_VERSION = "logistock-shell-v1.115.1";
 const SHELL_KEY = "./";
 const PRECACHE = [
   "./",
@@ -51,6 +51,10 @@ self.addEventListener("fetch", (e) => {
   // (otro origen, se degradan solas a la fuente de respaldo si no hay red),
   // ni nada que no sea un GET.
   if (url.origin !== self.location.origin || req.method !== "GET") return;
+  // LogiStock PRUEBAS vive en /pruebas/ (mismo origen y mismo alcance que esta app
+  // desde el punto de vista del navegador): jamás interceptarlo ni guardarlo en
+  // la caché de producción.
+  if (url.pathname.indexOf("/pruebas/") !== -1) return;
   // El chequeo de "hay una versión nueva" pide expresamente sin caché
   // (?nocache=...) — si lo interceptáramos para guardarlo, se nos llenaría
   // la caché de una entrada distinta cada 5 minutos sin servir para nada.
