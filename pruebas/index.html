@@ -120,8 +120,8 @@ html header{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255
 html .bottomNav{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.02) 55%),rgba(var(--header-bg-rgb),.72);backdrop-filter:blur(28px) saturate(190%);-webkit-backdrop-filter:blur(28px) saturate(190%);border-color:rgba(255,255,255,.14);box-shadow:0 1px 0 rgba(255,255,255,.28) inset,0 0 0 1px rgba(201,169,97,.28),0 18px 36px -14px rgba(0,0,0,.9)}
 html .timerInact{color:var(--header-muted)}
 html .timerInact.urgente{color:#F2C879}
-.btnAyuda{width:34px;height:34px;border-radius:50%;border:2px solid var(--glass-line);background:rgba(255,255,255,.14);color:var(--header-ink);font-weight:800;font-size:1.05rem;line-height:1;padding:0;cursor:pointer}
-:root[data-tema="dorado"] .btnAyuda{border-color:rgba(217,185,105,.7);background:rgba(217,185,105,.14);color:#D9B869}
+.btnAyuda{width:36px;height:36px;border-radius:50%;border:0;background:#F4EFE6;color:#2A2118;font-weight:800;font-size:1.2rem;line-height:1;padding:0;cursor:pointer;box-shadow:0 0 0 3px rgba(244,239,230,.28),0 2px 10px rgba(0,0,0,.35)}
+:root[data-tema="dorado"] .btnAyuda{background:linear-gradient(180deg,#E9D094,#C9A961);color:#0D0C0A;box-shadow:0 0 0 3px rgba(217,185,105,.3),0 2px 10px rgba(0,0,0,.4)}
 .ayCards{display:flex;flex-direction:column;gap:8px}
 .ayCard{border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:12px 14px}
 .ayCard b{display:block;font-size:.98rem;margin-bottom:2px}
@@ -859,7 +859,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.122.0";
+const FRONTEND_VERSION = "1.122.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
