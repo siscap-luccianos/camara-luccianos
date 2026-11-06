@@ -797,7 +797,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.116.1";
+const FRONTEND_VERSION = "1.117.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -976,9 +976,9 @@ window.addEventListener("online", colaFlush);
 function nombre(id){ return (S.saboresPorId[id]||{}).nombre || ("Sabor "+id) }
 function minimoDe(id){ return (S.saboresPorId[id]||{}).minimo ?? 6 }
 function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
-const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"] };
+const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"], k:["kilo","kilos"] };
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
-const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)" };
+const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)", k:"Kilos (granella, crumble: el stock es la cantidad de kilos)" };
 
 function regsActivos(){ return S.regs.filter(r=>!r.anulado) }
 /** Busca si este N° de remito ya tiene un ingreso cargado (no anulado) en
@@ -4818,7 +4818,7 @@ function resumenPesosHTML(c){
   const n=cantPesos(c); if(!n) return "";
   return `<p class="pesosResumen">Con peso: <b>${n}</b> · <b>${fmtKg(sumaPesos(c))} kg</b></p>`;
 }
-function esPesable(id){ const s=S.saboresPorId[String(id)]; return !!(S.escanerPeso && s && GRUPOS_PESABLES.includes(grupoProductoDe(s))) }
+function esPesable(id){ const s=S.saboresPorId[String(id)]; return !!(S.escanerPeso && s && s.tipo!=="k" && GRUPOS_PESABLES.includes(grupoProductoDe(s))) } // tipo "k" (kilos): el número ya es el peso, no se pesa vasqueta por vasqueta
 function disponibleParaPesar(id,c){
   const ya=S.cart[c][id]||0;
   return c==="desperdicio" ? Math.max(0,(stockMap()[id]||0)-ya) : Math.max(0,vendibleDe(id)-ya);
