@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.61.0";
+const BACKEND_VERSION = "1.62.0";
 
 function doPost(e) {
   let resultado;
@@ -1122,7 +1122,8 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (Object.keys(pesos2).length) {
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true)) return { ok: false, error: "Este local no tiene el escáner de peso activado." };
-    if (tipo !== "salida" || (subtipo && subtipo !== "desperdicio")) return { ok: false, error: "El peso por vasqueta solo se carga en una salida o un desperdicio." };
+    const esDevolConPeso = tipo === "ingreso" && subtipo === "devolucion";
+    if (!esDevolConPeso && (tipo !== "salida" || (subtipo && subtipo !== "desperdicio"))) return { ok: false, error: "El peso por vasqueta solo se carga en una salida, un desperdicio o una devolución." };
   }
   // Kilos reales (Locales.kilos_reales=SI): solo vasquetas (tipo "v" de la familia vasquetas; no baldes, ni granella/crumble).
   // Cada vasqueta que sale se pesa y todo ingreso (remito, devolución, producción) trae los kilos totales del sabor.

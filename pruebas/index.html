@@ -491,7 +491,27 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .escMsg.ok{background:var(--ok-soft);color:var(--ok)}
 .escMsg.err{background:var(--alert-soft);color:var(--alert)}
 .escLista{display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.escMsg.warn{background:#F2B400;color:#2A2118}
 .escLista div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.escLista .escRow{align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--surface)}
+.escLista .escRow.dup{background:#FFF1D6;border-color:#E0A93B;color:#2A2118}
+.escLista .escRow.dup small{color:#7A4B00!important}
+.escLista .escRow>span{flex:1;min-width:0}
+.escLista .escCab{border:0;padding:0;font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.escX{flex:none;width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--alert);font-weight:800;font-size:1rem;padding:0;cursor:pointer}
+.escDupAviso{margin:-4px 0 12px;padding:10px 12px;border-radius:12px;background:#F2B400;color:#2A2118;font-size:.88rem;font-weight:700;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.escDupAviso .btn{flex:none;padding:6px 12px;min-height:0;height:34px;font-size:.82rem;background:#fff;color:#2A2118;border-color:#fff}
+.kgChips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.kgChip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:3px 4px 3px 10px;font-weight:700;font-size:.85rem}
+.kgChip button{width:24px;height:24px;border-radius:50%;border:0;background:var(--alert-soft);color:var(--alert);font-weight:800;padding:0;cursor:pointer}
+.devChips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.devChip{min-width:92px;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface);color:var(--ink);text-align:center;cursor:pointer;font-family:inherit}
+.devChip b{display:block;font-size:1.05rem}
+.devChip small{font-size:.72rem;color:var(--muted);font-weight:600}
+.devChip.on{border-color:var(--accent);background:var(--accent-soft)}
+.devChip.on small{color:var(--accent);font-weight:800}
+.devSin{margin-top:8px;padding:10px 12px;border-radius:12px;background:#FFF1D6;border:1.5px solid #E0A93B;color:#7A4B00;font-size:.82rem;font-weight:700}
+.devSin .kgFila{margin-top:6px;color:#2A2118}
 .mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
 .mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
@@ -813,7 +833,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.118.0";
+const FRONTEND_VERSION = "1.119.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -874,7 +894,7 @@ const S = {
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
   detVenta: {}, // de dónde vino cada unidad del carrito de la venta: {idSabor:{x6,x10,x6s,x10s,lata5}} en unidades (el resto son sueltas)
-  pesos: {salida:{},desperdicio:{}}, escaneadas: [], escaner: null,
+  pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
@@ -1103,6 +1123,36 @@ function pendienteDevolucionHoy(){
   const pendiente={};
   Object.keys(sacado).forEach(id=>{ const p=sacado[id]-(devuelto[id]||0); if(p>0) pendiente[id]=p; });
   return pendiente;
+}
+/** Kilos reales: por vasqueta que esta persona sacó hoy y todavía no devolvió, el peso con que salió.
+ *  {id:{pesos:[kg…], sinPeso:n}} — «sinPeso» son las que salieron sin peso registrado (antes de pesar) y se escriben a mano. */
+function pesosPendientesDev(){
+  const desde=inicioDeHoy(), pend=pendienteDevolucionHoy(), tomadas={}, out={};
+  const regs=regsActivos().filter(r=>r.ts>=desde && String(r.empleadoId)===String(S.empleado.id)).sort((a,b)=>a.ts-b.ts);
+  for(const r of regs){
+    if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})) (tomadas[id]=tomadas[id]||[]).push(...a);
+  }
+  for(const r of regs){
+    if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,a] of Object.entries(r.pesos||{})) for(const kg of a){ const l=tomadas[id]||[], i=l.findIndex(x=>Math.abs(x-kg)<0.005); if(i>=0) l.splice(i,1) }
+  }
+  Object.keys(pend).forEach(id=>{
+    if(!esVasquetaKilos(id)) return;
+    const l=(tomadas[id]||[]).slice(0,pend[id]);
+    out[id]={pesos:l, sinPeso:Math.max(0,pend[id]-l.length)};
+  });
+  return out;
+}
+/** Arma el carrito de Devolución (cantidad, pesos y kilos) de las vasquetas tocadas y los pesos escritos a mano. */
+function syncDevolucion(){
+  const pend=pesosPendientesDev(), cart=S.cart.devolucion, pes=pesosDe("devolucion");
+  Object.keys(pend).forEach(id=>{
+    const ws=[];
+    (S.devSel[id]||[]).forEach(i=>{ if(pend[id].pesos[i]!==undefined) ws.push(pend[id].pesos[i]) });
+    const tip=S.devTip[id]||{};
+    for(let k=0;k<pend[id].sinPeso;k++){ const kg=kilosNum(tip[k]); if(kg>=0.1&&kg<=30) ws.push(Math.round(kg*100)/100) }
+    if(ws.length){ cart[id]=ws.length; pes[id]=ws; S.kilosProduccion[id]=String(Math.round(ws.reduce((a,x)=>a+x,0)*100)/100).replace(".",",") }
+    else { delete cart[id]; delete pes[id]; delete S.kilosProduccion[id] }
+  });
 }
 function estadoSabor(id, st){
   const n=st[id], min=minimoDe(id);
@@ -2570,7 +2620,8 @@ function quitarVentaPack(id, kind){
 /** Botones de la fila (a ancho completo debajo del producto, para no tener que volver arriba)
  *  y las cajas por origen. Alfajores: surtidos + +1/x6/x10; conitos: +1/x6. */
 function accionesPackHTML(s,hay,v){
-  const unidades=PACKS_UNIDAD_CHOCO[s.categoria]||[];
+  // Los minis (bolsa x12) se venden por unidad: no tienen x5/x6/x10 (esos son packs de alfajores sueltos).
+  const unidades=/^mini\b/i.test(String(s.nombre||"")) ? [1] : (PACKS_UNIDAD_CHOCO[s.categoria]||[]);
   const surt = PACKS_SURTIDOS_CHOCO.filter(p=>p.receta[s.id]); // el mix solo aparece en los productos que lo llevan
   const chipSurt=p=>`<button type="button" class="chip" data-vd-pack="${p.k}">${p.label}</button>`;
   const chipUni=n=>`<button type="button" class="chip${hay-v>=n?"":" sinStock"}" data-vd-add="${s.id}" data-n="${n}">${n===1?"+1":"x"+n}</button>`;
@@ -2807,8 +2858,20 @@ function gridDevolucion(st){
   const pendiente=pendienteDevolucionHoy();
   const cart=S.cart.devolucion;
   const ids=S.sabores.filter(s=>pendiente[s.id]>0);
+  const pp=S.kilosReales?pesosPendientesDev():{};
   const row=s=>{
     const max=pendiente[s.id], q=cart[s.id]||0;
+    if(pp[s.id]){
+      const d=pp[s.id], sel=S.devSel[s.id]||[], tip=S.devTip[s.id]||{};
+      return `<div class="row">
+      ${plateHTML(s.id)}
+      <div class="nm">${esc(s.nombre)}<div class="meta">Sacaste ${max} ${unidad(s.id,max)} hoy sin devolver${q?` · <b>${q} vuelve${q===1?"":"n"}</b>`:""}</div></div>
+      <div class="lotesFull">
+        ${d.pesos.length?`<div class="devChips">${d.pesos.map((kg,i)=>`<button type="button" class="devChip${sel.includes(i)?" on":""}" data-devchip="${s.id}:${i}" aria-pressed="${sel.includes(i)}"><b>${fmtKg(kg)} kg</b><small>${sel.includes(i)?"✓ vuelve":"tocá si vuelve"}</small></button>`).join("")}</div>`:""}
+        ${d.sinPeso?`<div class="devSin">${d.sinPeso===1?"Salió 1 sin peso registrado":"Salieron "+d.sinPeso+" sin peso registrado"}: si vuelve${d.sinPeso===1?"":"n"}, escribí cuánto pesa${d.sinPeso===1?"":" cada una"}.${Array.from({length:d.sinPeso},(_,k)=>`<div class="kgFila"><label for="dt-${s.id}-${k}">Vasqueta ${k+1}</label><input type="text" inputmode="decimal" id="dt-${s.id}-${k}" data-devtip="${s.id}:${k}" value="${esc(tip[k]||"")}" placeholder="0,00"> kg</div>`).join("")}</div>`:""}
+      </div>
+    </div>`;
+    }
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">Pendiente de devolver: ${max} ${unidad(s.id,max)}</div></div>
@@ -2817,7 +2880,7 @@ function gridDevolucion(st){
     </div>`};
   return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste.${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
   ${ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">No tenés nada pendiente de devolver hoy.</div>`}`;
 }
 /** Carga de producción propia (hoy solo Unicenter, Locales.produccion=SI)
@@ -3145,7 +3208,7 @@ function filaMovimiento(r){
   const total=filtra ? entradas.reduce((a,[,q])=>a+(+q||0),0) : r.total;
   const it=entradas.map(([id,q])=>{
     if(r.tipo==="conteo") return `${esc(nombre(id))}: ${q}`;
-    const kg=(r.subtipo==="produccion"||S.kilosReales)&&r.kilos&&r.kilos[id];
+    const kg=(r.subtipo==="produccion"||S.kilosReales)&&r.kilos&&r.kilos[id]&&!(r.subtipo==="devolucion"&&r.pesos&&(r.pesos[id]||[]).length);
     const vto=textoVencRegistro(r,id);
     const grupo=etiquetaProductoDe(S.saboresPorId[id]||{});
     const pe=r.pesos&&r.pesos[id], peTxt=pe&&pe.length?` (${pe.map(fmtKg).join(" · ")} kg${pe.length<+q?`, ${pe.length} de ${q} pesadas`:""})`:"";
@@ -3879,7 +3942,9 @@ function renderBar(){
       const conPeso=(cartKey==="salida"||cartKey==="desperdicio"), kgEscan=conPeso?sumaPesos(cartKey):0, nEscan=conPeso?cantPesos(cartKey):0;
       // Kilos reales: cada vasqueta que sale se pesa; todo ingreso de vasquetas trae sus kilos totales.
       const faltaKilos = !S.kilosReales ? [] : conPeso ? ent.filter(([id,q])=>esVasquetaKilos(id) && ((pesosDe(cartKey)[id]||[]).length<q)) : (cartKey==="ingreso"&&!enTransfIn||enDevolucion||enProduccion) ? ent.filter(([id])=>esVasquetaKilos(id) && !(kilosNum(S.kilosProduccion[id])>0)) : [];
-      const avisoKilos = faltaKilos.length ? `<div class="warn">${conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "";
+      const nDup=(cartKey==="salida")?escDuplicados().length:0;
+      const avisoDup = nDup ? `<div class="warn" style="background:#F2B400;color:#2A2118;border-radius:10px;padding:6px 10px">⚠ ${nDup===1?"1 código repetido":nDup+" códigos repetidos"} en lo escaneado: revisalo antes de confirmar (tocá Escanear vasqueta y la ✕ de esa fila).</div>` : "";
+      const avisoKilos = avisoDup + (faltaKilos.length ? `<div class="warn">${conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "");
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
@@ -4002,7 +4067,7 @@ async function guardarMovimiento(){
     const kilos={}; if(enProduccion || (S.kilosReales && tipo==="ingreso" && !enTransfIn)) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const pesosEnv={};
-    if(tipo==="salida"&&!enVenta) for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
+    if((tipo==="salida"&&!enVenta) || (enDevolucion&&S.kilosReales)) for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? (S.fotoRemitoUrl||undefined) : undefined,
@@ -4015,13 +4080,13 @@ async function guardarMovimiento(){
     const r = await api("registrar", payload);
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enTransfIn?"Transferencia recibida registrada: ":enVenta?(LABEL_SUBTIPO_CHOCO[subtipoChoco()].charAt(0).toUpperCase()+LABEL_SUBTIPO_CHOCO[subtipoChoco()].slice(1)+" registrada: "):enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -4261,6 +4326,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.ccaja){ const id=t.dataset.ccaja; S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.devchip){ const [did,di]=t.dataset.devchip.split(":"); const a=S.devSel[did]||(S.devSel[did]=[]); const k=a.indexOf(+di); if(k>=0) a.splice(k,1); else a.push(+di); syncDevolucion(); S.confirm=false; scheduleRender(); return }
+  if(t.dataset.escRevisar!==undefined){ abrirEscaner(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; scheduleRender(); return }
   if(t.dataset.ddec){ const c=S.cart.devolucion; c[t.dataset.ddec]=Math.max(0,(c[t.dataset.ddec]||0)-1); if(!c[t.dataset.ddec]) delete c[t.dataset.ddec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.vencOmitir){ const clave=t.dataset.vencOmitir, id=clave.split(":")[1]; S.vencOmit[clave]=true; if(clave.startsWith("ing:")) delete S.vencimientos[id]; else delete S.vencConteo[id]; renderApp(); return }
@@ -4343,7 +4410,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; resetSelPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
   if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
@@ -4525,6 +4592,7 @@ document.addEventListener("input", e=>{
   }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.dataset.devtip){ const [did,ds]=e.target.dataset.devtip.split(":"); (S.devTip[did]=S.devTip[did]||{})[ds]=e.target.value; syncDevolucion(); S.confirm=false; renderBar() }
   if(e.target.dataset.kc){ S.kilosConteo[e.target.dataset.kc]=e.target.value; S.confirm=false; renderBar() }
   if(e.target.dataset.remitoKg!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoKg].kilos=kilosNum(e.target.value)||null }
   if(e.target.dataset.loteF!==undefined || e.target.dataset.loteC!==undefined){ setLoteExtra(e.target); renderBar() }
@@ -4862,7 +4930,8 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.cantDlg){ cer
 const ZXING_SRC="../vendor/zxing-wasm-reader-3.1.6.iife.js", ZXING_WASM="../vendor/zxing_reader-3.1.6.wasm";
 const GRUPOS_PESABLES=["vasquetas","baldes","glutenfree"]; // lo que viene en vasqueta/balde con peso; Icepops y chocolatería no
 function fmtKg(k){ return (Number(k)||0).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function limpiarPesos(){ S.pesos={salida:{},desperdicio:{}}; S.escaneadas=[]; }
+function limpiarPesos(){ S.pesos={salida:{},desperdicio:{},devolucion:{}}; S.escaneadas=[]; S.escItems=[]; resetSelPesos(); }
+function resetSelPesos(){ S.devSel={}; S.devTip={}; }
 function pesosDe(c){ c=c||"salida"; return S.pesos[c]||(S.pesos[c]={}) }
 function cantPesos(c){ return Object.values(pesosDe(c)).reduce((a,l)=>a+l.length,0) }
 function sumaPesos(c){ return Math.round(Object.values(pesosDe(c)).reduce((a,l)=>a+l.reduce((x,y)=>x+y,0),0)*100)/100 }
@@ -4874,7 +4943,48 @@ function recortarPesos(id,c){
 }
 function resumenPesosHTML(c){
   const n=cantPesos(c); if(!n) return "";
-  return `<p class="pesosResumen">Con peso: <b>${n}</b> · <b>${fmtKg(sumaPesos(c))} kg</b></p>`;
+  const dup=c==="salida"?escDuplicados().length:0;
+  return `<p class="pesosResumen">Con peso: <b>${n}</b> · <b>${fmtKg(sumaPesos(c))} kg</b></p>`
+    + (dup?`<div class="escDupAviso"><span>⚠ ${dup===1?"1 código repetido":dup+" códigos repetidos"} en lo escaneado</span><button type="button" class="btn" data-esc-revisar>Revisar</button></div>`:"");
+}
+/** Lo escaneado que todavía está en el carrito de Salida: si se sacó una pesada con «−» o con la ✕, deja de figurar. */
+function reconciliarEsc(){
+  const copia={}; Object.entries(pesosDe("salida")).forEach(([id,a])=>copia[id]=a.slice());
+  S.escItems=S.escItems.filter(x=>{ const a=copia[x.id]; const i=a?a.indexOf(x.kg):-1; if(i<0) return false; a.splice(i,1); return true });
+}
+/** Escaneos cuyo mismo código ya figuraba antes en la salida (puede ser legítimo: el código no es único por vasqueta). */
+function escDuplicados(){
+  reconciliarEsc();
+  const vistos={}, out=[];
+  S.escItems.forEach(x=>{ if(vistos[x.crudo]) out.push(x); vistos[x.crudo]=true });
+  return out;
+}
+/** Quita UNA vasqueta escaneada: baja 1 el sabor y saca ese peso. */
+function quitarEscItem(n){
+  const x=S.escItems.find(i=>i.n===n); if(!x) return;
+  const a=pesosDe("salida")[x.id], k=a?a.indexOf(x.kg):-1;
+  if(k>=0) a.splice(k,1);
+  if(a && !a.length) delete pesosDe("salida")[x.id];
+  const c=S.cart.salida; c[x.id]=Math.max(0,(c[x.id]||0)-1); if(!c[x.id]) delete c[x.id];
+  S.escItems=S.escItems.filter(i=>i.n!==n);
+  S.confirm=false; scheduleRender();
+}
+/** Quita una pesada cargada a mano (Salida o Desperdicio) por su posición en la lista del diálogo «¿Cuánto pesa?». */
+function quitarPesadaMano(i){
+  const d=S.kilosDlg; if(!d) return;
+  const kg=d.cargadas[i]; if(kg===undefined) return;
+  const a=pesosDe(d.c)[d.id], k=a?a.indexOf(kg):-1;
+  if(k>=0) a.splice(k,1);
+  if(a && !a.length) delete pesosDe(d.c)[d.id];
+  const cart=S.cart[d.c]; cart[d.id]=Math.max(0,(cart[d.id]||0)-1); if(!cart[d.id]) delete cart[d.id];
+  d.cargadas.splice(i,1);
+  S.confirm=false; scheduleRender(); renderKgCargadas();
+}
+function renderKgCargadas(){
+  const d=S.kilosDlg, l=document.getElementById("kgCargadas"); if(!d||!l) return;
+  if(!d.cargadas.length){ l.hidden=true; l.innerHTML=""; return }
+  l.hidden=false;
+  l.innerHTML=`Cargadas — ${d.cargadas.length} ${d.cargadas.length===1?"vasqueta":"vasquetas"}, <b>${fmtKg(d.cargadas.reduce((a,x)=>a+x,0))} kg</b><span class="kgChips">${d.cargadas.map((k,i)=>`<span class="kgChip">${fmtKg(k)} kg<button type="button" data-kg-quitar="${i}" aria-label="Quitar esta pesada">✕</button></span>`).join("")}</span>`;
 }
 function esPesable(id){ const s=S.saboresPorId[String(id)]; if(S.kilosReales) return esVasquetaKilos(id); return !!(S.escanerPeso && s && s.tipo!=="k" && GRUPOS_PESABLES.includes(grupoProductoDe(s))) } // tipo "k" (kilos): el número ya es el peso, no se pesa vasqueta por vasqueta
 function disponibleParaPesar(id,c){
@@ -4891,8 +5001,12 @@ function parseCodigoRotulo(txt){
 function pitido(ok){
   try{
     const A=window.AudioContext||window.webkitAudioContext;
-    if(A){ const c=pitido.c||(pitido.c=new A()), o=c.createOscillator(), g=c.createGain(); o.frequency.value=ok?880:220; g.gain.value=.08; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+(ok?.12:.3)); }
-    if(navigator.vibrate) navigator.vibrate(ok?50:[80,60,80]);
+    if(A){
+      const c=pitido.c||(pitido.c=new A());
+      const tono=(f,ini,dur)=>{ const o=c.createOscillator(), g=c.createGain(); o.frequency.value=f; g.gain.value=.08; o.connect(g); g.connect(c.destination); o.start(c.currentTime+ini); o.stop(c.currentTime+ini+dur); };
+      if(ok==="dup"){ tono(520,0,.14); tono(520,.2,.14); tono(520,.4,.14); } else tono(ok?880:220,0,ok?.12:.3);
+    }
+    if(navigator.vibrate) navigator.vibrate(ok==="dup"?[120,80,120,80,120]:ok?50:[80,60,80]);
   }catch(e){}
 }
 /** Suma 1 vasqueta con su peso al carrito de Salida o de Desperdicio. */
@@ -4900,7 +5014,8 @@ function sumarPesada(c, id, kg){
   S.cart[c][id]=(S.cart[c][id]||0)+1;
   (pesosDe(c)[id]=pesosDe(c)[id]||[]).push(kg);
   S.confirm=false;
-  pitido(true); scheduleRender();
+  if(!sumarPesada.silencio) pitido(true);
+  scheduleRender();
 }
 
 /* ---- Escáner (solo Salida) ---- */
@@ -4923,6 +5038,7 @@ function abrirEscaner(){
   ov.addEventListener("click", e=>{
     if(e.target===ov){ cerrarEscaner(); return }
     const b=e.target.closest("button"); if(!b) return;
+    if(b.dataset.escQuitar!==undefined){ quitarEscItem(+b.dataset.escQuitar); renderEscaner(); const i=document.getElementById("escCodigo"); if(i) i.focus(); return }
     if(b.dataset.escCerrar!==undefined) cerrarEscaner();
     else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
   });
@@ -4941,10 +5057,19 @@ function cerrarEscaner(){
 }
 function renderEscaner(){
   const e=S.escaner; if(!e) return;
+  reconciliarEsc();
   const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
-  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.textContent=e.msg?e.msg.t:"Esperando el código…" }
-  if(l) l.innerHTML=e.lista.slice(0,5).map(x=>`<div><span>${esc(x.nombre)}${x.repetido?" ⚠":""}<br><small style="color:var(--muted)">lote ${esc(x.lote)}</small></span><b>${fmtKg(x.kg)} kg</b></div>`).join("")
-    + (e.lista.length?`<div style="border:0"><span>Esta salida</span><b>${cantPesos("salida")} · ${fmtKg(sumaPesos("salida"))} kg</b></div>`:"");
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…" }
+  if(l){
+    const items=S.escItems.slice().reverse(), vistos={}, dupN=new Set();
+    S.escItems.forEach(x=>{ if(vistos[x.crudo]) dupN.add(x.n); vistos[x.crudo]=true });
+    const sumaEsc=Math.round(S.escItems.reduce((a,x)=>a+x.kg,0)*100)/100;
+    l.innerHTML = items.length
+      ? `<div class="escCab"><span>Escaneadas en esta salida</span><span>${items.length} · ${fmtKg(sumaEsc)} kg</span></div>`
+        + items.map(x=>`<div class="escRow${dupN.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dupN.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">lote ${esc(x.lote)}${dupN.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="Quitar esta vasqueta">✕</button></div>`).join("")
+        + `<div style="border:0;font-size:.78rem;color:var(--muted);display:block">La ✕ quita solo esa vasqueta: baja 1 el sabor y saca ese peso.${cantPesos("salida")>items.length?` En la salida hay además ${cantPesos("salida")-items.length} pesada(s) cargadas a mano.`:""}</div>`
+      : "";
+  }
   if(v) v.classList.toggle("on", !!e.camara);
   if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
 }
@@ -4958,11 +5083,15 @@ function procesarEscaneo(txt){
   const s=saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
   if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+"). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
   if(disponibleParaPesar(s.id,"salida")<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
-  const repetido=S.escaneadas.indexOf(p.crudo)!==-1;
+  reconciliarEsc();
+  const repetido=S.escItems.some(x=>x.crudo===p.crudo);
   S.escaneadas.push(p.crudo);
-  e.msg={tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+(repetido?" · ⚠ este código ya se había escaneado":"")};
-  e.lista.unshift({id:s.id, nombre:s.nombre, kg:p.kg, lote:p.lote, repetido});
-  sumarPesada("salida", s.id, p.kg);
+  e.msg = repetido
+    ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+". ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
+    : {tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote};
+  S.escItems.push({n:++S.escN, id:s.id, nombre:s.nombre, kg:p.kg, lote:p.lote, crudo:p.crudo});
+  sumarPesada.silencio=repetido; sumarPesada("salida", s.id, p.kg); sumarPesada.silencio=false;
+  if(repetido) pitido("dup");
   renderEscaner();
   const i=document.getElementById("escCodigo"); if(i) i.focus();
 }
@@ -5095,6 +5224,7 @@ function abrirKilos(id,c){
     if(b.dataset.kgListo!==undefined) listoKilos();
     else if(b.dataset.kgOk!==undefined) confirmarKilos();
     else if(b.dataset.kgTecla!==undefined) teclaKilos(b.dataset.kgTecla);
+    else if(b.dataset.kgQuitar!==undefined) quitarPesadaMano(+b.dataset.kgQuitar);
   });
   // Con teclado físico (PC) también se puede tipear: el campo es de solo lectura para que la tablet no abra su teclado.
   ov.addEventListener("keydown", e=>{
@@ -5132,8 +5262,7 @@ function agregarKilos(){
   sumarPesada(d.c, d.id, kg);
   d.cargadas.push(kg);
   inp.value=""; document.getElementById("kgMsg").hidden=true;
-  const l=document.getElementById("kgCargadas");
-  if(l){ l.hidden=false; l.innerHTML=`Cargadas: <b>${d.cargadas.map(fmtKg).join(" · ")}</b> — ${d.cargadas.length} ${d.cargadas.length===1?"vasqueta":"vasquetas"}, ${fmtKg(d.cargadas.reduce((a,x)=>a+x,0))} kg` }
+  renderKgCargadas();
   if(disponibleParaPesar(d.id,d.c)<=0){ cerrarKilos(); toast("Ya no queda más stock de ese sabor."); return true }
   inp.focus();
   return true;
