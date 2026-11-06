@@ -27,6 +27,7 @@ h = reemplazar(h, "<title>LogiStock Lucciano's</title>", "<title>LogiStock PRUEB
 h = reemplazar(h, '<meta name="theme-color" content="#5E7A3F">', '<meta name="theme-color" content="#C2410C">');
 h = reemplazar(h, 'src="fotos/${id}.jpg"', 'src="../fotos/${id}.jpg"');
 h = reemplazar(h, 'src="icons/wordmark-dorado.png"', 'src="../icons/wordmark-dorado.png"');
+h = reemplazar(h, 'src="icons/wordmark-blanco.png"', 'src="../icons/wordmark-blanco.png"');
 h = reemplazar(h, 'src="media/bienvenida-lucciano.jpg"', 'src="../media/bienvenida-lucciano.jpg"');
 h = reemplazar(h, 'ZXING_SRC="vendor/', 'ZXING_SRC="../vendor/');
 h = reemplazar(h, 'ZXING_WASM="vendor/', 'ZXING_WASM="../vendor/');
@@ -40,6 +41,7 @@ Object.defineProperty(window,"localStorage",{value:w,configurable:true});}catch(
 <style>
 #bannerPruebas{background:#C2410C;color:#fff;font:700 12px/1.3 system-ui,sans-serif;letter-spacing:.06em;text-align:center;padding:5px 78px 5px 10px;text-transform:uppercase;position:relative;z-index:9998}
 #cintaPruebas{position:fixed;top:0;right:0;z-index:9999;background:#C2410C;color:#fff;font:800 10px/1 system-ui,sans-serif;letter-spacing:.1em;padding:4px 8px;border-radius:0 0 0 8px;pointer-events:none}
+@media print{#bannerPruebas{display:none!important}#cintaPruebas{background:#C2410C!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 </style>`;
 h = reemplazar(h, "<head>", "<head>\n" + shim);
 h = h.replace(/<body([^>]*)>/, (m) => m + '\n<div id="bannerPruebas">Entorno de pruebas · datos no reales</div><div id="cintaPruebas">PRUEBAS</div>');
