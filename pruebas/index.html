@@ -682,7 +682,7 @@ body:has(.mantenerOv){overflow:hidden}
 .authPremium[data-paso="quien"]{--wrapMax:720px}
 .authPremium .authBrand{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:var(--wrapMax);margin:0 auto 18px;flex-shrink:0}
 .authPremium .authLogo{width:112px;height:auto;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(217,185,105,.28))}
-.authPremium .authEyebrow,.authPremium .authBrandPie,.authPremium .authLocalLbl,.authPremium .authLocalNom,.authPremium .soloPC{display:none}
+.authPremium .authEyebrow,.authPremium .authLocalLbl,.authPremium .authLocalNom,.authPremium .soloPC{display:none}
 .authPremium .authFijo{font-size:12px;font-weight:700;color:#8F8074}
 .authPremium .authWrap{margin:0 auto;width:100%;max-width:var(--wrapMax);padding:0}
 .authPremium .authCard{background:none;border:0;box-shadow:none;padding:0;color:#F5F0E8;box-sizing:border-box;min-height:470px;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;justify-content:flex-start}
@@ -740,12 +740,11 @@ body:has(.mantenerOv){overflow:hidden}
   .authPremium{display:grid;grid-template-columns:clamp(300px,34vw,430px) minmax(0,1fr);padding:0;align-items:start}
   .authPremium .authBrand{position:sticky;top:0;height:100vh;height:100dvh;max-width:none;margin:0;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0;padding:56px 48px 40px;border-right:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0));box-sizing:border-box}
   .authPremium .authLogo{width:250px}
-  .authPremium .authEyebrow{display:block;margin-top:14px;font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#D9B869}
-  .authPremium .authLocalSlot{margin-top:auto}
+  .authPremium .authEyebrow{display:block;margin:6px 0 0 4px;font-family:'Fraunces',Georgia,serif;font-size:26px;font-weight:600;letter-spacing:.01em;color:#F5F0E8}
+  .authPremium .authLocalSlot{margin:auto 0}
   .authPremium .authLocalLbl{display:block;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#8F8074}
   .authPremium .authLocalNom{display:block;font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:700;line-height:1.1;margin-top:8px;color:#F5F0E8}
   .authPremium .authFijo{display:block;margin-top:18px}
-  .authPremium .authBrandPie{display:block;margin-top:auto;padding-top:28px;font-size:12px;font-weight:600;color:#6F6258}
   .authPremium .soloMovil{display:none}
   .authPremium .authWrap{max-width:none;margin:0;min-height:100vh;min-height:100dvh;padding:56px 64px 40px 72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center}
   .authPremium .authCard{width:100%;max-width:400px}
@@ -921,7 +920,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.125.1";
+const FRONTEND_VERSION = "1.125.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2274,7 +2273,7 @@ function renderAuth(){
   }
   // Panel de marca (logo + local). En celular/tablet es una franja arriba; en PC, el panel de la izquierda.
   const logo = `<img class="authLogo" src="../icons/wordmark-dorado.png" width="363" height="154" alt="Lucciano's" data-secreto-logo="1">`;
-  return `<div class="authPremium" data-paso="${esc(a.paso||"")}"><aside class="authBrand">${logo}<div class="authEyebrow">LogiStock</div><div class="authLocalSlot">${authLocalSlotHTML(a)}</div><div class="authBrandPie">Control de cámara y stock · Lucciano's</div></aside><div class="authWrap"><div class="authCard">${cuerpo}</div></div></div>`;
+  return `<div class="authPremium" data-paso="${esc(a.paso||"")}"><aside class="authBrand">${logo}<div class="authEyebrow">LogiStock</div><div class="authLocalSlot">${authLocalSlotHTML(a)}</div></aside><div class="authWrap"><div class="authCard">${cuerpo}</div></div></div>`;
 }
 
 /* PDF de Relevar: hasta 4 productos entran en hoja vertical; de 5 a 8 sale solo en horizontal; con más de 8 no entra bien. */
