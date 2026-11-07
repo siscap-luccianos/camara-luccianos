@@ -920,7 +920,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.125.2";
+const FRONTEND_VERSION = "1.125.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4724,9 +4724,10 @@ document.addEventListener("keydown", e=>{
   // Conteo físico como una columna de Excel: Enter y flecha abajo bajan al
   // siguiente sabor, flecha arriba sube al anterior; al entrar al campo se
   // selecciona el número (ver focusin) y se pisa tipeando.
-  if(e.target.dataset && (e.target.dataset.c!==undefined || e.target.dataset.vd!==undefined || e.target.dataset.cantInput!==undefined) && ["Enter","ArrowDown","ArrowUp"].includes(e.key)){
+  if(e.target.dataset && (e.target.dataset.c!==undefined || e.target.dataset.vd!==undefined || e.target.dataset.cantInput!==undefined || e.target.dataset.remitoQty!==undefined || e.target.dataset.remitoKg!==undefined) && ["Enter","ArrowDown","ArrowUp"].includes(e.key)){
     e.preventDefault();
-    const sel = e.target.dataset.c!==undefined ? "input[data-c]" : e.target.dataset.vd!==undefined ? "input[data-vd]:not([disabled])" : "input[data-cant-input]";
+    // Lector de remitos: cantidad y kilos de cada renglón, en el orden en que se ven en pantalla.
+    const sel = e.target.dataset.c!==undefined ? "input[data-c]" : e.target.dataset.vd!==undefined ? "input[data-vd]:not([disabled])" : (e.target.dataset.remitoQty!==undefined || e.target.dataset.remitoKg!==undefined) ? "input[data-remito-qty]:not([disabled]),input[data-remito-kg]" : "input[data-cant-input]";
     const campos=[...document.querySelectorAll(sel)];
     const paso = e.key==="ArrowUp" ? -1 : 1;
     const destino=campos[campos.indexOf(e.target)+paso];
@@ -4764,7 +4765,7 @@ document.addEventListener("focusin", e=>{
   // Sabores, etc.) — como una celda de Excel: el primer dígito que
   // escribís reemplaza el "0" de siempre en vez de agregarse al lado
   // (pedido de Gabi: "siempre aparece cero y me obliga a borrarlo").
-  if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number") e.target.select();
+  if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number"||(e.target.dataset&&e.target.dataset.remitoKg!==undefined)) e.target.select();
 });
 document.addEventListener("input", e=>{
   if(e.target.id==="authBuscar"){ authFiltrarPerfiles(e.target.value); return }
