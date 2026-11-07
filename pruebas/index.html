@@ -371,16 +371,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .eqIni.warn{background:#F1E4C4;color:#7A5410;font-size:.9rem}
 .eqNombre{width:100%;box-sizing:border-box;margin-top:8px}
 .eqCodigo{border:1.5px solid var(--accent)}
-/* En la pantalla del código se achica el logo y el teclado para que «Pedir que me aprueben» se vea sin scrollear. */
-.authPremium:has(.authAlt) .authLogo{width:190px;margin-bottom:6px}
-.authPremium:has(.authAlt) .keypad{gap:8px}
-.authPremium:has(.authAlt) .keypad button{width:54px;height:54px;font-size:1.35rem}
-.authPremium:has(.authAlt) .authBack{display:none}
-.authPremium:has(.authAlt) h1{font-size:1.3rem;margin-bottom:4px}
-.authPremium:has(.authAlt) .authCard>p{margin:0 0 6px}
-.authAlt{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:2px 0 4px}
-.authAltTit{font-size:.82rem;color:#BDB19C}
-.authPremium .btn.authAltBtn{width:auto;min-height:34px;padding:0 16px;font-size:.84rem;background:rgba(255,255,255,.08);color:#F5F0E8;box-shadow:none;border:1px solid rgba(217,185,105,.55)}
 .eqCodigoNum{font-family:'Fraunces',serif;font-size:2.2rem;font-weight:700;letter-spacing:.18em;text-align:center;padding:8px 0}
 .eqBtns{display:flex;gap:8px;margin-top:10px}
 .eqBtns .btn{flex:1;min-height:44px}
@@ -859,7 +849,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.122.2";
+const FRONTEND_VERSION = "1.123.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1412,7 +1402,8 @@ async function authChequearEquipo(emp){
   const r = await api("estadoEquipo", { empleadoId:emp.id, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
   a.cargando=false;
   if(S.auth!==a) return;
-  if(r && r.ok && (r.estado==="pendiente" || r.estado==="lleno")){ a.paso="equipo"; a.equipoInfo=r; renderApp(); return }
+  if(r && r.ok && r.estado==="pendiente"){ a.paso="codigo"; a.codigo=""; a.error="Este dispositivo todavía no está vinculado. Pedile a tu responsable el código de 6 números."; renderApp(); return }
+  if(r && r.ok && r.estado==="lleno"){ a.paso="equipo"; a.equipoInfo=r; renderApp(); return }
   if(r && r.equipo==="sinId"){ a.error=r.error; a.elegido=null; a.paso="quien"; renderApp(); return }
   a.paso="pin"; renderApp();
 }
@@ -1421,6 +1412,7 @@ function authEquipoBloqueado(r){
   const a=S.auth;
   if(r.equipo==="sinId"){ a.error=r.error; a.pin=""; a.pin1=""; a.paso="quien"; a.elegido=null; renderApp(); return }
   const i=r.equipoInfo||{};
+  if(r.equipo!=="lleno"){ a.paso="codigo"; a.codigo=""; a.pin=""; a.pin1=""; a.error="Este dispositivo todavía no está vinculado. Pedile a tu responsable el código de 6 números."; renderApp(); return }
   a.paso="equipo"; a.equipoInfo={ estado:r.equipo, usados:i.usados||0, max:i.max||3, nombre:i.nombre||nombreEquipoDetectado(), desde:i.desde||Date.now() };
   a.pin=""; a.pin1=""; renderApp();
 }
@@ -1464,17 +1456,6 @@ async function authAdminVincular(){
 function authAdminEntrar(){
   const a=S.auth; if(!a) return;
   a.clave=a.codigoAdminTipeado; a.codigoAdmin=true; a.esGestion=false; a.paso="quien"; a.empleados=[]; cargarEmpleadosDeAuth();
-}
-/** "No tengo código": deja el pedido anotado para que el encargado lo apruebe desde Equipo. */
-async function authPedirAprobacion(){
-  const a=S.auth; if(!a || a.cargando) return;
-  a.cargando=true; a.error=""; renderApp();
-  const r = await api("estadoEquipo", { empleadoId:"", local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
-  a.cargando=false;
-  if(S.auth!==a) return;
-  if(r && r.ok && r.estado==="aprobado"){ a.paso="quien"; a.empleados=[]; cargarEmpleadosDeAuth(); return }
-  if(r && r.ok){ a.paso="equipo"; a.sinPerfil=true; a.equipoInfo=r; renderApp(); return }
-  a.error=(r&&r.error)||"No se pudo enviar el pedido. Probá de nuevo."; renderApp();
 }
 /** Desde la pantalla de espera sin perfil: ¿ya lo aprobaron? */
 async function authReintentarSinPerfil(){
@@ -2132,11 +2113,7 @@ function renderAuth(){
     const val=a.codigo||"";
     cuerpo=`<button class="authBack" data-authback="1">Volver</button>
       <h1>Sumá este equipo a ${esc(a.local||"")}</h1>
-      <p>Pedile a tu encargado el código de 6 números.</p>
-      <div class="authAlt">
-        <span class="authAltTit">¿No tenés el código?</span>
-        <button class="btn ghost authAltBtn" type="button" data-codigo-pedir="1" ${a.cargando?"disabled":""}>Pedir que me aprueben</button>
-      </div>
+      <p>Pedile a tu responsable el código de 6 números. Te lo puede mandar por WhatsApp: vale 15 minutos y se usa una sola vez.</p>
       <div class="dots">${[0,1,2,3,4,5].map(i=>`<span class="${i<val.length?"on":""}"></span>`).join("")}</div>
       ${a.cargando?`<div class="note">Verificando…</div>`:a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       <div class="keypad">
@@ -4305,7 +4282,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.codigoCopiar){ const c=S.codigoEquipo&&S.codigoEquipo.codigo; if(c){ try{ navigator.clipboard.writeText(c) }catch(e){} S.codigoCopiado=true; renderApp(); } return }
   if(t.dataset.equipoQuitar){ t.disabled=true; equipoDecidir(t.dataset.equipoQuitar,"quitar"); return }
   if(t.dataset.equipoReintentar){ if(S.auth && S.auth.sinPerfil) authReintentarSinPerfil(); else if(S.auth && S.auth.elegido) authChequearEquipo(S.auth.elegido); return }
-  if(t.dataset.codigoPedir){ authPedirAprobacion(); return }
   if(t.dataset.adminVincular){ authAdminVincular(); return }
   if(t.dataset.adminEntrar){ authAdminEntrar(); return }
   if(t.dataset.codigoPerfil){ if(S.auth){ S.auth.paso="quien"; S.auth.empleados=[]; cargarEmpleadosDeAuth(); } return }
