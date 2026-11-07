@@ -921,7 +921,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.125.0";
+const FRONTEND_VERSION = "1.125.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1449,13 +1449,21 @@ async function authEnviarClave(){
   const r = await api("verificarClaveLocal", {local:S.auth.local, clave});
   S.auth.cargando=false;
   if(r && r.ok && S.auth.otroLocal && !r.modoAdmin){ S.auth.error="Para entrar a otro local desde acá necesitás el código de admin."; renderApp(); return }
-  if(r && r.ok && S.auth.otroLocal && r.modoAdmin && S.deviceLocal && S.deviceLocal===S.auth.local){
-    // Rescate (antes era el botón «¿No es tu local? Cambiar», que podía tocar cualquiera): solo con el código de admin.
-    if(confirm(`Código de admin correcto. ¿Dejar de usar "${S.deviceLocal}" como local fijo de este dispositivo? La próxima vez va a pedir elegir el local.`)){
-      S.deviceLocal=null; ls.del("deviceLocal");
-      S.auth={ paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false };
-      renderApp(); return;
+  if(r && r.ok && S.auth.accionDispositivo && r.modoAdmin){
+    // Gesto oculto en el logo (5 toques) + código de admin: fijar o desfijar el local de ESTE dispositivo.
+    // Es un gesto aparte del de «Elegí tu perfil» (entrar a otro local), que nunca toca el local fijo.
+    const loc=S.auth.local, acc=S.auth.accionDispositivo;
+    if(acc==="desfijar"){
+      if(confirm(`Vas a dejar de usar "${loc}" como local fijo de este dispositivo. La próxima vez va a pedir elegir el local. ¿Confirmás?`)){
+        S.deviceLocal=null; ls.del("deviceLocal");
+        S.auth={ paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false };
+        renderApp(); return;
+      }
+    } else if(confirm(`Vas a fijar "${loc}" como local de este dispositivo: la próxima vez arranca directo en ese local. ¿Confirmás?`)){
+      S.deviceLocal=loc; ls.set("deviceLocal",loc);
     }
+    S.auth={ paso:"quien", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false };
+    cargarEmpleadosDeAuth(); return;
   }
   if(r && r.ok){
     // Código de admin (6 dígitos): entra a cualquier local como Operaciones,
@@ -2265,7 +2273,7 @@ function renderAuth(){
       </div>`;
   }
   // Panel de marca (logo + local). En celular/tablet es una franja arriba; en PC, el panel de la izquierda.
-  const logo = `<img class="authLogo" src="../icons/wordmark-dorado.png" width="363" height="154" alt="Lucciano's">`;
+  const logo = `<img class="authLogo" src="../icons/wordmark-dorado.png" width="363" height="154" alt="Lucciano's" data-secreto-logo="1">`;
   return `<div class="authPremium" data-paso="${esc(a.paso||"")}"><aside class="authBrand">${logo}<div class="authEyebrow">LogiStock</div><div class="authLocalSlot">${authLocalSlotHTML(a)}</div><div class="authBrandPie">Control de cámara y stock · Lucciano's</div></aside><div class="authWrap"><div class="authCard">${cuerpo}</div></div></div>`;
 }
 
@@ -4418,7 +4426,7 @@ function teclaBloqueo(k){
 // Entrar a otro local con código de admin: no hay botón. Tocar 5 veces seguidas
 // el título "Elegí tu perfil" (en menos de 3 s) abre directo la casilla de
 // local y después la del código, sin textos. Vale para PC y tablet.
-let secretoToques=[];
+let secretoToques=[], secretoLogoToques=[];
 function tocarSecretoOtroLocal(){
   const ahora=Date.now();
   secretoToques=secretoToques.filter(t=>ahora-t<3000);
@@ -4426,7 +4434,22 @@ function tocarSecretoOtroLocal(){
   if(secretoToques.length<5) return false;
   secretoToques=[]; return true;
 }
+function tocarSecretoLogo(){
+  const ahora=Date.now();
+  secretoLogoToques=secretoLogoToques.filter(t=>ahora-t<3000);
+  secretoLogoToques.push(ahora);
+  if(secretoLogoToques.length<5) return false;
+  secretoLogoToques=[]; return true;
+}
 document.addEventListener("click", async e=>{
+  const logoSec=e.target.closest("[data-secreto-logo]");
+  if(logoSec){
+    if(tocarSecretoLogo()){
+      const loc=S.deviceLocal || (S.auth && S.auth.local);
+      if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true, accionDispositivo:S.deviceLocal?"desfijar":"fijar"}; renderApp() }
+    }
+    return;
+  }
   const secreto=e.target.closest("[data-secreto-otro]");
   if(secreto){ if(tocarSecretoOtroLocal()){ const loc=(S.auth&&S.auth.local)||S.deviceLocal; if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } else { S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } renderApp() } return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
