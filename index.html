@@ -851,7 +851,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.124.0";
+const FRONTEND_VERSION = "1.124.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2522,9 +2522,12 @@ function gridSalida(st){
 }
 /** Acciones de arriba de Salida: tarjetas del mismo tamaño en grilla 2×2, cada una con una línea que explica para qué sirve;
  *  solo «Escanear vasqueta» se destaca (mock 7B aprobado por Gabi 06/11/2026). */
+/** Locales con producción propia (la balanza imprime otra etiqueta): sacan las vasquetas por pad («¿Cuánto pesa?»), sin escáner.
+ *  El decodificador de la etiqueta de la balanza (PLU) queda en el código por si después se pone un lector de barras. */
+function escanerDisponible(){ return !!S.escanerPeso && !S.produccionLocal }
 function accionesSalidaHTML(){
   const t=[];
-  if(S.escanerPeso) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
+  if(escanerDisponible()) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
   t.push(`<button type="button" class="accTile" id="irDesperdicio"><b>Desperdicio</b><small>roto, caído, vencido</small></button>`);
   if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(`<button type="button" class="accTile" id="irVentaDia"><b>Salida de chocolatería</b><small>venta, gift card, baja…</small></button>`);
   if(!S.chocoSoloDeposito) t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>lotes por vencer</small></button>`);
@@ -5393,7 +5396,12 @@ function ayudaTemas(){
     "Elegí el sabor que figura en la caja y el que era en realidad.",
     "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
     "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
-  if(S.escanerPeso) T.push({id:"escaner", titulo:"Cómo usar el escáner", sub:"Sacar vasquetas con su peso real", html:li([
+  if(S.escanerPeso && S.produccionLocal) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
+    "En Salida tocá el sabor de la vasqueta que sacás.",
+    "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
+    "Tocá <b>Agregar otra</b> para cargar la siguiente vasqueta del mismo sabor, y <b>Listo</b> al terminar.",
+    "Revisá el total de abajo y tocá <b>Confirmar salida</b>."])+nota("Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran.")});
+  if(escanerDisponible()) T.push({id:"escaner", titulo:"Cómo usar el escáner", sub:"Sacar vasquetas con su peso real", html:li([
     "En Salida tocá <b>Escanear vasqueta</b>.",
     "Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real.",
     "Si suena triple y sale <b>amarillo</b>, ese código ya se escaneó. Si fue un error, tocá la <b>✕</b> de esa fila para quitar solo esa vasqueta.",
