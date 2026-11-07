@@ -851,7 +851,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.124.2";
+const FRONTEND_VERSION = "1.124.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2845,12 +2845,14 @@ async function leerRemitoFoto(base64, mime){
 /* ============================================================
    CAMBIO DE SABOR (solo responsables): una caja o vasqueta venía rotulada como un sabor y era otro.
    Pasa N unidades de un sabor a otro sin tocar el total. Un solo movimiento «cambio» con items firmados.
-   No aplica a chocolatería (tiene lotes). No cuenta como consumo.
+   Solo vasquetas, baldes, icepops y gluten free (no chocolatería, pastelería ni bollería). No cuenta como consumo.
 ============================================================ */
 const MOTIVOS_CAMBIO=["Caja mal rotulada","Error de fábrica"];
 function puedeCambioSabor(){ return !!S.local && !!S.empleado && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
 function resetCambio(){ S.cambio={desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""} }
-function saboresCambio(){ return saboresDelLocal().filter(s=>!esChocolateria(s.id)) }
+const CAMBIO_GRUPOS=["vasquetas","baldes","icepops","glutenfree"]; // no aplica a chocolatería (lotes), pastelería ni bollería
+function cambioPermitido(s){ return CAMBIO_GRUPOS.includes(grupoProductoDe(s)) }
+function saboresCambio(){ return saboresDelLocal().filter(cambioPermitido) }
 function cambioMotivoTxt(){ const c=S.cambio; return c.motivo==="otro" ? String(c.otro||"").trim() : String(c.motivo||"") }
 function optGruposSabor(ids, sel){
   const set=new Set(ids.map(String));
@@ -2861,6 +2863,11 @@ function cambioEstado(st){
   const max=d?(st[d]||0):0, cant=Math.min(Math.max(max,1),Math.max(1,Math.floor(+c.cant||1)));
   const kg=kilosNum(c.kilos), pideKg=!!(d && S.kilosReales && esVasquetaKilos(d));
   return {max, cant, kg, pideKg, ok: !!d && !!h && d!==h && max>=1 && (!pideKg||kg>0) && !!cambioMotivoTxt()};
+}
+function cambioAvisoKilos(e){
+  if(!e.pideKg || !(e.kg>0)) return "";
+  const por=e.kg/e.cant;
+  return (por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta: no cuadra. Podés corregir los kilos (lo escrito manda) y registrar igual.</span>`:"";
 }
 function cambioPreviewHTML(st){
   const c=S.cambio; if(!c.desde||!c.hacia) return "";
@@ -2885,7 +2892,7 @@ function gridCambioSabor(st){
   <div class="cmbCampo"><label for="cmbDesde">Figura como</label><select id="cmbDesde"><option value="">Elegí el sabor del rótulo…</option>${optGruposSabor(idsDesde,c.desde)}</select>${c.desde?`<small>En cámara: ${st[c.desde]||0} ${unidad(c.desde,st[c.desde]||0)}${e.pideKg&&km[c.desde]!=null?` · ${fmtKg(km[c.desde])} kg`:""}</small>`:""}</div>
   ${c.desde?`<div class="cmbCampo"><label for="cmbHacia">Era en realidad</label><select id="cmbHacia"><option value="">Elegí el sabor que era…</option>${optGruposSabor(idsHacia,c.hacia)}</select>${c.hacia?`<small>En cámara: ${st[c.hacia]||0} ${unidad(c.hacia,st[c.hacia]||0)}${e.pideKg&&km[c.hacia]!=null?` · ${fmtKg(km[c.hacia])} kg`:""}</small>`:""}</div>`:""}
   ${c.desde&&c.hacia?`<div class="cmbCampo"><label>Cuántas ${unidad(c.desde,2)}</label><div class="stepper"><button type="button" data-cmb-dec aria-label="Restar">−</button><span class="n">${e.cant}</span><button type="button" data-cmb-inc aria-label="Sumar">+</button></div></div>
-  ${e.pideKg?`<div class="cmbCampo"><div class="kgFila"><label for="cmbKilos">Kilos de esas ${e.cant}</label><input type="text" id="cmbKilos" inputmode="decimal" value="${esc(c.kilos)}" placeholder="0,00"> kg</div>${sug>0?`<small>Sugerido: ${fmtKg(sug)} kg (promedio de lo que hay en cámara). <button type="button" class="chip" data-cmb-sug="${sug}">Usar sugerido</button></small>`:""}</div>`:""}
+  ${e.pideKg?`<div class="cmbCampo"><div class="kgFila"><label for="cmbKilos">Kilos de esas ${e.cant}</label><input type="text" id="cmbKilos" inputmode="decimal" value="${esc(c.kilos)}" placeholder="0,00"> kg</div><small id="cmbKgAv">${cambioAvisoKilos(e)}</small>${sug>0?`<small>Sugerido: ${fmtKg(sug)} kg (promedio de lo que hay en cámara). <button type="button" class="chip" data-cmb-sug="${sug}">Usar sugerido</button></small>`:""}</div>`:""}
   <div class="cmbCampo"><label>Motivo</label><div class="cmbChips">${MOTIVOS_CAMBIO.map(m=>`<button type="button" class="chip" data-cmb-motivo="${esc(m)}" aria-pressed="${c.motivo===m}">${esc(m)}</button>`).join("")}<button type="button" class="chip" data-cmb-motivo="otro" aria-pressed="${c.motivo==="otro"}">Otro…</button></div>${c.motivo==="otro"?`<input type="text" id="cmbOtro" maxlength="120" placeholder="Escribí el motivo" value="${esc(c.otro)}" style="margin-top:8px">`:""}</div>
   <div id="cmbPreview">${cambioPreviewHTML(st)}</div>`:""}
   <div class="cmbBtns"><button type="button" class="btn volver" id="cmbCancelar">Cancelar</button><button type="button" class="btn" id="cmbOk" ${e.ok&&!S.busy?"":"disabled"}>${S.busy?"Guardando…":"Registrar cambio de sabor"}</button></div>`;
@@ -4688,7 +4695,7 @@ document.addEventListener("input", e=>{
   if(e.target.dataset.remitoKg!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoKg].kilos=kilosNum(e.target.value)||null }
   if(e.target.id==="cmbKilos"||e.target.id==="cmbOtro"){
     if(e.target.id==="cmbKilos") S.cambio.kilos=e.target.value; else S.cambio.otro=e.target.value;
-    const st=stockMap(), pv=$("#cmbPreview"), ok=$("#cmbOk"); if(pv) pv.innerHTML=cambioPreviewHTML(st); if(ok) ok.disabled=!(cambioEstado(st).ok&&!S.busy);
+    const st=stockMap(), pv=$("#cmbPreview"), ok=$("#cmbOk"), av=$("#cmbKgAv"); if(pv) pv.innerHTML=cambioPreviewHTML(st); if(av) av.innerHTML=cambioAvisoKilos(cambioEstado(st)); if(ok) ok.disabled=!(cambioEstado(st).ok&&!S.busy);
   }
   if(e.target.dataset.loteF!==undefined || e.target.dataset.loteC!==undefined){ setLoteExtra(e.target); renderBar() }
 });
