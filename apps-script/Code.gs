@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.63.0";
+const BACKEND_VERSION = "1.64.0";
 
 function doPost(e) {
   let resultado;
@@ -881,6 +881,8 @@ function _datosSinCache(local, empleado) {
   // sin peso promedio. Implica el peso por vasqueta al sacar (pad «¿Cuánto pesa?» y escáner).
   const kilosReales = filaLocal ? _esVerdadero(filaLocal.kilos_reales) === true : false;
   const escanerPeso = kilosReales || (filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false);
+  // Locales.sin_escaner=SI: el local pesa por pad («¿Cuánto pesa?») y no ve el botón de escanear (ej. Unicenter: su balanza imprime otra etiqueta).
+  const sinEscaner = filaLocal ? _esVerdadero(filaLocal.sin_escaner) === true : false;
   // Locales.venta_dia=SI habilita, en Salida, "Venta del día" (chocolatería): una
   // salida con lo que dice la caja al cerrar. Piloto: hoy solo "Local prueba".
   const ventaDia = filaLocal ? _esVerdadero(filaLocal.venta_dia) === true : false;
@@ -890,7 +892,7 @@ function _datosSinCache(local, empleado) {
 
   // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
   const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos, kilosReales: kilosReales };
+  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos, kilosReales: kilosReales };
 }
 
 function _cacheKeyDatos(local) {
@@ -922,7 +924,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, rol: empleado.rol };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
