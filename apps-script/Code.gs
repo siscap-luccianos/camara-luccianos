@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.64.1";
+const BACKEND_VERSION = "1.65.0";
 
 function doPost(e) {
   let resultado;
@@ -860,7 +860,8 @@ function _datosSinCache(local, empleado) {
   // le avisa al cliente cuáles ocultar en las grillas de este local; así
   // nombre(id) sigue funcionando para movimientos viejos de un sabor que
   // se excluyó después.
-  const excluidos = filaLocal ? String(filaLocal.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+  // Rubros apagados del local (columnas Locales.lleva_<rubro>=NO): se suman a los excluidos.
+  const excluidos = _excluidosDelLocal(filaLocal, saboresFilas);
   // Catálogo por país: sabores que NO se venden en el país de este local (el cliente los oculta
   // en todas las grillas y en la pestaña Sabores del local; nombre(id) sigue resolviendo en Historial).
   const pais = _paisDeLocal(filaLocal);
@@ -975,7 +976,7 @@ function relevar(empleado) {
         stock[id] += signo * (Number(items[id]) || 0);
       });
     });
-    String(l.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean).forEach((id) => { delete stock[id]; });
+    _excluidosDelLocal(l, saboresFilas).forEach((id) => { delete stock[id]; });
     const paisLocal = _paisDeLocal(l);
     saboresFilas.forEach((sb) => { if (!_saborEnPais(sb, paisLocal)) delete stock[String(sb.id)]; });
     locales.push({
@@ -2519,6 +2520,11 @@ function toggleSaborLocal(saborId, local, empleado) {
     if (colOperaciones !== -1 && _esVerdadero(filas[idx][colOperaciones]) === true) {
       return { ok: false, error: "Operaciones no tiene sabores por local." };
     }
+    const filaObj = {}; headers.forEach((h, i) => { filaObj[h] = filas[idx][i]; });
+    const saborFila = _leerCrudo("Sabores").filter((x) => String(x.id) === String(saborId))[0];
+    if (saborFila && _rubrosApagados(filaObj).indexOf(_rubroDeSabor(saborFila)) !== -1) {
+      return { ok: false, error: "Ese rubro está apagado para este local (lo maneja el supervisor en la planilla, columna lleva_...)." };
+    }
     const actuales = String(filas[idx][colExcluidos] || "").split(",").map((x) => x.trim()).filter(Boolean);
     const pos = actuales.indexOf(String(saborId));
     let excluido;
@@ -2553,6 +2559,20 @@ function _sheet(nombre) {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);
   if (!sheet) throw new Error("No existe la hoja '" + nombre + "'.");
   return sheet;
+}
+
+/** Rubros que un local puede apagar entero: una columna Locales.lleva_<rubro> por rubro.
+ *  Vacío = lo lleva (como siempre); NO = no lo lleva y desaparece de ese local. Baldes son tipo "b" (familia vasquetas). */
+const RUBROS_LOCAL = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria"];
+function _rubroDeSabor(s) { return String(s.tipo || "v") === "b" ? "baldes" : String(s.familia || "vasquetas"); }
+function _rubrosApagados(fila) { return fila ? RUBROS_LOCAL.filter((r) => _esVerdadero(fila["lleva_" + r]) === false) : []; }
+/** Ids que el local no ve: los de sabores_excluidos (a mano o desde la app) + todos los de los rubros apagados. */
+function _excluidosDelLocal(fila, sabores) {
+  const manual = fila ? String(fila.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+  const ap = _rubrosApagados(fila);
+  if (!ap.length) return manual;
+  const porRubro = (sabores || []).filter((x) => ap.indexOf(_rubroDeSabor(x)) !== -1).map((x) => String(x.id));
+  return manual.concat(porRubro.filter((id) => manual.indexOf(id) === -1));
 }
 
 function _esVerdadero(v) {
