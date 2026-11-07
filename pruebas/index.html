@@ -677,17 +677,29 @@ body:has(.mantenerOv){overflow:hidden}
 .portadaMarco{width:100%;max-width:680px;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:48px;padding:18px;box-shadow:0 30px 70px -30px rgba(0,0,0,.6)}
 .portadaMarco img{width:100%;height:auto;display:block;border-radius:34px;background:#fff}
 @media (max-width:767px){.portadaLocal{padding:20px 0 40px}.portadaMarco{max-width:340px;border-radius:36px;padding:12px}.portadaMarco img{border-radius:26px}}
-.authPremium{position:fixed;inset:0;z-index:40;overflow-y:auto;display:flex;flex-direction:column;padding:24px 16px;background:radial-gradient(120% 55% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%);color:#F5F0E8}
-.authPremium{padding-top:8vh}
-.authPremium .authWrap{margin:0 auto;width:100%;max-width:420px;padding:0}
-/* Tarjeta fija: misma altura en todos los pasos, así no se mueve al cambiar */
-.authPremium .authCard{min-height:470px;box-sizing:border-box;justify-content:flex-start}
-.authPremium .authPill{align-self:stretch;text-align:center;padding:14px 16px;border-radius:999px;background:#1B1611;color:#F5F0E8;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem;letter-spacing:.02em;border:1px solid rgba(217,185,105,.35);box-shadow:0 10px 24px -12px rgba(0,0,0,.6)}
-.authPremium .authLogo{width:280px;max-width:78%;height:auto;margin:0 auto 12px;filter:drop-shadow(0 6px 22px rgba(217,185,105,.28))}
-.authPremium .authCard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:30px;padding:28px 22px;box-sizing:border-box;color:#F5F0E8;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+/* --- Login premium (1.125.0): panel del local + perfiles en grilla (PC/tablet), lista compacta (celular) --- */
+.authPremium{--wrapMax:460px;position:fixed;inset:0;z-index:40;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;padding:22px 18px 28px;color:#F5F0E8;background:radial-gradient(520px 520px at 0% 0%,rgba(217,185,105,.16),rgba(217,185,105,0) 70%),radial-gradient(120% 70% at 50% 0%,#5A3A26 0%,#2A1E17 55%,#1B1611 100%)}
+.authPremium[data-paso="quien"]{--wrapMax:720px}
+.authPremium .authBrand{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:var(--wrapMax);margin:0 auto 18px;flex-shrink:0}
+.authPremium .authLogo{width:112px;height:auto;flex-shrink:0;filter:drop-shadow(0 4px 14px rgba(217,185,105,.28))}
+.authPremium .authEyebrow,.authPremium .authBrandPie,.authPremium .authLocalLbl,.authPremium .authLocalNom,.authPremium .soloPC{display:none}
+.authPremium .authFijo{font-size:12px;font-weight:700;color:#8F8074}
+.authPremium .authWrap{margin:0 auto;width:100%;max-width:var(--wrapMax);padding:0}
+.authPremium .authCard{background:none;border:0;box-shadow:none;padding:0;color:#F5F0E8;box-sizing:border-box;min-height:470px;display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;justify-content:flex-start}
+.authPremium[data-paso="quien"] .authCard{min-height:0;align-items:stretch;text-align:left;gap:12px}
 .authPremium h1{font-family:'Fraunces',Georgia,serif;font-weight:700;color:#F5F0E8}
 .authPremium p{color:#B3A395}
 .authPremium .authBack{color:#B3A395}
+.authPremium .quienHead{display:flex;flex-direction:column;gap:12px}
+.authPremium .quienHead h1{font-size:1.7rem;margin:0}
+.authPremium .quienHead p{margin:6px 0 0}
+.authPremium .quienHead p b{color:#E9D094}
+.authPremium .authSearch{display:flex;align-items:center;gap:10px;height:46px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#8F8074;box-sizing:border-box}
+.authPremium .authSearch input{flex:1;min-width:0;height:44px;padding:0;border:0;background:none;border-radius:0;color:#F5F0E8;font-size:15px;outline:none}
+.authPremium .authGrupo{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.authPremium .authGrpTit{display:flex;align-items:center;gap:12px;font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8F8074}
+.authPremium .authGrpTit::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.10)}
+.authPremium .authNadie{color:#8F8074;font-weight:600;padding:18px 4px}
 .authPremium input{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#F5F0E8;border-radius:16px;height:56px;padding:0 16px;font-size:15px;box-sizing:border-box}
 .authPremium input::placeholder{color:#8F8074}
 .authPremium .btn{background:linear-gradient(135deg,#E3A46F 0%,#C77D45 100%);color:#1B1611;border:0;border-radius:16px;min-height:52px;font-weight:800;box-shadow:0 10px 24px -10px rgba(217,146,90,.6)}
@@ -696,16 +708,58 @@ body:has(.mantenerOv){overflow:hidden}
 .authPremium .recientesTit{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8F8074}
 .authPremium .recienteBtn{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);color:#F5F0E8;font-weight:700;font-size:15px}
 .authPremium .recienteBtn .chev{color:#B3A395;font-size:20px}
-.authPremium .authList button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#F5F0E8;flex-direction:column;justify-content:center;text-align:center;min-height:150px;border-radius:24px;gap:12px}
-.authPremium .authList .nm{color:#F5F0E8;font-size:14px}
-.authPremium .authList .rol{color:#D9B869;text-transform:uppercase;letter-spacing:.06em;font-size:11px;font-weight:700}
-.authPremium .ini{width:64px;height:64px;font-family:'Fraunces',Georgia,serif;font-size:1.3rem;background:linear-gradient(135deg,#E3A46F,#9C5A2E);color:#1B1611}
+.authPremium .authList{display:grid;grid-template-columns:1fr;gap:8px;width:100%;text-align:left}
+.authPremium .authList button{background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.11);color:#F5F0E8;flex-direction:row;justify-content:flex-start;text-align:left;min-height:62px;padding:0 14px;border-radius:18px;gap:14px;box-shadow:0 12px 28px -18px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.07)}
+.authPremium .authList button.pri{border-color:rgba(217,185,105,.38);background:linear-gradient(135deg,rgba(217,185,105,.14),rgba(255,255,255,.05))}
+.authPremium .authList button:active{background:rgba(217,185,105,.18)}
+.authPremium .authList .pTxt{display:flex;flex-direction:column;min-width:0}
+.authPremium .authList .nm{color:#F5F0E8;font-size:15px;font-weight:800;line-height:1.2}
+.authPremium .authList .rol{color:#D9B869;text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;font-weight:800;margin-top:3px;white-space:nowrap}
+.authPremium .authList .rol.eq{color:#A9998A}
+.authPremium .authList .chev{margin-left:auto;color:#8F8074;font-size:22px;line-height:1}
+.authPremium .ini{width:46px;height:46px;font-family:'Fraunces',Georgia,serif;font-size:1.05rem;font-weight:700;background:linear-gradient(135deg,#F0D48A,#C9953A);color:#2A1E17;box-shadow:0 0 0 3px rgba(217,185,105,.18)}
 .authPremium .dots span{border-color:rgba(217,185,105,.55);width:14px;height:14px}
 .authPremium .dots span.on{background:#D9B869;border-color:#D9B869;box-shadow:0 0 14px rgba(217,185,105,.6)}
-.authPremium:has(.authList){overflow:hidden;padding-bottom:16px}
-.authPremium:has(.authList) .authWrap{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
-.authPremium:has(.authList) .authCard{flex:1 1 auto;min-height:0}
-.authPremium .authLogo,.authPremium .authPill{flex-shrink:0}
+.authPremium .eqInfo{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:.78rem;color:#B3A395;text-align:left}
+.authPremium .eqInfo>div{display:flex;justify-content:space-between;gap:12px}
+.authPremium .eqInfo b{color:#F5F0E8;text-align:right}
+.authPremium .keypad{max-width:300px;justify-items:center}
+.authPremium .keypad button{width:78px;height:78px;min-height:0;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#F5F0E8;font-family:'Fraunces',Georgia,serif;font-size:1.7rem;font-weight:600;padding:0}
+.authPremium .keypad button.op{color:#B3A395;font-family:'Manrope',system-ui,sans-serif;font-size:.85rem;font-weight:700}
+/* Tablet vertical: lista en 2 columnas */
+@media (min-width:600px) and (max-width:899px){
+  .authPremium{padding:40px 40px 32px}
+  .authPremium .authLogo{width:180px}
+  .authPremium .authFijo{font-size:13px}
+  .authPremium .quienHead h1{font-size:2.1rem}
+  .authPremium .authList{grid-template-columns:1fr 1fr;gap:12px}
+  .authPremium .authList button{min-height:84px}
+}
+/* PC y tablet horizontal: panel del local a la izquierda, contenido a la derecha */
+@media (min-width:900px){
+  .authPremium{display:grid;grid-template-columns:clamp(300px,34vw,430px) minmax(0,1fr);padding:0;align-items:start}
+  .authPremium .authBrand{position:sticky;top:0;height:100vh;height:100dvh;max-width:none;margin:0;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:0;padding:56px 48px 40px;border-right:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0));box-sizing:border-box}
+  .authPremium .authLogo{width:250px}
+  .authPremium .authEyebrow{display:block;margin-top:14px;font-size:11px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:#D9B869}
+  .authPremium .authLocalSlot{margin-top:auto}
+  .authPremium .authLocalLbl{display:block;font-size:13px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#8F8074}
+  .authPremium .authLocalNom{display:block;font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:700;line-height:1.1;margin-top:8px;color:#F5F0E8}
+  .authPremium .authFijo{display:block;margin-top:18px}
+  .authPremium .authBrandPie{display:block;margin-top:auto;padding-top:28px;font-size:12px;font-weight:600;color:#6F6258}
+  .authPremium .soloMovil{display:none}
+  .authPremium .authWrap{max-width:none;margin:0;min-height:100vh;min-height:100dvh;padding:56px 64px 40px 72px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center}
+  .authPremium .authCard{width:100%;max-width:400px}
+  .authPremium[data-paso="quien"] .authWrap{justify-content:flex-start;align-items:stretch}
+  .authPremium[data-paso="quien"] .authCard{max-width:none}
+  .authPremium .quienHead{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:18px}
+  .authPremium .quienHead h1{font-size:2.25rem}
+  .authPremium .authSearch{width:260px;flex-shrink:0}
+  .authPremium .authList{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+  .authPremium .authList.pri{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .authPremium .authList button{min-height:78px}
+  .authPremium .authList .chev{display:none}
+  .authPremium .ini{width:50px;height:50px}
+}
 .authPremium .authList{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;align-content:start;padding-bottom:4px}
 .authPremium .eqInfo{width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:.78rem;color:#B3A395;text-align:left}
 .authPremium .eqInfo>div{display:flex;justify-content:space-between;gap:12px}
@@ -867,7 +921,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.124.4";
+const FRONTEND_VERSION = "1.125.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1395,6 +1449,14 @@ async function authEnviarClave(){
   const r = await api("verificarClaveLocal", {local:S.auth.local, clave});
   S.auth.cargando=false;
   if(r && r.ok && S.auth.otroLocal && !r.modoAdmin){ S.auth.error="Para entrar a otro local desde acá necesitás el código de admin."; renderApp(); return }
+  if(r && r.ok && S.auth.otroLocal && r.modoAdmin && S.deviceLocal && S.deviceLocal===S.auth.local){
+    // Rescate (antes era el botón «¿No es tu local? Cambiar», que podía tocar cualquiera): solo con el código de admin.
+    if(confirm(`Código de admin correcto. ¿Dejar de usar "${S.deviceLocal}" como local fijo de este dispositivo? La próxima vez va a pedir elegir el local.`)){
+      S.deviceLocal=null; ls.del("deviceLocal");
+      S.auth={ paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false };
+      renderApp(); return;
+    }
+  }
   if(r && r.ok){
     // Código de admin (6 dígitos): entra a cualquier local como Operaciones,
     // con la lista de admin/supervisor en vez de la nómina del local.
@@ -1502,15 +1564,6 @@ function authVolver(){
   }
   if(S.auth.paso==="clave"){ S.auth.local=null; S.auth.paso="local"; renderApp(); return }
   S.auth=null; renderApp();
-}
-/** Desfija el local guardado en este dispositivo — para cuando alguien
- *  fijó un local por error (p. ej. un admin/supervisor que tocó "sí" sin
- *  querer) y necesita volver a elegir, incluida la entrada a Operaciones. */
-function cambiarDispositivo(){
-  if(!confirm("¿Dejar de usar este local fijo en este dispositivo? La próxima vez va a volver a pedir elegir el local.")) return;
-  S.deviceLocal=null; ls.del("deviceLocal");
-  S.auth={ paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false };
-  renderApp();
 }
 async function authTecla(k){
   if(S.auth.paso==="codigo"){
@@ -2094,6 +2147,21 @@ function recordarLocalReciente(nombre){
   const lista=[nombre, ...localesRecientes().filter(n=>n!==nombre)].slice(0,5);
   ls.set("localesRecientes", JSON.stringify(lista));
 }
+/** Local que se muestra en el panel de marca del login (nombre grande + candado si el dispositivo lo tiene fijo). */
+function authLocalSlotHTML(a){
+  const nom=(a && a.paso!=="local" && a.local) ? a.local : "";
+  if(!nom) return "";
+  const fijo=!!S.deviceLocal && S.deviceLocal===nom;
+  return `<div class="authLocalLbl">Local</div><div class="authLocalNom">${esc(nom)}</div>${fijo?`<div class="authFijo">🔒&nbsp; Local fijo en este dispositivo</div>`:""}`;
+}
+/** Filtra las tarjetas de perfil mientras se escribe en el buscador (sin rehacer la pantalla, para no perder el foco). */
+function authFiltrarPerfiles(q){
+  const norm=t=>String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+  const b=norm(q).trim(); let visibles=0;
+  document.querySelectorAll(".authPremium [data-authemp]").forEach(btn=>{ const ok=!b||norm(btn.dataset.nom).indexOf(b)!==-1; btn.hidden=!ok; if(ok) visibles++ });
+  document.querySelectorAll(".authPremium .authGrupo").forEach(g=>{ g.hidden=!g.querySelector("[data-authemp]:not([hidden])") });
+  const n=document.getElementById("authNadie"); if(n) n.hidden=visibles>0;
+}
 function renderAuth(){
   const a=S.auth;
   let cuerpo="";
@@ -2121,13 +2189,19 @@ function renderAuth(){
         <button class="btn" type="submit" id="authClaveOk" style="width:100%;margin-top:10px" ${a.cargando?"disabled":""}>${a.cargando?"Verificando…":"Continuar"}</button>
       </form>`;
   } else if(a.paso==="quien"){
-    cuerpo=`${S.deviceLocal?`<button class="authBack" type="button" data-cambiar-dispositivo="1">¿No es tu local? Cambiar</button>`:`<button class="authBack" data-authback="1">Volver</button>`}
-      <h1 ${!a.esGestion?'data-secreto-otro="1"':""}>Elegí tu perfil</h1>
-      <p>${a.esGestion?"Tocá tu tarjeta para continuar.":"Local: "+esc(a.local||"")+". Tocá tu tarjeta para continuar."}</p>
+    const RESP_ROLES=["admin","supervisor","encargado","turno"];
+    const tarjeta=(e,pri)=>`<button type="button" data-authemp="${e.id}" data-nom="${esc(e.nombre)}"${pri?' class="pri"':""}><span class="ini">${esc(iniPersona(e.nombre))}</span><span class="pTxt"><span class="nm">${esc(e.nombre)}</span><span class="rol${pri?"":" eq"}">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span><span class="chev">›</span></button>`;
+    const resp=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)!==-1), equ=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)===-1);
+    const conTit=resp.length>0 && equ.length>0;
+    const grupo=(tit,lista,pri)=>lista.length?`<section class="authGrupo">${conTit?`<div class="authGrpTit">${tit}</div>`:""}<div class="authList${pri?" pri":""}">${lista.map(e=>tarjeta(e,pri)).join("")}</div></section>`:"";
+    const buscador=(a.empleados||[]).length>8?`<label class="authSearch"><span aria-hidden="true">⌕</span><input type="search" id="authBuscar" placeholder="Buscar mi nombre…" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`:"";
+    cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">‹ Volver</button>`}
+      <div class="quienHead"><div><h1 ${!a.esGestion?'data-secreto-otro="1"':""}>Elegí tu perfil</h1>
+      <p>${a.esGestion?"Tocá tu tarjeta para continuar.":`<span class="soloMovil">Local: <b>${esc(a.local||"")}</b>. </span>Tocá tu tarjeta para continuar.`}</p></div>${buscador}</div>
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
-        a.empleados.length?`<div class="authList">${a.empleados.map(e=>`<button type="button" data-authemp="${e.id}"><span class="ini">${esc(iniPersona(e.nombre))}</span><span><span class="nm">${esc(e.nombre)}</span><br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}</span></span></button>`).join("")}</div>`
+        (a.empleados||[]).length?`${grupo("Responsables",resp,true)}${grupo("Equipo",equ,false)}<div class="authNadie" id="authNadie" hidden>No hay nadie con ese nombre.</div>`
         :`<div class="note">Todavía no hay nadie dado de alta acá. Pedile a un encargado o supervisor que te cree el usuario.</div>`}`;
   } else if(a.paso==="codigo"){
     const val=a.codigo||"";
@@ -2190,9 +2264,9 @@ function renderAuth(){
         <button type="button" class="op" data-tecla="borrar" ${a.cargando?"disabled":""}>Borrar</button>
       </div>`;
   }
-  // El logo está en todos los pasos (mismo lugar), así la tarjeta no salta al cambiar de paso.
+  // Panel de marca (logo + local). En celular/tablet es una franja arriba; en PC, el panel de la izquierda.
   const logo = `<img class="authLogo" src="../icons/wordmark-dorado.png" width="363" height="154" alt="Lucciano's">`;
-  return `<div class="authPremium">${logo}<div class="authWrap"><div class="authCard"><div class="authPill">LogiStock</div>${cuerpo}</div></div></div>`;
+  return `<div class="authPremium" data-paso="${esc(a.paso||"")}"><aside class="authBrand">${logo}<div class="authEyebrow">LogiStock</div><div class="authLocalSlot">${authLocalSlotHTML(a)}</div><div class="authBrandPie">Control de cámara y stock · Lucciano's</div></aside><div class="authWrap"><div class="authCard">${cuerpo}</div></div></div>`;
 }
 
 /* PDF de Relevar: hasta 4 productos entran en hoja vertical; de 5 a 8 sale solo en horizontal; con más de 8 no entra bien. */
@@ -4363,7 +4437,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.authback){ authVolver(); return }
   // Admin: pasa a la vista general (catálogo para todos los locales) sin cerrar sesión.
   if(t.dataset.irOperaciones){ irAOperaciones(t.dataset.irOperaciones==="sabores" ? "sabores" : undefined); return }
-  if(t.dataset.cambiarDispositivo){ cambiarDispositivo(); return }
   if(t.dataset.subEquipo){ S.subEquipo=t.dataset.subEquipo; S.equipoAviso=""; S.equipoConfirmar=null; if(S.subEquipo==="equipos") S.equipos=undefined; renderApp(); return }
   if(t.dataset.equiposRecargar){ S.equipos=undefined; renderApp(); return }
   if(t.dataset.equipoAprobar){ const c=t.dataset.equipoAprobar, inp=[...document.querySelectorAll("input[data-eq-nombre]")].find(i=>i.dataset.eqNombre===c); t.disabled=true; equipoDecidir(c,"aprobar",inp?inp.value.trim():""); return }
@@ -4672,6 +4745,7 @@ document.addEventListener("focusin", e=>{
   if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number") e.target.select();
 });
 document.addEventListener("input", e=>{
+  if(e.target.id==="authBuscar"){ authFiltrarPerfiles(e.target.value); return }
   if(e.target.id==="rlvQ" || e.target.id==="rlvQL"){
     const R=relevarEstado(), id=e.target.id, pos=e.target.selectionStart;
     if(id==="rlvQ") R.q=e.target.value; else R.qL=e.target.value;
@@ -5502,7 +5576,11 @@ function renderApp(){
   if(S.auth){
     // Actualiza solo la tarjeta: si se vuelve a crear todo (logo incluido) en cada toque, la pantalla salta y se traba.
     const html=renderAuth(), tarjeta=m.querySelector(".authPremium .authCard");
-    if(tarjeta){ const tmp=document.createElement("div"); tmp.innerHTML=html; const nueva=tmp.querySelector(".authCard"); if(nueva){ tarjeta.innerHTML=nueva.innerHTML; return } }
+    if(tarjeta){ const tmp=document.createElement("div"); tmp.innerHTML=html; const nueva=tmp.querySelector(".authCard");
+      if(nueva){ tarjeta.innerHTML=nueva.innerHTML;
+        const raiz=m.querySelector(".authPremium"), nraiz=tmp.querySelector(".authPremium"); if(raiz&&nraiz) raiz.dataset.paso=nraiz.dataset.paso;
+        const slot=m.querySelector(".authPremium .authLocalSlot"), nslot=tmp.querySelector(".authLocalSlot"); if(slot&&nslot&&slot.innerHTML!==nslot.innerHTML) slot.innerHTML=nslot.innerHTML;
+        return } }
     m.innerHTML=html; return
   }
   if(!S.empleado){ iniciarAuth(); return }
