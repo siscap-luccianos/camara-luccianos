@@ -440,6 +440,20 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .pill.ingreso{background:var(--ok-soft);color:var(--ok)}
 .pill.conteo{background:var(--line);color:var(--ink)}
 .pill.devolucion{background:var(--warn-soft);color:var(--warn)}
+.pill.cambio{background:#5B4B8A;color:#fff}
+.cmbCampo{margin:0 0 12px;display:flex;flex-direction:column;gap:6px}
+.cmbCampo label{font-weight:700;font-size:.85rem}
+.cmbCampo select,.cmbCampo input[type=text]{width:100%;box-sizing:border-box;min-height:44px;border:1.5px solid var(--line,#D9CDB8);border-radius:12px;padding:0 12px;font:inherit;background:#fff;color:var(--ink,#2A2118)}
+.cmbCampo small{color:var(--muted);font-size:.78rem;line-height:1.4}
+.cmbChips{display:flex;gap:8px;flex-wrap:wrap}
+.cmbRes{background:#2A2118;color:#F5EFE3;border-radius:14px;padding:12px 14px;margin:0 0 14px}
+.cmbRes .t{font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:6px}
+.cmbRes .r{display:flex;justify-content:space-between;gap:8px;padding:4px 0;font-weight:700;font-size:.9rem}
+.cmbRes .r span{font-weight:600;opacity:.9;text-align:right}
+.cmbRes .r b{color:#E9D094}
+.cmbBtns{display:flex;gap:10px;margin:6px 0 18px}
+.cmbBtns .btn{flex:1}
+.cmbBtns .btn:disabled{opacity:.5}
 .pill.desperdicio{background:var(--alert-soft);color:var(--alert)}
 .pill.venta{background:rgba(var(--accent-rgb),.14);color:var(--accent)}
 .pill.produccion{background:var(--accent);color:var(--accent-ink)}
@@ -849,7 +863,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.123.0";
+const FRONTEND_VERSION = "1.124.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -921,6 +935,7 @@ const S = {
   etiq: null, // reetiquetado de chocolatería sin fecha: {id, max, cant, fecha} mientras se carga
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
+  modoCambio: false, cambio: {desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""}, // «Cambio de sabor» (solo responsables), desde adentro de Ingreso
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
   modoVenta: false, // viendo "Venta del día" (chocolatería) desde adentro de Salida
@@ -1046,7 +1061,7 @@ function stockMapHasta(hasta){
   const base=(S.stock&&S.stock.base)||{}, bts=(S.stock&&S.stock.ts)||0, m={};
   S.sabores.forEach(s=>m[s.id]=+base[s.id]||0);
   for(const r of regsActivos()){ if(r.ts<=bts || r.ts>hasta) continue;
-    const sg=r.tipo==="ingreso"?1:r.tipo==="salida"?-1:0;
+    const sg=(r.tipo==="ingreso"||r.tipo==="cambio")?1:r.tipo==="salida"?-1:0; // el cambio de sabor trae items firmados (−N en un sabor, +N en el otro)
     for(const [id,q] of Object.entries(r.items||{})) if(id in m) m[id]+=sg*(+q||0); }
   return m;
 }
@@ -1065,6 +1080,7 @@ function kilosMap(){
   S.sabores.forEach(s=>{ if(!esVasquetaKilos(s.id)) return;
     out[s.id] = !bts ? 0 : (+kb[s.id]>0 ? +kb[s.id] : (+base[s.id]>0 ? null : 0)); });
   for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts) continue;
+    if(r.tipo==="cambio"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]+=(+k||0) } continue }
     if(r.tipo!=="ingreso" && r.tipo!=="salida") continue;
     for(const [id,q] of Object.entries(r.items||{})){ if(!(id in out) || out[id]===null || !(+q>0)) continue;
       if(r.tipo==="ingreso"){ const k=+((r.kilos||{})[id])||0; out[id] = k>0 ? out[id]+k : null }
@@ -2835,8 +2851,68 @@ async function leerRemitoFoto(base64, mime){
   }
   renderApp();
 }
+/* ============================================================
+   CAMBIO DE SABOR (solo responsables): una caja o vasqueta venía rotulada como un sabor y era otro.
+   Pasa N unidades de un sabor a otro sin tocar el total. Un solo movimiento «cambio» con items firmados.
+   No aplica a chocolatería (tiene lotes). No cuenta como consumo.
+============================================================ */
+const MOTIVOS_CAMBIO=["Caja mal rotulada","Error de fábrica"];
+function puedeCambioSabor(){ return !!S.local && !!S.empleado && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
+function resetCambio(){ S.cambio={desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""} }
+function saboresCambio(){ return saboresDelLocal().filter(s=>!esChocolateria(s.id)) }
+function cambioMotivoTxt(){ const c=S.cambio; return c.motivo==="otro" ? String(c.otro||"").trim() : String(c.motivo||"") }
+function optGruposSabor(ids, sel){
+  const set=new Set(ids.map(String));
+  return gruposParaSelectSabor().map(g=>{ const l=g.sabores.filter(x=>set.has(String(x.id))); return l.length?`<optgroup label="${esc(g.label)}">${l.map(x=>`<option value="${x.id}"${String(sel)===String(x.id)?" selected":""}>${esc(x.nombre)}</option>`).join("")}</optgroup>`:"" }).join("");
+}
+function cambioEstado(st){
+  const c=S.cambio, d=c.desde, h=c.hacia;
+  const max=d?(st[d]||0):0, cant=Math.min(Math.max(max,1),Math.max(1,Math.floor(+c.cant||1)));
+  const kg=kilosNum(c.kilos), pideKg=!!(d && S.kilosReales && esVasquetaKilos(d));
+  return {max, cant, kg, pideKg, ok: !!d && !!h && d!==h && max>=1 && (!pideKg||kg>0) && !!cambioMotivoTxt()};
+}
+function cambioPreviewHTML(st){
+  const c=S.cambio; if(!c.desde||!c.hacia) return "";
+  const e=cambioEstado(st), km=S.kilosReales?kilosMap():{};
+  const fila=(id,signo)=>{
+    const antes=st[id]||0, desp=Math.max(0,antes+signo*e.cant);
+    const kgTxt=(e.pideKg && km[id]!==undefined && km[id]!==null) ? ` · ${fmtKg(km[id])} → <b>${fmtKg(Math.max(0,km[id]+signo*(e.kg||0)))}</b> kg` : "";
+    return `<div class="r">${esc(nombre(id))}<span>${antes} → <b>${desp}</b> ${unidad(id,desp)}${kgTxt}</span></div>`;
+  };
+  return `<div class="cmbRes"><div class="t">Cómo queda</div>${fila(c.desde,-1)}${fila(c.hacia,1)}</div>`;
+}
+function gridCambioSabor(st){
+  const c=S.cambio, e=cambioEstado(st);
+  const base=saboresCambio();
+  const idsDesde=base.filter(x=>(st[x.id]||0)>0).map(x=>x.id);
+  let idsHacia=base.filter(x=>String(x.id)!==String(c.desde)).map(x=>x.id);
+  if(S.kilosReales && c.desde){ const kg=esVasquetaKilos(c.desde); idsHacia=idsHacia.filter(id=>esVasquetaKilos(id)===kg) }
+  const km=S.kilosReales?kilosMap():{};
+  const sug=(e.pideKg && km[c.desde]>0 && (st[c.desde]||0)>0) ? Math.round(km[c.desde]/st[c.desde]*e.cant*100)/100 : 0;
+  return `<p class="sec">Cambio de sabor</p>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:.85rem;line-height:1.45">Una caja o vasqueta venía rotulada como un sabor y era otro. Pasá las unidades de un sabor al otro: no suma ni resta el total, solo corrige el sabor.</p>
+  <div class="cmbCampo"><label for="cmbDesde">Figura como</label><select id="cmbDesde"><option value="">Elegí el sabor del rótulo…</option>${optGruposSabor(idsDesde,c.desde)}</select>${c.desde?`<small>En cámara: ${st[c.desde]||0} ${unidad(c.desde,st[c.desde]||0)}${e.pideKg&&km[c.desde]!=null?` · ${fmtKg(km[c.desde])} kg`:""}</small>`:""}</div>
+  ${c.desde?`<div class="cmbCampo"><label for="cmbHacia">Era en realidad</label><select id="cmbHacia"><option value="">Elegí el sabor que era…</option>${optGruposSabor(idsHacia,c.hacia)}</select>${c.hacia?`<small>En cámara: ${st[c.hacia]||0} ${unidad(c.hacia,st[c.hacia]||0)}${e.pideKg&&km[c.hacia]!=null?` · ${fmtKg(km[c.hacia])} kg`:""}</small>`:""}</div>`:""}
+  ${c.desde&&c.hacia?`<div class="cmbCampo"><label>Cuántas ${unidad(c.desde,2)}</label><div class="stepper"><button type="button" data-cmb-dec aria-label="Restar">−</button><span class="n">${e.cant}</span><button type="button" data-cmb-inc aria-label="Sumar">+</button></div></div>
+  ${e.pideKg?`<div class="cmbCampo"><div class="kgFila"><label for="cmbKilos">Kilos de esas ${e.cant}</label><input type="text" id="cmbKilos" inputmode="decimal" value="${esc(c.kilos)}" placeholder="0,00"> kg</div>${sug>0?`<small>Sugerido: ${fmtKg(sug)} kg (promedio de lo que hay en cámara). <button type="button" class="chip" data-cmb-sug="${sug}">Usar sugerido</button></small>`:""}</div>`:""}
+  <div class="cmbCampo"><label>Motivo</label><div class="cmbChips">${MOTIVOS_CAMBIO.map(m=>`<button type="button" class="chip" data-cmb-motivo="${esc(m)}" aria-pressed="${c.motivo===m}">${esc(m)}</button>`).join("")}<button type="button" class="chip" data-cmb-motivo="otro" aria-pressed="${c.motivo==="otro"}">Otro…</button></div>${c.motivo==="otro"?`<input type="text" id="cmbOtro" maxlength="120" placeholder="Escribí el motivo" value="${esc(c.otro)}" style="margin-top:8px">`:""}</div>
+  <div id="cmbPreview">${cambioPreviewHTML(st)}</div>`:""}
+  <div class="cmbBtns"><button type="button" class="btn volver" id="cmbCancelar">Cancelar</button><button type="button" class="btn" id="cmbOk" ${e.ok&&!S.busy?"":"disabled"}>${S.busy?"Guardando…":"Registrar cambio de sabor"}</button></div>`;
+}
+async function guardarCambioSabor(){
+  if(S.busy) return;
+  const st=stockMap(), e=cambioEstado(st); if(!e.ok) return;
+  S.busy=true; renderApp();
+  try{
+    const r=await api("cambioSabor",{clienteId:uuid(), local:S.local, desde:S.cambio.desde, hacia:S.cambio.hacia, cantidad:e.cant, kilos:e.pideKg?e.kg:undefined, motivo:cambioMotivoTxt()});
+    if(r&&r.ok){ toast("Cambio de sabor registrado."); S.modoCambio=false; resetCambio(); S.busy=false; await cargarDatos(); }
+    else if(r&&r.offline){ toast("Sin conexión: el cambio de sabor necesita señal. Probá de nuevo cuando vuelva.") }
+    else toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
+  } finally { S.busy=false; renderApp() }
+}
 function gridIngreso(st){
   if(S.lectorRemito) return lectorRemitoView();
+  if(S.modoCambio) return gridCambioSabor(st);
   const cart=S.cart.ingreso;
   const list=listaFiltrada(st);
   const row=s=>{
@@ -2856,6 +2932,7 @@ function gridIngreso(st){
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
   ${S.produccionLocal?`<button type="button" class="btn produccion" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
   ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
+  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Llegó un sabor cambiado? Cambio de sabor</button>`:""}
   ${S.ventaDia&&puedeRemito?`<div style="display:flex;gap:8px;margin:0 0 10px"><button type="button" class="chip" data-ing-tipo="remito" aria-pressed="${S.tipoIngreso!=="transferencia"}">Remito de fábrica</button><button type="button" class="chip" data-ing-tipo="transferencia" aria-pressed="${S.tipoIngreso==="transferencia"}">Transferencia recibida</button></div>`:""}
   ${chipFiltros()}
   ${puedeRemito&&S.ventaDia&&S.tipoIngreso==="transferencia"?`<div class="remitoRow"><label for="remito" style="font-weight:700">Local de origen</label><input type="text" id="remito" placeholder="Ej: Obelisco CABA" value="${esc(S.remito)}"></div>
@@ -3218,7 +3295,7 @@ function filaMovimiento(r){
   // Con filtro de categoría (Vasquetas / Icepops / Chocolatería) solo se muestran
   // los productos de esa categoría, así una salida mixta no aparece entera en cada filtro.
   const cat=S.categoriaHist||"todas";
-  const filtra=r.tipo!=="conteo" && !["todas","desperdicio","produccion"].includes(cat);
+  const filtra=r.tipo!=="conteo" && r.tipo!=="cambio" && !["todas","desperdicio","produccion"].includes(cat);
   const entradas=Object.entries(r.items||{}).filter(([id,q])=>q && (!filtra || grupoHistDe(id)===cat));
   const total=filtra ? entradas.reduce((a,[,q])=>a+(+q||0),0) : r.total;
   const it=entradas.map(([id,q])=>{
@@ -3229,12 +3306,14 @@ function filaMovimiento(r){
     const pe=r.pesos&&r.pesos[id], peTxt=pe&&pe.length?` (${pe.map(fmtKg).join(" · ")} kg${pe.length<+q?`, ${pe.length} de ${q} pesadas`:""})`:"";
     return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${peTxt}${vto}`;
   }).join(" · ");
-  const claseTipo=r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":CLASES_CHOCO.includes(r.subtipo)?"venta":r.tipo;
-  const labelTipo=r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":CLASES_CHOCO.includes(r.subtipo)?etiquetaSubtipoChoco(r):r.tipo;
+  const itCambio=()=>{ const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
+    return `${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b>${kg?` (${fmtKg(kg)} kg)`:""}` };
+  const claseTipo=r.tipo==="cambio"?"cambio":r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":CLASES_CHOCO.includes(r.subtipo)?"venta":r.tipo;
+  const labelTipo=r.tipo==="cambio"?"cambio de sabor":r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":CLASES_CHOCO.includes(r.subtipo)?etiquetaSubtipoChoco(r):r.tipo;
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
-    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
+    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||r.tipo==="cambio"||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${textoJornada(r.ts)}</time></div>
-    ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${it}</div>`}
+    ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${r.tipo==="cambio"?itCambio():it}</div>`}
     ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
     ${!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`;
@@ -4320,7 +4399,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
@@ -4427,8 +4506,14 @@ document.addEventListener("click", async e=>{
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; resetSelPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
+  if(t.id==="irCambioSabor"){ resetCambio(); S.modoCambio=true; S.confirm=false; renderApp(); return }
+  if(t.id==="cmbCancelar"){ S.modoCambio=false; resetCambio(); renderApp(); return }
+  if(t.id==="cmbOk"){ guardarCambioSabor(); return }
+  if(t.dataset.cmbDec!==undefined||t.dataset.cmbInc!==undefined){ const e=cambioEstado(stockMap()); S.cambio.cant=Math.min(e.max,Math.max(1,e.cant+(t.dataset.cmbInc!==undefined?1:-1))); renderApp(); return }
+  if(t.dataset.cmbMotivo!==undefined){ S.cambio.motivo=t.dataset.cmbMotivo; renderApp(); if(t.dataset.cmbMotivo==="otro"){ const i=$("#cmbOtro"); if(i) i.focus() } return }
+  if(t.dataset.cmbSug!==undefined){ S.cambio.kilos=String(t.dataset.cmbSug).replace(".",","); renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
-  if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoCambio=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.uni){ abrirUnidades(t.dataset.uni); return }
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
@@ -4610,9 +4695,15 @@ document.addEventListener("input", e=>{
   if(e.target.dataset.devtip){ const [did,ds]=e.target.dataset.devtip.split(":"); (S.devTip[did]=S.devTip[did]||{})[ds]=e.target.value; syncDevolucion(); S.confirm=false; renderBar() }
   if(e.target.dataset.kc){ S.kilosConteo[e.target.dataset.kc]=e.target.value; S.confirm=false; renderBar() }
   if(e.target.dataset.remitoKg!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoKg].kilos=kilosNum(e.target.value)||null }
+  if(e.target.id==="cmbKilos"||e.target.id==="cmbOtro"){
+    if(e.target.id==="cmbKilos") S.cambio.kilos=e.target.value; else S.cambio.otro=e.target.value;
+    const st=stockMap(), pv=$("#cmbPreview"), ok=$("#cmbOk"); if(pv) pv.innerHTML=cambioPreviewHTML(st); if(ok) ok.disabled=!(cambioEstado(st).ok&&!S.busy);
+  }
   if(e.target.dataset.loteF!==undefined || e.target.dataset.loteC!==undefined){ setLoteExtra(e.target); renderBar() }
 });
 document.addEventListener("change", e=>{
+  if(e.target.id==="cmbDesde"){ S.cambio.desde=e.target.value; S.cambio.hacia=""; S.cambio.cant=1; S.cambio.kilos=""; renderApp(); return }
+  if(e.target.id==="cmbHacia"){ S.cambio.hacia=e.target.value; renderApp(); return }
   if(e.target.id==="fechaVenta"){ const v=e.target.value; S.fechaVenta = (!v || v===fechaJornadaISO()) ? "" : v; S.confirm=false; renderApp(); return }
   if(e.target.id==="inputRemitoFoto"){
     const file=e.target.files[0]; e.target.value="";
@@ -5006,8 +5097,17 @@ function disponibleParaPesar(id,c){
   const ya=S.cart[c][id]||0;
   return c==="desperdicio" ? Math.max(0,(stockMap()[id]||0)-ya) : Math.max(0,vendibleDe(id)-ya);
 }
+/** Etiqueta de la balanza de producción: EAN-13 que empieza con 2, con el peso adentro:
+ *  2 + PLU (6 dígitos) + gramos (5 dígitos) + verificador. Ej. 2000011035501 = PLU 11, 3,550 kg. */
+function eanOk(d){ let t=0; for(let i=0;i<12;i++) t+=(+d[i])*(i%2?3:1); return (10-t%10)%10===+d[12] }
 function parseCodigoRotulo(txt){
   const d=String(txt||"").replace(/\D/g,"");
+  if(d.length===13){
+    if(d[0]!=="2"||!eanOk(d)) return null;
+    const kg=Number(d.slice(7,12))/1000;
+    if(!(kg>0&&kg<=30)) return null;
+    return {plu:String(+d.slice(1,7)), kg, lote:"etiqueta de producción", crudo:d};
+  }
   if(d.length!==20) return null;
   const kg=Number(d.slice(4,9))/100, dd=+d.slice(9,11), mm=+d.slice(11,13);
   if(!(kg>0&&kg<=30)||dd<1||dd>31||mm<1||mm>12) return null;
@@ -5081,7 +5181,7 @@ function renderEscaner(){
     const sumaEsc=Math.round(S.escItems.reduce((a,x)=>a+x.kg,0)*100)/100;
     l.innerHTML = items.length
       ? `<div class="escCab"><span>Escaneadas en esta salida</span><span>${items.length} · ${fmtKg(sumaEsc)} kg</span></div>`
-        + items.map(x=>`<div class="escRow${dupN.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dupN.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">lote ${esc(x.lote)}${dupN.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="Quitar esta vasqueta">✕</button></div>`).join("")
+        + items.map(x=>`<div class="escRow${dupN.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dupN.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">${/^etiqueta/.test(x.lote)?esc(x.lote):"lote "+esc(x.lote)}${dupN.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="Quitar esta vasqueta">✕</button></div>`).join("")
         + `<div style="border:0;font-size:.78rem;color:var(--muted);display:block">La ✕ quita solo esa vasqueta: baja 1 el sabor y saca ese peso.${cantPesos("salida")>items.length?` En la salida hay además ${cantPesos("salida")-items.length} pesada(s) cargadas a mano.`:""}</div>`
       : "";
   }
@@ -5091,19 +5191,19 @@ function renderEscaner(){
 function procesarEscaneo(txt){
   const e=S.escaner; if(!e) return;
   const p=parseCodigoRotulo(txt);
-  if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: tiene que tener 20 números ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
+  if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
   if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
   e.ultimo={crudo:p.crudo, ts:ahora};
-  const s=saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
-  if(!s){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg, lote "+p.lote+"). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
+  const s=p.plu!==undefined ? saboresDelLocal().find(x=>x.plu && String(+x.plu)===p.plu) : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
+  if(!s){ e.msg={tipo:"err", t:(p.plu!==undefined?"PLU "+p.plu:"Código de sabor "+p.codigo)+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":", lote "+p.lote)+"). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
   if(disponibleParaPesar(s.id,"salida")<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
   reconciliarEsc();
   const repetido=S.escItems.some(x=>x.crudo===p.crudo);
   S.escaneadas.push(p.crudo);
   e.msg = repetido
-    ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+". ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
-    : {tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg · lote "+p.lote};
+    ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":" · lote "+p.lote)+". ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
+    : {tipo:"ok", t:s.nombre+" · "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":" · lote "+p.lote)};
   S.escItems.push({n:++S.escN, id:s.id, nombre:s.nombre, kg:p.kg, lote:p.lote, crudo:p.crudo});
   sumarPesada.silencio=repetido; sumarPesada("salida", s.id, p.kg); sumarPesada.silencio=false;
   if(repetido) pitido("dup");
@@ -5129,7 +5229,7 @@ async function iniciarCamara(){
   v.srcObject=e.stream; try{ await v.play() }catch(_){}
   e.camara=true; e.msg={tipo:"", t:"Apuntá al código de barras del rótulo."}; renderEscaner();
   let detector=null;
-  if("BarcodeDetector" in window){ try{ const f=await BarcodeDetector.getSupportedFormats(); if(f.indexOf("itf")!==-1) detector=new BarcodeDetector({formats:["itf"]}) }catch(_){} }
+  if("BarcodeDetector" in window){ try{ const f=await BarcodeDetector.getSupportedFormats(); const fm=["itf","ean_13"].filter(x=>f.indexOf(x)!==-1); if(fm.length) detector=new BarcodeDetector({formats:fm}) }catch(_){} }
   if(detector){
     e.timer=setInterval(async()=>{ if(!e.camara||v.readyState<2) return; try{ const r=await detector.detect(v); if(r&&r[0]) procesarEscaneo(r[0].rawValue) }catch(_){} }, 250);
     return;
@@ -5142,7 +5242,7 @@ async function iniciarCamara(){
     try{
       canvas.width=v.videoWidth; canvas.height=v.videoHeight;
       const ctx=canvas.getContext("2d",{willReadFrequently:true}); ctx.drawImage(v,0,0);
-      const r=await ZXingWASM.readBarcodes(ctx.getImageData(0,0,canvas.width,canvas.height),{formats:["ITF"],tryHarder:true,maxNumberOfSymbols:1});
+      const r=await ZXingWASM.readBarcodes(ctx.getImageData(0,0,canvas.width,canvas.height),{formats:["ITF","EAN-13"],tryHarder:true,maxNumberOfSymbols:1});
       if(e.camara&&r&&r[0]&&r[0].text) procesarEscaneo(r[0].text);
     }catch(_){ /* sin código en este cuadro */ }
     ocupado=false;
@@ -5300,6 +5400,11 @@ function ayudaTemas(){
     <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después."}</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
+  if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor cambiado", sub:"La caja decía un sabor y era otro", html:li([
+    "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor cambiado?</b>.",
+    "Elegí el sabor que figura en la caja y el que era en realidad.",
+    "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
+    "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
   if(S.escanerPeso) T.push({id:"escaner", titulo:"Cómo usar el escáner", sub:"Sacar vasquetas con su peso real", html:li([
     "En Salida tocá <b>Escanear vasqueta</b>.",
     "Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real.",
