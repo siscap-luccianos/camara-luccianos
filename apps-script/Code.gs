@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.64.0";
+const BACKEND_VERSION = "1.64.1";
 
 function doPost(e) {
   let resultado;
@@ -1823,7 +1823,7 @@ function _stockActualLocal(local) {
 /** Cambio de sabor: una caja/vasqueta venía rotulada como un sabor y era otro. Pasa N unidades de `desde` a
  *  `hacia` sin tocar el total. Se guarda UN movimiento tipo "cambio" con items firmados ({desde:-N, hacia:+N})
  *  y, en locales con kilos reales, kilos firmados. No cuenta como consumo (no es salida ni ingreso).
- *  Solo admin, supervisor, responsable de local y de turno. No aplica a chocolatería (tiene lotes). */
+ *  Solo admin, supervisor, responsable de local y de turno. Solo vasquetas, baldes, icepops y gluten free (no chocolatería, pastelería ni bollería). */
 function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, empleado) {
   if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo el responsable de local o de turno puede cambiar el sabor." };
   if (!local) return { ok: false, error: "Falta el local." };
@@ -1837,7 +1837,8 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
   const catalogo = _leerCrudo("Sabores");
   const sd = catalogo.filter((x) => String(x.id) === desde)[0], sh = catalogo.filter((x) => String(x.id) === hacia)[0];
   if (!sd || !sh) return { ok: false, error: "No se encontró uno de los sabores." };
-  if (String(sd.familia || "vasquetas") === "chocolateria" || String(sh.familia || "vasquetas") === "chocolateria") return { ok: false, error: "El cambio de sabor no aplica a chocolatería." };
+  const familiasCambio = ["vasquetas", "icepops", "glutenfree"]; // baldes tienen familia "vasquetas"
+  if (familiasCambio.indexOf(String(sd.familia || "vasquetas")) === -1 || familiasCambio.indexOf(String(sh.familia || "vasquetas")) === -1) return { ok: false, error: "El cambio de sabor aplica a vasquetas, baldes, icepops y gluten free (no a chocolatería, pastelería ni bollería)." };
   const errPais = _errorPaisItems(local, { [desde]: 1, [hacia]: 1 }, catalogo);
   if (errPais) return { ok: false, error: errPais };
   const esKg = (x) => String(x.tipo || "v") === "v" && String(x.familia || "vasquetas") === "vasquetas";
