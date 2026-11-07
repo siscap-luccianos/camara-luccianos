@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.62.1";
+const BACKEND_VERSION = "1.63.0";
 
 function doPost(e) {
   let resultado;
@@ -114,6 +114,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
+    case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
     case "altaEmpleado": return altaEmpleado(body.nombre, body.rol, body.local, empleado);
@@ -850,7 +851,7 @@ function _datosSinCache(local, empleado) {
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const paisDelLocal = _paisDeLocal(filaLocal);
   const sabores = saboresFilas
-    .map((s) => ({ id: String(s.id), nombre: _textoPorPais(s.nombre_paises, paisDelLocal, s.nombre), tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: _textoPorPais(s.categoria_paises, paisDelLocal, s.categoria || "Cremas"), peso: _pesoDeSabor(s, paisDelLocal), familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica) }))
+    .map((s) => ({ id: String(s.id), nombre: _textoPorPais(s.nombre_paises, paisDelLocal, s.nombre), tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: _textoPorPais(s.categoria_paises, paisDelLocal, s.categoria || "Cremas"), peso: _pesoDeSabor(s, paisDelLocal), familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica), plu: _plu(s.plu) }))
     .sort((a, b) => a.orden - b.orden);
 
   // Sabores que ESTE local marcó que no tiene (ej. Baldes en un local que
@@ -964,7 +965,7 @@ function relevar(empleado) {
     const regs = regsPorLocal[nombre] || [];
     regs.forEach((r) => {
       if (Number(r.ts) <= bts) return;
-      const signo = r.tipo === "ingreso" ? 1 : -1;
+      const signo = (r.tipo === "ingreso" || r.tipo === "cambio") ? 1 : -1;
       let items = {};
       try { items = JSON.parse(r.items || "{}"); } catch (e) { items = {}; }
       Object.keys(items).forEach((id) => {
@@ -1073,6 +1074,12 @@ function _rubrosProduccion(valor) {
 function _codigoFabrica(valor) {
   const t = String(valor === undefined || valor === null ? "" : valor).replace(/[^0-9]/g, "");
   return t ? ("0000" + t).slice(-4) : "";
+}
+
+/** PLU de la balanza de producción (ej. "11"): solo dígitos y sin ceros a la izquierda. Vacío si no hay. */
+function _plu(valor) {
+  const t = String(valor === undefined || valor === null ? "" : valor).replace(/[^0-9]/g, "").replace(/^0+/, "");
+  return t;
 }
 
 /** Pesos por vasqueta de una salida: { idSabor: [kg, kg, ...] }. Cada peso entre
@@ -1243,7 +1250,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       const stockActual = Object.assign({}, stockBase);
       infoLocal.registros.forEach((rg) => {
         if (rg.anulado || rg.ts <= bts) return;
-        const signo = rg.tipo === "ingreso" ? 1 : rg.tipo === "salida" ? -1 : 0;
+        const signo = (rg.tipo === "ingreso" || rg.tipo === "cambio") ? 1 : rg.tipo === "salida" ? -1 : 0;
         if (!signo) return;
         Object.keys(rg.items || {}).forEach((id) => {
           stockActual[id] = (Number(stockActual[id]) || 0) + signo * (Number(rg.items[id]) || 0);
@@ -1775,7 +1782,7 @@ function etiquetar(clienteId, local, items, vencimientos, empleado) {
     const bts = infoLocal.stock ? infoLocal.stock.ts : 0;
     infoLocal.registros.forEach((rg) => {
       if (rg.anulado || rg.ts <= bts) return;
-      const signo = rg.tipo === "ingreso" ? 1 : rg.tipo === "salida" ? -1 : 0;
+      const signo = (rg.tipo === "ingreso" || rg.tipo === "cambio") ? 1 : rg.tipo === "salida" ? -1 : 0;
       if (!signo) return;
       Object.keys(rg.items || {}).forEach((id) => { stockActual[id] = (Number(stockActual[id]) || 0) + signo * (Number(rg.items[id]) || 0); });
     });
@@ -1790,6 +1797,75 @@ function etiquetar(clienteId, local, items, vencimientos, empleado) {
     });
     const detalle = Object.keys(items2).map((id) => (nombreDe[id] || ("Sabor " + id)) + " x" + items2[id] + " → " + norm.vencimientos[id].map((l) => l.f + " (" + l.c + ")").join(" + ")).join("; ");
     _auditar("etiquetar", empleado.id, empleado.nombre, local + ": " + detalle);
+    _invalidarCacheDatos(local);
+    return { ok: true, id: r.id, ts: ts };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Stock actual de un local por sabor (base del último conteo + ingresos − salidas ± cambios de sabor). */
+function _stockActualLocal(local) {
+  const info = _datosSinCache(local);
+  const stock = Object.assign({}, info.stock ? info.stock.base : {});
+  const bts = info.stock ? info.stock.ts : 0;
+  info.registros.forEach((rg) => {
+    if (rg.anulado || rg.ts <= bts) return;
+    const signo = (rg.tipo === "ingreso" || rg.tipo === "cambio") ? 1 : rg.tipo === "salida" ? -1 : 0;
+    if (!signo) return;
+    Object.keys(rg.items || {}).forEach((id) => { stock[id] = (Number(stock[id]) || 0) + signo * (Number(rg.items[id]) || 0); });
+  });
+  return stock;
+}
+
+/** Cambio de sabor: una caja/vasqueta venía rotulada como un sabor y era otro. Pasa N unidades de `desde` a
+ *  `hacia` sin tocar el total. Se guarda UN movimiento tipo "cambio" con items firmados ({desde:-N, hacia:+N})
+ *  y, en locales con kilos reales, kilos firmados. No cuenta como consumo (no es salida ni ingreso).
+ *  Solo admin, supervisor, responsable de local y de turno. No aplica a chocolatería (tiene lotes). */
+function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, empleado) {
+  if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo el responsable de local o de turno puede cambiar el sabor." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  desde = String(desde || ""); hacia = String(hacia || "");
+  if (!desde || !hacia || desde === hacia) return { ok: false, error: "Elegí dos sabores distintos." };
+  const n = Math.floor(Number(cantidad) || 0);
+  if (n < 1) return { ok: false, error: "La cantidad tiene que ser al menos 1." };
+  const motivoTxt = String(motivo || "").trim().slice(0, 120);
+  if (!motivoTxt) return { ok: false, error: "Escribí el motivo del cambio." };
+  const catalogo = _leerCrudo("Sabores");
+  const sd = catalogo.filter((x) => String(x.id) === desde)[0], sh = catalogo.filter((x) => String(x.id) === hacia)[0];
+  if (!sd || !sh) return { ok: false, error: "No se encontró uno de los sabores." };
+  if (String(sd.familia || "vasquetas") === "chocolateria" || String(sh.familia || "vasquetas") === "chocolateria") return { ok: false, error: "El cambio de sabor no aplica a chocolatería." };
+  const errPais = _errorPaisItems(local, { [desde]: 1, [hacia]: 1 }, catalogo);
+  if (errPais) return { ok: false, error: errPais };
+  const esKg = (x) => String(x.tipo || "v") === "v" && String(x.familia || "vasquetas") === "vasquetas";
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const kilosReales = !!filaLocal && _esVerdadero(filaLocal.kilos_reales) === true;
+  let kg = 0;
+  if (kilosReales && (esKg(sd) || esKg(sh))) {
+    if (!(esKg(sd) && esKg(sh))) return { ok: false, error: "Con kilos reales, una vasqueta solo se cambia por otra vasqueta." };
+    kg = Math.round((Number(kilos) || 0) * 100) / 100;
+    if (!(kg > 0)) return { ok: false, error: "Faltan los kilos de esas vasquetas." };
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (clienteId) {
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      if (existente) return { ok: true, id: existente.id, repetido: true };
+    }
+    const stock = _stockActualLocal(local);
+    if ((Number(stock[desde]) || 0) < n) return { ok: false, error: "No hay " + n + " de " + sd.nombre + " en cámara para cambiar (hay " + (Number(stock[desde]) || 0) + ")." };
+    const items = {}; items[desde] = -n; items[hacia] = n;
+    const kil = {}; if (kg > 0) { kil[desde] = -kg; kil[hacia] = kg; }
+    const ts = Date.now();
+    const r = _escribirCrudo("Registros", {
+      clienteId: clienteId || "", tipo: "cambio", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
+      items: JSON.stringify(items), total: n, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: motivoTxt,
+      foto_remito: "", subtipo: "cambio", kilos: Object.keys(kil).length ? JSON.stringify(kil) : "", vencimientos: "", pesos: "",
+    });
+    _auditar("cambio_sabor", empleado.id, empleado.nombre, local + ": " + n + " de " + sd.nombre + " → " + sh.nombre + (kg > 0 ? " (" + kg + " kg)" : "") + " · " + motivoTxt);
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
   } finally {
@@ -1918,6 +1994,14 @@ function anular(registroId, motivo, empleado) {
       if (hayDevolucionPosterior) {
         return { ok: false, error: "No se puede anular: ya hay una devolución cargada después de esta salida. Anulá primero esa devolución y después esta salida." };
       }
+    }
+
+    if (tipoReg === "cambio") {
+      let itemsCambio = {};
+      try { itemsCambio = JSON.parse(filas[idx][col.items] || "{}"); } catch (e) { itemsCambio = {}; }
+      const stockAhora = _stockActualLocal(local);
+      const sinStock = Object.keys(itemsCambio).filter((id) => Number(itemsCambio[id]) > 0 && (Number(stockAhora[id]) || 0) < Number(itemsCambio[id]));
+      if (sinStock.length) return { ok: false, error: "No se puede anular el cambio de sabor: ya no hay en cámara esas unidades del sabor que recibió. Primero hay que corregir ese stock." };
     }
 
     sheet.getRange(idx + 1, col.anulado_por + 1).setValue(empleado.nombre);
