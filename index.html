@@ -847,7 +847,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.122.1";
+const FRONTEND_VERSION = "1.122.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3452,26 +3452,26 @@ function teamViewEmpleados(){
 function teamView(){
   if(!S.controlEquipos) return teamViewEmpleados();
   const tab=(k,l)=>`<button type="button" class="tabCat" role="tab" data-sub-equipo="${k}" aria-selected="${S.subEquipo===k}">${l}</button>`;
-  const tabs=`<div class="tabsCat" role="tablist" style="margin-top:0">${tab("empleados","Empleados")}${tab("equipos","Equipos"+((S.equipos&&S.equipos.pendientes&&S.equipos.pendientes.length)?" ("+S.equipos.pendientes.length+")":""))}</div>`;
+  const tabs=`<div class="tabsCat" role="tablist" style="margin-top:22px">${tab("empleados","Empleados")}${tab("equipos","Dispositivos"+((S.equipos&&S.equipos.pendientes&&S.equipos.pendientes.length)?" ("+S.equipos.pendientes.length+")":""))}</div>`;
   return tabs+(S.subEquipo==="equipos"?equiposView():teamViewEmpleados());
 }
 function equiposView(){
   if(S.equipos===undefined){ S.equipos=null; cargarEquipos(); }
-  if(S.equipos===null) return `<div class="note">Cargando equipos…</div>`;
+  if(S.equipos===null) return `<div class="note">Cargando dispositivos…</div>`;
   const e=S.equipos;
   if(e.error) return `<div class="empty">${esc(e.error)}</div><button class="btn ghost" type="button" data-equipos-recargar="1" style="margin-top:10px">Reintentar</button>`;
   const max=e.max||3, usados=e.aprobados.length, lleno=usados>=max;
   const seg=Array.from({length:max},(_,k)=>k).map(i=>`<span class="eqSeg${i<usados?(lleno?" full":" on"):""}"></span>`).join("");
   const sigla=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase().slice(0,2)||"EQ";
   const ultimo=d=>d.ultimoTs?`Último acceso: ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" · "+esc(d.ultimoEmpleado):""}`:"Todavía no entró";
-  return `<p class="sec" style="margin-top:6px">Equipos de ${esc(S.local)}</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} equipos aprobados. Un equipo nuevo queda bloqueado hasta que lo aprobás o le pasás un código.</p>
-  <div class="eqCard"><div class="eqCupo"><b>${usados} de ${max} equipos</b><span style="color:${lleno?"var(--alert)":"var(--accent)"}">${lleno?"Cupo lleno":(max-usados===1?"Queda 1 lugar":"Quedan "+(max-usados)+" lugares")}</span></div><div class="eqSegs">${seg}</div></div>
+  return `<p class="sec" style="margin-top:6px">Dispositivos de ${esc(S.local)}</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} dispositivos aprobados. Un dispositivo nuevo queda bloqueado hasta que lo aprobás o le pasás un código.</p>
+  <div class="eqCard"><div class="eqCupo"><b>${usados} de ${max} dispositivos</b><span style="color:${lleno?"var(--alert)":"var(--accent)"}">${lleno?"Cupo lleno":(max-usados===1?"Queda 1 lugar":"Quedan "+(max-usados)+" lugares")}</span></div><div class="eqSegs">${seg}</div></div>
   ${S.equipoAviso?`<div class="note" role="status" style="margin:10px 0">${esc(S.equipoAviso)}</div>`:""}
   ${codigoEquipoHTML(lleno)}
   ${e.pendientes.length?`<p class="sec">Bloqueados · esperando aprobación</p>`+e.pendientes.map(d=>`<div class="eqCard pend">
     <div class="eqFila"><span class="eqIni warn">!</span><div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b><div class="meta">Intentó entrar ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" como "+esc(d.ultimoEmpleado):""}</div></div></div>
-    ${lleno?`<div class="warn" style="margin:8px 0 0">Sin lugar: ya hay ${max} equipos. Quitá uno de la lista para poder aprobar este.</div>`:`<input type="text" class="eqNombre" data-eq-nombre="${esc(d.clave)}" value="${esc(d.nombre)}" maxlength="60" aria-label="Nombre del equipo" placeholder="Nombre del equipo (ej. Tablet cámara)">`}
+    ${lleno?`<div class="warn" style="margin:8px 0 0">Sin lugar: ya hay ${max} dispositivos. Quitá uno de la lista para poder aprobar este.</div>`:`<input type="text" class="eqNombre" data-eq-nombre="${esc(d.clave)}" value="${esc(d.nombre)}" maxlength="60" aria-label="Nombre del dispositivo" placeholder="Nombre del dispositivo (ej. Tablet cámara)">`}
     <div class="eqBtns"><button type="button" class="btn ghost" data-equipo-rechazar="${esc(d.clave)}">Rechazar</button><button type="button" class="btn" data-equipo-aprobar="${esc(d.clave)}" ${lleno?"disabled":""}>Aprobar</button></div>
   </div>`).join(""):""}
   <p class="sec">Autorizados</p>
@@ -3481,10 +3481,10 @@ function equiposView(){
     <div class="meta" style="border-top:1px solid var(--line);margin-top:8px;padding-top:8px">${ultimo(d)}</div>
     ${S.equipoConfirmar===d.clave?`<div class="warn" style="margin-top:8px">¿Quitar «${esc(d.nombre)}»? Ya no va a poder entrar y se libera un lugar. No cierra sesiones que ya estén abiertas.
       <div class="eqBtns" style="margin-top:8px"><button type="button" class="btn ghost" data-equipo-cancelar="1">Cancelar</button><button type="button" class="btn" data-equipo-quitar="${esc(d.clave)}">Sí, quitar</button></div></div>`:""}
-  </div>`).join(""):`<div class="empty">No hay equipos autorizados. El próximo que entre quedará bloqueado hasta que lo apruebes.</div>`}
+  </div>`).join(""):`<div class="empty">No hay dispositivos autorizados. El próximo que entre quedará bloqueado hasta que lo apruebes.</div>`}
   <p style="margin:12px 0 0;color:var(--muted);font-size:.74rem;line-height:1.5">Admin y supervisor no ocupan lugar: cuando entran por Operaciones o con el código de admin no cuentan ni necesitan aprobación.</p>`;
 }
-/** Botón "+ Agregar un equipo con un código" y el código a la vista (15 min, un solo uso). */
+/** Botón "+ Agregar un dispositivo con un código" y el código a la vista (15 min, un solo uso). */
 function codigoEquipoHTML(lleno){
   const c=S.codigoEquipo;
   if(c && c.vence>Date.now()){
@@ -3495,8 +3495,8 @@ function codigoEquipoHTML(lleno){
       <div class="eqBtns"><button type="button" class="btn ghost" data-codigo-copiar="1">${S.codigoCopiado?"✓ Copiado":"Copiar código"}</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Código para sumar un equipo a "+S.local+" en LogiStock: "+c.codigo+". Sirve una vez y vence en 15 minutos.")}" style="text-decoration:none;text-align:center">Mandar por WhatsApp</a></div>
       <button type="button" class="authBack" data-codigo-cerrar="1" style="margin-top:8px;color:var(--muted)">Listo</button></div>`;
   }
-  return `<button type="button" class="btn" data-equipo-codigo="1" style="width:100%;margin:0 0 6px" ${lleno||S.codigoCargando?"disabled":""}>${S.codigoCargando?"Generando…":"+ Agregar un equipo con un código"}</button>
-    <p class="meta" style="margin:0 0 12px">${lleno?"El cupo está lleno: quitá un equipo para poder sumar otro.":"Sin contraseña del local: el equipo nuevo escribe el código y queda aprobado."}</p>`;
+  return `<button type="button" class="btn" data-equipo-codigo="1" style="width:100%;margin:0 0 6px" ${lleno||S.codigoCargando?"disabled":""}>${S.codigoCargando?"Generando…":"+ Agregar un dispositivo con un código"}</button>
+    <p class="meta" style="margin:0 0 12px">${lleno?"El cupo está lleno: quitá un dispositivo para poder sumar otro.":"Sin contraseña del local: el dispositivo nuevo escribe el código y queda aprobado."}</p>`;
 }
 async function generarCodigoEquipo(){
   S.codigoCargando=true; S.equipoAviso=""; renderApp();
