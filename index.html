@@ -471,7 +471,9 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
-.etiqSheet{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0 auto;max-width:520px;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(42,30,23,.18);padding:18px 20px 22px;max-height:72vh;overflow:auto;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+.etiqOv{position:fixed;inset:0;z-index:60;background:rgba(42,30,23,.5);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overscroll-behavior:contain}
+.etiqSheet{width:100%;max-width:440px;background:var(--surface);border-radius:24px;box-shadow:0 18px 50px rgba(42,30,23,.35);padding:20px 20px 22px;max-height:calc(100dvh - 28px);overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+body:has(.etiqOv){overflow:hidden}
 .etiqSheet .btn{min-height:44px;padding:0 14px;font-size:.95rem}
 .etiqSheet input[type=date]{width:100%;height:44px;box-sizing:border-box;padding:0 12px;font-size:.95rem}
 .etiqTitulo{font-size:1.3rem;font-weight:700}
@@ -489,7 +491,6 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqSheet.etiqEnviando{pointer-events:none}
 .etiqSheet.etiqEnviando .btn{opacity:.75}
 .etiqGuardando{font-weight:600}
-.etiqEspacio{height:72vh}
 .btn.escaner{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .pesosResumen{margin:-4px 0 12px;font-size:.88rem;color:var(--muted)}
 .pesosResumen b{color:var(--ink)}
@@ -537,12 +538,12 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .devChip.on small{color:var(--accent);font-weight:800}
 .devSin{margin-top:8px;padding:10px 12px;border-radius:12px;background:#FFF1D6;border:1.5px solid #E0A93B;color:#7A4B00;font-size:.82rem;font-weight:700}
 .devSin .kgFila{margin-top:6px;color:#2A2118}
-.mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
 /* Con un diálogo abierto (ayuda, escáner, pad de kilos, cantidades…) la pantalla de atrás queda quieta. */
 body:has(.mantenerOv){overflow:hidden}
 .mantenerOv{overscroll-behavior:contain;touch-action:none}
 .mantenerBox{touch-action:pan-y;overscroll-behavior:contain}
-.mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
+.mantenerBox{width:100%;max-width:420px;max-height:calc(100dvh - 24px);overflow-y:auto;box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
 .mantSub{margin:0;color:var(--muted);font-size:.9rem}
 .mantAyuda{margin:0;font-size:.8rem;color:var(--muted);text-align:center}
@@ -942,7 +943,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.128.0";
+const FRONTEND_VERSION = "1.128.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2033,7 +2034,7 @@ function vencimientosPantallaHTML(){
       <div class="vencFecha">${sem?tachar(fechaVencCorta(l.f)):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
       <div class="vencNom">${tachar(esc(s.nombre))}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
       ${(etq||acc)?`<div class="vencAcciones">${etq}${acc}</div>`:""}
-    </div>`; }).join("")}</div>`:`<div class="empty">${todos.length?"No hay lotes en este filtro.":"Todavía no hay chocolatería cargada."}</div>`}${S.etiq?`<div class="etiqEspacio"></div>${etiquetarSheetHTML()}`:""}`;
+    </div>`; }).join("")}</div>`:`<div class="empty">${todos.length?"No hay lotes en este filtro.":"Todavía no hay chocolatería cargada."}</div>`}${S.etiq?etiquetarSheetHTML():""}`;
 }
 /** Reetiquetado y pase a desperdicio desde Ver vencimientos: Responsable de local y de turno; admin y supervisor en urgencias. */
 function canEtiquetar(){ return !!S.local && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
@@ -2046,50 +2047,67 @@ function etiqAbrir(id, de){
   if(de){ // corregir un vencimiento ya puesto: arranca con todo el lote y su fecha actual
     const lote=(lotesPorSabor()[id]||[]).find(l=>l.f===de), n=lote?lote.c:0;
     if(!n) return toast("Ese lote ya no está en cámara.");
-    S.etiq={ id:String(id), clienteId:uuid(), max:n, cant:n, fecha:de, de:de };
+    S.etiq={ id:String(id), clienteId:uuid(), max:n+sinFechaUnidades(id), cant:n, c0:n, fecha:de, de:de };
     renderApp(); return;
   }
   const sin=sinFechaUnidades(id);
   S.etiq={ id:String(id), clienteId:uuid(), max:sin, cant:sin, fecha:(+s.vida_util_dias>0)?isoMasDias(+s.vida_util_dias):"" };
   renderApp();
 }
-function etiqSetCant(n){ if(!S.etiq) return; S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+n||1))); renderApp() }
-function etiqValida(e){ return e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) && (!e.de || e.fecha!==e.de) }
+function etiqMin(e){ return e.de ? 0 : 1 } // corrigiendo un lote se puede dejar en 0 (todas vuelven a «sin fecha»)
+function etiqSetCant(n){ if(!S.etiq) return; const v=Math.floor(+n); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); renderApp() }
+function etiqValida(e){
+  if(e.cant<etiqMin(e) || e.cant>e.max) return false;
+  if(e.de){ if(e.cant===0) return true; return /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) && !(e.fecha===e.de && e.cant===e.c0); }
+  return /^\d{4}-\d{2}-\d{2}$/.test(e.fecha);
+}
+/** Qué va a pasar al confirmar una corrección (texto para la hoja y para la pregunta). */
+function etiqResumen(e){
+  const u=n=>`${n} ${unidad(e.id,n)}`, sin=e.max-e.c0;
+  if(e.cant===0) return `Las ${u(e.c0)} del ${fechaVencCorta(e.de)} vuelven a «sin fecha».`;
+  const partes=[];
+  if(e.fecha!==e.de) partes.push(`${u(Math.min(e.cant,e.c0))} pasan del ${fechaVencCorta(e.de)} al ${fechaVencCorta(e.fecha)}`);
+  else if(e.cant===e.c0) partes.push("Sin cambios");
+  else partes.push(`El lote del ${fechaVencCorta(e.de)} queda con ${u(e.cant)}`);
+  if(e.cant<e.c0) partes.push(`${u(e.c0-e.cant)} vuelven a «sin fecha»`);
+  if(e.cant>e.c0) partes.push(`se toman ${u(e.cant-e.c0)} de las que están sin fecha (hay ${sin})`);
+  return partes.join(" · ")+".";
+}
 function etiquetarSheetHTML(){
   const e=S.etiq, s=S.saboresPorId[e.id]||{}, caja=+s.cantidad_maestra||0, vida=+s.vida_util_dias||0;
   const sugerida=vida?isoMasDias(vida):"";
   const quedan=Math.max(0,e.max-e.cant);
   const cambio=!!e.de;
   const pregunta=`<div class="etiqPregunta"><b>${cambio?"¿Confirmás el cambio de fecha?":"¿Confirmás el vencimiento?"}</b>
-      <span>${cambio?`${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")} pasan de ${fechaVencCorta(e.de)} a ${fechaVencCorta(e.fecha)}.`:`${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.`}</span>
+      <span>${cambio?`${esc(s.nombre||"")}: ${etiqResumen(e)}`:`${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.`}</span>
       <div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-volver ${e.enviando?"disabled":""}>No, volver</button><button type="button" class="btn" data-etiq-si ${e.enviando?"disabled":""}>${e.enviando?"Guardando…":"Sí, confirmar"}</button></div>${e.enviando?`<div class="meta etiqGuardando">Guardando el vencimiento… esperá un momento.</div>`:""}</div>`;
-  const botones=`<div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button><button type="button" class="btn" data-etiq-confirmar ${etiqValida(e)?"":"disabled"}>${cambio?"Cambiar fecha de":"Poner fecha a"} ${e.cant} ${unidad(e.id,e.cant)}</button></div>`;
-  return `<div class="etiqSheet${e.enviando?" etiqEnviando":""}" role="dialog" aria-label="Poner vencimiento">
+  const botones=`<div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button><button type="button" class="btn" data-etiq-confirmar ${etiqValida(e)?"":"disabled"}>${cambio?"Guardar el cambio":`Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}`}</button></div>`;
+  return `<div class="etiqOv"><div class="etiqSheet${e.enviando?" etiqEnviando":""}" role="dialog" aria-modal="true" aria-label="Poner vencimiento">
     <div class="etiqTitulo">${cambio?"Cambiar vencimiento":"Poner vencimiento"}</div>
-    <div class="etiqSub">${esc(s.nombre||"")} · ${cambio?`vencen el ${fechaVencCorta(e.de)}: ${e.max} ${unidad(e.id,e.max)}`:`sin fecha: ${e.max} ${unidad(e.id,e.max)}`}</div>
+    <div class="etiqSub">${esc(s.nombre||"")} · ${cambio?`vencen el ${fechaVencCorta(e.de)}: ${e.c0} ${unidad(e.id,e.c0)}`:`sin fecha: ${e.max} ${unidad(e.id,e.max)}`}</div>
     <label class="etiqLbl" for="etiqFecha">${cambio?"Fecha correcta":"Fecha de vencimiento"}</label>
     <input id="etiqFecha" type="date" data-etiq-fecha value="${esc(e.fecha)}">
     ${cambio?"":vida?`<button type="button" class="btn ghost" data-etiq-sugerida="${sugerida}">Usar la sugerida: ${fechaVencCorta(sugerida)} (${vida} días)</button>`:`<div class="meta">Este producto no tiene vida útil cargada: elegí la fecha a mano.</div>`}
-    <label class="etiqLbl" for="etiqCant">${cambio?"Cantidad a cambiar":"Cantidad a etiquetar"}</label>
+    <label class="etiqLbl" for="etiqCant">${cambio?"Unidades con esta fecha":"Cantidad a etiquetar"}</label>
     <div class="etiqCant">
       <button type="button" class="btn ghost" data-etiq-dec aria-label="Menos">−</button>
-      <input id="etiqCant" type="number" min="1" max="${e.max}" inputmode="numeric" data-etiq-cant value="${e.cant}">
+      <input id="etiqCant" type="number" min="${etiqMin(e)}" max="${e.max}" inputmode="numeric" data-etiq-cant value="${e.cant}">
       <button type="button" class="btn ghost" data-etiq-inc aria-label="Más">+</button>
     </div>
     ${caja>0&&!cambio?`<div class="etiqChips"><button type="button" class="chip" data-etiq-chip="${caja}">1 caja · ${caja} unidades</button></div>`:""}
-    <div class="meta etiqQuedan">${cambio?`Quedan con la fecha anterior (${fechaVencCorta(e.de)})`:"Quedan sin fecha"}: <b>${quedan} ${unidad(e.id,quedan)}</b></div>
+    <div class="meta etiqQuedan">${cambio?etiqResumen(e):`Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b>`}</div>
     ${e.error?`<div class="warn">${esc(e.error)}</div>`:""}
     ${e.confirmar?pregunta:botones}
-  </div>`;
+  </div></div>`;
 }
 /** Actualiza la hoja sin redibujarla: si se redibuja al soltar el campo, el clic del botón se pierde. */
 function etiqPintar(){
   const e=S.etiq, sh=document.querySelector(".etiqSheet"); if(!e||!sh) return;
   const inp=sh.querySelector("[data-etiq-cant]"); if(inp && +inp.value!==e.cant) inp.value=e.cant;
   const quedan=Math.max(0,e.max-e.cant), q=sh.querySelector(".etiqQuedan");
-  if(q) q.innerHTML=`${e.de?`Quedan con la fecha anterior (${fechaVencCorta(e.de)})`:"Quedan sin fecha"}: <b>${quedan} ${unidad(e.id,quedan)}</b>`;
+  if(q) q.innerHTML=e.de?esc(etiqResumen(e)):`Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b>`;
   const b=sh.querySelector("[data-etiq-confirmar]");
-  if(b){ b.disabled=!etiqValida(e); b.textContent=`${e.de?"Cambiar fecha de":"Poner fecha a"} ${e.cant} ${unidad(e.id,e.cant)}`; }
+  if(b){ b.disabled=!etiqValida(e); b.textContent=e.de?"Guardar el cambio":`Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}`; }
 }
 function etiqPedirConfirmacion(){
   if(!etiqValida(S.etiq)) return toast("Revisá la fecha y la cantidad.");
@@ -2100,9 +2118,9 @@ async function etiquetarConfirmar(){
   e.enviando=true; e.error=null; renderApp();
   const s=S.saboresPorId[e.id]||{};
   const r=e.de
-    ? await api("cambiarVencimiento",{clienteId:e.clienteId, local:S.local, id:e.id, de:e.de, f:e.fecha, c:e.cant})
+    ? await api("cambiarVencimiento",{clienteId:e.clienteId, local:S.local, id:e.id, de:e.de, f:e.fecha, k:e.cant, c:e.c0})
     : await api("etiquetar",{clienteId:e.clienteId, local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
-  if(r && r.ok){ S.etiq=null; toast(e.de?`Vencimiento corregido en ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`:`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
+  if(r && r.ok){ S.etiq=null; toast(e.de?`Vencimiento corregido: ${s.nombre||"producto"}`:`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
   else { if(S.etiq){ S.etiq.enviando=false; S.etiq.confirmar=false; S.etiq.error=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para poder cambiar fechas.":(r&&r.error)||"No se pudo guardar el vencimiento."; } renderApp(); }
 }
 document.addEventListener("input", e=>{
@@ -2116,7 +2134,7 @@ document.addEventListener("change", e=>{
   const el=e.target;
   if(!S.etiq || !el.dataset) return;
   if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; S.etiq.error=null; etiqPintar(); }
-  if(el.dataset.etiqCant!==undefined){ S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+el.value||1))); etiqPintar(); }
+  if(el.dataset.etiqCant!==undefined){ const v=Math.floor(+el.value); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); etiqPintar(); }
 });
 function iniciarConteo(){
   const st=stockMap();
