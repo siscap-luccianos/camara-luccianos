@@ -1020,7 +1020,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.135.2";
+const FRONTEND_VERSION = "1.135.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1579,6 +1579,9 @@ async function authEnviarClave(){
   else { S.auth.error=(r&&r.error)||"No se pudo verificar la contraseña."; renderApp(); }
 }
 function authElegirEmpleado(emp){
+  // Desde 1.135.3 el admin necesita su PIN personal también en Operaciones y con el código de admin.
+  S.auth.pinGestion = !!((S.auth.esGestion || S.auth.codigoAdmin) && emp.rol==="admin");
+  if(S.auth.pinGestion){ S.auth.elegido=emp; S.auth.pin=""; S.auth.pin1=""; S.auth.error=""; S.auth.paso="pin"; renderApp(); return }
   if(S.auth.esGestion || S.auth.codigoAdmin){ authEntrarGestion(emp); return }
   S.auth.elegido=emp; S.auth.pin=""; S.auth.pin1=""; S.auth.error="";
   const info=S.locales.find(l=>l.nombre===S.auth.local);
@@ -1694,9 +1697,12 @@ async function authSubmit(){
   const a=S.auth;
   if(a.paso==="pin"){
     a.cargando=true; a.error=""; renderApp();
-    const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
+    const r = a.pinGestion
+      ? await api(a.codigoAdmin?"loginAdminLocal":"loginGestion", a.codigoAdmin ? { empleadoId:a.elegido.id, codigo:a.clave, local:a.local, pin:a.pin } : { empleadoId:a.elegido.id, clave:a.clave, local:a.local, pin:a.pin })
+      : await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
     a.cargando=false;
     if(r && r.ok){ aplicarLogin(r); return }
+    if(a.pinGestion){ a.error=(r&&r.error)||"No se pudo validar el PIN."; a.pin=""; renderApp(); return }
     if(r && r.equipo){ authEquipoBloqueado(r); return }
     if(r && r.primeraVez){ a.paso="pinConfirm"; a.pin1=""; renderApp(); return }
     a.error = (r&&r.error) || "No se pudo validar el PIN.";
