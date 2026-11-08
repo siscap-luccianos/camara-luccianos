@@ -68,6 +68,8 @@ Un conteo físico es **una foto absoluta del stock**: lo que se guarda **reempla
 
 ## 6. Mejoras propuestas para la app (todas necesitan mock antes de construir)
 
+> **Estado 08/11/2026:** las mejoras 1 a 4 de esta lista (resumen antes de guardar, alerta de saltos con confirmación, borrador automático y marca de «sin contar») ya están construidas en `/pruebas/` (front 1.132.0). El conteo parcial por rubro (5) queda pendiente.
+
 Ordenadas por impacto y esfuerzo:
 
 1. **Resumen de cambios antes de guardar** (solo front): «Cambia 18 sabores · 6 quedan en 0 · 2 suben más del triple», con la lista y color rojo en los saltos raros. Evita el error de Recoleta.

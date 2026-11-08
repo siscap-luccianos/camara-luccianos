@@ -284,6 +284,43 @@ select{max-width:220px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .card{position:relative;display:flex;flex-direction:column}
 .card>.pick{flex:1 1 auto}
+.cProg{margin:0 0 10px}
+.cProgTx{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;margin-bottom:5px}
+.cProgTx span{color:var(--muted);font-weight:600}
+.cProgBar{height:8px;border-radius:999px;background:rgba(120,100,80,.25);overflow:hidden}
+.cProgBar i{display:block;height:8px;border-radius:999px;background:#B5532A}
+.cBadge{display:inline-block;margin-top:4px;font-size:.68rem;font-weight:800;border-radius:999px;padding:2px 8px}
+.cBadge[hidden]{display:none}
+.cBadge.c-sin{background:#E6E1D8;color:#4A4036}.cBadge.c-igual{background:#DDF0E3;color:#14653A}.cBadge.c-cambia{background:#E3EAF5;color:#1F3E75}.cBadge.c-cero{background:#F8DAD7;color:#8F1D16}.cBadge.c-salto{background:#FBE7A8;color:#5C3D00}
+.cBorrador{margin-top:16px;background:#DDF0E3;border:2px solid #1E8A4C;border-radius:16px;padding:14px;color:#2A211A}
+.cBorrador .t{display:flex;align-items:center;gap:8px;font-size:.8rem;font-weight:800;color:#14653A}
+.cBorrador .t i{width:9px;height:9px;border-radius:50%;background:#1E8A4C;display:inline-block}
+.cBorrador .d{font-size:.88rem;line-height:1.4;margin:6px 0 10px}
+.cBorrador .b{display:flex;gap:8px;flex-wrap:wrap}
+.cvTitulo{font-family:'Fraunces',Georgia,serif;font-size:1.3rem;font-weight:600;margin:0 0 10px}
+.cvKpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.cvKpis>div{background:#fff;border:1px solid #E3D9C6;border-radius:12px;padding:10px 12px;color:#2A211A}
+.cvKpis b{display:block;font-size:1.6rem;line-height:1}
+.cvKpis span{font-size:.75rem;color:#6B5E52}
+.cvKpis .mal b{color:#B3261E}.cvKpis .aviso b{color:#8A5A00}
+.cvCard{background:#fff;border:1px solid #E3D9C6;border-radius:14px;overflow:hidden;color:#2A211A;margin-bottom:12px}
+.cvHead{padding:10px 12px;background:#FBF7EE;border-bottom:1px solid #E3D9C6;font-size:.88rem}
+.cvHead .t{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6B5E52;margin-bottom:3px}
+.cvRow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:4px;padding:8px 12px;border-top:1px solid #EFE7D6;align-items:center;text-align:center;font-size:.9rem;background:#fff}
+.cvRow .nm{text-align:left;font-weight:700}
+.cvRow small{display:block;font-size:.66rem;font-weight:700}
+.cvCab{border-top:0;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#6B5E52}
+.cvRow.c-cero{background:#FDF0EE;color:#8F1D16}.cvRow.c-salto{background:#FFF7DD;color:#5C3D00}
+.cvVacio{padding:12px;text-align:center;color:#6B5E52;font-size:.85rem}
+.cvToggle{margin:8px 12px 12px;width:calc(100% - 24px)}
+.cvSec{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 8px}
+.cvFlag{background:#fff;border:2px solid #D49A00;border-radius:14px;padding:12px;margin-bottom:8px;color:#2A211A}
+.cvFlag.c-cero{border-color:#C62828}
+.cvFlag .top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:.95rem}
+.cvFlag .mot{font-size:.8rem;font-weight:700;margin:6px 0 8px}
+.cvFlag.c-cero .mot{color:#8F1D16}.cvFlag.c-salto .mot{color:#8A5A00}
+.cvFlag button.ok{background:#1E8A4C;color:#fff;border-color:#1E8A4C}
+.cvSin{font-size:.85rem;line-height:1.5;color:var(--muted)}
 .lotesFull{grid-column:1/-1;padding:0 0 10px}
 .kgFila{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.82rem;font-weight:700}
 .kgFila input{width:96px;height:40px;text-align:center;border:1.5px solid var(--accent);border-radius:12px;font:800 1rem inherit;background:#fff;color:var(--ink)}
@@ -962,7 +999,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.131.2";
+const FRONTEND_VERSION = "1.132.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1026,6 +1063,7 @@ const S = {
   pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
+  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
@@ -2174,11 +2212,89 @@ document.addEventListener("change", e=>{
   if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; S.etiq.error=null; etiqPintar(); }
   if(el.dataset.etiqCant!==undefined){ const v=Math.floor(+el.value); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); etiqPintar(); }
 });
-function iniciarConteo(){
+function iniciarConteo(conBorrador){
   const st=stockMap();
   S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+  S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false;
   Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
+  if(conBorrador){ const b=borradorConteo(); if(b) aplicarBorradorConteo(b) } else descartarBorradorConteo();
   S.confirm=false; renderApp();
+}
+/* ---- Conteo físico: borrador automático, «sin contar» y revisión antes de guardar ----
+   El conteo en curso se guarda solo en ESTE equipo (localStorage), no en el servidor: el stock del local
+   no cambia hasta el único «Guardar conteo» final. Umbrales de los avisos: un sabor que tenía al menos
+   CONTEO_CERO_MIN y queda en 0, o que cambia 3 veces o más (y al menos CONTEO_SALTO_DIF unidades). */
+const CONTEO_CERO_MIN=5, CONTEO_SALTO_X=3, CONTEO_SALTO_DIF=10;
+function claveBorradorConteo(){ return "conteoBorrador:"+S.local }
+function descartarBorradorConteo(){ try{ ls.del(claveBorradorConteo()) }catch(e){} }
+function borradorConteo(){
+  if(!S.local) return null;
+  try{
+    const b=JSON.parse(ls.get(claveBorradorConteo(),"")||"null");
+    if(!b || !b.vals) return null;
+    const hace=Date.now()-(+b.ts||0);
+    if(hace>24*36e5) return null;                           // más de un día: ya no sirve
+    if(S.stock && (+S.stock.ts||0)>(+b.inicio||0)) return null; // otra persona guardó un conteo después de empezar este
+    return b;
+  }catch(e){ return null }
+}
+function aplicarBorradorConteo(b){
+  Object.keys(b.vals||{}).forEach(id=>{ if(S.conteo[id]!==undefined || S.saboresPorId[id]) S.conteo[id]=Math.max(0,+b.vals[id]||0) });
+  S.conteoTocado=Object.assign({},b.tocados||{});
+  S.vencConteo=Object.assign({},b.venc||{}); S.kilosConteo=Object.assign({},b.kilos||{}); S.vencOmit=Object.assign({},b.omit||{});
+  limpiarLotesExtra("conteo:"); Object.keys(b.lotes||{}).forEach(k=>{ S.lotesExtra[k]=b.lotes[k] });
+  S.conteoInicio=+b.inicio||Date.now();
+}
+let _borradorTimer=null;
+function programarBorradorConteo(){
+  clearTimeout(_borradorTimer);
+  _borradorTimer=setTimeout(guardarBorradorConteo,500);
+}
+function guardarBorradorConteo(){
+  if(!S.conteo || !S.local) return;
+  const st=stockMap(), vals={};
+  Object.keys(S.conteo).forEach(id=>{ if(S.conteoTocado[id] || S.conteo[id]!==Math.max(0,st[id]||0)) vals[id]=S.conteo[id] });
+  if(!Object.keys(vals).length && !Object.keys(S.conteoTocado).length) { descartarBorradorConteo(); return }
+  const lotes={}; Object.keys(S.lotesExtra).forEach(k=>{ if(k.indexOf("conteo:")===0) lotes[k]=S.lotesExtra[k] });
+  if(!S.conteoInicio) S.conteoInicio=Date.now();
+  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, omit:S.vencOmit, lotes})) }catch(e){}
+}
+/** Estado de cada sabor del conteo respecto del stock del sistema: sin (sin contar), igual, cambia, cero (queda en 0), salto (cambio raro). */
+function conteoEstadoDe(id, prev, v){
+  const tocado=!!S.conteoTocado[id];
+  if(v===prev) return tocado ? "igual" : (prev>0 ? "sin" : "igual0");
+  if(prev>=CONTEO_CERO_MIN && v===0) return "cero";
+  if(prev>0 && v>0 && Math.abs(v-prev)>=CONTEO_SALTO_DIF && (v>=prev*CONTEO_SALTO_X || v*CONTEO_SALTO_X<=prev)) return "salto";
+  return "cambia";
+}
+const CONTEO_BADGE={sin:"Sin contar", igual:"Igual al sistema", cambia:"Cambia", cero:"Queda en 0", salto:"Salto raro"};
+function conteoResumen(){
+  const st=stockMap(), lista=saboresDelLocal();
+  const filas=lista.map(s=>{ const prev=Math.max(0,st[s.id]||0), v=S.conteo[s.id]||0; return {s, prev, v, e:conteoEstadoDe(s.id,prev,v)} });
+  const sinContar=filas.filter(f=>f.e==="sin");
+  return {
+    filas, sinContar,
+    contados: filas.filter(f=>f.e!=="sin" && f.e!=="igual0").length,
+    total: filas.filter(f=>f.e!=="igual0").length,
+    cambian: filas.filter(f=>f.e==="cambia"||f.e==="cero"||f.e==="salto"),
+    ceros: filas.filter(f=>f.e==="cero"), saltos: filas.filter(f=>f.e==="salto"),
+    flags: filas.filter(f=>f.e==="cero"||f.e==="salto"),
+    antes: filas.reduce((a,f)=>a+f.prev,0), despues: filas.reduce((a,f)=>a+f.v,0)
+  };
+}
+function conteoFaltaConfirmar(r){ return r.flags.filter(f=>!S.conteoAck[f.s.id]) }
+/** Actualiza la etiqueta de un sabor y la barra de avance sin repintar la lista (no se pierde el foco al escribir). */
+function actualizarEstadoConteoDom(id){
+  const st=stockMap(), prev=Math.max(0,st[id]||0), v=S.conteo[id]||0, e=conteoEstadoDe(id,prev,v);
+  const b=document.querySelector(`[data-cbadge="${id}"]`);
+  if(b){ b.className="cBadge c-"+e; b.textContent=CONTEO_BADGE[e]||""; b.hidden=!CONTEO_BADGE[e] }
+  const fila=b&&b.closest(".row"); if(fila) fila.dataset.cestado=e;
+  const r=conteoResumen(), p=document.getElementById("conteoProg");
+  if(p) p.innerHTML=conteoProgresoHTML(r);
+}
+function conteoProgresoHTML(r){
+  const pct=r.total?Math.round(r.contados/r.total*100):100;
+  return `<div class="cProgTx"><b>${r.contados} de ${r.total} contados</b><span>Se guarda solo en este equipo</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
 }
 /** Lotes extra de un renglón (además del principal): "+ Otro vencimiento". */
 function sumaExtra(extra){ return extra.reduce((a,l)=>a+(+l.c||0),0) }
@@ -3226,6 +3342,14 @@ function gridProduccion(st){
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
+function bannerBorradorConteoHTML(){
+  const b=borradorConteo(); if(!b) return "";
+  const n=Object.keys(b.tocados||{}).length||Object.keys(b.vals||{}).length;
+  const hora=new Date(+b.ts).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
+  return `<div class="cBorrador"><div class="t"><i></i>Tenés un conteo sin terminar</div>
+    <div class="d"><b>${n} ${n===1?"sabor cargado":"sabores cargados"}</b> · guardado en este equipo a las ${hora}${b.empleado?" por "+esc(b.empleado):""}. No se mandó al servidor: el stock no cambió.</div>
+    <div class="b"><button type="button" class="btn" id="continuarConteo">Continuar donde quedé</button><button type="button" class="btn ghost" id="descartarBorradorBtn">Descartar</button></div></div>`;
+}
 function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
@@ -3276,6 +3400,7 @@ function stockViewGeneral(st){
     <span class="tx"><b>Pedido sugerido</b><span>${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>`:""}
+  ${puedeGestionar?bannerBorradorConteoHTML():""}
   <div class="tools" style="margin-top:16px">
     <span class="grow" style="color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</span>
     ${puedeGestionar?`<button class="chip" id="conteoBtn">Conteo físico</button>`:""}
@@ -3424,12 +3549,33 @@ function stockViewResumen(st){
   ${sinPedido.length?`<p style="margin:10px 0 0;color:var(--muted);font-size:.8rem;text-align:center">Sin nada para pedir: ${esc(sinPedido.join(", "))}.</p>`:""}`;
 }
 
+function conteoRevisarView(){
+  const r=conteoResumen(), pend=conteoFaltaConfirmar(r);
+  const delta=r.despues-r.antes, col=delta===0?"#14653A":(delta<0?"#B3261E":"#1F3E75");
+  const mostradas=S.conteoVerTodos ? r.filas.filter(f=>f.e!=="igual0") : r.cambian;
+  const tabla=mostradas.length ? mostradas.map(f=>`<div class="cvRow c-${f.e}"><div class="nm">${esc(f.s.nombre)}</div><div>${f.prev}</div><div><b>${f.v}</b><small>${f.e==="sin"?"sin contar · igual":esc(CONTEO_BADGE[f.e]||"")}</small></div></div>`).join("") : `<div class="cvVacio">No cambia ningún número.</div>`;
+  const flags=r.flags.map(f=>{
+    const ok=!!S.conteoAck[f.s.id];
+    const motivo=f.e==="cero" ? `Tenía ${f.prev} y lo dejaste en 0. ¿De verdad no queda nada?` : (f.v>f.prev ? `Sube más de ${CONTEO_SALTO_X} veces (de ${f.prev} a ${f.v}). ¿Está bien el número?` : `Baja a menos de un tercio (de ${f.prev} a ${f.v}). ¿Está bien el número?`);
+    return `<div class="cvFlag c-${f.e}"><div class="top"><b>${esc(f.s.nombre)}</b><span>${f.prev} → ${f.v}</span></div><div class="mot">${motivo}</div><button type="button" class="btn ghost ${ok?"ok":""}" data-cack="${f.s.id}">${ok?"Confirmado ✓":"Está bien, así es"}</button></div>`;
+  }).join("");
+  const sin=r.sinContar.slice(0,12).map(f=>esc(f.s.nombre)).join(", ")+(r.sinContar.length>12?` y ${r.sinContar.length-12} más`:"");
+  return `<div class="cvTitulo">Revisá antes de guardar</div>
+  <div class="cvKpis"><div><b>${r.cambian.length}</b><span>sabores cambian</span></div><div class="mal"><b>${r.ceros.length}</b><span>quedan en 0</span></div><div class="aviso"><b>${r.saltos.length}</b><span>saltos raros</span></div><div><b>${r.sinContar.length}</b><span>sin contar</span></div></div>
+  <div class="cvCard"><div class="cvHead"><div class="t">Así queda el stock</div><div>Total: <b>${r.antes}</b> → <b>${r.despues}</b> <span style="font-weight:800;color:${col}">(${delta>0?"+":""}${delta} unidades)</span></div></div>
+    <div class="cvRow cvCab"><div class="nm">Sabor</div><div>Antes</div><div>Después</div></div>${tabla}
+    <button type="button" class="btn ghost cvToggle" data-cver-todos>${S.conteoVerTodos?"Ver solo los que cambian":"Ver todos los sabores"}</button></div>
+  ${r.flags.length?`<div class="cvSec">Confirmá estos números${r.flags.length>3?` <button type="button" class="chip" data-cack-todos>${pend.length?"Confirmar todos":"Quitar confirmaciones"}</button>`:""}</div>${flags}`:""}
+  ${r.sinContar.length?`<div class="cvSec">Sin contar: quedan con el stock actual</div><div class="cvSin">${sin}.</div>`:""}`;
+}
 function stockViewConteo(){
-  const cont=S.conteo;
-  const list=listaFiltrada(stockMap());
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div></div>
+  if(S.conteoRevisar) return conteoRevisarView();
+  const cont=S.conteo, st0=stockMap();
+  const list=listaFiltrada(st0);
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}</div>
     <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
-  return `<p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
+  return `<div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
+  <p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
   <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
     <input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0">
@@ -4345,9 +4491,15 @@ function renderBar(){
     visible=true;
     const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id])).concat(S.kilosReales?Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[]);
     const faltaKgC=S.kilosReales?Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)).length:0;
-    inn.innerHTML = S.confirm
-      ? `<div class="sum">¿Guardar el conteo de <b>${esc(S.local)}</b>? Reemplaza el stock actual.</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`
-      : `<div class="sum">Revisá los números y guardá.${faltaKgC?`<div class="warn">Faltan los kilos totales de ${faltaKgC} ${faltaKgC===1?"sabor":"sabores"} para guardar el conteo.</div>`:""}${(faltaVencC.length-faltaKgC)>0?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length-faltaKgC} ${(faltaVencC.length-faltaKgC)===1?"producto":"productos"} para guardar el conteo.</div>`:""}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Guardar conteo</button>`;
+    programarBorradorConteo();
+    const avisoVK=`${faltaKgC?`<div class="warn">Faltan los kilos totales de ${faltaKgC} ${faltaKgC===1?"sabor":"sabores"} para guardar el conteo.</div>`:""}${(faltaVencC.length-faltaKgC)>0?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length-faltaKgC} ${(faltaVencC.length-faltaKgC)===1?"producto":"productos"} para guardar el conteo.</div>`:""}`;
+    const rc=conteoResumen();
+    if(S.conteoRevisar){
+      const pend=conteoFaltaConfirmar(rc);
+      inn.innerHTML=`<div class="sum">${pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`;
+    } else {
+      inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Revisar y guardar</button>`;
+    }
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
     const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia";
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
@@ -4443,7 +4595,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -4532,6 +4684,7 @@ async function guardarConteo(){
   if(r && r.ok){
     toast("Conteo guardado");
     S.conteo=null; S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+    S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
     await cargarDatos();
   } else if(r && r.offline){
     colaAgregar("conteo", payload);
@@ -4541,7 +4694,7 @@ async function guardarConteo(){
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
     guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
-    S.conteo=null; S.confirm=false;
+    S.conteo=null; S.confirm=false; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
   } else {
     toast((r&&r.error)||"No se pudo guardar el conteo.");
   }
@@ -4767,7 +4920,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; recortarPesos(t.dataset.wsub,"desperdicio"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
-  if(t.dataset.ccaja){ const id=t.dataset.ccaja; S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.confirm=false; renderApp(); return }
+  if(t.dataset.ccaja){ const id=t.dataset.ccaja; S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.devchip){ const [did,di]=t.dataset.devchip.split(":"); const a=S.devSel[did]||(S.devSel[did]=[]); const k=a.indexOf(+di); if(k>=0) a.splice(k,1); else a.push(+di); syncDevolucion(); S.confirm=false; scheduleRender(); return }
@@ -4907,7 +5060,7 @@ document.addEventListener("click", async e=>{
     renderApp();
     return;
   }
-  if(t.id==="conteoBtn"){ iniciarConteo(); return }
+  if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; iniciarConteo(); return }
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
@@ -4950,11 +5103,19 @@ document.addEventListener("click", async e=>{
   if(t.id==="aplicarTodos"){
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     Object.keys(S.conteo).forEach(id=>S.conteo[id]=v);
+    S.conteoTocado={}; S.conteoAck={}; // «Aplicar a todos» no cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }
-  if(t.id==="cancelConteo"){ S.conteo=null; renderApp(); return }
-  if(t.id==="volver"){ S.confirm=false; renderApp(); return }
-  if(t.id==="go"){ S.confirm=true; renderApp(); return }
+  if(t.id==="cancelConteo"){
+    if(Object.keys(S.conteoTocado).length && !confirm("¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia.")) return;
+    descartarBorradorConteo(); S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
+  if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
+  if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); return }
+  if(t.dataset.cack){ const id=t.dataset.cack; if(S.conteoAck[id]) delete S.conteoAck[id]; else S.conteoAck[id]=true; renderApp(); return }
+  if(t.dataset.cackTodos!==undefined){ const r=conteoResumen(), pend=conteoFaltaConfirmar(r); if(pend.length) r.flags.forEach(f=>S.conteoAck[f.s.id]=true); else S.conteoAck={}; renderApp(); return }
+  if(t.dataset.cverTodos!==undefined){ S.conteoVerTodos=!S.conteoVerTodos; renderApp(); return }
+  if(t.id==="continuarConteo"){ iniciarConteo(true); return }
+  if(t.id==="descartarBorradorBtn"){ if(!confirm("¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia.")) return; descartarBorradorConteo(); renderApp(); return }
   if(t.id==="ok"){ if(S.tab==="stock"&&S.conteo) guardarConteo(); else guardarMovimiento(); return }
 });
 /** Los teclados numéricos del PIN (login y bloqueo de pantalla en PC) son
@@ -5027,7 +5188,9 @@ document.addEventListener("input", e=>{
   if(e.target.dataset.c){
     const n=Math.max(0,parseInt(e.target.value,10)||0);
     S.conteo[e.target.dataset.c]=n;
+    S.conteoTocado[e.target.dataset.c]=true; delete S.conteoAck[e.target.dataset.c];
     mostrarVencRenglon(e.target, e.target.dataset.c, "conteo:", "data-venc-conteo", n);
+    actualizarEstadoConteoDom(e.target.dataset.c);
     renderBar();
   }
   if(e.target.dataset.vd){
