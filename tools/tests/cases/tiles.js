@@ -1,0 +1,20 @@
+const { chromium } = require("playwright");
+(async()=>{
+ const b=await chromium.launch(); const page=await (await b.newContext({viewport:{width:390,height:800}})).newPage();
+ const err=[]; page.on("pageerror",e=>err.push(e.message));
+ await page.goto("http://localhost:8995/"); await page.waitForSelector("#authLocal");
+ await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
+ await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
+ await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+ await page.waitForSelector("header"); await page.waitForTimeout(400);
+ await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
+ const t=await page.$$eval(".accTile",e=>e.map(x=>x.textContent.replace(/\s+/g," ").trim()));
+ console.log(t); await page.screenshot({path:"tiles1.png"});
+ await page.click("#irDesperdicio"); await page.waitForTimeout(300); console.log("desperdicio:", (await page.$eval("body",e=>e.textContent)).includes("Modo Desperdicio"));
+ await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);
+ await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+ console.log("sin escáner:",await page.$$eval(".accTile",e=>e.map(x=>x.id||x.dataset.verVenc+"|"+x.className)));
+ await page.screenshot({path:"tiles2.png"});
+ await page.click("[data-ver-venc]"); await page.waitForTimeout(300); console.log("vencimientos abre:", await page.$("[data-volver-venc]")!==null);
+ console.log("errores:",err.length?err:"ninguno"); await b.close();
+})();

@@ -1,0 +1,23 @@
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  const err=[]; page.on("pageerror",e=>err.push(e.message));
+  const ok=(c,m)=>console.log((c?"OK   ":"FALLA")+" "+m);
+  await page.goto("http://localhost:8991/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+  await page.waitForSelector("header"); await page.waitForTimeout(500);
+  await page.click("#tabs [data-t='sabores']"); await page.waitForTimeout(800);
+  await page.click("[data-pais-modo]"); await page.waitForTimeout(300);
+  ok(await page.$("[data-pais-destino]")!==null, "con filtro Todos: la barra muestra los países para elegir");
+  await page.click("[data-pais-filtro='Marruecos']"); await page.waitForTimeout(400);
+  console.log("barra:", (await page.innerText(".paisBar")).replace(/\s+/g," ").slice(0,160));
+  ok(await page.$("[data-pais-destino]")!==null, "con Marruecos elegido arriba: siguen las pills del país destino (para agregar desde otro país)");
+  const filas=await page.$$eval("[data-pais-tildar]",e=>e.length); console.log("filas visibles con Marruecos:",filas);
+  await page.click("[data-sel-todos]"); await page.waitForTimeout(300);
+  ok(!(await page.$eval("[data-pais-aplicar]",e=>e.disabled)), "con sabores elegidos, el botón de aplicar queda listo");
+  console.log("botón:", await page.innerText("[data-pais-aplicar]")); console.log("errores:", err);
+  await b.close();
+})().catch(e=>{console.error("ERROR",e.message);process.exit(1)});

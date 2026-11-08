@@ -1,0 +1,25 @@
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
+  const fallos=[], err=[], csp=[]; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c) fallos.push(m)};
+  page.on("pageerror",e=>err.push(e.message));
+  page.on("console",m=>{const t=m.text(); if(/Content Security Policy|Refused to/i.test(t)) csp.push(t); else if(m.type()==="error"&&!/ERR_|404/.test(t)) err.push(t)});
+  const reqs=[]; page.on("request",r=>{ if(r.method()==="POST") reqs.push(r.postData()||"") });
+  await page.goto("http://localhost:8991/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); 
+  const g=reqs.map(r=>{try{return JSON.parse(r)}catch(e){return {}}}).find(r=>r.accion==="empleadosGestion");
+  ok(g && g.clave==="op2024" && g.local==="Operaciones", "empleadosGestion viaja con la contraseña y el local");
+  ok(await page.evaluate(()=>localStorage.getItem("empleadosCache_gestion"))===null, "la lista de admin no queda guardada en el equipo");
+  await page.click("[data-authemp]"); await page.waitForSelector("header"); await page.waitForTimeout(500);
+  await page.fill("#local","Marruecos"); await page.press("#local","Enter"); await page.waitForTimeout(900);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
+  ok(await page.$("#main .card, #main .row")!==null, "la app carga y muestra sabores con la CSP puesta");
+  await page.reload(); await page.waitForTimeout(1500);
+  ok(await page.$("header")!==null, "recargar con sesión abierta anda");
+  ok(csp.length===0, "sin violaciones de CSP: "+JSON.stringify(csp.slice(0,3)));
+  console.log("errores:", err.length?err:"ninguno"); console.log(fallos.length?"RESULTADO: "+fallos.length+" fallo(s)":"RESULTADO: todo OK");
+  await b.close();
+})().catch(e=>{console.error("ERROR",e.message);process.exit(1)});

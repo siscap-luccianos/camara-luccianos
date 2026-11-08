@@ -1,0 +1,27 @@
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch(); const page = await (await b.newContext({ viewport: { width: 1100, height: 900 } })).newPage();
+  const err=[]; page.on("pageerror",e=>err.push(e.message)); const ok=(c,m)=>console.log((c?"OK   ":"FALLA")+" "+m);
+  await page.goto("http://localhost:8991/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+  await page.waitForSelector("header"); await page.waitForTimeout(500);
+  await page.click("#tabs [data-t='sabores']"); await page.waitForTimeout(800);
+  const filas=async()=> (await page.$$("[data-toggle-sabor]")).length;
+  const todos=await filas(); console.log("todos:",todos);
+  await page.click("[data-pais-filtro='Marruecos']"); await page.waitForTimeout(300);
+  const m=await filas(); console.log("Marruecos:",m); ok(m<todos,"Marruecos muestra solo lo suyo (Banana Split, que Marruecos no tiene, no está)");
+  ok(!(await page.innerText("#main")).includes("Banana Split")||false,"…");
+  await page.click("[data-pais-filtro='Argentina']"); await page.waitForTimeout(300);
+  const ma=await filas(); console.log("Marruecos + Argentina:",ma); ok(ma>m,"Marruecos + Argentina muestra las dos listas juntas");
+  const t=await page.innerText("#main"); ok(/MARRUECOS · \d+ sabor/i.test(t)&&/ARGENTINA · \d+ sabor/i.test(t),"una lista por país con su título y cantidad");
+  await page.screenshot({path:"multi-pais.png"});
+  await page.click("[data-pais-filtro='Marruecos']"); await page.waitForTimeout(300);
+  console.log("solo Argentina:",await filas());
+  await page.click("[data-pais-filtro='Todos']"); await page.waitForTimeout(300); ok(await filas()===todos,"Todos vuelve al catálogo completo");
+  await page.click("[data-pais-filtro='Marruecos']"); await page.click("[data-pais-filtro='Argentina']");
+  await page.click("[data-pais-modo]"); await page.waitForTimeout(300);
+  ok(await page.$("[data-pais-destino]")!==null,"modo Elegir varios: se elige a qué país se aplica");
+  console.log("errores:",err); await b.close();
+})().catch(e=>{console.error("ERROR",e.message);process.exit(1)});

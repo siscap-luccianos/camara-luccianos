@@ -1,0 +1,22 @@
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 390, height: 900 } })).newPage();
+  const fallos=[], err=[]; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c) fallos.push(m)};
+  page.on("pageerror",e=>err.push(e.message));
+  await page.goto("http://localhost:8995/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+  await page.waitForSelector("header"); await page.waitForTimeout(400);
+  await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(400);
+  ok(await page.$("#irDevolucion")!==null,"antes del conteo: hay algo para devolver (salida de hoy)");
+  await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
+  await page.click("#conteoBtn"); await page.waitForTimeout(400);
+  for(const h of await page.$$("[data-c]")) await h.fill("0");
+  await page.click("#go"); await page.click("#ok"); await page.waitForTimeout(900);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(400);
+  ok(await page.$("#irDevolucion")===null,"después del conteo: ya no ofrece devolver lo sacado antes");
+  console.log("errores:",err.length?err:"ninguno"); console.log(fallos.length?"FALLAS":"TODO OK"); await b.close();
+})();
