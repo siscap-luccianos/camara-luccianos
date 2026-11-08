@@ -908,7 +908,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.125.3";
+const FRONTEND_VERSION = "1.125.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3128,7 +3128,7 @@ function stockViewGeneral(st){
     const {s,cov,ed}=f;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${(km&&s.id in km)?(km[s.id]===null?` · <b style="color:var(--warn)">sin kilos cargados</b>`:` · <b>${fmtKg(km[s.id])} kg</b>`):s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}${ed?` <span class="badge ${ed.cls}" style="margin:0 0 0 2px">${ed.label}</span>`:""}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${(km&&s.id in km)?(km[s.id]===null?` · <b style="color:var(--warn)">sin kilos cargados</b>`:` · <b>${fmtKg(km[s.id])} kg</b>`):s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}</div>${ed?`<div style="margin-top:5px"><span class="badge ${ed.cls}" style="margin:0;display:inline-block;white-space:nowrap">${ed.label}</span></div>`:""}</div>
       <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>
     </div>`};
 
