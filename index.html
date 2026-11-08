@@ -596,6 +596,22 @@ body:has(.mantenerOv){overflow:hidden}
 .vencRow,.vencItem{color:var(--ink)}
 .vencNom{display:flex;flex-direction:column;gap:2px;font-weight:700;min-width:0}
 .vencNom span{font-size:.8rem;font-weight:600;color:var(--muted)}
+.kpis.gvKpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gvKpis .kpi:not(:first-child) .val{font-size:1.45rem}
+.gvTbl table{table-layout:fixed;width:100%}
+.gvTbl th,.gvTbl td{padding:9px 3px;font-size:.8rem;overflow-wrap:anywhere}
+.gvTbl th:nth-child(1){width:34%}.gvTbl th:nth-child(2){width:13%}.gvTbl th:nth-child(3){width:21%}.gvTbl th:nth-child(4){width:32%}
+.gvTbl td{font-variant-numeric:tabular-nums}
+.gvVista{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0 8px;padding:10px 14px;border-radius:14px;background:rgba(var(--accent-rgb),.10);font-size:.82rem}
+.gvVista span{min-width:0;overflow-wrap:anywhere}
+.gvVista strong{font-family:var(--display);font-size:1.15rem;white-space:nowrap}
+.gvTbl tfoot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:0}
+.gvBars{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.gvBar{display:grid;grid-template-columns:96px minmax(0,1fr) 112px;gap:10px;align-items:center;font-size:.82rem}
+.gvBar b{text-align:center;font-variant-numeric:tabular-nums}
+.gvTrack{height:10px;border-radius:99px;background:var(--line);overflow:hidden;display:block}
+.gvTrack span{display:block;height:100%;border-radius:99px}
+@media (max-width:420px){.gvBar{grid-template-columns:78px minmax(0,1fr) 96px}}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
 .kpi{background:rgba(var(--surface-rgb),.62);backdrop-filter:blur(14px) saturate(160%);-webkit-backdrop-filter:blur(14px) saturate(160%);border:1px solid rgba(var(--surface-rgb),.8);box-shadow:0 1px 0 rgba(var(--surface-rgb),.9) inset,0 6px 16px -8px rgba(var(--header-bg-rgb),.18);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
 .kpi .lbl{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -870,6 +886,18 @@ body:has(.mantenerOv){overflow:hidden}
   main .informeCab .icLinea,main .informeCab .icLinea *{color:#b8b8b8!important}
   main .informeCab .icLinea b{color:#fff!important}
   main{position:relative!important;box-sizing:border-box!important;min-height:296mm!important}
+  /* Gestión (stock valorizado): impresión compacta para que entre en una sola hoja con el pie incluido */
+  main .gvKpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important;margin-top:6px!important}
+  main .gvKpis .kpi{grid-column:auto!important;padding:6px 10px!important;gap:2px!important;border-radius:8px!important}
+  main .gvKpis .kpi .val{font-size:14pt!important}
+  main .gvKpis .kpi .lbl,main .gvKpis .kpi .sub{font-size:6.5pt!important}
+  main .gvBars{gap:3px!important;margin-top:8px!important}
+  main .gvBar{font-size:8pt!important;grid-template-columns:70px minmax(0,1fr) 90px!important}
+  main .gvTrack{height:6px!important}
+  main .gvVista{margin:8px 0 5px!important;padding:6px 10px!important;border-radius:8px!important}
+  main .gvTbl td,main .gvTbl th{padding:3px 4px!important}
+  main .gvTbl tfoot td{background:#f0f0f0!important;border-top:2px solid #0d0c0a!important;font-weight:800!important}
+  main .gvAviso{margin:6px 0 0!important;padding:5px 10px!important;font-size:8pt!important}
   main .informePie{display:block!important;position:absolute!important;left:14mm!important;right:14mm!important;bottom:7mm!important;border-top:1px solid #bbb!important;padding-top:3mm!important;font-size:8pt!important;color:#555!important;opacity:1!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   main .informePie *{color:#555!important}
   /* Tablas del informe: cabecera negra, filas finas y total marcado */
@@ -908,7 +936,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.125.4";
+const FRONTEND_VERSION = "1.126.5";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -963,7 +991,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
   controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
@@ -1015,7 +1043,7 @@ function guardarSesionPC(){
 }
 function limpiarSesion(){
   S.token=null; S.empleado=null; S.esGestion=false; S.gestionLocal=null; S.sesionCodigo=false;
-  ls.del("sesionCodigo"); ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
+  ls.del("preciosCache"); ls.del("sesionCodigo"); ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
 }
 
 /* ============================================================
@@ -1276,9 +1304,10 @@ function rubrosProduccion(){
 function saboresProduccion(){
   const prod=produccionSaboresSet();
   const fuera=new Set((S.saboresFuera||[]).map(String));
-  if(prod) return S.sabores.filter(s=>prod.has(String(s.id)) && !fuera.has(String(s.id)));
+  const noGeladot=s=>(s.categoria||"")!=="Geladot"; // Geladot viene hecho: nunca es parte de Producción
+  if(prod) return S.sabores.filter(s=>prod.has(String(s.id)) && !fuera.has(String(s.id)) && noGeladot(s));
   // Sin lista elegida: todo el rubro que el local fabrica, como siempre.
-  const base=saboresTenemos();
+  const base=saboresTenemos().filter(noGeladot);
   if(!(S.produccionRubros||[]).length) return base;
   const ok=new Set(rubrosProduccion());
   return base.filter(s=>ok.has(grupoProductoDe(s)));
@@ -1631,7 +1660,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
-    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -2276,7 +2305,7 @@ function notaHojaRelevar(n){
 function fechaCortaHoy(){ return new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric"}); }
 /* Encabezado "informe" (franja negra con el logo) y pie de los PDF de Relevar e Historial. Solo se ven al imprimir. */
 function informeCabHTML(o){
-  return `<div class="informeCab"><div class="icTop"><img class="icLogo" src="icons/wordmark-blanco.png" width="363" height="154" alt="Lucciano's"><div class="icDer"><div class="icEtq">${esc(o.etiqueta)}</div><div class="icTit">${esc(o.titulo)}</div><div class="icSub">${esc(o.sub)}</div></div></div><div class="icLinea">${o.lineaHTML}</div></div>`;
+  return `<div class="informeCab"><div class="icTop"><img class="icLogo" src="icons/wordmark-blanco.png" width="363" height="154" alt="Lucciano's"><div class="icDer">${o.etiqueta?`<div class="icEtq">${esc(o.etiqueta)}</div>`:""}<div class="icTit">${esc(o.titulo)}</div><div class="icSub">${esc(o.sub)}</div></div></div><div class="icLinea">${o.lineaHTML}</div></div>`;
 }
 function informePieHTML(texto){ return `<div class="informePie">Lucciano's - LogiStock&nbsp; | &nbsp;${esc(texto)}&nbsp; | &nbsp;Generado el <span class="infFechaCorta">${esc(fechaCortaHoy())}</span></div>`; }
 /* Fecha y hora del relevamiento (hora de Argentina), para el encabezado del PDF de Relevar. */
@@ -2285,8 +2314,17 @@ function fechaHoraRelevamiento(){
   return d.toLocaleDateString("es-AR",{timeZone:tz,day:"2-digit",month:"2-digit",year:"numeric"})+" · "+d.toLocaleTimeString("es-AR",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false})+" hs";
 }
 // Al mandar a imprimir se actualiza la hora: si la pantalla llevaba rato abierta, el PDF lleva la hora real de la impresión.
-window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); });
+/* Nombre del archivo al «Guardar como PDF»: los navegadores usan el título de la página. Queda «LogiStock_<local>_<d-m-aa>»
+   (ej. LogiStock_Galerias Pacifico CABA_8-11-26); en Relevar, que no es de un solo local, «LogiStock_Relevamiento_<d-m-aa>». */
+let tituloOriginal=null;
+function nombreArchivoInforme(){
+  const f=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"numeric",month:"numeric",year:"2-digit"}).replace(/\//g,"-");
+  const quien=(!S.local || document.querySelector(".rlv[data-rlv-n]")) ? "Relevamiento" : String(S.local).trim();
+  return ("LogiStock_"+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
+}
+window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); if(tituloOriginal!==null){ document.title=tituloOriginal; tituloOriginal=null } });
 window.addEventListener("beforeprint",()=>{
+  if(tituloOriginal===null){ tituloOriginal=document.title; document.title=nombreArchivoInforme(); }
   const r=document.querySelector(".rlv[data-rlv-n]"); // Relevar: vertical hasta 4 productos, horizontal de 5 a 8. El resto de los informes: A4 vertical
   const horizontal=!!(r && (Number(r.dataset.rlvN)||0)>RLV_MAX_VERTICAL), st=document.createElement("style"); st.id="rlvOrientacion";
   st.textContent="@page{size:A4 "+(horizontal?"landscape":"portrait")+";margin:0}@media print{main{min-height:"+(horizontal?"209mm":"296mm")+"!important}}"; document.head.appendChild(st);
@@ -2340,6 +2378,7 @@ const ICONOS_TAB = {
   equipo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   inicio: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
   relevar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 4v16"/></svg>`,
+  gestion: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9a2.6 2.6 0 0 0-2.8-1.6c-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2A2.8 2.8 0 0 1 9.2 14.6"/><path d="M12 6v1.4M12 16.6V18"/></svg>`,
   sabores: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>`,
 };
 /* ============================================================
@@ -2498,10 +2537,12 @@ function renderNav(){
   tabs.push(["historial","Historial"]);
   if(S.empleado.rol==="admin"||S.empleado.rol==="supervisor"||S.empleado.rol==="encargado") tabs.push(["equipo","Equipo"]);
   if(S.empleado.rol==="admin"||S.empleado.rol==="encargado") tabs.push(["sabores","Sabores"]);
+  if(S.stockValorizado) tabs.push(["gestion","Gestión"]);
   return `<nav role="tablist" id="tabs" class="bottomNav${tabs.length<=3?" navCorta":""}">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
 }
 
 function renderMain(){
+  if(S.local && S.tab==="gestion" && !S.stockValorizado && S.sabores.length) S.tab="salida"; // Gestión solo con stock_valorizado=SI
   if(S.local && S.tab==="relevar") S.tab="salida"; // Relevar es solo de Operaciones (sin local elegido)
   // Vista general (sin local elegido): la portada ocupa toda la pantalla como fondo,
   // y la barra LogiStock de arriba queda encima.
@@ -2522,11 +2563,12 @@ function renderMain(){
   else if(S.tab==="historial") h=histView();
   else if(S.tab==="equipo") h=teamView();
   else if(S.tab==="sabores") h=saboresView();
+  else if(S.tab==="gestion") h=gestionView(st);
   return h;
 }
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
-const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Classiques","Enrobés","Prestige","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas","Tortas","Pastelería Fresca","Bollería"];
+const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Classiques","Enrobés","Prestige","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas","Tortas","Pastelería Fresca","Bollería","Geladot"];
 const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","chocolateria","glutenfree","pasteleria","bolleria"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
@@ -3752,7 +3794,7 @@ function grupoProductoDe(s){
 /** Etiqueta corta de un producto en Historial. Las icepops de fruta, crema,
  *  bañados y luxury dicen "Ice Pop"; canoli, mini y Dubai dicen su nombre,
  *  para no confundir (pedido de Gabi 21/10/2026). */
-const ETIQUETA_CATEGORIA_PRODUCTO = { "Cannoli":"Canoli", "Mini Icepops":"Mini Ice Pop", "Dubai":"Dubai" };
+const ETIQUETA_CATEGORIA_PRODUCTO = { "Cannoli":"Canoli", "Mini Icepops":"Mini Ice Pop", "Dubai":"Dubai", "Geladot":"Geladot" };
 function etiquetaProductoDe(s){
   const g=grupoProductoDe(s);
   if(g==="icepops") return ETIQUETA_CATEGORIA_PRODUCTO[s.categoria]||"Ice Pop";
@@ -3846,6 +3888,110 @@ async function toggleSaborLocal(saborId){
     toast(r.excluido?"Desactivado":"Activado");
     renderApp();
   } else toast((r&&r.error)||"No se pudo ajustar.");
+}
+/* ============================================================
+   GESTIÓN — stock valorizado de referencia (mock aprobado por Gabi 08/11/2026).
+   Solo con Locales.stock_valorizado=SI y para responsable de local, supervisor y admin.
+   Los precios (Sabores.precio_lista, costo de lista de fábrica) NO viajan en datos():
+   los pide la acción preciosStock, que el servidor entrega solo a esos roles.
+   Vasquetas: kilos reales × precio por kilo. Crumble/Granella (tipo k): kilos × precio por kilo.
+   Icepops, minis, Gluten Free y chocolatería: unidades × precio por unidad. Baldes no entran.
+============================================================ */
+/* Los precios se piden apenas llega la bandera stockValorizado (no hace falta esperar a que se abra la solapa) y se
+   guardan en el equipo (solo los del último local, se borran al cerrar sesión): así Gestión abre al instante y se
+   actualiza de fondo. Es solo comodidad: el servidor igual valida el rol cada vez. */
+async function cargarPrecios(){
+  if(!S.local || S._preciosPidiendo) return;
+  const local=S.local;
+  if(S.preciosLocal!==local){
+    try{ const c=JSON.parse(ls.get("preciosCache","null")); if(c && c.local===local && c.precios){ S.precios=c.precios; S.preciosLocal=local; S.errorPrecios=null; if(S.tab==="gestion") renderApp(); } }catch(e){}
+  }
+  S._preciosPidiendo=true;
+  let r; try{ r = await api("preciosStock", {local}); } finally { S._preciosPidiendo=false; }
+  if(local!==S.local) return;
+  if(r && r.ok){ S.precios=r.precios||{}; S.preciosLocal=local; S.errorPrecios=null; ls.set("preciosCache", JSON.stringify({local, precios:S.precios})); }
+  else if(S.precios && S.preciosLocal===local){ /* se queda con lo último que vio */ }
+  else { S.precios=null; S.errorPrecios=(r&&r.error)||"No se pudo conectar. Probá de nuevo."; }
+  if(S.tab==="gestion") renderApp();
+}
+function pesosAR(v){ return "$ "+Math.round(v).toLocaleString("es-AR") }
+/** Valor de referencia de un sabor: {u, k, v, sinKilos} o null si no tiene precio de lista. */
+function valorDeSabor(s, st, km){
+  const pr=S.precios && S.precios[s.id]; if(!pr) return null;
+  const u=st[s.id]||0;
+  if(s.tipo==="v" && grupoProductoDe(s)==="vasquetas"){
+    const k=(km && (s.id in km)) ? km[s.id] : null;
+    if(k===null || k===undefined) return {u, k:null, v:null, sinKilos:u>0};
+    return {u, k, v:k*pr, sinKilos:false};
+  }
+  if(s.tipo==="k") return {u, k:u, v:u*pr, sinKilos:false};
+  return {u, k:null, v:u*pr, sinKilos:false};
+}
+function gestionView(st){
+  if(!S.stockValorizado) return `<div class="note">Este local no tiene activado el stock valorizado.</div>`;
+  if(S.precios===null || S.preciosLocal!==S.local){
+    if(S.errorPrecios) return `<div class="note">${esc(S.errorPrecios)}<br><button class="btn ghost" id="reintentarPrecios" style="margin-top:10px">Reintentar</button></div>`;
+    return `<div class="note">Calculando el valor del stock…</div>`;
+  }
+  const km=S.kilosReales?kilosMap():{};
+  const COLG={vasquetas:"#7A3E1D",icepops:"#B5762E",chocolateria:"#C9A46B",glutenfree:"#8A6A3A",pasteleria:"#A5833A",bolleria:"#6B5D52"};
+  const filas=[]; let sinPrecio=0;
+  saboresDelLocalBase().forEach(s=>{
+    const f=valorDeSabor(s,st,km);
+    if(!f){ if((st[s.id]||0)>0 && s.tipo!=="b") sinPrecio++; return; }
+    filas.push({s, g:grupoProductoDe(s), ...f});
+  });
+  const totales={}; let total=0, kgHelado=0, sinKilos=0, conStock=0;
+  filas.forEach(f=>{
+    if(f.u>0) conStock++;
+    if(f.v!==null){ totales[f.g]=(totales[f.g]||0)+f.v; total+=f.v }
+    if(f.sinKilos) sinKilos++;
+    if(f.s.tipo==="v" && f.k!==null) kgHelado+=f.k;
+  });
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>filas.some(f=>f.g===g));
+  if(S.filtroValor!=="todos" && !grupos.includes(S.filtroValor)) S.filtroValor="todos";
+  const rubro=S.filtroValor;
+  const catDe=f=>f.s.categoria||"Cremas";
+  const setCats=new Set(filas.filter(f=>f.g===rubro).map(catDe));
+  const cats=rubro==="todos"?[]:CATEGORIAS_ORDEN.filter(c=>setCats.has(c)).concat([...setCats].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
+  if(S.catValor!=="todas" && !cats.includes(S.catValor)) S.catValor="todas";
+  if(rubro==="todos" || cats.length<2) S.catValorAbierta=false;
+  // Barras: por rubro; con un rubro elegido, por subcategoría de ese rubro.
+  const totCat={}; filas.forEach(f=>{ if(f.g===rubro && f.v!==null) totCat[catDe(f)]=(totCat[catDe(f)]||0)+f.v });
+  const barras = rubro==="todos" ? grupos.map(g=>[GRUPO_PRODUCTO_LABEL[g], totales[g]||0, COLG[g]||"var(--accent)"]) : cats.map(c=>[c, totCat[c]||0, COLG[rubro]||"var(--accent)"]);
+  const max=Math.max(1,...barras.map(b=>b[1]));
+  const qv=normalizar((S.q||"").trim());
+  const visibles=filas.filter(f=>(rubro==="todos"||f.g===rubro) && (S.catValor==="todas"||catDe(f)===S.catValor) && (!qv||normalizar(f.s.nombre).includes(qv)));
+  const subElegida=S.catValor!=="todas"?S.catValor:null;
+  const vVis=visibles.reduce((a,f)=>a+(f.v||0),0), uVis=visibles.reduce((a,f)=>a+f.u,0), kVis=visibles.reduce((a,f)=>a+((f.s.tipo==="v"||f.s.tipo==="k")&&f.k!==null?f.k:0),0);
+  const hayKg=visibles.some(f=>f.s.tipo==="v"||f.s.tipo==="k");
+  const etiquetaVista=(rubro==="todos"?"Todos los rubros":GRUPO_PRODUCTO_LABEL[rubro]+(subElegida?" · "+subElegida:""))+(qv?` · «${esc(S.q.trim())}»`:"");
+  const etiquetaTab=g=>{
+    if(g==="todos") return "Todos";
+    const base=esc(GRUPO_PRODUCTO_LABEL[g])+(g===rubro&&subElegida&&!S.catValorAbierta?` · ${esc(subElegida)}`:"");
+    return g===rubro&&cats.length>1 ? `${base} ${S.catValorAbierta?"▴":"▾"}` : base;
+  };
+  return `${informeCabHTML({etiqueta:"", titulo:"Stock valorizado", sub:(S.local||"")+" | "+etiquetaVista, lineaHTML:`Generado el <span class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</span> por <b>${esc(S.empleado?S.empleado.nombre:"")}</b>`})}
+  ${informePieHTML("Stock valorizado · "+(S.local||""))}
+  <div class="kpis gvKpis">
+    <div class="kpi" style="grid-column:1/-1"><span class="lbl">Valor de referencia</span><span class="val">${pesosAR(total)}</span><span class="sub">Costo de lista · no es el precio al público</span></div>
+    <div class="kpi"><span class="lbl">Kilos de helado</span><span class="val">${S.kilosReales?fmtKg(kgHelado):"—"}${S.kilosReales?" kg":""}</span>${S.kilosReales?"":`<span class="sub">este local no usa kilos reales</span>`}</div>
+    <div class="kpi"><span class="lbl">Productos con stock</span><span class="val">${conStock}</span><span class="sub">en mi local</span></div>
+  </div>
+  ${sinKilos?`<div class="note gvAviso" style="margin-top:12px;color:var(--warn)"><b>${sinKilos} ${sinKilos===1?"sabor de vasqueta sin kilos cargados":"sabores de vasqueta sin kilos cargados"}:</b> ${S.kilosReales?"no entran en el valor hasta el próximo conteo físico con kilos.":"las vasquetas se valorizan con kilos reales y este local todavía no los usa."}</div>`:""}
+  <div class="gvBars">${barras.map(([n,v,col])=>`<div class="gvBar"><span>${esc(n)}</span><span class="gvTrack"><span style="width:${Math.max(3,v/max*100)}%;background:${col}"></span></span><b>${pesosAR(v)}</b></div>`).join("")}</div>
+  <div class="tools noPrint" style="margin-top:12px"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
+  <div class="tabsCat noPrint" role="tablist" style="margin-top:6px">${["todos",...grupos].map(g=>`<button type="button" class="tabCat" role="tab" data-gval="${g}" aria-selected="${rubro===g}" aria-expanded="${rubro===g&&S.catValorAbierta}">${etiquetaTab(g)}</button>`).join("")}</div>
+  ${S.catValorAbierta?`<div class="subCats noPrint" role="group" aria-label="Subcategorías">
+    <button type="button" class="subCat" data-gcat="todas" aria-pressed="${S.catValor==="todas"}">Todas</button>
+    ${cats.map(c=>`<button type="button" class="subCat" data-gcat="${esc(c)}" aria-pressed="${S.catValor===c}">${esc(c)}</button>`).join("")}
+  </div>`:""}
+  <div class="tools noPrint" style="justify-content:center;margin:12px 0 0"><button type="button" class="btn ghost" id="exportarGestion">🖨 Exportar PDF</button></div>
+  <div class="gvVista"><span>Viendo: <b>${etiquetaVista}</b> · ${visibles.length} ${visibles.length===1?"producto":"productos"}</span><strong>${pesosAR(vVis)}</strong></div>
+  <div class="tbl gvTbl"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Kilos</th><th>Valor</th></tr></thead><tbody>
+    ${visibles.map(f=>`<tr><td>${esc(f.s.nombre)}</td><td${f.u===0?` style="color:var(--warn);font-weight:800"`:""}>${f.u}</td><td${f.sinKilos?` style="color:var(--warn);font-weight:800"`:""}>${f.s.tipo==="v"||f.s.tipo==="k"?(f.k===null?(f.sinKilos?"sin kilos":"—"):fmtKg(f.k)):"—"}</td><td>${f.v===null?"—":pesosAR(f.v)}</td></tr>`).join("")||`<tr><td colspan="4">No hay productos con precio en este rubro.</td></tr>`}
+  </tbody>${visibles.length?`<tfoot><tr><td>Total</td><td>${uVis}</td><td>${hayKg?fmtKg(kVis):"—"}</td><td>${pesosAR(vVis)}</td></tr></tfoot>`:""}</table></div>
+  ${sinPrecio?`<p class="note gvAviso" style="margin-top:10px">${sinPrecio} ${sinPrecio===1?"producto con stock no tiene":"productos con stock no tienen"} precio de lista y no ${sinPrecio===1?"entra":"entran"} en el valor.</p>`:""}`;
 }
 async function cargarSaboresAdmin(){
   const r = await api("saboresAdmin", {});
@@ -4179,9 +4325,10 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
-  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
   S.regs = r.registros;
   S.stock = r.stock;
+  if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
   guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
@@ -4196,7 +4343,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -4490,13 +4637,20 @@ document.addEventListener("click", async e=>{
   if(t.id==="cambiarTema"){ alternarTema(); return }
   if(t.id==="ayudaBtn"){ abrirAyuda(); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
+  if(t.id==="reintentarPrecios"){ S.errorPrecios=null; cargarPrecios(); renderApp(); return }
+  if(t.dataset && t.dataset.gval){
+    const g=t.dataset.gval;
+    if(g===S.filtroValor && g!=="todos") S.catValorAbierta=!S.catValorAbierta;   // tocar el rubro activo despliega o cierra sus subcategorías
+    else { S.filtroValor=g; S.catValor="todas"; S.catValorAbierta=(g!=="todos"); }
+    renderApp(); return }
+  if(t.dataset && t.dataset.gcat){ S.catValor=t.dataset.gcat; S.catValorAbierta=false; renderApp(); return }
   if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
   if(t.id==="reintentarEquipo"){ S.equipo=undefined; renderApp(); return }
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
 
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; renderApp(); return }
+  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
@@ -4545,7 +4699,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.id==="calCancelar"){ S.calHist=null; renderApp(); return }
   if(t.id==="calAplicar"){ const c=S.calHist; if(c&&c.d){ S.rangoHist=`c${c.d}|${c.h||c.d}`; S.calHist=null; renderApp() } return }
-  if(t.id==="exportarHist"){ window.print(); return }
+  if(t.id==="exportarHist" || t.id==="exportarGestion"){ window.print(); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
   if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t.dataset.tipoReg, t); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
