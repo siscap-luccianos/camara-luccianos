@@ -13,7 +13,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1200);
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
-  await page.click("#conteoBtn"); await page.waitForTimeout(400);
+  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
 
   const valor = id => page.$eval(`[data-c="${id}"]`, e => e.value);
   const rubro = async f => { await page.click(`.tabCat[data-familia='${f}']`); await page.waitForTimeout(250) };
