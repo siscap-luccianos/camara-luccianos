@@ -3959,7 +3959,7 @@ function gestionView(st){
   <div class="tbl gvTbl"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Kilos</th><th>Valor</th></tr></thead><tbody>
     ${visibles.map(f=>`<tr><td>${esc(f.s.nombre)}</td><td${f.u===0?` style="color:var(--warn);font-weight:800"`:""}>${f.u}</td><td${f.sinKilos?` style="color:var(--warn);font-weight:800"`:""}>${f.s.tipo==="v"||f.s.tipo==="k"?(f.k===null?(f.sinKilos?"sin kilos":"—"):fmtKg(f.k)):"—"}</td><td>${f.v===null?"—":pesosAR(f.v)}</td></tr>`).join("")||`<tr><td colspan="4">No hay productos con precio en este rubro.</td></tr>`}
   </tbody>${visibles.length?`<tfoot><tr><td>Total</td><td>${uVis}</td><td>${hayKg?fmtKg(kVis):"—"}</td><td>${pesosAR(vVis)}</td></tr></tfoot>`:""}</table></div>
-  <p class="note" style="margin-top:10px">Vasquetas: kilos reales × precio por kilo de la lista de fábrica. Icepops, Gluten Free y chocolatería: unidades × precio por unidad. Baldes no entran por ahora.${sinPrecio?` ${sinPrecio} ${sinPrecio===1?"producto con stock no tiene":"productos con stock no tienen"} precio de lista y no ${sinPrecio===1?"entra":"entran"} en el valor.`:""}</p>`;
+  ${sinPrecio?`<p class="note" style="margin-top:10px">${sinPrecio} ${sinPrecio===1?"producto con stock no tiene":"productos con stock no tienen"} precio de lista y no ${sinPrecio===1?"entra":"entran"} en el valor.</p>`:""}`;
 }
 async function cargarSaboresAdmin(){
   const r = await api("saboresAdmin", {});
