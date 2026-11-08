@@ -1,0 +1,32 @@
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 390, height: 900 } })).newPage();
+  const err=[]; page.on("pageerror",e=>err.push(e.message));
+  let fallas=0; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c) fallas++};
+  await page.goto("http://localhost:8998/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+  await page.waitForSelector("header"); await page.waitForTimeout(300);
+  await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(1200);
+  await page.evaluate(()=>{ S.stockValorizado=true; S.tab="gestion"; S.produccionLocal=false; S.produccionRubros=[]; S.produccionSabores=[]; renderApp() });
+  await page.waitForTimeout(1500);
+  const filas=()=>page.$$eval(".gvTbl tbody tr, .gvTbl tr",e=>e.map(x=>x.textContent.replace(/\s+/g," ").trim()));
+  const kpi=()=>page.$eval(".gvKpis",e=>e.textContent.replace(/\s+/g," ").trim());
+  let t=await page.$eval("main",e=>e.textContent.replace(/\s+/g," "));
+  ok(/Banana Split/.test(t)&&/Frutilla/.test(t),"sin producción: se valorizan las vasquetas (Banana Split, Frutilla)");
+  ok(!/Solo lo que recibe el local/.test(t),"sin producción: no hay aviso");
+  console.log("   KPIs:", await kpi());
+  // ahora el local fabrica vasquetas (como Unicenter)
+  await page.evaluate(()=>{ S.produccionLocal=true; S.produccionRubros=["vasquetas"]; S.produccionSabores=[]; renderApp() });
+  await page.waitForTimeout(400);
+  t=await page.$eval("main",e=>e.textContent.replace(/\s+/g," "));
+  ok(!/Banana Split/.test(t)&&!/Frutilla(?! icepop)/.test(t.replace(/Frutilla icepop/g,"")),"fabrica vasquetas: no aparecen Banana Split ni Frutilla");
+  ok(/Solo lo que recibe el local\. Vasquetas se produce acá y no está incluido/.test(t),"avisa que las vasquetas no están incluidas");
+  ok(/Frutilla icepop/.test(t),"lo que recibe (Icepop) sigue valorizado");
+  console.log("   KPIs:", await kpi());
+  ok(/el helado se produce acá/.test(await kpi()),"el KPI de kilos dice «el helado se produce acá»");
+  await page.screenshot({path:"gestion-prod.png"});
+  console.log(fallas?"FALLAS "+fallas:"TODO OK","errores:",JSON.stringify(err)); await b.close();
+})();

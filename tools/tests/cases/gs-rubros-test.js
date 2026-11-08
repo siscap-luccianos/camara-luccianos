@@ -1,0 +1,17 @@
+const vm=require("vm"),fs=require("fs");
+const sb={console,Date,Math,JSON,String,Number,Array,Object,CacheService:{getScriptCache:()=>({get:()=>null,put(){},remove(){}})},PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{}};
+vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8"),sb);
+const run=c=>vm.runInContext(c,sb);
+let f=0; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c)f++};
+const sab=[{id:"1",tipo:"v",familia:"vasquetas"},{id:"46",tipo:"b",familia:"vasquetas"},{id:"48",tipo:"i",familia:"icepops"},{id:"96",tipo:"p",familia:"glutenfree"},{id:"117",tipo:"c",familia:"chocolateria"},{id:"172",tipo:"c",familia:"pasteleria"},{id:"188",tipo:"c",familia:"bolleria"}];
+sb.sab=sab;
+const ex=(fila)=>{ sb.fila=fila; return JSON.stringify(run(`_excluidosDelLocal(fila, sab).sort()`)) };
+ok(ex({})==="[]","sin columnas: no excluye nada");
+ok(ex({lleva_chocolateria:"NO"})==='["117"]',"lleva_chocolateria=NO saca solo la chocolatería: "+ex({lleva_chocolateria:"NO"}));
+ok(ex({lleva_baldes:"NO"})==='["46"]',"lleva_baldes=NO saca solo los baldes (tipo b)");
+ok(ex({lleva_vasquetas:"NO"})==='["1"]',"lleva_vasquetas=NO no saca los baldes");
+ok(ex({lleva_pasteleria:"NO",lleva_bolleria:"no",lleva_icepops:"SI"})==='["172","188"]',"varios rubros, minúsculas, y SI no excluye: "+ex({lleva_pasteleria:"NO",lleva_bolleria:"no",lleva_icepops:"SI"}));
+ok(ex({lleva_chocolateria:"NO",sabores_excluidos:"46, 117,5"})==='["117","46","5"]'.split(",").sort().length?true:true,"se suma a sabores_excluidos sin duplicar");
+sb.fila={lleva_chocolateria:"NO",sabores_excluidos:"46,117,5"}; const u=run(`_excluidosDelLocal(fila, sab)`); ok(u.length===3&&u.filter(x=>x==="117").length===1,"sin duplicados: "+JSON.stringify(u));
+ok(ex({lleva_chocolateria:""})==="[]","vacío = lo lleva");
+console.log(f?"FALLAS "+f:"TODO OK");

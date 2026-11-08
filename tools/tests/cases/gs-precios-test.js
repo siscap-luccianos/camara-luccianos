@@ -1,0 +1,31 @@
+const vm=require("vm"),fs=require("fs");
+const sb={console,Date,Math,JSON,String,Number,Array,Object,parseFloat,isFinite,CacheService:{getScriptCache:()=>({get:()=>null,put(){},remove(){}})},PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{}};
+vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8"),sb);
+const run=c=>vm.runInContext(c,sb);
+let f=0; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c)f++};
+sb.tablas={
+ Locales:[{nombre:"Palermo",stock_valorizado:"SI",activo:"SI"},{nombre:"Belgrano",stock_valorizado:"NO",activo:"SI"},{nombre:"Recoleta",activo:"SI"},{nombre:"Marruecos",stock_valorizado:"SI",pais:"Marruecos",activo:"SI"}],
+ Sabores:[{id:1,tipo:"v",activo:"SI",precio_lista:10747.57},{id:46,tipo:"b",activo:"SI",precio_lista:7114.06},{id:48,tipo:"i",activo:"SI",precio_lista:"1709,09"},{id:172,tipo:"c",activo:"SI",precio_lista:""},{id:9,tipo:"v",activo:"NO",precio_lista:5000},{id:5,tipo:"v",activo:"SI",precio_lista:8000,paises_excluidos:"Marruecos"}]};
+run("_leerCrudo=function(n){return tablas[n]||[]}");
+const call=(local,rol,loc)=>{sb.l=local;sb.e={rol:rol,local:loc||""};return run("preciosStock(l,e)")};
+let r=call("Palermo","encargado","Palermo");
+ok(r.ok&&r.precios["1"]===10747.57&&r.precios["48"]===1709.09,"encargado de su local con SI: ve precios (coma decimal ok)");
+ok(!("46" in r.precios),"baldes (tipo b) no entran");
+ok(!("172" in r.precios)&&!("9" in r.precios),"sin precio o inactivo: no entra");
+ok(call("Palermo","admin").ok,"admin ve cualquier local");
+ok(call("Palermo","supervisor").ok,"supervisor ve cualquier local");
+ok(!call("Palermo","turno","Palermo").ok,"turno NO");
+ok(!call("Palermo","colaborador","Palermo").ok,"colaborador NO");
+ok(!call("Palermo","produccion","Palermo").ok,"producción NO");
+ok(!call("Palermo","encargado","Belgrano").ok,"encargado de otro local NO");
+ok(call("Belgrano","admin").ok&&call("Belgrano","supervisor").ok,"local con NO: admin y supervisor igual lo ven");
+ok(!call("Belgrano","encargado","Belgrano").ok,"local con NO: el responsable no");
+ok(call("Recoleta","admin").ok&&!call("Recoleta","encargado","Recoleta").ok,"columna vacía: admin sí, responsable no");
+let m=call("Marruecos","admin");
+ok(!m.ok&&/Argentina/.test(m.error),"local de otro país: ni admin lo ve ("+m.error+")");
+sb.fb={pais:"Argentina"};ok(run("(function(b){return (b.pais||PAIS_DEFECTO)===PAIS_DEFECTO})(fb)")===true,"Argentina pasa el filtro de país");
+const flag=(f,rol)=>{sb.f=f;sb.e={rol:rol};return run("_ve_valorizado(f,e)")};
+ok(flag(false,"admin")&&flag(false,"supervisor"),"flag de datos: admin y supervisor siempre");
+ok(flag(true,"encargado")&&!flag(false,"encargado"),"flag de datos: responsable solo con SI");
+ok(!flag(true,"turno")&&!flag(true,"colaborador")&&!flag(true,"produccion"),"flag de datos: turno, colaborador y producción nunca");
+console.log(f?"FALLAS "+f:"TODO OK");
