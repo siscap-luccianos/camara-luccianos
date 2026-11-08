@@ -121,6 +121,17 @@ html .bottomNav{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255
 html .timerInact{color:var(--header-muted)}
 html .timerInact.urgente{color:#F2C879}
 .btnAyuda{width:36px;height:36px;border-radius:50%;border:0;background:#F4EFE6;color:#2A2118;font-weight:800;font-size:1.2rem;line-height:1;padding:0;cursor:pointer;box-shadow:0 0 0 3px rgba(244,239,230,.28),0 2px 10px rgba(0,0,0,.35)}
+:root{--ayuda-halo:244,239,230}
+.btnAyuda{position:relative;overflow:hidden;animation:ayudaHalo 2.4s ease-out infinite}
+.btnAyuda::after{content:"";position:absolute;top:-25%;left:-70%;width:45%;height:150%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.95),transparent);transform:skewX(-20deg);animation:ayudaBrillo 3.2s ease-in-out infinite;pointer-events:none}
+.btnAyuda.vista{animation:none}
+.btnAyuda.llama,.btnAyuda.vista.llama{animation:ayudaHalo 1.6s ease-out infinite}
+.btnAyuda.llama::after,.btnAyuda.vista.llama::after{animation-duration:2.2s}
+.btnAyuda.vista::after{animation-duration:7s}
+@keyframes ayudaHalo{0%{box-shadow:0 0 0 3px rgba(var(--ayuda-halo),.28),0 2px 10px rgba(0,0,0,.35),0 0 0 3px rgba(var(--ayuda-halo),.55)}70%{box-shadow:0 0 0 3px rgba(var(--ayuda-halo),.28),0 2px 10px rgba(0,0,0,.35),0 0 0 13px rgba(var(--ayuda-halo),0)}100%{box-shadow:0 0 0 3px rgba(var(--ayuda-halo),.28),0 2px 10px rgba(0,0,0,.35),0 0 0 13px rgba(var(--ayuda-halo),0)}}
+@keyframes ayudaBrillo{0%,55%{left:-70%}100%{left:130%}}
+@media (prefers-reduced-motion:reduce){.btnAyuda,.btnAyuda::after,.btnAyuda.llama,.btnAyuda.llama::after{animation:none}}
+:root[data-tema="dorado"]{--ayuda-halo:217,185,105}
 :root[data-tema="dorado"] .btnAyuda{background:linear-gradient(180deg,#E9D094,#C9A961);color:#0D0C0A;box-shadow:0 0 0 3px rgba(217,185,105,.3),0 2px 10px rgba(0,0,0,.4)}
 .ayCards{display:flex;flex-direction:column;gap:8px}
 .ayCard{border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:12px 14px}
@@ -284,6 +295,9 @@ select{max-width:220px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .card{position:relative;display:flex;flex-direction:column}
 .card>.pick{flex:1 1 auto}
+.aplicarBox{margin:0 0 12px;padding:10px 12px;border:1px solid rgba(120,100,80,.3);border-radius:12px;background:rgba(255,255,255,.55);color:#2A211A}
+.aplicarT{font-weight:700;font-size:.85rem;margin-bottom:6px}
+.aplicarOp{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
 .cProg{margin:0 0 10px}
 .cProgTx{display:flex;justify-content:space-between;gap:8px;font-size:.8rem;margin-bottom:5px}
 .cProgTx span{color:var(--muted);font-weight:600}
@@ -999,7 +1013,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.132.0";
+const FRONTEND_VERSION = "1.133.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1063,7 +1077,7 @@ const S = {
   pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
-  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
+  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
@@ -2215,7 +2229,7 @@ document.addEventListener("change", e=>{
 function iniciarConteo(conBorrador){
   const st=stockMap();
   S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
-  S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false;
+  S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false; S.conteoAplicar="visible"; S.conteoAplicarVal="";
   Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
   if(conBorrador){ const b=borradorConteo(); if(b) aplicarBorradorConteo(b) } else descartarBorradorConteo();
   S.confirm=false; renderApp();
@@ -2550,7 +2564,7 @@ function renderHeader(){
       ${esOperador() && S.local ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
       ${!S.esGestion ? (()=>{ const seg=segundosInact(); return `<span class="timerInact${seg!==null&&seg<=60?" urgente":""}" id="timerInact" title="Si no tocás nada, la sesión se bloquea al llegar a cero">${textoTimerInact(seg)}</span>` })() : ""}
-      <button type="button" class="btnAyuda" id="ayudaBtn" aria-label="Ayuda: cómo se usa" title="Ayuda: cómo se usa">?</button>
+      <button type="button" class="btnAyuda${ls.get("ayudaVista","")?" vista":""}${S.conteo?" llama":""}" id="ayudaBtn" aria-label="Ayuda: cómo se usa" title="Ayuda: cómo se usa">?</button>
       <button type="button" class="btnTema" id="cambiarTema" aria-label="Cambiar tema" title="Cambiar tema: crema / negro y dorado">${temaActual()==="dorado"?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>Dorado':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Crema'}</button>
       <div class="userChip"><span>${esc(S.empleado.nombre)} · ${esc(ROL_LABEL[S.empleado.rol]||S.empleado.rol)}</span><button type="button" id="editarNombre" aria-label="Corregir mi nombre" title="Corregir mi nombre">✎</button><button type="button" id="salir">Salir</button></div>
     </div>
@@ -3576,10 +3590,11 @@ function stockViewConteo(){
     <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   return `<div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
   <p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
-  <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar todo, poné <b>0</b> en "Poner el mismo número en todos" y tocá "Aplicar a todos" antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar.</p>
-  <div class="remitoRow"><label for="aplicarTodos" style="font-weight:700">Poner el mismo número en todos</label>
-    <input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0">
-    <button class="btn ghost" id="aplicarTodos" type="button">Aplicar a todos</button></div>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar, poné <b>0</b> en «Poner el mismo número» y tocá «Aplicar» antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar. Elegí si es para <b>todo el local</b> o solo para el rubro que estás viendo.</p>
+  ${(()=>{ const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo";
+    return `<div class="aplicarBox"><div class="aplicarT">Poner el mismo número en:</div>
+    <div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo}">Solo ${esc(rub)} · ${list.length}</button><button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button></div>
+    <div class="remitoRow"><input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0" value="${esc(S.conteoAplicarVal)}"><button class="btn ghost" id="aplicarTodos" type="button">Aplicar</button></div></div>`})()}
   ${chipFiltros()}
   <div class="rows" style="margin-top:14px">${list.map(row).join("")}</div>`;
 }
@@ -5102,8 +5117,9 @@ document.addEventListener("click", async e=>{
   }
   if(t.id==="aplicarTodos"){
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
-    Object.keys(S.conteo).forEach(id=>S.conteo[id]=v);
-    S.conteoTocado={}; S.conteoAck={}; // «Aplicar a todos» no cuenta como haber contado: hay que tocar cada sabor
+    // «Todo el local» o solo lo que se está viendo (rubro y subcategoría elegidos, ej. Icepops › Frutales).
+    const objetivo=S.conteoAplicar==="todo" ? saboresDelLocal() : listaFiltrada(stockMap());
+    objetivo.forEach(x=>{ S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id] }); // no cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }
   if(t.id==="cancelConteo"){
@@ -5111,6 +5127,7 @@ document.addEventListener("click", async e=>{
     descartarBorradorConteo(); S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
   if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
   if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); return }
+  if(t.dataset.apl){ const iv=$("#aplicarTodosValor"); if(iv) S.conteoAplicarVal=iv.value; S.conteoAplicar=t.dataset.apl==="todo"?"todo":"visible"; renderApp(); return }
   if(t.dataset.cack){ const id=t.dataset.cack; if(S.conteoAck[id]) delete S.conteoAck[id]; else S.conteoAck[id]=true; renderApp(); return }
   if(t.dataset.cackTodos!==undefined){ const r=conteoResumen(), pend=conteoFaltaConfirmar(r); if(pend.length) r.flags.forEach(f=>S.conteoAck[f.s.id]=true); else S.conteoAck={}; renderApp(); return }
   if(t.dataset.cverTodos!==undefined){ S.conteoVerTodos=!S.conteoVerTodos; renderApp(); return }
@@ -5945,10 +5962,12 @@ function ayudaTemas(){
     colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock con el motivo ya cargado.",
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b> la completa: te propone la fecha según la vida útil del producto y se puede cambiar; elegís cuántas unidades."])+nota("Las latas no tienen vencimiento.")});
   if(!colab) T.push({id:"conteo", titulo:"Conteo físico", sub:"Cómo recontar sin errores", html:li([
-    "Entrá a Stock › <b>Conteo físico</b>.",
-    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente, como en una planilla. Las cajas se suman con <b>+1 caja</b>.",
-    "Tip: antes de empezar, poné <b>0</b> en «Poner el mismo número en todos». Así un sabor que te olvidás queda en 0 bien visible, en vez de arrastrar un número viejo.",
-    S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Guardá el conteo cuando termines."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
+    "Entrá a Stock › <b>Conteo físico</b>. Contá <b>una sola vez, de punta a punta</b>, sin movimientos en la cámara.",
+    "Antes de empezar, poné <b>0</b> en «Poner el mismo número» y elegí si es para <b>todo el local</b> o solo el rubro que estás viendo (ej. Icepops › Frutales). Así ningún sabor arrastra el número viejo.",
+    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía.",
+    S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",
+    "En la revisión mirá cómo queda el stock. Los sabores que pasan a <b>0</b> o saltan de golpe piden que los confirmes con <b>Está bien, así es</b>.",
+    "Guardá <b>una sola vez</b>. Tu avance se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
     "Revisá lo que leyó: los renglones en <b>amarillo</b> con «?» son los que no pudo identificar; elegí el sabor a mano o ignorá el renglón. Las cantidades se pueden corregir.",
@@ -5971,7 +5990,8 @@ function renderAyuda(){
 }
 function abrirAyuda(){
   if(document.getElementById("ayudaOv")) return;
-  S.ayudaTema="quepaso";
+  ls.set("ayudaVista","1"); const bt=document.getElementById("ayudaBtn"); if(bt) bt.classList.add("vista"); // ya lo abrió: deja de pulsar, solo queda el brillo lento
+  S.ayudaTema=S.conteo?"conteo":"quepaso"; // contando: abre directo «Conteo físico»
   const ov=document.createElement("div"); ov.id="ayudaOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="ayTit">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><p class="mantTit" id="ayTit" style="margin:0">¿Cómo se usa?</p><button type="button" class="btn ghost" data-ay-cerrar aria-label="Cerrar" style="min-height:34px;padding:0 12px">✕</button></div>
