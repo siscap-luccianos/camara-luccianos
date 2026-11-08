@@ -569,6 +569,11 @@ body:has(.mantenerOv){overflow:hidden}
 .vrChip.amarillo{border-color:#F2B400}.vrChip.amarillo .vrDot{background:#F2B400}
 .vrChip.verde{border-color:#1E8A4C}.vrChip.verde .vrDot{background:#1E8A4C}
 .vrChip small{font-weight:600;color:#6b5d52;font-size:.74rem}
+.loteLista{display:flex;flex-direction:column;align-items:stretch;gap:3px;align-self:stretch;margin-top:2px}
+.loteL{display:flex;align-items:center;justify-content:center;gap:6px;font-size:.76rem;font-weight:600;line-height:1.3;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.loteL.prim{color:var(--ink);font-weight:800}
+.loteL.venc{color:var(--alert);font-weight:700;text-decoration:line-through}
+.loteL .semDot{flex:none}
 .loteN{align-self:stretch;text-align:center;font-size:.74rem;font-weight:700;color:var(--muted)}
 .loteN.alertTxt{color:var(--alert)}
 .card>.pick.sem-rojo{border:4px solid #C62828}
@@ -962,7 +967,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.129.0";
+const FRONTEND_VERSION = "1.129.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1946,16 +1951,29 @@ function semCardClase(id, conVencidos){
 }
 function loteInfoSpan(id, conVencidos){
   if(!usaLotes(id)) return "";
-  const lotes=(lotesPorSabor()[id]||[]).filter(l=>l.f);
-  if(!lotes.length) return "";
-  const nLotes=new Set((lotesPorSabor()[id]||[]).filter(l=>conVencidos || !l.f || diasHasta(l.f)>=0).map(l=>l.f||"")).size;
-  const vencidas=lotes.filter(l=>diasHasta(l.f)<0).reduce((a,l)=>a+l.c,0);
+  const todos=(lotesPorSabor()[id]||[]).filter(l=>l.c>0);
+  if(!todos.some(l=>l.f)) return "";
+  // Desglose dentro de la misma tarjeta: cada lote con su fecha, unidades y días; el que sale primero va arriba.
+  // «15 vencen en 70 días · 17/01»: cantidad primero, como se lee en voz alta.
+  const frase=(c,d,noSeVende)=>{
+    const v=c===1?"vence":"vencen";
+    const t=d<0?`${c} ${c===1?"vencido":"vencidos"} ${d===-1?"ayer":`hace ${-d} días`}${noSeVende?", no se venden":""}`
+      :d===0?`${c} ${v} hoy`:d===1?`${c} ${v} mañana`:`${c} ${v} en ${d} días`;
+    return t;
+  };
   const primero=loteMostrado(id, conVencidos);
-  let html="";
-  if(primero&&!primero.f){ html+=`<span class="loteInfo"><span class="semDot"></span>${conVencidos?"Lote":"Sale primero"}: sin fecha</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
-  else if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo"><span class="semDot ${sem.k}"></span>${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)} · ${sem.label}</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
-  if(!conVencidos && vencidas>0) html+=`<span class="loteN alertTxt">${vencidas} vencidas, no se venden</span>`;
-  return html;
+  const conFecha=todos.filter(l=>l.f).sort((x,y)=>x.f<y.f?-1:x.f>y.f?1:0);
+  const sinFecha=todos.filter(l=>!l.f);
+  const lineas=[];
+  conFecha.forEach(l=>{
+    const sem=semaforoVenc(l.f), venc=sem.d<0;
+    const esPrimero=!!primero && primero.f===l.f;
+    lineas.push({k:venc&&!conVencidos?"rojo":sem.k, prim:esPrimero&&!(venc&&!conVencidos),
+      txt:frase(l.c,sem.d,venc&&!conVencidos), fecha:fechaVencCorta(l.f), venc:venc&&!conVencidos});
+  });
+  sinFecha.forEach(l=>lineas.push({k:"", prim:false, txt:`${l.c} sin fecha`}));
+  const MAX=4, vis=lineas.slice(0,MAX), mas=lineas.length-vis.length;
+  return `<span class="loteLista" title="El primero (en negrita) es el que sale primero">${vis.map(l=>`<span class="loteL${l.prim?" prim":""}${l.venc?" venc":""}"${l.fecha?` title="Vence el ${esc(l.fecha)}"`:""}><span class="semDot ${l.k}"></span><span>${esc(l.txt)}</span></span>`).join("")}${mas>0?`<span class="loteN">+${mas} ${mas===1?"lote más":"lotes más"}</span>`:""}</span>`;
 }
 /** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
 function loteElegirBtn(id, conVencidos){
