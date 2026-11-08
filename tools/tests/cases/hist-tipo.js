@@ -14,6 +14,13 @@ const { chromium } = require("playwright");
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(500);
   await page.click('[data-rango-hist="d60"]'); await page.waitForTimeout(400);
 
+  // una venta del día (es una salida) y una transferencia recibida (es un ingreso) se cargan para ver que quedan en su propio filtro
+  await page.evaluate(async () => {
+    await api("registrar", { clienteId: uuid(), tipo: "salida", subtipo: "venta", local: S.local, items: { "117": 2 }, motivo: "Venta del día" });
+    await api("registrar", { clienteId: uuid(), tipo: "ingreso", subtipo: "transferencia", local: S.local, items: { "117": 3 }, motivo: "Transferencia de Obelisco CABA" });
+    await cargarDatos();
+  });
+  await page.waitForTimeout(500);
   const chips = async () => (await page.$$eval("[data-tipo-hist]", e => e.map(x => x.textContent.trim())));
   const pills = async () => (await page.$$eval(".hist .pill", e => e.map(x => x.textContent.trim())));
   const c0 = await chips();
@@ -39,6 +46,20 @@ const { chromium } = require("playwright");
   await page.click('[data-tipo-hist="ingreso"]'); await page.waitForTimeout(300);
   p = await pills();
   ok(p.length > 0 && p.every(x => /ingreso/i.test(x)), "«Ingresos» muestra solo ingresos");
+
+  // Venta del día: filtro propio, separado de «Salidas»
+  const cVenta = await chips();
+  ok(cVenta.some(t => t.startsWith("Venta del día · 1")), "aparece «Venta del día · 1»: " + JSON.stringify(cVenta));
+  ok(cVenta.some(t => t.startsWith("Transferencia recibida · 1")), "aparece «Transferencia recibida · 1»");
+  await page.click('[data-tipo-hist="venta"]'); await page.waitForTimeout(300);
+  p = await pills();
+  ok(p.length === 1 && /venta del día/i.test(p[0]), "«Venta del día» muestra solo esa venta: " + JSON.stringify(p));
+  await page.click('[data-tipo-hist="salida"]'); await page.waitForTimeout(300);
+  p = await pills();
+  ok(p.length > 0 && p.every(x => /^salida$/i.test(x)), "«Salidas» ya no mezcla la venta del día: " + JSON.stringify([...new Set(p)]));
+  await page.click('[data-tipo-hist="ingreso"]'); await page.waitForTimeout(300);
+  p = await pills();
+  ok(p.length > 0 && p.every(x => /^ingreso$/i.test(x)), "«Ingresos» ya no mezcla la transferencia recibida: " + JSON.stringify([...new Set(p)]));
 
   // Todos vuelve a mostrar todo
   await page.click('[data-tipo-hist="todos"]'); await page.waitForTimeout(300);
