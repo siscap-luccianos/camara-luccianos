@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.66.0";
+const BACKEND_VERSION = "1.67.0";
 
 function doPost(e) {
   let resultado;
@@ -840,13 +840,15 @@ function _errorPaisItems(local, items, catalogo) {
 }
 
 function _datosSinCache(local, empleado) {
-  const limite = Date.now() - DIAS_HISTORIAL * 864e5;
+  const stockFilas = _leerCrudo("Stock").filter((s) => String(s.local || "").trim() === String(local).trim());
+  const stock = stockFilas.length ? _stockPublico(stockFilas[0]) : null;
+  // El stock es "último conteo + movimientos posteriores": se traen TODOS los movimientos desde el último conteo
+  // (o toda la historia si nunca hubo uno), aunque pasen de DIAS_HISTORIAL. Si no, un local con el último conteo
+  // viejo calcularía el stock con la ventana recortada y mostraría (y validaría) un número equivocado.
+  const limite = Math.min(Date.now() - DIAS_HISTORIAL * 864e5, stock ? Number(stock.ts) || 0 : 0);
   const registros = _leerCrudo("Registros")
     .filter((r) => String(r.local || "").trim() === String(local).trim() && Number(r.ts) >= limite)
     .map(_registroPublico);
-
-  const stockFilas = _leerCrudo("Stock").filter((s) => String(s.local || "").trim() === String(local).trim());
-  const stock = stockFilas.length ? _stockPublico(stockFilas[0]) : null;
 
   const saboresFilas = _leerCrudo("Sabores").filter((s) => _esVerdadero(s.activo) !== false);
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
@@ -1164,6 +1166,9 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!items || !Object.keys(items).length) return { ok: false, error: "No hay sabores cargados." };
+  // Las cantidades son unidades enteras y nunca negativas (un valor raro rompería el stock).
+  const cantidadRara = Object.keys(items).filter((id) => { const v = Number(items[id]); return !isFinite(v) || v < 0 || Math.floor(v) !== v; });
+  if (cantidadRara.length) return { ok: false, error: "Las cantidades tienen que ser números enteros, sin negativos." };
   // Chocolatería (familia "chocolateria"): en un ingreso normal (no devolución
   // ni producción) cada producto trae su vencimiento. Se valida acá, no solo en
   // el cliente.
@@ -1326,6 +1331,24 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       if (faltantes.length) {
         return { ok: false, error: "No hay stock suficiente de: " + faltantes.join(", ") + ". Actualizá la pantalla e intentá de nuevo." };
       }
+    }
+
+    // Una Devolución no puede superar lo que ESA persona sacó (salidas comunes, no desperdicio ni ventas) y todavía
+    // no devolvió, desde el último conteo y como mucho en las últimas 24 hs. Si no, el stock quedaría de más sin
+    // ninguna salida que lo justifique. El cliente ya lo valida; esta es la red de seguridad del servidor.
+    if (tipo === "ingreso" && subtipo === "devolucion") {
+      const infoDev = _datosSinCache(local);
+      const desdeDev = Math.max(infoDev.stock ? Number(infoDev.stock.ts) || 0 : 0, Date.now() - 24 * 36e5);
+      const saco = {};
+      infoDev.registros.forEach((rg) => {
+        if (rg.anulado || rg.ts <= desdeDev || String(rg.empleadoId) !== String(empleado.id)) return;
+        const esSalida = rg.tipo === "salida" && !rg.subtipo;
+        const esDevol = rg.tipo === "ingreso" && rg.subtipo === "devolucion";
+        if (!esSalida && !esDevol) return;
+        Object.keys(rg.items || {}).forEach((id) => { saco[id] = (saco[id] || 0) + (esSalida ? 1 : -1) * (Number(rg.items[id]) || 0); });
+      });
+      const exceso = Object.keys(items2).filter((id) => items2[id] > Math.max(0, saco[id] || 0)).map((id) => nombreVenc[String(id)] || ("Sabor " + id));
+      if (exceso.length) return { ok: false, error: "No podés devolver más de lo que sacaste y todavía no devolviste: " + exceso.join(", ") + "." };
     }
 
     const total = _totalItems(items2);
@@ -1879,6 +1902,25 @@ function _stockActualLocal(local) {
   return stock;
 }
 
+/** ¿Anular (o borrar) este movimiento dejaría algún sabor en negativo? Un ingreso, una devolución, una producción o el
+ *  lado «hacia» de un cambio de sabor SUMARON stock: si esas unidades ya se sacaron, quitarlas dejaría stock negativo.
+ *  Devuelve los nombres de los sabores que quedarían en negativo (vacío = se puede). Si el movimiento es anterior al
+ *  último conteo, ese conteo ya reemplazó el stock y anular no lo toca. */
+function _negativosSiSeQuita(local, tipoReg, items, tsReg) {
+  const signo = (tipoReg === "ingreso" || tipoReg === "cambio") ? 1 : tipoReg === "salida" ? -1 : 0;
+  if (signo !== 1) return []; // anular una salida suma stock: nunca lo deja en negativo
+  const info = _datosSinCache(local);
+  const bts = info.stock ? Number(info.stock.ts) || 0 : 0;
+  if (Number(tsReg) <= bts) return [];
+  const stock = _stockActualLocal(local);
+  const nombres = {};
+  info.sabores.forEach((sb) => { nombres[sb.id] = sb.nombre; });
+  return Object.keys(items || {}).filter((id) => {
+    const quita = Number(items[id]) || 0;
+    return quita > 0 && (Number(stock[id]) || 0) - quita < 0;
+  }).map((id) => nombres[id] || ("Sabor " + id));
+}
+
 /** Cambio de sabor: una caja/vasqueta venía rotulada como un sabor y era otro. Pasa N unidades de `desde` a
  *  `hacia` sin tocar el total. Se guarda UN movimiento tipo "cambio" con items firmados ({desde:-N, hacia:+N})
  *  y, en locales con kilos reales, kilos firmados. No cuenta como consumo (no es salida ni ingreso).
@@ -2058,12 +2100,14 @@ function anular(registroId, motivo, empleado) {
       }
     }
 
-    if (tipoReg === "cambio") {
-      let itemsCambio = {};
-      try { itemsCambio = JSON.parse(filas[idx][col.items] || "{}"); } catch (e) { itemsCambio = {}; }
-      const stockAhora = _stockActualLocal(local);
-      const sinStock = Object.keys(itemsCambio).filter((id) => Number(itemsCambio[id]) > 0 && (Number(stockAhora[id]) || 0) < Number(itemsCambio[id]));
-      if (sinStock.length) return { ok: false, error: "No se puede anular el cambio de sabor: ya no hay en cámara esas unidades del sabor que recibió. Primero hay que corregir ese stock." };
+    // Anular un ingreso, una devolución, una producción o un cambio de sabor RESTA stock: si esas unidades ya se
+    // sacaron, el stock quedaría negativo. Se rechaza con el detalle (hay que anular antes las salidas posteriores
+    // o corregir el stock con un conteo físico).
+    if (tipoReg === "ingreso" || tipoReg === "cambio") {
+      let itemsReg = {};
+      try { itemsReg = JSON.parse(filas[idx][col.items] || "{}"); } catch (e) { itemsReg = {}; }
+      const negativos = _negativosSiSeQuita(local, tipoReg, itemsReg, ts);
+      if (negativos.length) return { ok: false, error: "No se puede anular: ya se sacó parte de lo que sumó este movimiento y el stock quedaría en negativo (" + negativos.join(", ") + "). Anulá primero las salidas posteriores o corregí el stock con un conteo físico." };
     }
 
     sheet.getRange(idx + 1, col.anulado_por + 1).setValue(empleado.nombre);
@@ -2087,6 +2131,20 @@ function eliminarRegistro(registroId, empleado) {
     // salida/ingreso de prueba puede ver el stock viejo hasta 45s (lo que
     // dure el cache) en vez de corregirse al toque.
     const objetivo = _leerCrudo("Registros").filter((x) => String(x.id) === String(registroId))[0];
+    // Mismas protecciones que anular(): borrar un ingreso ya consumido dejaría stock negativo, y borrar una salida con
+    // una devolución posterior dejaría esa devolución sin respaldo. Un movimiento ya anulado no cuenta en el stock.
+    if (objetivo && !objetivo.anulado_ts) {
+      let itemsObj = {};
+      try { itemsObj = JSON.parse(objetivo.items || "{}"); } catch (e) { itemsObj = {}; }
+      if (objetivo.tipo === "ingreso" || objetivo.tipo === "cambio") {
+        const negativos = _negativosSiSeQuita(objetivo.local, objetivo.tipo, itemsObj, Number(objetivo.ts));
+        if (negativos.length) return { ok: false, error: "No se puede borrar: ya se sacó parte de lo que sumó este movimiento y el stock quedaría en negativo (" + negativos.join(", ") + "). Anulá o corregí primero las salidas posteriores, o hacé un conteo físico." };
+      }
+      if (objetivo.tipo === "salida" && !objetivo.subtipo) {
+        const hayDevol = _leerCrudo("Registros").some((x) => x.tipo === "ingreso" && x.subtipo === "devolucion" && !x.anulado_ts && String(x.empleadoId) === String(objetivo.empleadoId) && String(x.local) === String(objetivo.local) && Number(x.ts) > Number(objetivo.ts));
+        if (hayDevol) return { ok: false, error: "No se puede borrar: ya hay una devolución cargada después de esta salida. Anulá primero esa devolución." };
+      }
+    }
     const r = _eliminarCrudo("Registros", registroId);
     if (r.ok) {
       _auditar("eliminar_registro", empleado.id, empleado.nombre, "Registro " + registroId + " borrado definitivamente");
