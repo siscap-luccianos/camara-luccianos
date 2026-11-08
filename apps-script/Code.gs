@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.68.0";
+const BACKEND_VERSION = "1.69.0";
 
 function doPost(e) {
   let resultado;
@@ -115,7 +115,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
-    case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.c, empleado);
+    case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
@@ -1886,18 +1886,22 @@ function etiquetar(clienteId, local, items, vencimientos, empleado) {
   }
 }
 
-/** Corrige un vencimiento ya puesto: `c` unidades del lote que vencía el `de` pasan a vencer el `f`.
- *  Igual que etiquetar(): no cambia el stock; se guarda como movimiento "etiquetado" con el lote
- *  [{f, c, de}] (el cliente lo lee en lotesPorSabor()). Mismos permisos que etiquetar(). */
-function cambiarVencimiento(clienteId, local, id, de, f, c, empleado) {
+/** Corrige un vencimiento ya puesto: el lote que vencía el `de` (hoy con `c` unidades) pasa a tener `k`
+ *  unidades con vencimiento `f`. Si k < c, las que sobran vuelven a «sin fecha»; si k > c, el resto se toma
+ *  de las que están sin fecha. Igual que etiquetar(): no cambia el stock; se guarda como movimiento
+ *  "etiquetado" con lotes [{f, c, de}] (`de` = lote de origen; sin `de` = sale de «sin fecha»; f vacío =
+ *  vuelve a sin fecha) que el cliente lee en lotesPorSabor(). Mismos permisos que etiquetar(). */
+function cambiarVencimiento(clienteId, local, id, de, f, k, c, empleado) {
   if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo el responsable de local o de turno puede cambiar vencimientos." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   const esFecha = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ""));
-  const cant = Math.floor(Number(c) || 0);
-  if (!id || cant <= 0) return { ok: false, error: "Falta el producto o la cantidad." };
-  if (!esFecha(de) || !esFecha(f)) return { ok: false, error: "Las fechas no son válidas." };
-  if (de === f) return { ok: false, error: "La fecha nueva es igual a la que ya tenía." };
+  const nuevas = Math.floor(Number(k));
+  const actuales = Math.floor(Number(c) || 0);
+  if (!id || !(nuevas >= 0) || actuales <= 0) return { ok: false, error: "Falta el producto o la cantidad." };
+  if (!esFecha(de)) return { ok: false, error: "Las fechas no son válidas." };
+  if (nuevas > 0 && !esFecha(f)) return { ok: false, error: "Las fechas no son válidas." };
+  if (nuevas === actuales && (f === de)) return { ok: false, error: "No hay nada para cambiar: misma fecha y misma cantidad." };
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -1911,17 +1915,24 @@ function cambiarVencimiento(clienteId, local, id, de, f, c, empleado) {
     if ((sab.familia || "") !== "chocolateria") return { ok: false, error: "Solo se cambia el vencimiento de chocolatería." };
     if ((sab.categoria || "") === "Latas") return { ok: false, error: "Las latas carrusel no llevan vencimiento." };
     const actual = Number(_stockActualLocal(local)[String(id)]) || 0;
-    if (cant > actual) return { ok: false, error: "Hay menos unidades en cámara de las que querés cambiar." };
+    if (Math.max(nuevas, actuales) > actual) return { ok: false, error: "Hay menos unidades en cámara de las que querés cambiar." };
 
-    const items = {}; items[String(id)] = cant;
-    const venc = {}; venc[String(id)] = [{ f: f, c: cant, de: de }];
+    // Movimientos de lote: del lote `de` a la fecha nueva, lo que sobra a «sin fecha», y lo que falta de «sin fecha».
+    const lotes = [];
+    const movidas = Math.min(nuevas, actuales);
+    if (movidas > 0 && f !== de) lotes.push({ f: f, c: movidas, de: de });
+    if (nuevas < actuales) lotes.push({ f: "", c: actuales - nuevas, de: de });
+    if (nuevas > actuales) lotes.push({ f: f, c: nuevas - actuales });
+    const total = lotes.reduce((a, l) => a + l.c, 0);
+    const items = {}; items[String(id)] = total;
+    const venc = {}; venc[String(id)] = lotes;
     const ts = Date.now();
     const r = _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: "etiquetado", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
-      items: JSON.stringify(items), total: cant, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "",
+      items: JSON.stringify(items), total: total, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "",
       foto_remito: "", subtipo: "", kilos: "", vencimientos: JSON.stringify(venc),
     });
-    _auditar("cambiar_vencimiento", empleado.id, empleado.nombre, local + ": " + sab.nombre + " x" + cant + " " + de + " → " + f);
+    _auditar("cambiar_vencimiento", empleado.id, empleado.nombre, local + ": " + sab.nombre + " lote " + de + " (" + actuales + ") → " + (nuevas > 0 ? f : "sin fecha") + " (" + nuevas + ")");
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
   } finally {
