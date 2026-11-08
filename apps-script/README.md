@@ -209,9 +209,8 @@ La chocolatería no pasa por la caja de la app. Al cerrar, el responsable mira e
 
 ## Chocolatería en un centro comercial (`Code.gs` 1.47.0)
 
-Dos formas de llevarla, por local, con una columna en `Locales` (valor `SI`):
+Una forma de llevarla distinta de la común, por local, con una columna en `Locales` (valor `SI`):
 - `venta_dia` = **todo junto**: local y depósito suman en un solo stock y un responsable carga la Venta del día al cerrar (ver más arriba). Con vencimientos.
-- `choco_solo_deposito` = **solo depósito**: la chocolatería usa la salida común (lo que sale del depósito es el consumo) y no lleva vencimientos: no aparecen los campos de fecha, «Ver vencimientos» ni el semáforo. Si el local tiene las dos, manda `venta_dia`.
 
 ## Control de equipos por local (`Code.gs` 1.52.0)
 

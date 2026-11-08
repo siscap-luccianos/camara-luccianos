@@ -942,7 +942,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.127.0";
+const FRONTEND_VERSION = "1.127.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -997,7 +997,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false,
   controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
@@ -1666,7 +1666,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
-    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -1767,10 +1767,8 @@ async function desbloquearPC(){
 // El scroll no burbujea desde los contenedores, por eso va con captura.
 /* Chocolatería: cada producto del carrito de Ingreso pide su vencimiento antes de confirmar. */
 function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
-/** Chocolatería con vencimientos y lotes. En un local «solo depósito» (Locales.choco_solo_deposito=SI, p. ej. un
- *  centro comercial con el depósito lejos) la chocolatería solo se cuenta: no se cargan fechas, así que no hay
- *  lotes, semáforo ni «Ver vencimientos». La salida es la común (lo que sale del depósito es el consumo). */
-function usaLotes(id){ return esChocolateria(id) && !S.chocoSoloDeposito }
+/** Chocolatería con vencimientos y lotes. */
+function usaLotes(id){ return esChocolateria(id) }
 /** Desde 21/10/2026 el vencimiento ya no es obligatorio en ningún producto (pedido de Gabi): quien
  *  carga puede no tener la fecha a mano. Lo que quede sin fecha se completa después con "Poner fecha"
  *  en Ver vencimientos. Se deja la función para no tocar a quienes la llaman. */
@@ -1906,7 +1904,7 @@ function lotesPorSabor(){
 }
 /** Lotes que se pueden vender: los que todavía no vencieron (sin fecha también se vende). */
 function lotesVendibles(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f || diasHasta(l.f)>=0) }
-function vendibleDe(id){ return S.chocoSoloDeposito && esChocolateria(id) ? (stockMap()[id]||0) : sumaLotes(lotesVendibles(id)) }
+function vendibleDe(id){ return sumaLotes(lotesVendibles(id)) }
 /** Lote del que sale la próxima unidad: el elegido a mano o, si no, el que vence antes. */
 function loteSalida(id){
   const v=lotesVendibles(id), elegido=S.lotePick[id];
@@ -2001,7 +1999,7 @@ function ventaDesperdicioLote(id, f){
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
 const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"]];
 /** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
-function saboresConVencimiento(){ if(S.chocoSoloDeposito) return []; return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
+function saboresConVencimiento(){ return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
 /** Hay chocolatería en stock, con fecha o sin fecha. */
 function hayLotesVencimiento(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).length>0) }
 function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
@@ -2681,7 +2679,7 @@ function accionesSalidaHTML(){
   if(escanerDisponible()) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
   t.push(`<button type="button" class="accTile" id="irDesperdicio"><b>Desperdicio</b><small>roto, caído, vencido</small></button>`);
   if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(`<button type="button" class="accTile" id="irVentaDia"><b>Salida de chocolatería</b><small>venta, gift card, baja…</small></button>`);
-  if(!S.chocoSoloDeposito) t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>lotes por vencer</small></button>`);
+  t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>lotes por vencer</small></button>`);
   const grilla=`<div class="accGrid${t.length%2?" impar":""}">${t.join("")}</div>`;
   return grilla+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
 }
@@ -3163,7 +3161,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return (S.chocoSoloDeposito?"":`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`)+stockViewGeneral(st);
+  return `<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -3899,7 +3897,7 @@ async function toggleSaborProduccion(saborId){
   if(r && r.ok){
     S.produccionSabores = (r.ids||[...set]).map(String);
     toast(set.has(id)?"Lo producimos":"Ya no lo producimos");
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     renderApp();
   } else toast((r&&r.error)||"No se pudo ajustar.");
 }
@@ -4330,7 +4328,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
-    S.escanerPeso = !!d.escanerPeso; S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
+    S.escanerPeso = !!d.escanerPeso; S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -4349,11 +4347,11 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
-  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
   S.regs = r.registros;
   S.stock = r.stock;
   if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -4367,7 +4365,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -4397,7 +4395,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: payload.fecha ? tsVentaDe(payload.fecha) : Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -4465,7 +4463,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
@@ -5700,7 +5698,7 @@ function ayudaTemas(){
     "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
     "Alfajores: botones <b>+1, x5, x6, x10</b> y los <b>mix</b> (surtidos). Conitos: <b>+1</b> y <b>x6</b>. Minis: solo <b>+1</b>. Abajo de cada producto ves de dónde vino cada cantidad; tocá una caja para quitarla.",
     "Lo que recibís de otro local se carga en Ingreso › <b>Transferencia recibida</b>."])+nota("Si te equivocaste, anulalo desde Historial y cargalo de nuevo.")});
-  if(!S.chocoSoloDeposito) T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
+  T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
     "En Salida tocá <b>Ver vencimientos</b>: lista cada lote de chocolatería con su fecha.",
     "El semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días. Los filtros de arriba muestran solo un color o los que no tienen fecha.",
     "Al sacar, sale primero el lote que vence antes. Lo vencido no se puede vender.",
