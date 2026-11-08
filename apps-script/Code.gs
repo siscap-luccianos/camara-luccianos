@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.67.1";
+const BACKEND_VERSION = "1.68.0";
 
 function doPost(e) {
   let resultado;
@@ -115,6 +115,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
+    case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
@@ -1878,6 +1879,49 @@ function etiquetar(clienteId, local, items, vencimientos, empleado) {
     });
     const detalle = Object.keys(items2).map((id) => (nombreDe[id] || ("Sabor " + id)) + " x" + items2[id] + " → " + norm.vencimientos[id].map((l) => l.f + " (" + l.c + ")").join(" + ")).join("; ");
     _auditar("etiquetar", empleado.id, empleado.nombre, local + ": " + detalle);
+    _invalidarCacheDatos(local);
+    return { ok: true, id: r.id, ts: ts };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Corrige un vencimiento ya puesto: `c` unidades del lote que vencía el `de` pasan a vencer el `f`.
+ *  Igual que etiquetar(): no cambia el stock; se guarda como movimiento "etiquetado" con el lote
+ *  [{f, c, de}] (el cliente lo lee en lotesPorSabor()). Mismos permisos que etiquetar(). */
+function cambiarVencimiento(clienteId, local, id, de, f, c, empleado) {
+  if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo el responsable de local o de turno puede cambiar vencimientos." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  const esFecha = (v) => /^\d{4}-\d{2}-\d{2}$/.test(String(v || ""));
+  const cant = Math.floor(Number(c) || 0);
+  if (!id || cant <= 0) return { ok: false, error: "Falta el producto o la cantidad." };
+  if (!esFecha(de) || !esFecha(f)) return { ok: false, error: "Las fechas no son válidas." };
+  if (de === f) return { ok: false, error: "La fecha nueva es igual a la que ya tenía." };
+
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (clienteId) {
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      if (existente) return { ok: true, id: existente.id, repetido: true };
+    }
+    const sab = _leerCrudo("Sabores").filter((x) => String(x.id) === String(id))[0];
+    if (!sab) return { ok: false, error: "No existe ese producto." };
+    if ((sab.familia || "") !== "chocolateria") return { ok: false, error: "Solo se cambia el vencimiento de chocolatería." };
+    if ((sab.categoria || "") === "Latas") return { ok: false, error: "Las latas carrusel no llevan vencimiento." };
+    const actual = Number(_stockActualLocal(local)[String(id)]) || 0;
+    if (cant > actual) return { ok: false, error: "Hay menos unidades en cámara de las que querés cambiar." };
+
+    const items = {}; items[String(id)] = cant;
+    const venc = {}; venc[String(id)] = [{ f: f, c: cant, de: de }];
+    const ts = Date.now();
+    const r = _escribirCrudo("Registros", {
+      clienteId: clienteId || "", tipo: "etiquetado", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
+      items: JSON.stringify(items), total: cant, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "",
+      foto_remito: "", subtipo: "", kilos: "", vencimientos: JSON.stringify(venc),
+    });
+    _auditar("cambiar_vencimiento", empleado.id, empleado.nombre, local + ": " + sab.nombre + " x" + cant + " " + de + " → " + f);
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
   } finally {
