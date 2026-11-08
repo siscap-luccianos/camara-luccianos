@@ -296,6 +296,12 @@ select{max-width:220px}
 .lpAgregar{height:42px;border-radius:10px;border:1px dashed var(--accent);background:transparent;color:var(--accent);font:inherit;font-weight:800;font-size:.85rem;cursor:pointer}
 .card>.pick{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:0 0 12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow:hidden;transition:transform .08s,border-color .15s}
 .card>.pick:active{transform:scale(.97)}
+.card.consulta>.pick{cursor:default}
+.card.consulta>.pick:active{transform:none}
+.consultaAviso{display:flex;flex-direction:column;gap:10px;background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.25);border-radius:14px;padding:12px 14px;margin:6px 0 10px;font-size:.84rem;color:var(--ink)}
+.consultaAviso b{display:block;font-size:.9rem;margin-bottom:2px}
+.consultaGo{align-self:flex-start;min-height:42px;padding:0 16px;font-size:.84rem}
+.consultaNota{color:var(--muted);font-weight:700;font-size:.8rem}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
 .strip{display:block;width:100%;height:7px}
 .plate{width:60px;height:60px;flex:none;border-radius:14px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
@@ -465,7 +471,9 @@ th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:
 th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
 .empty{padding:28px 16px;text-align:center;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:20;max-width:calc(100% - 32px)}
-.etiqSheet{position:fixed;left:0;right:0;bottom:0;z-index:50;margin:0 auto;max-width:520px;background:var(--surface);border-radius:24px 24px 0 0;box-shadow:0 -10px 30px rgba(42,30,23,.18);padding:18px 20px 22px;max-height:72vh;overflow:auto;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+.etiqOv{position:fixed;inset:0;z-index:60;background:rgba(42,30,23,.5);display:flex;align-items:center;justify-content:center;padding:14px;box-sizing:border-box;overscroll-behavior:contain}
+.etiqSheet{width:100%;max-width:440px;background:var(--surface);border-radius:24px;box-shadow:0 18px 50px rgba(42,30,23,.35);padding:20px 20px 22px;max-height:calc(100dvh - 28px);overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;box-sizing:border-box}
+body:has(.etiqOv){overflow:hidden}
 .etiqSheet .btn{min-height:44px;padding:0 14px;font-size:.95rem}
 .etiqSheet input[type=date]{width:100%;height:44px;box-sizing:border-box;padding:0 12px;font-size:.95rem}
 .etiqTitulo{font-size:1.3rem;font-weight:700}
@@ -483,7 +491,6 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .etiqSheet.etiqEnviando{pointer-events:none}
 .etiqSheet.etiqEnviando .btn{opacity:.75}
 .etiqGuardando{font-weight:600}
-.etiqEspacio{height:72vh}
 .btn.escaner{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .pesosResumen{margin:-4px 0 12px;font-size:.88rem;color:var(--muted)}
 .pesosResumen b{color:var(--ink)}
@@ -531,12 +538,12 @@ th{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--mut
 .devChip.on small{color:var(--accent);font-weight:800}
 .devSin{margin-top:8px;padding:10px 12px;border-radius:12px;background:#FFF1D6;border:1.5px solid #E0A93B;color:#7A4B00;font-size:.82rem;font-weight:700}
 .devSin .kgFila{margin-top:6px;color:#2A2118}
-.mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.mantenerOv{position:fixed;inset:0;z-index:50;background:rgba(42,30,23,.45);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
 /* Con un diálogo abierto (ayuda, escáner, pad de kilos, cantidades…) la pantalla de atrás queda quieta. */
 body:has(.mantenerOv){overflow:hidden}
 .mantenerOv{overscroll-behavior:contain;touch-action:none}
 .mantenerBox{touch-action:pan-y;overscroll-behavior:contain}
-.mantenerBox{width:100%;max-width:420px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
+.mantenerBox{width:100%;max-width:420px;max-height:calc(100dvh - 24px);overflow-y:auto;box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 50px rgba(42,30,23,.35);padding:18px;display:flex;flex-direction:column;gap:14px}
 .mantTit{margin:0;font-family:'Fraunces',Georgia,serif;font-weight:700;font-size:1.25rem}
 .mantSub{margin:0;color:var(--muted);font-size:.9rem}
 .mantAyuda{margin:0;font-size:.8rem;color:var(--muted);text-align:center}
@@ -544,6 +551,11 @@ body:has(.mantenerOv){overflow:hidden}
 .mantAcc .btn{min-height:50px}
 .mantAcc .btn:disabled{opacity:.4}
 .loteInfo{display:flex;align-items:center;justify-content:center;gap:6px;align-self:stretch;font-size:.8rem;font-weight:700;line-height:1.3;color:var(--ink);text-align:center;overflow-wrap:anywhere;margin-top:2px}
+.loteLista{display:flex;flex-direction:column;align-items:stretch;gap:3px;align-self:stretch;margin-top:2px}
+.loteL{display:flex;align-items:center;justify-content:center;gap:6px;font-size:.76rem;font-weight:600;line-height:1.3;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.loteL.prim{color:var(--ink);font-weight:800}
+.loteL.venc{color:var(--alert);font-weight:700;text-decoration:line-through}
+.loteL .semDot{flex:none}
 .loteN{align-self:stretch;text-align:center;font-size:.74rem;font-weight:700;color:var(--muted)}
 .loteN.alertTxt{color:var(--alert)}
 .card>.pick.sem-rojo{border:4px solid #C62828}
@@ -936,7 +948,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.126.6";
+const FRONTEND_VERSION = "1.129.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -991,7 +1003,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false,
   controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
@@ -1660,7 +1672,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
-    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.chocoSoloDeposito = !!r.datos.chocoSoloDeposito; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String);
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -1761,10 +1773,8 @@ async function desbloquearPC(){
 // El scroll no burbujea desde los contenedores, por eso va con captura.
 /* Chocolatería: cada producto del carrito de Ingreso pide su vencimiento antes de confirmar. */
 function esChocolateria(id){ return (S.saboresPorId[id]||{}).familia==="chocolateria" }
-/** Chocolatería con vencimientos y lotes. En un local «solo depósito» (Locales.choco_solo_deposito=SI, p. ej. un
- *  centro comercial con el depósito lejos) la chocolatería solo se cuenta: no se cargan fechas, así que no hay
- *  lotes, semáforo ni «Ver vencimientos». La salida es la común (lo que sale del depósito es el consumo). */
-function usaLotes(id){ return esChocolateria(id) && !S.chocoSoloDeposito }
+/** Chocolatería con vencimientos y lotes. */
+function usaLotes(id){ return esChocolateria(id) }
 /** Desde 21/10/2026 el vencimiento ya no es obligatorio en ningún producto (pedido de Gabi): quien
  *  carga puede no tener la fecha a mano. Lo que quede sin fecha se completa después con "Poner fecha"
  *  en Ver vencimientos. Se deja la función para no tocar a quienes la llaman. */
@@ -1866,10 +1876,11 @@ function lotesDeVenc(v, cantidad){
   return [{f:null, c:cantidad}];
 }
 /** Reetiquetado: `n` unidades que estaban sin fecha pasan a tener fecha `f`.
- *  Salen primero de los lotes sin fecha; el total del sabor no cambia. */
-function etiquetarLote(L, f, n){
+ *  Salen primero de los lotes sin fecha; el total del sabor no cambia.
+ *  Con `de` (corrección de un vencimiento ya puesto) salen del lote que vencía `de`. */
+function etiquetarLote(L, f, n, de){
   let resto=n;
-  L.forEach(l=>{ if(!l.f && l.c>0 && resto>0){ const t=Math.min(resto,l.c); l.c-=t; resto-=t; sumarLote(L,f,t); } });
+  L.forEach(l=>{ if((de ? l.f===de : !l.f) && l.c>0 && resto>0){ const t=Math.min(resto,l.c); l.c-=t; resto-=t; sumarLote(L,f,t); } });
 }
 /** Lotes de cada sabor del local, en orden de vencimiento (sin fecha al final). */
 function lotesPorSabor(){
@@ -1882,7 +1893,7 @@ function lotesPorSabor(){
   });
   regsActivos().filter(r=>r.ts>bts).sort((a,b)=>a.ts-b.ts).forEach(r=>{
     const venc=r.vencimientos||{};
-    if(r.tipo==="etiquetado"){ Object.entries(r.items||{}).forEach(([id,q])=>{ const L=lotes[id]; if(L && (+q||0)>0) lotesDeVenc(venc[id], +q||0).forEach(l=>etiquetarLote(L,l.f,l.c)); }); return; }
+    if(r.tipo==="etiquetado"){ Object.entries(r.items||{}).forEach(([id,q])=>{ const L=lotes[id]; if(L && (+q||0)>0) (Array.isArray(venc[id])?venc[id]:lotesDeVenc(venc[id], +q||0)).forEach(l=>etiquetarLote(L,l.f||null,Number(l.c)||0,l.de||null)); }); return; }
     Object.entries(r.items||{}).forEach(([id,q])=>{
       const L=lotes[id], n=+q||0;
       if(!L||n<=0) return;
@@ -1900,7 +1911,7 @@ function lotesPorSabor(){
 }
 /** Lotes que se pueden vender: los que todavía no vencieron (sin fecha también se vende). */
 function lotesVendibles(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f || diasHasta(l.f)>=0) }
-function vendibleDe(id){ return S.chocoSoloDeposito && esChocolateria(id) ? (stockMap()[id]||0) : sumaLotes(lotesVendibles(id)) }
+function vendibleDe(id){ return sumaLotes(lotesVendibles(id)) }
 /** Lote del que sale la próxima unidad: el elegido a mano o, si no, el que vence antes. */
 function loteSalida(id){
   const v=lotesVendibles(id), elegido=S.lotePick[id];
@@ -1921,16 +1932,29 @@ function semCardClase(id, conVencidos){
 }
 function loteInfoSpan(id, conVencidos){
   if(!usaLotes(id)) return "";
-  const lotes=(lotesPorSabor()[id]||[]).filter(l=>l.f);
-  if(!lotes.length) return "";
-  const nLotes=new Set((lotesPorSabor()[id]||[]).filter(l=>conVencidos || !l.f || diasHasta(l.f)>=0).map(l=>l.f||"")).size;
-  const vencidas=lotes.filter(l=>diasHasta(l.f)<0).reduce((a,l)=>a+l.c,0);
+  const todos=(lotesPorSabor()[id]||[]).filter(l=>l.c>0);
+  if(!todos.some(l=>l.f)) return "";
+  // Desglose dentro de la misma tarjeta: cada lote con su fecha, unidades y días; el que sale primero va arriba.
+  // «15 vencen en 70 días · 17/01»: cantidad primero, como se lee en voz alta.
+  const frase=(c,d,noSeVende)=>{
+    const v=c===1?"vence":"vencen";
+    const t=d<0?`${c} ${c===1?"vencido":"vencidos"} ${d===-1?"ayer":`hace ${-d} días`}${noSeVende?", no se venden":""}`
+      :d===0?`${c} ${v} hoy`:d===1?`${c} ${v} mañana`:`${c} ${v} en ${d} días`;
+    return t;
+  };
   const primero=loteMostrado(id, conVencidos);
-  let html="";
-  if(primero&&!primero.f){ html+=`<span class="loteInfo"><span class="semDot"></span>${conVencidos?"Lote":"Sale primero"}: sin fecha</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
-  else if(primero){ const sem=semaforoVenc(primero.f); html+=`<span class="loteInfo"><span class="semDot ${sem.k}"></span>${conVencidos?"Lote":"Sale primero"}: ${fechaVencCorta(primero.f)} · ${sem.label}</span>`+(nLotes>1?`<span class="loteN">${nLotes} lotes</span>`:"") }
-  if(!conVencidos && vencidas>0) html+=`<span class="loteN alertTxt">${vencidas} vencidas, no se venden</span>`;
-  return html;
+  const conFecha=todos.filter(l=>l.f).sort((x,y)=>x.f<y.f?-1:x.f>y.f?1:0);
+  const sinFecha=todos.filter(l=>!l.f);
+  const lineas=[];
+  conFecha.forEach(l=>{
+    const sem=semaforoVenc(l.f), venc=sem.d<0;
+    const esPrimero=!!primero && primero.f===l.f;
+    lineas.push({k:venc&&!conVencidos?"rojo":sem.k, prim:esPrimero&&!(venc&&!conVencidos),
+      txt:frase(l.c,sem.d,venc&&!conVencidos), fecha:fechaVencCorta(l.f), venc:venc&&!conVencidos});
+  });
+  sinFecha.forEach(l=>lineas.push({k:"", prim:false, txt:`${l.c} sin fecha`}));
+  const MAX=4, vis=lineas.slice(0,MAX), mas=lineas.length-vis.length;
+  return `<span class="loteLista" title="El primero (en negrita) es el que sale primero">${vis.map(l=>`<span class="loteL${l.prim?" prim":""}${l.venc?" venc":""}"${l.fecha?` title="Vence el ${esc(l.fecha)}"`:""}><span class="semDot ${l.k}"></span><span>${esc(l.txt)}</span></span>`).join("")}${mas>0?`<span class="loteN">+${mas} ${mas===1?"lote más":"lotes más"}</span>`:""}</span>`;
 }
 /** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
 function loteElegirBtn(id, conVencidos){
@@ -1995,9 +2019,15 @@ function ventaDesperdicioLote(id, f){
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
 const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"]];
 /** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
-function saboresConVencimiento(){ if(S.chocoSoloDeposito) return []; return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
+function saboresConVencimiento(){ return S.sabores.filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
 /** Hay chocolatería en stock, con fecha o sin fecha. */
 function hayLotesVencimiento(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).length>0) }
+/** Cuántos lotes (y unidades) de chocolatería hay en cada color del semáforo, y cuántos sin fecha. */
+function resumenVenc(){
+  const r={rojo:{l:0,u:0},amarillo:{l:0,u:0},verde:{l:0,u:0},sin:{l:0,u:0}};
+  saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!(l.c>0)) return; const k=l.f?semaforoVenc(l.f).k:"sin"; r[k].l++; r[k].u+=l.c }));
+  return r;
+}
 function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
 /** Leyenda del semáforo, visible en Salida para que se entienda sin preguntar. */
 function leyendaVencHTML(){
@@ -2021,13 +2051,14 @@ function vencimientosPantallaHTML(){
     // Etiqueta del semáforo: rojo = Desperdicio (el botón la reemplaza si el usuario es responsable), amarillo = Rotar, verde = sin etiqueta.
     const etq=!sem?"":sem.k==="rojo"?(canEtiquetar()?"":`<span class="vencTag rojo">Desperdicio</span>`):sem.k==="amarillo"?`<span class="vencTag amarillo">Rotar</span>`:"";
     const acc=(!sem&&canEtiquetar()?`<button type="button" class="btn ghost" data-etiq-abrir="${s.id}">Poner fecha</button>`:"")
+      +(sem&&canEtiquetar()?`<button type="button" class="btn ghost" data-etiq-cambiar="${s.id}|${l.f}">Cambiar fecha</button>`:"")
       +(sem&&sem.d<=VENC_ROJO_DIAS&&canEtiquetar()?`<button type="button" class="btn desperdicio" data-venc-desp="${s.id}|${l.f}">Pasar a desperdicio</button>`:"")
       +(sem&&sem.d>=0&&!S.ventaDia&&venderPrimeroLote(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:"");
     return `<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}${vencido?" vencido":""}">
       <div class="vencFecha">${sem?tachar(fechaVencCorta(l.f)):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
       <div class="vencNom">${tachar(esc(s.nombre))}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
       ${(etq||acc)?`<div class="vencAcciones">${etq}${acc}</div>`:""}
-    </div>`; }).join("")}</div>`:`<div class="empty">${todos.length?"No hay lotes en este filtro.":"Todavía no hay chocolatería cargada."}</div>`}${S.etiq?`<div class="etiqEspacio"></div>${etiquetarSheetHTML()}`:""}`;
+    </div>`; }).join("")}</div>`:`<div class="empty">${todos.length?"No hay lotes en este filtro.":"Todavía no hay chocolatería cargada."}</div>`}${S.etiq?etiquetarSheetHTML():""}`;
 }
 /** Reetiquetado y pase a desperdicio desde Ver vencimientos: Responsable de local y de turno; admin y supervisor en urgencias. */
 function canEtiquetar(){ return !!S.local && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
@@ -2035,47 +2066,72 @@ function canEtiquetar(){ return !!S.local && ["admin","supervisor","encargado","
 function isoMasDias(n){ const d=new Date(); d.setDate(d.getDate()+n); return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-") }
 function sinFechaUnidades(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f).reduce((a,l)=>a+l.c,0) }
 /** Abre la hoja de reetiquetado: fecha sugerida = hoy + vida útil del producto (si la tiene). */
-function etiqAbrir(id){
-  const s=S.saboresPorId[id]||{}, sin=sinFechaUnidades(id);
+function etiqAbrir(id, de){
+  const s=S.saboresPorId[id]||{};
+  if(de){ // corregir un vencimiento ya puesto: arranca con todo el lote y su fecha actual
+    const lote=(lotesPorSabor()[id]||[]).find(l=>l.f===de), n=lote?lote.c:0;
+    if(!n) return toast("Ese lote ya no está en cámara.");
+    S.etiq={ id:String(id), clienteId:uuid(), max:n+sinFechaUnidades(id), cant:n, c0:n, fecha:de, de:de };
+    renderApp(); return;
+  }
+  const sin=sinFechaUnidades(id);
   S.etiq={ id:String(id), clienteId:uuid(), max:sin, cant:sin, fecha:(+s.vida_util_dias>0)?isoMasDias(+s.vida_util_dias):"" };
   renderApp();
 }
-function etiqSetCant(n){ if(!S.etiq) return; S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+n||1))); renderApp() }
-function etiqValida(e){ return e.cant>=1 && e.cant<=e.max && /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) }
+function etiqMin(e){ return e.de ? 0 : 1 } // corrigiendo un lote se puede dejar en 0 (todas vuelven a «sin fecha»)
+function etiqSetCant(n){ if(!S.etiq) return; const v=Math.floor(+n); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); renderApp() }
+function etiqValida(e){
+  if(e.cant<etiqMin(e) || e.cant>e.max) return false;
+  if(e.de){ if(e.cant===0) return true; return /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) && !(e.fecha===e.de && e.cant===e.c0); }
+  return /^\d{4}-\d{2}-\d{2}$/.test(e.fecha);
+}
+/** Qué va a pasar al confirmar una corrección (texto para la hoja y para la pregunta). */
+function etiqResumen(e){
+  const u=n=>`${n} ${unidad(e.id,n)}`, sin=e.max-e.c0;
+  if(e.cant===0) return `Las ${u(e.c0)} del ${fechaVencCorta(e.de)} vuelven a «sin fecha».`;
+  const partes=[];
+  if(e.fecha!==e.de) partes.push(`${u(Math.min(e.cant,e.c0))} pasan del ${fechaVencCorta(e.de)} al ${fechaVencCorta(e.fecha)}`);
+  else if(e.cant===e.c0) partes.push("Sin cambios");
+  else partes.push(`El lote del ${fechaVencCorta(e.de)} queda con ${u(e.cant)}`);
+  if(e.cant<e.c0) partes.push(`${u(e.c0-e.cant)} vuelven a «sin fecha»`);
+  if(e.cant>e.c0) partes.push(`se toman ${u(e.cant-e.c0)} de las que están sin fecha (hay ${sin})`);
+  return partes.join(" · ")+".";
+}
 function etiquetarSheetHTML(){
   const e=S.etiq, s=S.saboresPorId[e.id]||{}, caja=+s.cantidad_maestra||0, vida=+s.vida_util_dias||0;
   const sugerida=vida?isoMasDias(vida):"";
   const quedan=Math.max(0,e.max-e.cant);
-  const pregunta=`<div class="etiqPregunta"><b>¿Confirmás el vencimiento?</b>
-      <span>${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.</span>
+  const cambio=!!e.de;
+  const pregunta=`<div class="etiqPregunta"><b>${cambio?"¿Confirmás el cambio de fecha?":"¿Confirmás el vencimiento?"}</b>
+      <span>${cambio?`${esc(s.nombre||"")}: ${etiqResumen(e)}`:`${fechaVencCorta(e.fecha)} a ${e.cant} ${unidad(e.id,e.cant)} de ${esc(s.nombre||"")}.`}</span>
       <div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-volver ${e.enviando?"disabled":""}>No, volver</button><button type="button" class="btn" data-etiq-si ${e.enviando?"disabled":""}>${e.enviando?"Guardando…":"Sí, confirmar"}</button></div>${e.enviando?`<div class="meta etiqGuardando">Guardando el vencimiento… esperá un momento.</div>`:""}</div>`;
-  const botones=`<div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button><button type="button" class="btn" data-etiq-confirmar ${etiqValida(e)?"":"disabled"}>Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}</button></div>`;
-  return `<div class="etiqSheet${e.enviando?" etiqEnviando":""}" role="dialog" aria-label="Poner vencimiento">
-    <div class="etiqTitulo">Poner vencimiento</div>
-    <div class="etiqSub">${esc(s.nombre||"")} · sin fecha: ${e.max} ${unidad(e.id,e.max)}</div>
-    <label class="etiqLbl" for="etiqFecha">Fecha de vencimiento</label>
+  const botones=`<div class="etiqBtns"><button type="button" class="btn ghost" data-etiq-cancelar>Cancelar</button><button type="button" class="btn" data-etiq-confirmar ${etiqValida(e)?"":"disabled"}>${cambio?"Guardar el cambio":`Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}`}</button></div>`;
+  return `<div class="etiqOv"><div class="etiqSheet${e.enviando?" etiqEnviando":""}" role="dialog" aria-modal="true" aria-label="Poner vencimiento">
+    <div class="etiqTitulo">${cambio?"Cambiar vencimiento":"Poner vencimiento"}</div>
+    <div class="etiqSub">${esc(s.nombre||"")} · ${cambio?`vencen el ${fechaVencCorta(e.de)}: ${e.c0} ${unidad(e.id,e.c0)}`:`sin fecha: ${e.max} ${unidad(e.id,e.max)}`}</div>
+    <label class="etiqLbl" for="etiqFecha">${cambio?"Fecha correcta":"Fecha de vencimiento"}</label>
     <input id="etiqFecha" type="date" data-etiq-fecha value="${esc(e.fecha)}">
-    ${vida?`<button type="button" class="btn ghost" data-etiq-sugerida="${sugerida}">Usar la sugerida: ${fechaVencCorta(sugerida)} (${vida} días)</button>`:`<div class="meta">Este producto no tiene vida útil cargada: elegí la fecha a mano.</div>`}
-    <label class="etiqLbl" for="etiqCant">Cantidad a etiquetar</label>
+    ${cambio?"":vida?`<button type="button" class="btn ghost" data-etiq-sugerida="${sugerida}">Usar la sugerida: ${fechaVencCorta(sugerida)} (${vida} días)</button>`:`<div class="meta">Este producto no tiene vida útil cargada: elegí la fecha a mano.</div>`}
+    <label class="etiqLbl" for="etiqCant">${cambio?"Unidades con esta fecha":"Cantidad a etiquetar"}</label>
     <div class="etiqCant">
       <button type="button" class="btn ghost" data-etiq-dec aria-label="Menos">−</button>
-      <input id="etiqCant" type="number" min="1" max="${e.max}" inputmode="numeric" data-etiq-cant value="${e.cant}">
+      <input id="etiqCant" type="number" min="${etiqMin(e)}" max="${e.max}" inputmode="numeric" data-etiq-cant value="${e.cant}">
       <button type="button" class="btn ghost" data-etiq-inc aria-label="Más">+</button>
     </div>
-    ${caja>0?`<div class="etiqChips"><button type="button" class="chip" data-etiq-chip="${caja}">1 caja · ${caja} unidades</button></div>`:""}
-    <div class="meta etiqQuedan">Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b></div>
+    ${caja>0&&!cambio?`<div class="etiqChips"><button type="button" class="chip" data-etiq-chip="${caja}">1 caja · ${caja} unidades</button></div>`:""}
+    <div class="meta etiqQuedan">${cambio?etiqResumen(e):`Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b>`}</div>
     ${e.error?`<div class="warn">${esc(e.error)}</div>`:""}
     ${e.confirmar?pregunta:botones}
-  </div>`;
+  </div></div>`;
 }
 /** Actualiza la hoja sin redibujarla: si se redibuja al soltar el campo, el clic del botón se pierde. */
 function etiqPintar(){
   const e=S.etiq, sh=document.querySelector(".etiqSheet"); if(!e||!sh) return;
   const inp=sh.querySelector("[data-etiq-cant]"); if(inp && +inp.value!==e.cant) inp.value=e.cant;
   const quedan=Math.max(0,e.max-e.cant), q=sh.querySelector(".etiqQuedan");
-  if(q) q.innerHTML=`Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b>`;
+  if(q) q.innerHTML=e.de?esc(etiqResumen(e)):`Quedan sin fecha: <b>${quedan} ${unidad(e.id,quedan)}</b>`;
   const b=sh.querySelector("[data-etiq-confirmar]");
-  if(b){ b.disabled=!etiqValida(e); b.textContent=`Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}`; }
+  if(b){ b.disabled=!etiqValida(e); b.textContent=e.de?"Guardar el cambio":`Poner fecha a ${e.cant} ${unidad(e.id,e.cant)}`; }
 }
 function etiqPedirConfirmacion(){
   if(!etiqValida(S.etiq)) return toast("Revisá la fecha y la cantidad.");
@@ -2085,9 +2141,11 @@ async function etiquetarConfirmar(){
   const e=S.etiq; if(!e || e.enviando) return; // un segundo toque mientras guarda no manda nada
   e.enviando=true; e.error=null; renderApp();
   const s=S.saboresPorId[e.id]||{};
-  const r=await api("etiquetar",{clienteId:e.clienteId, local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
-  if(r && r.ok){ S.etiq=null; toast(`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
-  else { if(S.etiq){ S.etiq.enviando=false; S.etiq.confirmar=false; S.etiq.error=(r&&r.error)||"No se pudo guardar el vencimiento."; } renderApp(); }
+  const r=e.de
+    ? await api("cambiarVencimiento",{clienteId:e.clienteId, local:S.local, id:e.id, de:e.de, f:e.fecha, k:e.cant, c:e.c0})
+    : await api("etiquetar",{clienteId:e.clienteId, local:S.local, items:{[e.id]:e.cant}, vencimientos:{[e.id]:[{f:e.fecha,c:e.cant}]}});
+  if(r && r.ok){ S.etiq=null; toast(e.de?`Vencimiento corregido: ${s.nombre||"producto"}`:`Vencimiento puesto a ${e.cant} ${unidad(e.id,e.cant)} de ${s.nombre||"producto"}`); await cargarDatos(); }
+  else { if(S.etiq){ S.etiq.enviando=false; S.etiq.confirmar=false; S.etiq.error=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para poder cambiar fechas.":(r&&r.error)||"No se pudo guardar el vencimiento."; } renderApp(); }
 }
 document.addEventListener("input", e=>{
   if(e.target && e.target.id==="minSel"){
@@ -2100,7 +2158,7 @@ document.addEventListener("change", e=>{
   const el=e.target;
   if(!S.etiq || !el.dataset) return;
   if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; S.etiq.error=null; etiqPintar(); }
-  if(el.dataset.etiqCant!==undefined){ S.etiq.cant=Math.min(S.etiq.max, Math.max(1, Math.floor(+el.value||1))); etiqPintar(); }
+  if(el.dataset.etiqCant!==undefined){ const v=Math.floor(+el.value); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); etiqPintar(); }
 });
 function iniciarConteo(){
   const st=stockMap();
@@ -2597,7 +2655,7 @@ function categoriasPresentes(){
  *  oculta en la Salida común; Desperdicio, Ingreso, Conteo y Stock la siguen mostrando. */
 function chocoOcultaEnSalida(){ return !!S.ventaDia && S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio }
 function chipFiltros(){
-  const grupos=familiasPresentes().filter(g=>!(g==="chocolateria" && chocoOcultaEnSalida())), grupoActivo=S.filtroFamilia||"vasquetas";
+  const grupos=familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
   const subElegida=S.filtroCategoria!=="todas"?S.filtroCategoria:null;
   const etiqueta=g=>{
@@ -2626,9 +2684,27 @@ function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
   if(S.modoVenta) return gridVentaDia(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  if(chocoOcultaEnSalida() && S.filtroFamilia==="chocolateria"){ S.filtroFamilia=(familiasPresentes().find(g=>g!=="chocolateria"))||"vasquetas"; S.filtroCategoria="todas"; S.catAbierta=false; }
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
+  // Local con «Salida de chocolatería»: la pestaña Chocolatería se ve para consultar stock y vencimientos, pero no se saca acá (08/11/2026).
+  const consulta=chocoOcultaEnSalida() && S.filtroFamilia==="chocolateria";
+  const cardConsulta=s=>{
+    const ed=estadoSabor(s.id,st), info=loteInfoSpan(s.id,false);
+    const sinFecha=usaLotes(s.id)&&(st[s.id]||0)>0&&!info;
+    return `<div class="card consulta"><div class="pick${semCardClase(s.id,false)}" data-consulta="${s.id}" role="group" aria-label="${esc(s.nombre)}, ${st[s.id]} ${unidad(s.id,st[s.id])}, solo consulta">
+        <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
+        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${info||(sinFecha?`<span class="loteInfo"><span class="semDot"></span>Sin fecha todavía</span>`:"")}</span>
+        ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
+        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+      </div></div>`};
+  if(consulta){
+    return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
+  ${accionesSalidaHTML()}
+  ${chipFiltros()}
+  <div class="consultaAviso"><div><b>Solo informativo</b>La chocolatería se descuenta con «Salida de chocolatería». Acá ves cuánto hay y qué vence primero.</div>${S.empleado.rol!=="colaborador"?`<button type="button" class="btn consultaGo" id="irVentaDia2">Ir a Salida de chocolatería</button>`:`<div class="consultaNota">La carga un responsable.</div>`}</div>
+  ${hayLotesConFecha()?leyendaVencHTML():""}
+  ${list.length?`<div class="grid" style="margin-top:12px">${list.map(cardConsulta).join("")}</div>`:`<div class="empty">Ningún producto coincide con la búsqueda.</div>`}`;
+  }
   const card=s=>{
     const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=vendibleDe(s.id), agotado=c>=disponible;
     return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
@@ -2657,7 +2733,8 @@ function accionesSalidaHTML(){
   if(escanerDisponible()) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
   t.push(`<button type="button" class="accTile" id="irDesperdicio"><b>Desperdicio</b><small>roto, caído, vencido</small></button>`);
   if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(`<button type="button" class="accTile" id="irVentaDia"><b>Salida de chocolatería</b><small>venta, gift card, baja…</small></button>`);
-  if(!S.chocoSoloDeposito) t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>lotes por vencer</small></button>`);
+  const rv=resumenVenc(), porVencer=rv.rojo.l+rv.amarillo.l;
+  t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>${rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:porVencer?`${porVencer} por vencer`:"lotes por vencer"}</small></button>`);
   const grilla=`<div class="accGrid${t.length%2?" impar":""}">${t.join("")}</div>`;
   return grilla+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
 }
@@ -3139,7 +3216,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return (S.chocoSoloDeposito?"":`<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`)+stockViewGeneral(st);
+  return `<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`+stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -3875,7 +3952,7 @@ async function toggleSaborProduccion(saborId){
   if(r && r.ok){
     S.produccionSabores = (r.ids||[...set]).map(String);
     toast(set.has(id)?"Lo producimos":"Ya no lo producimos");
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     renderApp();
   } else toast((r&&r.error)||"No se pudo ajustar.");
 }
@@ -4306,7 +4383,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
-    S.escanerPeso = !!d.escanerPeso; S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.chocoSoloDeposito = !!d.chocoSoloDeposito; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
+    S.escanerPeso = !!d.escanerPeso; S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String);
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
@@ -4325,11 +4402,11 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
-  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
   S.regs = r.registros;
   S.stock = r.stock;
   if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -4343,7 +4420,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -4373,7 +4450,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: payload.fecha ? tsVentaDe(payload.fecha) : Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -4441,7 +4518,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, chocoSoloDeposito:S.chocoSoloDeposito, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteo=null; S.confirm=false;
   } else {
@@ -4586,6 +4663,7 @@ document.addEventListener("click", async e=>{
   }
   const secreto=e.target.closest("[data-secreto-otro]");
   if(secreto){ if(tocarSecretoOtroLocal()){ const loc=(S.auth&&S.auth.local)||S.deviceLocal; if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } else { S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } renderApp() } return }
+  if(e.target.closest("[data-consulta]")){ toast("Solo consulta. Las ventas se cargan en «Salida de chocolatería»."); return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
@@ -4770,7 +4848,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
-  if(t.id==="irVentaDia"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
+  if(t.id==="irVentaDia" || t.id==="irVentaDia2"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
   if(t.dataset.ingTipo){ S.tipoIngreso=t.dataset.ingTipo; S.remito=""; S.confirm=false; renderApp(); return }
   if(t.dataset.vdAdd){
     const id=t.dataset.vdAdd, n=Number(t.dataset.n)||0;
@@ -4815,6 +4893,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
   if(t.dataset.etiqAbrir!==undefined){ etiqAbrir(t.dataset.etiqAbrir); return }
+  if(t.dataset.etiqCambiar!==undefined){ const [id,f]=t.dataset.etiqCambiar.split("|"); etiqAbrir(id,f); return }
   if(t.dataset.etiqCancelar!==undefined){ S.etiq=null; renderApp(); return }
   if(t.dataset.etiqDec!==undefined){ etiqSetCant(S.etiq.cant-1); return }
   if(t.dataset.etiqInc!==undefined){ etiqSetCant(S.etiq.cant+1); return }
@@ -5675,7 +5754,7 @@ function ayudaTemas(){
     "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
     "Alfajores: botones <b>+1, x5, x6, x10</b> y los <b>mix</b> (surtidos). Conitos: <b>+1</b> y <b>x6</b>. Minis: solo <b>+1</b>. Abajo de cada producto ves de dónde vino cada cantidad; tocá una caja para quitarla.",
     "Lo que recibís de otro local se carga en Ingreso › <b>Transferencia recibida</b>."])+nota("Si te equivocaste, anulalo desde Historial y cargalo de nuevo.")});
-  if(!S.chocoSoloDeposito) T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
+  T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
     "En Salida tocá <b>Ver vencimientos</b>: lista cada lote de chocolatería con su fecha.",
     "El semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días. Los filtros de arriba muestran solo un color o los que no tienen fecha.",
     "Al sacar, sale primero el lote que vence antes. Lo vencido no se puede vender.",
