@@ -612,7 +612,9 @@ body:has(.mantenerOv){overflow:hidden}
 .gvKpis .kpi:not(:first-child) .val{font-size:1.45rem}
 .gvTbl table{table-layout:fixed;width:100%}
 .gvTbl th,.gvTbl td{padding:9px 3px;font-size:.8rem;overflow-wrap:anywhere}
-.gvTbl th:nth-child(1){width:34%}.gvTbl th:nth-child(2){width:13%}.gvTbl th:nth-child(3){width:21%}.gvTbl th:nth-child(4){width:32%}
+.gvTbl th:nth-child(1){width:25%}.gvTbl th:nth-child(2){width:12%}.gvTbl th:nth-child(3){width:16%}.gvTbl th:nth-child(4){width:25%}.gvTbl th:nth-child(5){width:22%}
+.gvTbl th{font-size:.64rem;letter-spacing:.02em;white-space:nowrap;overflow:visible}
+.gvPer{font-size:.66rem;font-weight:600;color:var(--muted);margin-left:1px;white-space:nowrap}
 .gvTbl td{font-variant-numeric:tabular-nums}
 .gvVista{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0 8px;padding:10px 14px;border-radius:14px;background:rgba(var(--accent-rgb),.10);font-size:.82rem}
 .gvVista span{min-width:0;overflow-wrap:anywhere}
@@ -948,7 +950,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.130.0";
+const FRONTEND_VERSION = "1.131.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3998,12 +4000,14 @@ function valorDeSabor(s, st, km){
   const u=st[s.id]||0;
   if(s.tipo==="v" && grupoProductoDe(s)==="vasquetas"){
     const k=(km && (s.id in km)) ? km[s.id] : null;
-    if(k===null || k===undefined) return {u, k:null, v:null, sinKilos:u>0};
-    return {u, k, v:k*pr, sinKilos:false};
+    if(k===null || k===undefined) return {u, k:null, v:null, sinKilos:u>0, pr, per:"kg"};
+    return {u, k, v:k*pr, sinKilos:false, pr, per:"kg"};
   }
-  if(s.tipo==="k") return {u, k:u, v:u*pr, sinKilos:false};
-  return {u, k:null, v:u*pr, sinKilos:false};
+  if(s.tipo==="k") return {u, k:u, v:u*pr, sinKilos:false, pr, per:"kg"};
+  return {u, k:null, v:u*pr, sinKilos:false, pr, per:s.tipo==="m"?"caja":"u."};
 }
+/** Costo unitario de lista para la grilla de Gestión: «$ 7.822 /kg» (helado por kilo, el resto por unidad o caja). */
+function costoUnitHTML(f){ return `${pesosAR(f.pr)}<small class="gvPer">/${f.per}</small>` }
 function gestionView(st){
   if(!S.stockValorizado) return `<div class="note">Este local no tiene activado el stock valorizado.</div>`;
   if(S.precios===null || S.preciosLocal!==S.local){
@@ -4070,9 +4074,9 @@ function gestionView(st){
   </div>`:""}
   <div class="tools noPrint" style="justify-content:center;margin:12px 0 0"><button type="button" class="btn ghost" id="exportarGestion">🖨 Exportar PDF</button></div>
   <div class="gvVista"><span>Viendo: <b>${etiquetaVista}</b> · ${visibles.length} ${visibles.length===1?"producto":"productos"}</span><strong>${pesosAR(vVis)}</strong></div>
-  <div class="tbl gvTbl"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Kilos</th><th>Valor</th></tr></thead><tbody>
-    ${visibles.map(f=>`<tr><td>${esc(f.s.nombre)}</td><td${f.u===0?` style="color:var(--warn);font-weight:800"`:""}>${f.u}</td><td${f.sinKilos?` style="color:var(--warn);font-weight:800"`:""}>${f.s.tipo==="v"||f.s.tipo==="k"?(f.k===null?(f.sinKilos?"sin kilos":"—"):fmtKg(f.k)):"—"}</td><td>${f.v===null?"—":pesosAR(f.v)}</td></tr>`).join("")||`<tr><td colspan="4">No hay productos con precio en este rubro.</td></tr>`}
-  </tbody>${visibles.length?`<tfoot><tr><td>Total</td><td>${uVis}</td><td>${hayKg?fmtKg(kVis):"—"}</td><td>${pesosAR(vVis)}</td></tr></tfoot>`:""}</table></div>
+  <div class="tbl gvTbl"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Kilos</th><th>Costo unit.</th><th>Valor</th></tr></thead><tbody>
+    ${visibles.map(f=>`<tr><td>${esc(f.s.nombre)}</td><td${f.u===0?` style="color:var(--warn);font-weight:800"`:""}>${f.u}</td><td${f.sinKilos?` style="color:var(--warn);font-weight:800"`:""}>${f.s.tipo==="v"||f.s.tipo==="k"?(f.k===null?(f.sinKilos?"sin kilos":"—"):fmtKg(f.k)):"—"}</td><td>${costoUnitHTML(f)}</td><td>${f.v===null?"—":pesosAR(f.v)}</td></tr>`).join("")||`<tr><td colspan="5">No hay productos con precio en este rubro.</td></tr>`}
+  </tbody>${visibles.length?`<tfoot><tr><td>Total</td><td>${uVis}</td><td>${hayKg?fmtKg(kVis):"—"}</td><td>—</td><td>${pesosAR(vVis)}</td></tr></tfoot>`:""}</table></div>
   ${sinPrecio?`<p class="note gvAviso" style="margin-top:10px">${sinPrecio} ${sinPrecio===1?"producto con stock no tiene":"productos con stock no tienen"} precio de lista y no ${sinPrecio===1?"entra":"entran"} en el valor.</p>`:""}`;
 }
 async function cargarSaboresAdmin(){
