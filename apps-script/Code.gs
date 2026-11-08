@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.70.0";
+const BACKEND_VERSION = "1.71.0";
 
 function doPost(e) {
   let resultado;
@@ -97,8 +97,8 @@ function _despachar(body) {
     case "estadoEquipo": return estadoEquipo(body.equipoId, body.equipoNombre, body.local, body.empleadoId);
     case "estadoEquipoLocal": return estadoEquipoLocal(body.equipoId, body.local);
     case "vincularEquipo": return vincularEquipo(body.local, body.codigo, body.equipoId, body.equipoNombre, body.vincular);
-    case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local);
-    case "loginAdminLocal": return loginAdminLocal(body.empleadoId, body.codigo, body.local);
+    case "loginGestion": return loginGestion(body.empleadoId, body.clave, body.local, body.pin);
+    case "loginAdminLocal": return loginAdminLocal(body.empleadoId, body.codigo, body.local, body.pin);
     case "verificarClaveLocal": return verificarClaveLocal(body.local, body.clave);
     default: return { ok: false, error: "Acción desconocida: " + accion };
   }
@@ -317,7 +317,18 @@ function _verificarCodigoAdmin(codigo) {
 /** Admin entrando a un local real con el código de admin (en vez de la
  *  contraseña del local). Igual que Operaciones: sin PIN personal, porque
  *  el código es el factor. Solo admin o supervisor. */
-function loginAdminLocal(empleadoId, codigo, local) {
+/** El rol admin siempre necesita además su PIN personal (decidido por Gabi 08/11/2026): sabiendo la
+ *  contraseña de Operaciones o el código de admin no alcanza para entrar como admin. Reusa login()
+ *  para el control de intentos y el bloqueo de 5 min. Devuelve null si el PIN es correcto. */
+function _exigirPinAdmin(empleado, pin, local) {
+  if (!_pinValido(pin)) return { ok: false, pidePin: true, error: "Escribí tu PIN de administrador." };
+  const r = login(empleado.id, pin, "", local, "", "");
+  if (r && r.ok) return null;
+  if (r && r.primeraVez) return { ok: false, pidePin: true, error: "Tu cuenta de administrador todavía no tiene PIN. Creálo entrando primero a un local." };
+  return { ok: false, pidePin: true, error: (r && r.error) || "PIN incorrecto." };
+}
+
+function loginAdminLocal(empleadoId, codigo, local, pin) {
   if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
   if (!filaLocal) return { ok: false, error: "No se encontró el local." };
@@ -327,7 +338,8 @@ function loginAdminLocal(empleadoId, codigo, local) {
   if (!empleado) return { ok: false, error: "No se encontró ese empleado." };
   if (_esVerdadero(empleado.activo) === false) return { ok: false, error: "Ese usuario está dado de baja." };
   if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
-  _auditar("login_admin_codigo", empleado.id, empleado.nombre, "Entró a " + local + " con el código de admin (sin PIN)");
+  if (empleado.rol === "admin") { const e = _exigirPinAdmin(empleado, pin, local); if (e) return e; }
+  _auditar("login_admin_codigo", empleado.id, empleado.nombre, "Entró a " + local + " con el código de admin" + (empleado.rol === "admin" ? " + PIN" : " (sin PIN)"));
   return _resultadoLogin(empleado, local, false);
 }
 
@@ -627,7 +639,7 @@ function empleadosGestion(local, clave) {
  *  contraseña realmente cargada (si no tiene contraseña, no se puede
  *  entrar así — si no, quedaría sin ninguna protección). Para un local
  *  real el PIN sigue siendo obligatorio, esto no lo toca. */
-function loginGestion(empleadoId, clave, local) {
+function loginGestion(empleadoId, clave, local, pin) {
   if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
   if (!filaLocal || _esVerdadero(filaLocal.operaciones) !== true) {
@@ -651,7 +663,8 @@ function loginGestion(empleadoId, clave, local) {
   if (!empleado) return { ok: false, error: "No se encontró ese empleado." };
   if (_esVerdadero(empleado.activo) === false) return { ok: false, error: "Ese usuario está dado de baja." };
   if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
-  _auditar("login_gestion_sin_pin", empleado.id, empleado.nombre, "Entró a Operaciones solo con la contraseña del local (sin PIN)");
+  if (empleado.rol === "admin") { const e = _exigirPinAdmin(empleado, pin, local); if (e) return e; }
+  _auditar("login_gestion_sin_pin", empleado.id, empleado.nombre, "Entró a Operaciones con la contraseña del local" + (empleado.rol === "admin" ? " + PIN" : " (sin PIN)"));
   return _resultadoLogin(empleado, local, true);
 }
 
