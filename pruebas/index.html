@@ -962,7 +962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.131.1";
+const FRONTEND_VERSION = "1.131.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2640,7 +2640,7 @@ function renderMain(){
 }
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
-const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Classiques","Enrobés","Prestige","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas","Tortas","Pastelería Fresca","Bollería","Geladot"];
+const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Classiques","Enrobés","Prestige","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas","Bombones","Tortas","Pastelería Fresca","Bollería","Geladot"];
 const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","chocolateria","glutenfree","pasteleria","bolleria"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
