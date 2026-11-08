@@ -25,10 +25,10 @@ const { chromium } = require("playwright");
   for(let i=0;i<24;i++) await page.click("[data-iinc='189']").catch(()=>{});
   await page.fill("#remito","Elaboración propia");
   ok(await page.$(".vencCampo")===null, "sin vencimiento");
-  await page.screenshot({path:"../past-ingreso2.png"});
+  await page.screenshot({path:"past-ingreso2.png"});
   const btn=await page.$("#confirmar, #confirmBtn, .bar .btn:not(.ghost)");
   console.log("botón confirmar:", btn?await btn.innerText():"no");
-  await btn.click(); await page.waitForTimeout(500); await page.fill("#remito","Elaboración propia").catch(()=>{}); await page.click("text=Confirmar ingreso"); await page.waitForTimeout(900); await page.screenshot({path:"../past-after-confirm.png"}); console.log((await page.innerText("body")).slice(0,300).replace(/\n/g," | "));
+  await btn.click(); await page.waitForTimeout(500); await page.fill("#remito","Elaboración propia").catch(()=>{}); await page.click("text=Confirmar ingreso"); await page.waitForTimeout(900); await page.screenshot({path:"past-after-confirm.png"}); console.log((await page.innerText("body")).slice(0,300).replace(/\n/g," | "));
   // SALIDA con pad
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400);
   const t2=await page.$$eval(".tabCat[data-familia]",e=>e.map(x=>x.dataset.familia));
@@ -38,9 +38,9 @@ const { chromium } = require("playwright");
   ok(true, "Red Velvet abre el pad de cantidad");
   await page.click("[data-cant-tecla='5']"); 
   ok((await page.inputValue("#cantNum"))==="5", "pad: 5");
-  await page.screenshot({path:"../past-pad.png"});
+  await page.screenshot({path:"past-pad.png"});
   await page.click("[data-cant-listo]"); await page.waitForTimeout(300);
-  await page.screenshot({path:"../past-salida.png"});
+  await page.screenshot({path:"past-salida.png"});
   const conf=await page.$(".bar .btn:not(.ghost)"); console.log("salida btn:", await conf.innerText()); await conf.click(); await page.waitForTimeout(500); const c2=await page.$("text=/Confirmar salida/"); if(c2){await c2.click(); await page.waitForTimeout(900)}
   // HISTORIAL
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(400);
@@ -49,12 +49,12 @@ const { chromium } = require("playwright");
   await page.click("[data-categoria-hist='pasteleria']"); await page.waitForTimeout(300);
   const h=await page.innerText("#main");
   ok(/Red Velvet/.test(h), "Historial Pastelería muestra Red Velvet");
-  await page.screenshot({path:"../past-hist.png"});
+  await page.screenshot({path:"past-hist.png"});
   // STOCK / PEDIDO
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
   const t3=await page.$$eval(".tabCat[data-familia]",e=>e.map(x=>x.dataset.familia));
   ok(t3.includes("pasteleria")&&t3.includes("bolleria"), "pestañas en Stock: "+t3.join(","));
-  await page.screenshot({path:"../past-stock.png"});
+  await page.screenshot({path:"past-stock.png"});
   console.log("ERRORES CONSOLA:", err.length?err.join(" || "):"ninguno");
   await b.close(); process.exit(fallos.length?1:0);
 })();

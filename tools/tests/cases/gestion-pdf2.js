@@ -10,7 +10,7 @@ const { execSync } = require("child_process");
     await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
     await page.waitForSelector("header"); await page.waitForTimeout(250);
     await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(700);
-    await page.click("#tabs [data-t='gestion']"); await page.waitForTimeout(500);
+    await page.click("#tabs [data-t='gestion']"); await page.waitForSelector(".gvTbl tbody tr",{timeout:15000}); await page.waitForTimeout(300);
     await page.evaluate((n)=>{ const tb=document.querySelector(".gvTbl tbody"); const tr=tb.rows[1]; while(tb.rows.length<n) tb.appendChild(tr.cloneNode(true));
       const p=document.createElement("p"); p.className="note gvAviso"; p.textContent="1 producto con stock no tiene precio de lista y no entra en el valor."; document.querySelector(".gvTbl").after(p); },n);
     await page.pdf({path:"g2.pdf",format:fmt,printBackground:true,preferCSSPageSize:true});

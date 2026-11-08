@@ -26,7 +26,7 @@ const { chromium } = require("playwright");
   ok(!!(await page.$("[data-add]")) , "carga la grilla de Salida en pruebas");
   const imgOk=await page.$$eval(".plate img",els=>els.filter(i=>i.complete&&i.naturalWidth>0).length);
   ok(imgOk>0,"las fotos (../fotos) cargan: "+imgOk);
-  await page.screenshot({path:"../pruebas-salida.png"});
+  await page.screenshot({path:"pruebas-salida.png"});
   // recarga con sesión
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(800);
   ok(!!(await page.$("header")),"recarga con sesión abierta");

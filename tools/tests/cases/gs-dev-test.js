@@ -26,6 +26,8 @@ r=run(`registrar("c6","salida","Local prueba",{"4":1},"",emp,"","",undefined,{},
 // la salida válida necesita stock: se simula
 sb._datosSinCache=()=>({stock:{base:{"4":10},ts:1},registros:[],sabores:sabores});
 r=run(`registrar("c7","salida","Local prueba",{"4":2},"",emp,"","",undefined,{},{},{"4":[3.6,3.9]})`); console.log("   salida válida:",JSON.stringify(r));
+// la devolución solo puede ser de lo que esa persona sacó: se simula su salida de hace un rato
+sb._datosSinCache=()=>({stock:{base:{"4":10},ts:1},registros:[{id:"50",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",items:{"4":2},ts:Date.now()-60000}],sabores:sabores});
 r=run(`registrar("d1","ingreso","Local prueba",{"4":1},"",emp,"","devolucion",undefined,{"4":3.6},{},{"4":[3.6]})`); ok(r.ok,"devolución con pesos pasa: "+JSON.stringify(r));
 ok(JSON.parse(escritos[escritos.length-1].pesos)["4"][0]===3.6,"guarda Registros.pesos de la devolución");
 r=run(`registrar("d2","ingreso","Local prueba",{"4":1},"R9",emp,"","",undefined,{"4":3.6},{},{"4":[3.6]})`); ok(!r.ok,"pesos en un ingreso común se rechazan: "+r.error);

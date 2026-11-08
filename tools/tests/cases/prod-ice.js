@@ -24,7 +24,7 @@ const { chromium } = require("playwright");
   for (const k of ["1","2"]) await page.click(`[data-uni-tecla='${k}']`);
   await page.click("[data-uni-caja]");
   ok((await page.inputValue("#uniNum"))==="42", "12 + 1 caja (30) = 42");
-  await page.screenshot({path:"../prod-ice-pad.png"});
+  await page.screenshot({path:"prod-ice-pad.png"});
   await page.click("[data-uni-tecla='⌫']"); ok((await page.inputValue("#uniNum"))==="4","borrar deja 4");
   await page.click("[data-uni-tecla='2']"); await page.click("[data-uni-listo]"); await page.waitForTimeout(300);
   ok((await page.innerText("[data-uni='162']")).includes("42"), "la fila muestra 42 unid.");
@@ -34,7 +34,7 @@ const { chromium } = require("playwright");
   // cancelar no cambia
   await page.click("[data-uni='73']"); await page.click("[data-uni-tecla='9']"); await page.click("[data-uni-cancel]"); await page.waitForTimeout(200);
   ok((await page.innerText("[data-uni='73']")).includes("Tocar"), "cancelar no carga nada");
-  await page.screenshot({path:"../prod-ice-lista.png"});
+  await page.screenshot({path:"prod-ice-lista.png"});
   console.log("barra:", (await page.innerText("#bar")).replace(/\n/g," | ").slice(0,160));
   await page.click("#bar #go, #bar button >> nth=-1").catch(()=>{});
   await page.waitForTimeout(500);

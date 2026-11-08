@@ -13,7 +13,7 @@ const { chromium } = require("playwright");
   await page.click("#tabs [data-t='relevar']"); await page.waitForTimeout(1200);
   await page.emulateMedia({media:"print"});
   await page.evaluate(()=>window.dispatchEvent(new Event("beforeprint")));
-  await page.pdf({path:"../informe-relevar.pdf",format:"A4",printBackground:false,preferCSSPageSize:true});
+  await page.pdf({path:"informe-relevar.pdf",format:"A4",printBackground:false,preferCSSPageSize:true});
   await page.emulateMedia({media:"screen"});
   // HISTORIAL (local con movimientos)
   await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(1000);
@@ -25,7 +25,7 @@ const { chromium } = require("playwright");
   await page.click(".bar .btn:not(.ghost)"); await page.waitForTimeout(400); const c2=await page.$("text=/Confirmar salida/"); if(c2){await c2.click(); await page.waitForTimeout(800)}
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(600);
   await page.emulateMedia({media:"print"});
-  await page.pdf({path:"../informe-historial.pdf",format:"A4",printBackground:false,preferCSSPageSize:true});
+  await page.pdf({path:"informe-historial.pdf",format:"A4",printBackground:false,preferCSSPageSize:true});
   console.log("errores:", err.length?err.join(" || "):"ninguno");
   await b.close();
 })();

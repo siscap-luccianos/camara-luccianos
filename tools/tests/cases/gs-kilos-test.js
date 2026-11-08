@@ -12,6 +12,9 @@ sb._puedeVerLocal=()=>true; sb._errorPaisItems=()=>null;
 sb._escribirCrudo=(h,o)=>{escritos.push(o);return {id:"1"}}; sb._invalidarCacheDatos=()=>{};
 sb._datosSinCache=()=>({stock:null,registros:[]});
 sb._leerUltimasFilas=()=>[]; sb._auditar=()=>{};
+// hoja Stock simulada para conteo()
+const hojaStock={getDataRange:()=>({getValues:()=>[["local","base","ts","empleado"]]}),getLastRow:()=>1,getRange:()=>({})};
+sb._sheet=()=>hojaStock; sb._escribirCeldaSinAdivinar=()=>{};
 const emp={id:"1",nombre:"Gabi",rol:"admin"}; sb.emp=emp;
 const run=c=>vm.runInContext(c,sb);
 let f=0; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c)f++};
@@ -27,5 +30,5 @@ r=run(`registrar("c6","salida","Local prueba",{"4":1},"",emp,"","",undefined,{},
 sb._datosSinCache=()=>({stock:{base:{"4":10},ts:1},registros:[],sabores:sabores});
 r=run(`registrar("c7","salida","Local prueba",{"4":2},"",emp,"","",undefined,{},{},{"4":[3.6,3.9]})`); console.log("   salida válida:",JSON.stringify(r));
 r=run(`conteo("k1","Local prueba",{"4":3,"5":0},emp,{},{})`); ok(!r.ok&&/Faltan los kilos totales de: Banana Split/.test(r.error),"conteo sin kilos se rechaza: "+r.error);
-r=run(`conteo("k2","Local prueba",{"4":3},emp,{},{"4":11.4})`); console.log("   conteo con kilos:",JSON.stringify(r));
+r=run(`conteo("k2","Local prueba",{"4":3},emp,{},{"4":11.4})`); ok(r.ok,"conteo con kilos pasa: "+JSON.stringify(r));
 console.log(f?"RESULTADO: "+f+" fallo(s)":"RESULTADO: todo OK");

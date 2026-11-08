@@ -17,7 +17,7 @@ const { chromium } = require("playwright");
   ok((await page.$$(".card.consulta")).length===2,"2 tarjetas de consulta");
   ok((await page.$$("[data-add]")).length===0,"ninguna tarjeta suma (sin data-add)");
   const txt=(await page.$eval("main",e=>e.textContent)).replace(/\s+/g," ");
-  ok(/Alfajor Semiamargo/.test(txt)&&/Sale primero/.test(txt),"muestra «Sale primero»");
+  ok(/Alfajor Semiamargo/.test(txt)&&/vencen en \d+ días/.test(txt),"muestra una línea por lote («N vencen en X días»)");
   ok(/Sin fecha todavía/.test(txt)||/sin fecha/i.test(txt),"muestra lo sin fecha");
   const cls=await page.$$eval(".card.consulta>.pick",e=>e.map(x=>x.className)); console.log(cls.join(" | "));
   ok(cls.some(c=>/sem-rojo/.test(c)),"semáforo rojo en el que vence en 3 días");
