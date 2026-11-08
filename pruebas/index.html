@@ -948,7 +948,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.126.4";
+const FRONTEND_VERSION = "1.126.5";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2326,8 +2326,17 @@ function fechaHoraRelevamiento(){
   return d.toLocaleDateString("es-AR",{timeZone:tz,day:"2-digit",month:"2-digit",year:"numeric"})+" · "+d.toLocaleTimeString("es-AR",{timeZone:tz,hour:"2-digit",minute:"2-digit",hour12:false})+" hs";
 }
 // Al mandar a imprimir se actualiza la hora: si la pantalla llevaba rato abierta, el PDF lleva la hora real de la impresión.
-window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); });
+/* Nombre del archivo al «Guardar como PDF»: los navegadores usan el título de la página. Queda «LogiStock_<local>_<d-m-aa>»
+   (ej. LogiStock_Galerias Pacifico CABA_8-11-26); en Relevar, que no es de un solo local, «LogiStock_Relevamiento_<d-m-aa>». */
+let tituloOriginal=null;
+function nombreArchivoInforme(){
+  const f=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"numeric",month:"numeric",year:"2-digit"}).replace(/\//g,"-");
+  const quien=(!S.local || document.querySelector(".rlv[data-rlv-n]")) ? "Relevamiento" : String(S.local).trim();
+  return ("LogiStock_"+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
+}
+window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); if(tituloOriginal!==null){ document.title=tituloOriginal; tituloOriginal=null } });
 window.addEventListener("beforeprint",()=>{
+  if(tituloOriginal===null){ tituloOriginal=document.title; document.title=nombreArchivoInforme(); }
   const r=document.querySelector(".rlv[data-rlv-n]"); // Relevar: vertical hasta 4 productos, horizontal de 5 a 8. El resto de los informes: A4 vertical
   const horizontal=!!(r && (Number(r.dataset.rlvN)||0)>RLV_MAX_VERTICAL), st=document.createElement("style"); st.id="rlvOrientacion";
   st.textContent="@page{size:A4 "+(horizontal?"landscape":"portrait")+";margin:0}@media print{main{min-height:"+(horizontal?"209mm":"296mm")+"!important}}"; document.head.appendChild(st);
