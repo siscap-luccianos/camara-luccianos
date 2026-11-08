@@ -296,6 +296,12 @@ select{max-width:220px}
 .lpAgregar{height:42px;border-radius:10px;border:1px dashed var(--accent);background:transparent;color:var(--accent);font:inherit;font-weight:800;font-size:.85rem;cursor:pointer}
 .card>.pick{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:0 0 12px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;overflow:hidden;transition:transform .08s,border-color .15s}
 .card>.pick:active{transform:scale(.97)}
+.card.consulta>.pick{cursor:default}
+.card.consulta>.pick:active{transform:none}
+.consultaAviso{display:flex;flex-direction:column;gap:10px;background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.25);border-radius:14px;padding:12px 14px;margin:6px 0 10px;font-size:.84rem;color:var(--ink)}
+.consultaAviso b{display:block;font-size:.9rem;margin-bottom:2px}
+.consultaGo{align-self:flex-start;min-height:42px;padding:0 16px;font-size:.84rem}
+.consultaNota{color:var(--muted);font-weight:700;font-size:.8rem}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
 .strip{display:block;width:100%;height:7px}
 .plate{width:60px;height:60px;flex:none;border-radius:14px;overflow:hidden;background:var(--accent-soft);display:grid;place-items:center}
@@ -936,7 +942,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.126.6";
+const FRONTEND_VERSION = "1.127.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2597,7 +2603,7 @@ function categoriasPresentes(){
  *  oculta en la Salida común; Desperdicio, Ingreso, Conteo y Stock la siguen mostrando. */
 function chocoOcultaEnSalida(){ return !!S.ventaDia && S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio }
 function chipFiltros(){
-  const grupos=familiasPresentes().filter(g=>!(g==="chocolateria" && chocoOcultaEnSalida())), grupoActivo=S.filtroFamilia||"vasquetas";
+  const grupos=familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
   const subElegida=S.filtroCategoria!=="todas"?S.filtroCategoria:null;
   const etiqueta=g=>{
@@ -2626,9 +2632,27 @@ function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
   if(S.modoVenta) return gridVentaDia(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  if(chocoOcultaEnSalida() && S.filtroFamilia==="chocolateria"){ S.filtroFamilia=(familiasPresentes().find(g=>g!=="chocolateria"))||"vasquetas"; S.filtroCategoria="todas"; S.catAbierta=false; }
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
+  // Local con «Salida de chocolatería»: la pestaña Chocolatería se ve para consultar stock y vencimientos, pero no se saca acá (08/11/2026).
+  const consulta=chocoOcultaEnSalida() && S.filtroFamilia==="chocolateria";
+  const cardConsulta=s=>{
+    const ed=estadoSabor(s.id,st), info=loteInfoSpan(s.id,false);
+    const sinFecha=usaLotes(s.id)&&(st[s.id]||0)>0&&!info;
+    return `<div class="card consulta"><div class="pick${semCardClase(s.id,false)}" data-consulta="${s.id}" role="group" aria-label="${esc(s.nombre)}, ${st[s.id]} ${unidad(s.id,st[s.id])}, solo consulta">
+        <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
+        <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${info||(sinFecha?`<span class="loteInfo"><span class="semDot"></span>Sin fecha todavía</span>`:"")}</span>
+        ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
+        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+      </div></div>`};
+  if(consulta){
+    return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
+  ${accionesSalidaHTML()}
+  ${chipFiltros()}
+  <div class="consultaAviso"><div><b>Solo informativo</b>La chocolatería se descuenta con «Salida de chocolatería». Acá ves cuánto hay y qué vence primero.</div>${S.empleado.rol!=="colaborador"?`<button type="button" class="btn consultaGo" id="irVentaDia2">Ir a Salida de chocolatería</button>`:`<div class="consultaNota">La carga un responsable.</div>`}</div>
+  ${hayLotesConFecha()?leyendaVencHTML():""}
+  ${list.length?`<div class="grid" style="margin-top:12px">${list.map(cardConsulta).join("")}</div>`:`<div class="empty">Ningún producto coincide con la búsqueda.</div>`}`;
+  }
   const card=s=>{
     const c=cart[s.id]||0, ed=estadoSabor(s.id,st), disponible=vendibleDe(s.id), agotado=c>=disponible;
     return `<div class="card${c?" sel":""}${agotado?" agotado":""}">
@@ -4586,6 +4610,7 @@ document.addEventListener("click", async e=>{
   }
   const secreto=e.target.closest("[data-secreto-otro]");
   if(secreto){ if(tocarSecretoOtroLocal()){ const loc=(S.auth&&S.auth.local)||S.deviceLocal; if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } else { S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } renderApp() } return }
+  if(e.target.closest("[data-consulta]")){ toast("Solo consulta. Las ventas se cargan en «Salida de chocolatería»."); return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
@@ -4770,7 +4795,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
-  if(t.id==="irVentaDia"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
+  if(t.id==="irVentaDia" || t.id==="irVentaDia2"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
   if(t.dataset.ingTipo){ S.tipoIngreso=t.dataset.ingTipo; S.remito=""; S.confirm=false; renderApp(); return }
   if(t.dataset.vdAdd){
     const id=t.dataset.vdAdd, n=Number(t.dataset.n)||0;
