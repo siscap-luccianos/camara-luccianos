@@ -965,12 +965,17 @@ function preciosStock(local, empleado) {
   if (_paisDeLocal(filaLocal) !== PAIS_DEFECTO) return { ok: false, error: "El stock valorizado es solo para locales de Argentina (la lista de precios es argentina)." };
   if (!_ve_valorizado(_esVerdadero(filaLocal.stock_valorizado) === true, empleado)) return { ok: false, error: "Este local no tiene activado el stock valorizado." };
   const pais = _paisDeLocal(filaLocal);
+  // Los precios cambian muy de vez en cuando: se guardan 5 minutos en el cache del script para no releer la hoja Sabores
+  // en cada apertura de Gestión (los permisos de arriba se validan siempre, antes del cache).
+  const cache = CacheService.getScriptCache(), key = "precios_" + pais;
+  try { const c = cache.get(key); if (c) return { ok: true, precios: JSON.parse(c) }; } catch (err) { /* sigue sin cache */ }
   const precios = {};
   _leerCrudo("Sabores").forEach((s) => {
     if (_esVerdadero(s.activo) === false || s.tipo === "b" || !_saborEnPais(s, pais)) return;
     const p = _precioLista(s.precio_lista);
     if (p > 0) precios[String(s.id)] = p;
   });
+  try { cache.put(key, JSON.stringify(precios), 300); } catch (err) { /* no crítico */ }
   return { ok: true, precios: precios };
 }
 

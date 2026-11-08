@@ -936,7 +936,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.126.2";
+const FRONTEND_VERSION = "1.126.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1043,7 +1043,7 @@ function guardarSesionPC(){
 }
 function limpiarSesion(){
   S.token=null; S.empleado=null; S.esGestion=false; S.gestionLocal=null; S.sesionCodigo=false;
-  ls.del("sesionCodigo"); ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
+  ls.del("preciosCache"); ls.del("sesionCodigo"); ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
 }
 
 /* ============================================================
@@ -3887,12 +3887,19 @@ async function toggleSaborLocal(saborId){
    Vasquetas: kilos reales × precio por kilo. Crumble/Granella (tipo k): kilos × precio por kilo.
    Icepops, minis, Gluten Free y chocolatería: unidades × precio por unidad. Baldes no entran.
 ============================================================ */
+/* Los precios se piden apenas llega la bandera stockValorizado (no hace falta esperar a que se abra la solapa) y se
+   guardan en el equipo (solo los del último local, se borran al cerrar sesión): así Gestión abre al instante y se
+   actualiza de fondo. Es solo comodidad: el servidor igual valida el rol cada vez. */
 async function cargarPrecios(){
-  if(!S.local) return;
+  if(!S.local || S._preciosPidiendo) return;
   const local=S.local;
-  const r = await api("preciosStock", {local});
+  if(S.preciosLocal!==local){
+    try{ const c=JSON.parse(ls.get("preciosCache","null")); if(c && c.local===local && c.precios){ S.precios=c.precios; S.preciosLocal=local; S.errorPrecios=null; if(S.tab==="gestion") renderApp(); } }catch(e){}
+  }
+  S._preciosPidiendo=true;
+  let r; try{ r = await api("preciosStock", {local}); } finally { S._preciosPidiendo=false; }
   if(local!==S.local) return;
-  if(r && r.ok){ S.precios=r.precios||{}; S.preciosLocal=local; S.errorPrecios=null; }
+  if(r && r.ok){ S.precios=r.precios||{}; S.preciosLocal=local; S.errorPrecios=null; ls.set("preciosCache", JSON.stringify({local, precios:S.precios})); }
   else if(S.precios && S.preciosLocal===local){ /* se queda con lo último que vio */ }
   else { S.precios=null; S.errorPrecios=(r&&r.error)||"No se pudo conectar. Probá de nuevo."; }
   if(S.tab==="gestion") renderApp();
@@ -3914,7 +3921,7 @@ function gestionView(st){
   if(!S.stockValorizado) return `<div class="note">Este local no tiene activado el stock valorizado.</div>`;
   if(S.precios===null || S.preciosLocal!==S.local){
     if(S.errorPrecios) return `<div class="note">${esc(S.errorPrecios)}<br><button class="btn ghost" id="reintentarPrecios" style="margin-top:10px">Reintentar</button></div>`;
-    return `<div class="note">Cargando valores…</div>`;
+    return `<div class="note">Calculando el valor del stock…</div>`;
   }
   const km=S.kilosReales?kilosMap():{};
   const COLG={vasquetas:"#7A3E1D",icepops:"#B5762E",chocolateria:"#C9A46B",glutenfree:"#8A6A3A",pasteleria:"#A5833A",bolleria:"#6B5D52"};
@@ -4311,6 +4318,7 @@ async function cargarDatos(){
   S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.chocoSoloDeposito = !!r.chocoSoloDeposito; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String);
   S.regs = r.registros;
   S.stock = r.stock;
+  if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
   guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, chocoSoloDeposito:!!r.chocoSoloDeposito, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], registros:r.registros, stock:r.stock});
   if(S.conteo){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
