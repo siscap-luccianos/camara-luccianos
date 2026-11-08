@@ -929,7 +929,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
 }
 
 /** Quién ve la solapa Gestión (stock valorizado): admin, supervisor y responsable de local. */
@@ -937,7 +937,7 @@ function _puedeVerValorizado(empleado) {
   return empleado.rol === "admin" || empleado.rol === "supervisor" || empleado.rol === "encargado";
 }
 
-/** ¿Ve la solapa Gestión? Admin y supervisor siempre (el local tenga o no stock_valorizado=SI);
+/** ¿Ve la solapa Gestión? Solo en locales de Argentina (la lista de precios es argentina). Admin y supervisor siempre (el local tenga o no stock_valorizado=SI);
  *  el responsable de local, solo si su local tiene Locales.stock_valorizado=SI. */
 function _ve_valorizado(flagLocal, empleado) {
   if (empleado.rol === "admin" || empleado.rol === "supervisor") return true;
@@ -962,6 +962,7 @@ function preciosStock(local, empleado) {
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   if (!filaLocal) return { ok: false, error: "No se encontró ese local." };
+  if (_paisDeLocal(filaLocal) !== PAIS_DEFECTO) return { ok: false, error: "El stock valorizado es solo para locales de Argentina (la lista de precios es argentina)." };
   if (!_ve_valorizado(_esVerdadero(filaLocal.stock_valorizado) === true, empleado)) return { ok: false, error: "Este local no tiene activado el stock valorizado." };
   const pais = _paisDeLocal(filaLocal);
   const precios = {};

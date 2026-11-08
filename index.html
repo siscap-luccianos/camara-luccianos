@@ -3942,19 +3942,22 @@ function gestionView(st){
     const base=esc(GRUPO_PRODUCTO_LABEL[g])+(g===rubro&&subElegida&&!S.catValorAbierta?` · ${esc(subElegida)}`:"");
     return g===rubro&&cats.length>1 ? `${base} ${S.catValorAbierta?"▴":"▾"}` : base;
   };
-  return `<div class="kpis gvKpis">
+  return `${informeCabHTML({etiqueta:"Informe de stock valorizado", titulo:"Stock valorizado de referencia", sub:(S.local||"")+" | "+etiquetaVista, lineaHTML:`Generado el <span class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</span> por <b>${esc(S.empleado?S.empleado.nombre:"")}</b> · valores al costo de lista`})}
+  ${informePieHTML("Stock valorizado · "+(S.local||""))}
+  <div class="kpis gvKpis">
     <div class="kpi" style="grid-column:1/-1"><span class="lbl">Valor de referencia</span><span class="val">${pesosAR(total)}</span><span class="sub">Costo de lista · no es el precio al público</span></div>
     <div class="kpi"><span class="lbl">Kilos de helado</span><span class="val">${S.kilosReales?fmtKg(kgHelado):"—"}${S.kilosReales?" kg":""}</span>${S.kilosReales?"":`<span class="sub">este local no usa kilos reales</span>`}</div>
     <div class="kpi"><span class="lbl">Productos con stock</span><span class="val">${conStock}</span><span class="sub">en mi local</span></div>
   </div>
   ${sinKilos?`<div class="note" style="margin-top:12px;color:var(--warn)"><b>${sinKilos} ${sinKilos===1?"sabor de vasqueta sin kilos cargados":"sabores de vasqueta sin kilos cargados"}:</b> ${S.kilosReales?"no entran en el valor hasta el próximo conteo físico con kilos.":"las vasquetas se valorizan con kilos reales y este local todavía no los usa."}</div>`:""}
   <div class="gvBars">${barras.map(([n,v,col])=>`<div class="gvBar"><span>${esc(n)}</span><span class="gvTrack"><span style="width:${Math.max(3,v/max*100)}%;background:${col}"></span></span><b>${pesosAR(v)}</b></div>`).join("")}</div>
-  <div class="tools" style="margin-top:12px"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
-  <div class="tabsCat" role="tablist" style="margin-top:6px">${["todos",...grupos].map(g=>`<button type="button" class="tabCat" role="tab" data-gval="${g}" aria-selected="${rubro===g}" aria-expanded="${rubro===g&&S.catValorAbierta}">${etiquetaTab(g)}</button>`).join("")}</div>
-  ${S.catValorAbierta?`<div class="subCats" role="group" aria-label="Subcategorías">
+  <div class="tools noPrint" style="margin-top:12px"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
+  <div class="tabsCat noPrint" role="tablist" style="margin-top:6px">${["todos",...grupos].map(g=>`<button type="button" class="tabCat" role="tab" data-gval="${g}" aria-selected="${rubro===g}" aria-expanded="${rubro===g&&S.catValorAbierta}">${etiquetaTab(g)}</button>`).join("")}</div>
+  ${S.catValorAbierta?`<div class="subCats noPrint" role="group" aria-label="Subcategorías">
     <button type="button" class="subCat" data-gcat="todas" aria-pressed="${S.catValor==="todas"}">Todas</button>
     ${cats.map(c=>`<button type="button" class="subCat" data-gcat="${esc(c)}" aria-pressed="${S.catValor===c}">${esc(c)}</button>`).join("")}
   </div>`:""}
+  <div class="tools noPrint" style="justify-content:center;margin:12px 0 0"><button type="button" class="btn ghost" id="exportarGestion">🖨 Exportar PDF</button></div>
   <div class="gvVista"><span>Viendo: <b>${etiquetaVista}</b> · ${visibles.length} ${visibles.length===1?"producto":"productos"}</span><strong>${pesosAR(vVis)}</strong></div>
   <div class="tbl gvTbl"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Kilos</th><th>Valor</th></tr></thead><tbody>
     ${visibles.map(f=>`<tr><td>${esc(f.s.nombre)}</td><td${f.u===0?` style="color:var(--warn);font-weight:800"`:""}>${f.u}</td><td${f.sinKilos?` style="color:var(--warn);font-weight:800"`:""}>${f.s.tipo==="v"||f.s.tipo==="k"?(f.k===null?(f.sinKilos?"sin kilos":"—"):fmtKg(f.k)):"—"}</td><td>${f.v===null?"—":pesosAR(f.v)}</td></tr>`).join("")||`<tr><td colspan="4">No hay productos con precio en este rubro.</td></tr>`}
@@ -4666,7 +4669,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.id==="calCancelar"){ S.calHist=null; renderApp(); return }
   if(t.id==="calAplicar"){ const c=S.calHist; if(c&&c.d){ S.rangoHist=`c${c.d}|${c.h||c.d}`; S.calHist=null; renderApp() } return }
-  if(t.id==="exportarHist"){ window.print(); return }
+  if(t.id==="exportarHist" || t.id==="exportarGestion"){ window.print(); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
   if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t.dataset.tipoReg, t); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
