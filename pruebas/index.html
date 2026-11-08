@@ -960,7 +960,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.129.4";
+const FRONTEND_VERSION = "1.130.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4025,7 +4025,11 @@ function gestionView(st){
   const km=S.kilosReales?kilosMap():{};
   const COLG={vasquetas:"#7A3E1D",icepops:"#B5762E",chocolateria:"#C9A46B",glutenfree:"#8A6A3A",pasteleria:"#A5833A",bolleria:"#6B5D52"};
   const filas=[]; let sinPrecio=0;
+  // Local que fabrica (ej. Unicenter): Gestión valoriza solo lo que recibe. Lo que produce se suma cuando haya costos de producción.
+  const prodIds=S.produccionLocal?new Set(saboresProduccion().map(x=>String(x.id))):new Set();
+  const prodGrupos=S.produccionLocal?GRUPO_PRODUCTO_ORDEN.filter(g=>saboresProduccion().some(x=>grupoProductoDe(x)===g)):[];
   saboresDelLocalBase().forEach(s=>{
+    if(prodIds.has(String(s.id))) return;
     const f=valorDeSabor(s,st,km);
     if(!f){ if((st[s.id]||0)>0 && s.tipo!=="b") sinPrecio++; return; }
     filas.push({s, g:grupoProductoDe(s), ...f});
@@ -4064,9 +4068,10 @@ function gestionView(st){
   ${informePieHTML("Stock valorizado · "+(S.local||""))}
   <div class="kpis gvKpis">
     <div class="kpi" style="grid-column:1/-1"><span class="lbl">Valor de referencia</span><span class="val">${pesosAR(total)}</span><span class="sub">Costo de lista · no es el precio al público</span></div>
-    <div class="kpi"><span class="lbl">Kilos de helado</span><span class="val">${S.kilosReales?fmtKg(kgHelado):"—"}${S.kilosReales?" kg":""}</span>${S.kilosReales?"":`<span class="sub">este local no usa kilos reales</span>`}</div>
+    <div class="kpi"><span class="lbl">Kilos de helado</span><span class="val">${S.kilosReales&&!prodGrupos.includes("vasquetas")?fmtKg(kgHelado):"—"}${S.kilosReales&&!prodGrupos.includes("vasquetas")?" kg":""}</span>${prodGrupos.includes("vasquetas")?`<span class="sub">el helado se produce acá</span>`:S.kilosReales?"":`<span class="sub">este local no usa kilos reales</span>`}</div>
     <div class="kpi"><span class="lbl">Productos con stock</span><span class="val">${conStock}</span><span class="sub">en mi local</span></div>
   </div>
+  ${prodGrupos.length?`<div class="note gvAviso" style="margin-top:12px"><b>Solo lo que recibe el local.</b> ${prodGrupos.map(g=>GRUPO_PRODUCTO_LABEL[g]).join(", ")} se produce${prodGrupos.length>1?"n":""} acá y no está incluido en el valor: se suma cuando estén los costos de producción.</div>`:""}
   ${sinKilos?`<div class="note gvAviso" style="margin-top:12px;color:var(--warn)"><b>${sinKilos} ${sinKilos===1?"sabor de vasqueta sin kilos cargados":"sabores de vasqueta sin kilos cargados"}:</b> ${S.kilosReales?"no entran en el valor hasta el próximo conteo físico con kilos.":"las vasquetas se valorizan con kilos reales y este local todavía no los usa."}</div>`:""}
   <div class="gvBars">${barras.map(([n,v,col])=>`<div class="gvBar"><span>${esc(n)}</span><span class="gvTrack"><span style="width:${Math.max(3,v/max*100)}%;background:${col}"></span></span><b>${pesosAR(v)}</b></div>`).join("")}</div>
   <div class="tools noPrint" style="margin-top:12px"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
