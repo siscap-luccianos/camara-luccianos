@@ -602,6 +602,10 @@ body:has(.mantenerOv){overflow:hidden}
 .gvTbl th,.gvTbl td{padding:9px 3px;font-size:.8rem;overflow-wrap:anywhere}
 .gvTbl th:nth-child(1){width:34%}.gvTbl th:nth-child(2){width:13%}.gvTbl th:nth-child(3){width:21%}.gvTbl th:nth-child(4){width:32%}
 .gvTbl td{font-variant-numeric:tabular-nums}
+.gvVista{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0 8px;padding:10px 14px;border-radius:14px;background:rgba(var(--accent-rgb),.10);font-size:.82rem}
+.gvVista span{min-width:0;overflow-wrap:anywhere}
+.gvVista strong{font-family:var(--display);font-size:1.15rem;white-space:nowrap}
+.gvTbl tfoot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:0}
 .gvBars{display:flex;flex-direction:column;gap:8px;margin-top:14px}
 .gvBar{display:grid;grid-template-columns:96px minmax(0,1fr) 112px;gap:10px;align-items:center;font-size:.82rem}
 .gvBar b{text-align:center;font-variant-numeric:tabular-nums}
@@ -975,7 +979,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false, chocoSoloDeposito: false,
   controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
@@ -3901,6 +3905,7 @@ function gestionView(st){
     return `<div class="note">Cargando valores…</div>`;
   }
   const km=S.kilosReales?kilosMap():{};
+  const COLG={vasquetas:"#7A3E1D",icepops:"#B5762E",chocolateria:"#C9A46B",glutenfree:"#8A6A3A",pasteleria:"#A5833A",bolleria:"#6B5D52"};
   const filas=[]; let sinPrecio=0;
   saboresDelLocalBase().forEach(s=>{
     const f=valorDeSabor(s,st,km);
@@ -3916,20 +3921,44 @@ function gestionView(st){
   });
   const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>filas.some(f=>f.g===g));
   if(S.filtroValor!=="todos" && !grupos.includes(S.filtroValor)) S.filtroValor="todos";
-  const max=Math.max(1,...grupos.map(g=>totales[g]||0));
-  const visibles=filas.filter(f=>S.filtroValor==="todos"||f.g===S.filtroValor);
-  const COLG={vasquetas:"#7A3E1D",icepops:"#B5762E",chocolateria:"#C9A46B",glutenfree:"#8A6A3A",pasteleria:"#A5833A",bolleria:"#6B5D52"};
+  const rubro=S.filtroValor;
+  const catDe=f=>f.s.categoria||"Cremas";
+  const setCats=new Set(filas.filter(f=>f.g===rubro).map(catDe));
+  const cats=rubro==="todos"?[]:CATEGORIAS_ORDEN.filter(c=>setCats.has(c)).concat([...setCats].filter(c=>!CATEGORIAS_ORDEN.includes(c)));
+  if(S.catValor!=="todas" && !cats.includes(S.catValor)) S.catValor="todas";
+  if(rubro==="todos" || cats.length<2) S.catValorAbierta=false;
+  // Barras: por rubro; con un rubro elegido, por subcategoría de ese rubro.
+  const totCat={}; filas.forEach(f=>{ if(f.g===rubro && f.v!==null) totCat[catDe(f)]=(totCat[catDe(f)]||0)+f.v });
+  const barras = rubro==="todos" ? grupos.map(g=>[GRUPO_PRODUCTO_LABEL[g], totales[g]||0, COLG[g]||"var(--accent)"]) : cats.map(c=>[c, totCat[c]||0, COLG[rubro]||"var(--accent)"]);
+  const max=Math.max(1,...barras.map(b=>b[1]));
+  const qv=normalizar((S.q||"").trim());
+  const visibles=filas.filter(f=>(rubro==="todos"||f.g===rubro) && (S.catValor==="todas"||catDe(f)===S.catValor) && (!qv||normalizar(f.s.nombre).includes(qv)));
+  const subElegida=S.catValor!=="todas"?S.catValor:null;
+  const vVis=visibles.reduce((a,f)=>a+(f.v||0),0), uVis=visibles.reduce((a,f)=>a+f.u,0), kVis=visibles.reduce((a,f)=>a+((f.s.tipo==="v"||f.s.tipo==="k")&&f.k!==null?f.k:0),0);
+  const hayKg=visibles.some(f=>f.s.tipo==="v"||f.s.tipo==="k");
+  const etiquetaVista=(rubro==="todos"?"Todos los rubros":GRUPO_PRODUCTO_LABEL[rubro]+(subElegida?" · "+subElegida:""))+(qv?` · «${esc(S.q.trim())}»`:"");
+  const etiquetaTab=g=>{
+    if(g==="todos") return "Todos";
+    const base=esc(GRUPO_PRODUCTO_LABEL[g])+(g===rubro&&subElegida&&!S.catValorAbierta?` · ${esc(subElegida)}`:"");
+    return g===rubro&&cats.length>1 ? `${base} ${S.catValorAbierta?"▴":"▾"}` : base;
+  };
   return `<div class="kpis gvKpis">
     <div class="kpi" style="grid-column:1/-1"><span class="lbl">Valor de referencia</span><span class="val">${pesosAR(total)}</span><span class="sub">Costo de lista · no es el precio al público</span></div>
-    <div class="kpi"><span class="lbl">Kilos de helado</span><span class="val">${S.kilosReales?fmtKg(kgHelado):"—"}${S.kilosReales?" kg":""}</span><span class="sub">${S.kilosReales?"remitos − retiros":"este local no usa kilos reales"}</span></div>
+    <div class="kpi"><span class="lbl">Kilos de helado</span><span class="val">${S.kilosReales?fmtKg(kgHelado):"—"}${S.kilosReales?" kg":""}</span>${S.kilosReales?"":`<span class="sub">este local no usa kilos reales</span>`}</div>
     <div class="kpi"><span class="lbl">Productos con stock</span><span class="val">${conStock}</span><span class="sub">en mi local</span></div>
   </div>
   ${sinKilos?`<div class="note" style="margin-top:12px;color:var(--warn)"><b>${sinKilos} ${sinKilos===1?"sabor de vasqueta sin kilos cargados":"sabores de vasqueta sin kilos cargados"}:</b> ${S.kilosReales?"no entran en el valor hasta el próximo conteo físico con kilos.":"las vasquetas se valorizan con kilos reales y este local todavía no los usa."}</div>`:""}
-  <div class="gvBars">${grupos.map(g=>`<div class="gvBar"><span>${GRUPO_PRODUCTO_LABEL[g]}</span><span class="gvTrack"><span style="width:${Math.max(3,(totales[g]||0)/max*100)}%;background:${COLG[g]||"var(--accent)"}"></span></span><b>${pesosAR(totales[g]||0)}</b></div>`).join("")}</div>
-  <div class="chips" style="margin:12px 0;display:flex;flex-wrap:wrap;gap:8px">${["todos",...grupos].map(g=>`<button type="button" class="chip" data-gval="${g}" aria-pressed="${S.filtroValor===g}">${g==="todos"?"Todos":GRUPO_PRODUCTO_LABEL[g]}</button>`).join("")}</div>
+  <div class="gvBars">${barras.map(([n,v,col])=>`<div class="gvBar"><span>${esc(n)}</span><span class="gvTrack"><span style="width:${Math.max(3,v/max*100)}%;background:${col}"></span></span><b>${pesosAR(v)}</b></div>`).join("")}</div>
+  <div class="tools" style="margin-top:12px"><div class="grow"><input type="search" id="q" placeholder="Buscar producto" value="${esc(S.q)}"></div></div>
+  <div class="tabsCat" role="tablist" style="margin-top:6px">${["todos",...grupos].map(g=>`<button type="button" class="tabCat" role="tab" data-gval="${g}" aria-selected="${rubro===g}" aria-expanded="${rubro===g&&S.catValorAbierta}">${etiquetaTab(g)}</button>`).join("")}</div>
+  ${S.catValorAbierta?`<div class="subCats" role="group" aria-label="Subcategorías">
+    <button type="button" class="subCat" data-gcat="todas" aria-pressed="${S.catValor==="todas"}">Todas</button>
+    ${cats.map(c=>`<button type="button" class="subCat" data-gcat="${esc(c)}" aria-pressed="${S.catValor===c}">${esc(c)}</button>`).join("")}
+  </div>`:""}
+  <div class="gvVista"><span>Viendo: <b>${etiquetaVista}</b> · ${visibles.length} ${visibles.length===1?"producto":"productos"}</span><strong>${pesosAR(vVis)}</strong></div>
   <div class="tbl gvTbl"><table><thead><tr><th>Producto</th><th>Unid.</th><th>Kilos</th><th>Valor</th></tr></thead><tbody>
     ${visibles.map(f=>`<tr><td>${esc(f.s.nombre)}</td><td${f.u===0?` style="color:var(--warn);font-weight:800"`:""}>${f.u}</td><td${f.sinKilos?` style="color:var(--warn);font-weight:800"`:""}>${f.s.tipo==="v"||f.s.tipo==="k"?(f.k===null?(f.sinKilos?"sin kilos":"—"):fmtKg(f.k)):"—"}</td><td>${f.v===null?"—":pesosAR(f.v)}</td></tr>`).join("")||`<tr><td colspan="4">No hay productos con precio en este rubro.</td></tr>`}
-  </tbody></table></div>
+  </tbody>${visibles.length?`<tfoot><tr><td>Total</td><td>${uVis}</td><td>${hayKg?fmtKg(kVis):"—"}</td><td>${pesosAR(vVis)}</td></tr></tfoot>`:""}</table></div>
   <p class="note" style="margin-top:10px">Vasquetas: kilos reales × precio por kilo de la lista de fábrica. Icepops, Gluten Free y chocolatería: unidades × precio por unidad. Baldes no entran por ahora.${sinPrecio?` ${sinPrecio} ${sinPrecio===1?"producto con stock no tiene":"productos con stock no tienen"} precio de lista y no ${sinPrecio===1?"entra":"entran"} en el valor.`:""}</p>`;
 }
 async function cargarSaboresAdmin(){
@@ -4281,7 +4310,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.chocoSoloDeposito=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -4576,7 +4605,12 @@ document.addEventListener("click", async e=>{
   if(t.id==="ayudaBtn"){ abrirAyuda(); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="reintentarPrecios"){ S.errorPrecios=null; cargarPrecios(); renderApp(); return }
-  if(t.dataset && t.dataset.gval){ S.filtroValor=t.dataset.gval; renderApp(); return }
+  if(t.dataset && t.dataset.gval){
+    const g=t.dataset.gval;
+    if(g===S.filtroValor && g!=="todos") S.catValorAbierta=!S.catValorAbierta;   // tocar el rubro activo despliega o cierra sus subcategorías
+    else { S.filtroValor=g; S.catValor="todas"; S.catValorAbierta=(g!=="todos"); }
+    renderApp(); return }
+  if(t.dataset && t.dataset.gcat){ S.catValor=t.dataset.gcat; S.catValorAbierta=false; renderApp(); return }
   if(t.id==="reintentarSabores"){ S.saboresAdmin=undefined; renderApp(); return }
   if(t.id==="reintentarEquipo"){ S.equipo=undefined; renderApp(); return }
   if(t.id==="reintentarGestion"){ S.gestion=undefined; renderApp(); return }

@@ -929,12 +929,19 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: !!base.stockValorizado && _puedeVerValorizado(empleado), rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
 }
 
 /** Quién ve la solapa Gestión (stock valorizado): admin, supervisor y responsable de local. */
 function _puedeVerValorizado(empleado) {
   return empleado.rol === "admin" || empleado.rol === "supervisor" || empleado.rol === "encargado";
+}
+
+/** ¿Ve la solapa Gestión? Admin y supervisor siempre (el local tenga o no stock_valorizado=SI);
+ *  el responsable de local, solo si su local tiene Locales.stock_valorizado=SI. */
+function _ve_valorizado(flagLocal, empleado) {
+  if (empleado.rol === "admin" || empleado.rol === "supervisor") return true;
+  return empleado.rol === "encargado" && !!flagLocal;
 }
 
 /** Precio de lista de un sabor (Sabores.precio_lista), como número; 0 si no hay. */
@@ -945,7 +952,7 @@ function _precioLista(valor) {
 }
 
 /** PRECIOS DEL STOCK VALORIZADO. Devuelve {id: precio de lista} de los sabores que se venden en el país del local.
- *  Solo para admin, supervisor y el responsable de ESE local, y solo si el local tiene Locales.stock_valorizado=SI.
+ *  Solo para admin y supervisor (de cualquier local) y para el responsable de ESE local si tiene Locales.stock_valorizado=SI.
  *  Los precios no viajan en datos() a propósito: esos datos se comparten con todo el equipo del local.
  *  Vasquetas (tipo v) y Crumble (tipo k) son precio por kilo; el resto, por unidad (lo decide el cliente por tipo).
  *  Baldes (tipo b) quedan afuera hasta tener sus datos. */
@@ -954,7 +961,8 @@ function preciosStock(local, empleado) {
   if (!_puedeVerValorizado(empleado)) return { ok: false, error: "No tenés permiso para ver el stock valorizado." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-  if (!filaLocal || _esVerdadero(filaLocal.stock_valorizado) !== true) return { ok: false, error: "Este local no tiene activado el stock valorizado." };
+  if (!filaLocal) return { ok: false, error: "No se encontró ese local." };
+  if (!_ve_valorizado(_esVerdadero(filaLocal.stock_valorizado) === true, empleado)) return { ok: false, error: "Este local no tiene activado el stock valorizado." };
   const pais = _paisDeLocal(filaLocal);
   const precios = {};
   _leerCrudo("Sabores").forEach((s) => {
