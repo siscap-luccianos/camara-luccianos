@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.65.0";
+const BACKEND_VERSION = "1.66.0";
 
 function doPost(e) {
   let resultado;
@@ -110,6 +110,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
     case "datos": return datos(body.local, empleado);
     case "relevar": return relevar(empleado);
+    case "preciosStock": return preciosStock(body.local, empleado);
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
@@ -893,7 +894,10 @@ function _datosSinCache(local, empleado) {
 
   // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
   const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
-  return { registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos, kilosReales: kilosReales };
+  // Locales.stock_valorizado=SI: el local tiene la solapa Gestión (stock valorizado de referencia). Solo es la bandera:
+  // los precios NO viajan acá, los entrega preciosStock() solo a los roles autorizados.
+  const stockValorizado = filaLocal ? _esVerdadero(filaLocal.stock_valorizado) === true : false;
+  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos, kilosReales: kilosReales };
 }
 
 function _cacheKeyDatos(local) {
@@ -925,7 +929,40 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: !!base.stockValorizado && _puedeVerValorizado(empleado), rol: empleado.rol };
+}
+
+/** Quién ve la solapa Gestión (stock valorizado): admin, supervisor y responsable de local. */
+function _puedeVerValorizado(empleado) {
+  return empleado.rol === "admin" || empleado.rol === "supervisor" || empleado.rol === "encargado";
+}
+
+/** Precio de lista de un sabor (Sabores.precio_lista), como número; 0 si no hay. */
+function _precioLista(valor) {
+  if (typeof valor === "number") return isFinite(valor) && valor > 0 ? valor : 0;
+  const n = parseFloat(String(valor || "").replace(/\s/g, "").replace(",", "."));
+  return isFinite(n) && n > 0 ? n : 0;
+}
+
+/** PRECIOS DEL STOCK VALORIZADO. Devuelve {id: precio de lista} de los sabores que se venden en el país del local.
+ *  Solo para admin, supervisor y el responsable de ESE local, y solo si el local tiene Locales.stock_valorizado=SI.
+ *  Los precios no viajan en datos() a propósito: esos datos se comparten con todo el equipo del local.
+ *  Vasquetas (tipo v) y Crumble (tipo k) son precio por kilo; el resto, por unidad (lo decide el cliente por tipo).
+ *  Baldes (tipo b) quedan afuera hasta tener sus datos. */
+function preciosStock(local, empleado) {
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerValorizado(empleado)) return { ok: false, error: "No tenés permiso para ver el stock valorizado." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  if (!filaLocal || _esVerdadero(filaLocal.stock_valorizado) !== true) return { ok: false, error: "Este local no tiene activado el stock valorizado." };
+  const pais = _paisDeLocal(filaLocal);
+  const precios = {};
+  _leerCrudo("Sabores").forEach((s) => {
+    if (_esVerdadero(s.activo) === false || s.tipo === "b" || !_saborEnPais(s, pais)) return;
+    const p = _precioLista(s.precio_lista);
+    if (p > 0) precios[String(s.id)] = p;
+  });
+  return { ok: true, precios: precios };
 }
 
 /** RELEVAR (solo Operaciones: admin y supervisor): stock vigente de TODOS los
