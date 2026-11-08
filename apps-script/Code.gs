@@ -1267,6 +1267,13 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
         return { ok: false, error: "Este local no produce: " + fuera.map((id) => porId[String(id)].nombre).join(", ") + "." };
       }
     }
+    // Geladot viene hecho de fábrica: nunca es parte de Producción.
+    const porIdG = {};
+    catalogoVenc.forEach((sab) => { porIdG[String(sab.id)] = sab; });
+    const geladot = Object.keys(items).filter((id) => porIdG[String(id)] && String(porIdG[String(id)].categoria || "").trim() === "Geladot");
+    if (geladot.length) {
+      return { ok: false, error: "Geladot no se produce en el local: " + geladot.map((id) => porIdG[String(id)].nombre).join(", ") + "." };
+    }
     // Y, si el local eligió qué sabores fabrica (Locales.produccion_sabores), solo esos.
     const saboresOk = _idsLista(filaLocalProd.produccion_sabores);
     if (saboresOk.length) {
