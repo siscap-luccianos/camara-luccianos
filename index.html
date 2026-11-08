@@ -283,6 +283,7 @@ select{max-width:220px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .card{position:relative;display:flex;flex-direction:column}
 .card>.pick{flex:1 1 auto}
+.tipoHistRow{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
 .cParcial{margin:0 0 10px;padding:9px 12px;border-radius:12px;background:#EADFFF;color:#3B1E78;font-size:.85rem;line-height:1.4;border:1px solid #C9B2FF}
 .ceOpts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
 .ceOp{min-height:76px;border-radius:14px;padding:10px 12px;text-align:left;border:2px solid #2A211A;background:#fff;color:#2A211A;font-family:inherit;cursor:pointer}
@@ -1007,7 +1008,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.134.0";
+const FRONTEND_VERSION = "1.135.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1071,7 +1072,7 @@ const S = {
   pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
-  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
+  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", tipoHist: "todos", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
@@ -3852,7 +3853,12 @@ function histView(){
 
   // La lista de abajo sigue a la pill de categoría igual que la tabla de arriba
   const regsCategoria=regs.filter(r=>movimientoEnCategoria(r, S.categoriaHist));
-  const lista=regsCategoria.slice(0,150).map(filaMovimiento).join("");
+  // Filtro por tipo (Salidas, Ingresos, Conteos…): solo los tipos que hay en el período, con su cantidad
+  const cuentaTipo={}; regsCategoria.forEach(r=>{ const t=tipoMovHist(r); cuentaTipo[t]=(cuentaTipo[t]||0)+1 });
+  const chipsTipo=[["todos","Todos",regsCategoria.length]].concat(TIPOS_HIST.filter(([v])=>cuentaTipo[v]||S.tipoHist===v).map(([v,l])=>[v,l,cuentaTipo[v]||0]))
+    .map(([v,l,n])=>`<button type="button" class="chip" data-tipo-hist="${v}" aria-pressed="${S.tipoHist===v}">${l} · ${n}</button>`).join("");
+  const regsLista=S.tipoHist==="todos" ? regsCategoria : regsCategoria.filter(r=>tipoMovHist(r)===S.tipoHist);
+  const lista=regsLista.slice(0,150).map(filaMovimiento).join("");
   return `${informeCabHTML({etiqueta:"Informe de historial", titulo:tituloTabla, sub:(S.local||"")+" | "+rango.label, lineaHTML:`Generado el <span class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</span> por <b>${esc(S.empleado?S.empleado.nombre:"")}</b>`})}
   ${informePieHTML(tituloTabla+" · "+(S.local||""))}
   <div class="tools noPrint" style="justify-content:center"><button type="button" class="btn ghost" id="exportarHist">🖨 Exportar</button></div>
@@ -3868,12 +3874,22 @@ function histView(){
   <p class="sec tituloTabla" style="margin:14px 0 8px">${esc(tituloTabla)} — ${esc(rango.label)}</p>
   ${tabla}
   <p class="sec noPrint tituloTabla" style="margin-top:20px">Movimientos</p>
-  <div class="noPrint">${lista?`<div class="hist">${lista}</div>`:`<div class="empty">${S.categoriaHist==="todas"?"Sin movimientos en este período.":"Sin movimientos de esta categoría en este período."}</div>`}</div>`;
+  <div class="tipoHistRow noPrint" role="group" aria-label="Tipo de movimiento">${chipsTipo}</div>
+  <div class="noPrint">${lista?`<div class="hist">${lista}</div>`:`<div class="empty">${S.tipoHist!=="todos"?"No hay movimientos de este tipo en este período. Probá con otro período (Todo = últimos 60 días)"+(S.categoriaHist!=="todas"?" o con la pestaña Todas.":"."):S.categoriaHist==="todas"?"Sin movimientos en este período.":"Sin movimientos de esta categoría en este período."}</div>`}</div>`;
 }
 /** Qué movimientos muestra cada pill de categoría en la lista de abajo.
  *  Mismo criterio que la tabla de arriba: Vasquetas/Icepops son salidas
  *  (sin desperdicio) con algún sabor de ese grupo; si una salida mezcla
  *  los dos, aparece entera en ambos filtros. Chocolatería suma ingresos. */
+/** Tipo de movimiento para el filtro de la lista de Historial (pedido de Gabi 08/11/2026, para encontrar un conteo, un ingreso, etc. sin depender del día). */
+const TIPOS_HIST=[["salida","Salidas"],["ingreso","Ingresos"],["conteo","Conteos"],["devolucion","Devoluciones"],["desperdicio","Desperdicio"],["produccion","Producción"],["cambio","Cambios de sabor"]];
+function tipoMovHist(r){
+  if(r.tipo==="conteo" || (r.tipo==="cambio" && r.subtipo==="conteo_parcial")) return "conteo";
+  if(r.tipo==="cambio") return "cambio";
+  if(r.tipo==="salida") return r.subtipo==="desperdicio" ? "desperdicio" : "salida";
+  if(r.tipo==="ingreso") return r.subtipo==="devolucion" ? "devolucion" : r.subtipo==="produccion" ? "produccion" : "ingreso";
+  return r.tipo;
+}
 function movimientoEnCategoria(r, cat){
   if(cat==="todas") return true;
   if(cat==="desperdicio") return r.tipo==="salida" && r.subtipo==="desperdicio";
@@ -4649,7 +4665,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -5000,6 +5016,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
+  if(t.dataset.tipoHist){ S.tipoHist=t.dataset.tipoHist; renderApp(); return }
   if(t.dataset.rangoMenu){ S.rangoMenu=!S.rangoMenu; renderApp(); return }
   if(t.dataset.rangoHist){ S.rangoHist=t.dataset.rangoHist; S.calHist=null; S.rangoMenu=false; renderApp(); return }
   if(t.dataset.calToggle){
