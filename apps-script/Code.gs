@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.67.0";
+const BACKEND_VERSION = "1.67.1";
 
 function doPost(e) {
   let resultado;
@@ -890,16 +890,13 @@ function _datosSinCache(local, empleado) {
   // Locales.venta_dia=SI habilita, en Salida, "Venta del día" (chocolatería): una
   // salida con lo que dice la caja al cerrar. Piloto: hoy solo "Local prueba".
   const ventaDia = filaLocal ? _esVerdadero(filaLocal.venta_dia) === true : false;
-  // Locales.choco_solo_deposito=SI: la chocolatería se cuenta sin vencimientos (centro comercial con
-  // el depósito lejos); la salida es la común. Si el local ya usa «Venta del día», esa manda.
-  const chocoSoloDeposito = !ventaDia && (filaLocal ? _esVerdadero(filaLocal.choco_solo_deposito) === true : false);
 
   // Locales.control_equipos=SI: el local tiene control de equipos (pestaña Equipo > Equipos).
   const controlEquipos = filaLocal ? _esVerdadero(filaLocal.control_equipos) === true : false;
   // Locales.stock_valorizado=SI: el local tiene la solapa Gestión (stock valorizado de referencia). Solo es la bandera:
   // los precios NO viajan acá, los entrega preciosStock() solo a los roles autorizados.
   const stockValorizado = filaLocal ? _esVerdadero(filaLocal.stock_valorizado) === true : false;
-  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, chocoSoloDeposito: chocoSoloDeposito, controlEquipos: controlEquipos, kilosReales: kilosReales };
+  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, controlEquipos: controlEquipos, kilosReales: kilosReales };
 }
 
 function _cacheKeyDatos(local) {
@@ -931,7 +928,7 @@ function datos(local, empleado) {
     try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, chocoSoloDeposito: !!base.chocoSoloDeposito, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
 }
 
 /** Quién ve la solapa Gestión (stock valorizado): admin, supervisor y responsable de local. */
