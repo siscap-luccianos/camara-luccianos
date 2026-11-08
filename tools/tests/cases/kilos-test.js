@@ -54,7 +54,7 @@ const { chromium } = require("playwright");
   ok(/39,67 kg/.test(kpi2), "después de sacar 3,60 kg quedan 39,67: "+kpi2.slice(0,150));
 
   // ---- CONTEO con kilos
-  await page.click("#conteoBtn"); await page.waitForTimeout(400);
+  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
   await page.fill("[data-c='4']","3"); await page.fill("[data-c='20']","2"); await page.fill("[data-c='5']","0"); 
   await page.waitForSelector("[data-kc='4']");
   let bar=await page.$eval("#barIn",e=>e.textContent); ok(/Faltan los kilos totales de/.test(bar),"conteo pide kilos: "+bar.slice(0,90));

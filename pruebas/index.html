@@ -294,6 +294,13 @@ select{max-width:220px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 .card{position:relative;display:flex;flex-direction:column}
 .card>.pick{flex:1 1 auto}
+.cParcial{margin:0 0 10px;padding:9px 12px;border-radius:12px;background:#EADFFF;color:#3B1E78;font-size:.85rem;line-height:1.4;border:1px solid #C9B2FF}
+.ceOpts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.ceOp{min-height:76px;border-radius:14px;padding:10px 12px;text-align:left;border:2px solid #2A211A;background:#fff;color:#2A211A;font-family:inherit;cursor:pointer}
+.ceOp b{display:block;font-size:.95rem}.ceOp span{display:block;font-size:.75rem;margin-top:3px;line-height:1.3}
+.ceOp[aria-pressed="true"]{background:#2A211A;color:#fff}
+.ceRubros{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.ceExp{font-size:.85rem;line-height:1.5;margin:0 0 12px}
 .aplicarBox{margin:0 0 12px;padding:10px 12px;border:1px solid rgba(120,100,80,.3);border-radius:12px;background:rgba(255,255,255,.55);color:#2A211A}
 .aplicarT{font-weight:700;font-size:.85rem;margin-bottom:6px}
 .aplicarOp{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
@@ -1012,7 +1019,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.133.1";
+const FRONTEND_VERSION = "1.134.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1076,7 +1083,7 @@ const S = {
   pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
-  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
+  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
@@ -1885,6 +1892,7 @@ function lotesPanelHTML(clave, id, cantidad){
  *  sin esperar a Guardar. Solo se reemplaza el panel, no el campo de cantidad, así no se pierde el foco. */
 function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
   if(!usaLotes(id)) return;
+  if(prefijo==="conteo:" && conteoParcialActivo()) return; // en un conteo parcial los vencimientos no se tocan
   const fila=input.closest(".row"), clave=prefijo+id, panel=fila.querySelector(".lotesFull");
   if(cantidad<=0){ if(panel) panel.remove(); delete S.lotesExtra[clave]; return }
   const html=`<div class="lotesFull">${lotesPanelHTML(clave,id,cantidad)}</div>`;
@@ -2225,8 +2233,11 @@ document.addEventListener("change", e=>{
   if(el.dataset.etiqFecha!==undefined){ S.etiq.fecha=el.value; S.etiq.error=null; etiqPintar(); }
   if(el.dataset.etiqCant!==undefined){ const v=Math.floor(+el.value); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); etiqPintar(); }
 });
-function iniciarConteo(conBorrador){
+function iniciarConteo(conBorrador, alcance){
   const st=stockMap();
+  const bor=conBorrador?borradorConteo():null;
+  S.conteoAlcance=bor?(bor.alcance||"todo"):(alcance||"todo");
+  if(S.conteoAlcance!=="todo"){ S.filtroFamilia=S.conteoAlcance; S.filtroCategoria="todas"; S.catAbierta=false; S.q=""; S.soloAlerta=false; S.conteoAplicar="visible" }
   S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
   S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false; S.conteoAplicar="visible"; S.conteoAplicarVal="";
   Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
@@ -2238,6 +2249,10 @@ function iniciarConteo(conBorrador){
    no cambia hasta el único «Guardar conteo» final. Umbrales de los avisos: un sabor que tenía al menos
    CONTEO_CERO_MIN y queda en 0, o que cambia 3 veces o más (y al menos CONTEO_SALTO_DIF unidades). */
 const CONTEO_CERO_MIN=5, CONTEO_SALTO_X=3, CONTEO_SALTO_DIF=10;
+/** Conteo parcial: «solo un rubro» (decidido por Gabi 08/11/2026). Reemplaza el stock de los sabores de ESE rubro y no toca el resto. */
+function conteoParcialActivo(){ return !!S.conteo && !!S.conteoAlcance && S.conteoAlcance!=="todo" }
+function saboresDelConteo(){ const l=saboresDelLocal(); return conteoParcialActivo() ? l.filter(s=>grupoProductoDe(s)===S.conteoAlcance) : l }
+function etiquetaRubroConteo(){ return conteoParcialActivo() ? (GRUPO_PRODUCTO_LABEL[S.conteoAlcance]||S.conteoAlcance) : "todo el local" }
 function claveBorradorConteo(){ return "conteoBorrador:"+S.local }
 function descartarBorradorConteo(){ try{ ls.del(claveBorradorConteo()) }catch(e){} }
 function borradorConteo(){
@@ -2270,7 +2285,7 @@ function guardarBorradorConteo(){
   if(!Object.keys(vals).length && !Object.keys(S.conteoTocado).length) { descartarBorradorConteo(); return }
   const lotes={}; Object.keys(S.lotesExtra).forEach(k=>{ if(k.indexOf("conteo:")===0) lotes[k]=S.lotesExtra[k] });
   if(!S.conteoInicio) S.conteoInicio=Date.now();
-  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, omit:S.vencOmit, lotes})) }catch(e){}
+  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, alcance:S.conteoAlcance, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, omit:S.vencOmit, lotes})) }catch(e){}
 }
 /** Estado de cada sabor del conteo respecto del stock del sistema: sin (sin contar), igual, cambia, cero (queda en 0), salto (cambio raro). */
 function conteoEstadoDe(id, prev, v){
@@ -2282,7 +2297,7 @@ function conteoEstadoDe(id, prev, v){
 }
 const CONTEO_BADGE={sin:"Sin contar", igual:"Igual al sistema", cambia:"Cambia", cero:"Queda en 0", salto:"Salto raro"};
 function conteoResumen(){
-  const st=stockMap(), lista=saboresDelLocal();
+  const st=stockMap(), lista=saboresDelConteo();
   const filas=lista.map(s=>{ const prev=Math.max(0,st[s.id]||0), v=S.conteo[s.id]||0; return {s, prev, v, e:conteoEstadoDe(s.id,prev,v)} });
   const sinContar=filas.filter(f=>f.e==="sin");
   return {
@@ -2798,7 +2813,7 @@ function categoriasPresentes(){
  *  oculta en la Salida común; Desperdicio, Ingreso, Conteo y Stock la siguen mostrando. */
 function chocoOcultaEnSalida(){ return !!S.ventaDia && S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio }
 function chipFiltros(){
-  const grupos=familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
+  const grupos=conteoParcialActivo()?[S.conteoAlcance]:familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
   const subElegida=S.filtroCategoria!=="todas"?S.filtroCategoria:null;
   const etiqueta=g=>{
@@ -3355,11 +3370,43 @@ function gridProduccion(st){
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 
+/** «¿Qué vas a contar?»: todo el local (reemplaza todo el stock) o solo un rubro (reemplaza solo ese rubro y no toca el resto). */
+function abrirElegirConteo(){
+  if(document.getElementById("contOv")) return;
+  const grupos=familiasPresentes();
+  if(grupos.length<2){ iniciarConteo(false,"todo"); return }
+  let alc="todo", rub=grupos.includes(S.filtroFamilia)?S.filtroFamilia:grupos[0];
+  const ov=document.createElement("div"); ov.id="contOv"; ov.className="mantenerOv";
+  const nombreR=g=>GRUPO_PRODUCTO_LABEL[g]||g;
+  const pintar=()=>{
+    ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="ceTit">
+      <p class="mantTit" id="ceTit" style="margin:0 0 10px">¿Qué vas a contar?</p>
+      <div class="ceOpts">
+        <button type="button" class="ceOp" data-ce="todo" aria-pressed="${alc==="todo"}"><b>Todo el local</b><span>Reemplaza todo el stock</span></button>
+        <button type="button" class="ceOp" data-ce="rubro" aria-pressed="${alc==="rubro"}"><b>Solo un rubro</b><span>El resto no se toca</span></button>
+      </div>
+      ${alc==="rubro"?`<div class="ceRubros">${grupos.map(g=>`<button type="button" class="chip" data-ce-rubro="${g}" aria-pressed="${rub===g}">${esc(nombreR(g))}</button>`).join("")}</div>`:""}
+      <p class="ceExp">${alc==="rubro"
+        ? `Al guardar solo se reemplaza el stock de <b>${esc(nombreR(rub))}</b>. Los demás rubros, sus vencimientos y lo que se mueva mientras contás quedan como están. Ideal para recontar un rubro sin arriesgar el resto.`
+        : `Al guardar se reemplaza todo el stock del local. Empezás con cada sabor en «Sin contar» para que ninguno se cuele con el número viejo.`}</p>
+      <div class="mantAcc"><button type="button" class="btn ghost" data-ce-cerrar>Cancelar</button><button type="button" class="btn" data-ce-empezar>${alc==="rubro"?"Empezar conteo de "+esc(nombreR(rub)):"Empezar conteo de todo el local"}</button></div>
+    </div>`;
+  };
+  ov.addEventListener("click", e=>{
+    if(e.target===ov || e.target.closest("[data-ce-cerrar]")){ cerrarElegirConteo(); return }
+    const a=e.target.closest("[data-ce]"); if(a){ alc=a.dataset.ce; pintar(); return }
+    const r=e.target.closest("[data-ce-rubro]"); if(r){ rub=r.dataset.ceRubro; pintar(); return }
+    if(e.target.closest("[data-ce-empezar]")){ const al=alc==="rubro"?rub:"todo"; cerrarElegirConteo(); iniciarConteo(false,al) }
+  });
+  pintar(); document.body.appendChild(ov);
+}
+function cerrarElegirConteo(){ const ov=document.getElementById("contOv"); if(ov) ov.remove() }
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrarElegirConteo() });
 function bannerBorradorConteoHTML(){
   const b=borradorConteo(); if(!b) return "";
   const n=Object.keys(b.tocados||{}).length||Object.keys(b.vals||{}).length;
   const hora=new Date(+b.ts).toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"});
-  return `<div class="cBorrador"><div class="t"><i></i>Tenés un conteo sin terminar</div>
+  return `<div class="cBorrador"><div class="t"><i></i>Tenés un conteo sin terminar${b.alcance&&b.alcance!=="todo"?" · "+esc(GRUPO_PRODUCTO_LABEL[b.alcance]||b.alcance):""}</div>
     <div class="d"><b>${n} ${n===1?"sabor cargado":"sabores cargados"}</b> · guardado en este equipo a las ${hora}${b.empleado?" por "+esc(b.empleado):""}. No se mandó al servidor: el stock no cambió.</div>
     <div class="b"><button type="button" class="btn" id="continuarConteo">Continuar donde quedé</button><button type="button" class="btn ghost" id="descartarBorradorBtn">Descartar</button></div></div>`;
 }
@@ -3574,6 +3621,7 @@ function conteoRevisarView(){
   }).join("");
   const sin=r.sinContar.slice(0,12).map(f=>esc(f.s.nombre)).join(", ")+(r.sinContar.length>12?` y ${r.sinContar.length-12} más`:"");
   return `<div class="cvTitulo">Revisá antes de guardar</div>
+  ${conteoParcialActivo()?`<div class="cParcial"><b>Solo se reemplaza el stock de ${esc(etiquetaRubroConteo())}.</b> Los demás rubros no se tocan.</div>`:""}
   <div class="cvKpis"><div><b>${r.cambian.length}</b><span>sabores cambian</span></div><div class="mal"><b>${r.ceros.length}</b><span>quedan en 0</span></div><div class="aviso"><b>${r.saltos.length}</b><span>saltos raros</span></div><div><b>${r.sinContar.length}</b><span>sin contar</span></div></div>
   <div class="cvCard"><div class="cvHead"><div class="t">Así queda el stock</div><div>Total: <b>${r.antes}</b> → <b>${r.despues}</b> <span style="font-weight:800;color:${col}">(${delta>0?"+":""}${delta} unidades)</span></div></div>
     <div class="cvRow cvCab"><div class="nm">Sabor</div><div>Antes</div><div>Después</div></div>${tabla}
@@ -3583,16 +3631,16 @@ function conteoRevisarView(){
 }
 function stockViewConteo(){
   if(S.conteoRevisar) return conteoRevisarView();
-  const cont=S.conteo, st0=stockMap();
+  const cont=S.conteo, st0=stockMap(), parcial=conteoParcialActivo();
   const list=listaFiltrada(st0);
   const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}</div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
-  return `<div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+  return `${parcial?`<div class="cParcial"><b>Contando solo ${esc(etiquetaRubroConteo())}.</b> El resto del local no se toca al guardar.</div>`:""}<div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
   <p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar, poné <b>0</b> en «Poner el mismo número» y tocá «Aplicar» antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar. Elegí si es para <b>todo el local</b> o solo para el rubro que estás viendo.</p>
-  ${(()=>{ const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo";
+  ${(()=>{ const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
     return `<div class="aplicarBox"><div class="aplicarT">Poner el mismo número en:</div>
-    <div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo}">Solo ${esc(rub)} · ${list.length}</button><button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button></div>
+    <div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo||parcial}">Solo ${esc(rub)} · ${list.length}</button>${parcial?"":`<button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button>`}</div>
     <div class="remitoRow"><input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0" value="${esc(S.conteoAplicarVal)}"><button class="btn ghost" id="aplicarTodos" type="button">Aplicar</button></div></div>`})()}
   ${chipFiltros()}
   <div class="rows" style="margin-top:14px">${list.map(row).join("")}</div>`;
@@ -3684,12 +3732,14 @@ function filaMovimiento(r){
   }).join(" · ");
   const itCambio=()=>{ const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
     return `${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b>${kg?` (${fmtKg(kg)} kg)`:""}` };
-  const claseTipo=r.tipo==="cambio"?"cambio":r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":CLASES_CHOCO.includes(r.subtipo)?"venta":r.tipo;
-  const labelTipo=r.tipo==="cambio"?"cambio de sabor":r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":CLASES_CHOCO.includes(r.subtipo)?etiquetaSubtipoChoco(r):r.tipo;
+  const parcialH=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+  const itParcial=()=>Object.entries(r.items||{}).filter(([,q])=>+q).map(([id,q])=>`${esc(nombre(id))} <b>${+q>0?"+":"−"}${Math.abs(+q)}</b>`).join(" · ")||"Sin diferencias";
+  const claseTipo=parcialH?"conteo":r.tipo==="cambio"?"cambio":r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":CLASES_CHOCO.includes(r.subtipo)?"venta":r.tipo;
+  const labelTipo=parcialH?"conteo parcial":r.tipo==="cambio"?"cambio de sabor":r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":CLASES_CHOCO.includes(r.subtipo)?etiquetaSubtipoChoco(r):r.tipo;
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
-    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||r.tipo==="cambio"||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
+    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||(r.tipo==="cambio"&&!parcialH)||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${textoJornada(r.ts)}</time></div>
-    ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${r.tipo==="cambio"?itCambio():it}</div>`}
+    ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${parcialH?itParcial():r.tipo==="cambio"?itCambio():it}</div>${parcialH?`<div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">${esc((r.motivo||"Conteo parcial").replace(/^Conteo parcial: ?/,"Conteo parcial de ").replace(/de (\w+)/,(m,g)=>"de "+(GRUPO_PRODUCTO_LABEL[g]||g)))}: dejó cada sabor en lo contado. Las diferencias son contra el stock de ese momento.</div>`:""}`}
     ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
     ${!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`;
@@ -4503,14 +4553,16 @@ function renderBar(){
   let visible=false;
   if(S.tab==="stock" && S.conteo){
     visible=true;
-    const faltaVencC=Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id])).concat(S.kilosReales?Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[]);
-    const faltaKgC=S.kilosReales?Object.keys(S.conteo).filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)).length:0;
+    const idsC=conteoParcialActivo()?saboresDelConteo().map(x=>String(x.id)):Object.keys(S.conteo);
+    const faltaKgIds=S.kilosReales?idsC.filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[];
+    const faltaVencIds=conteoParcialActivo()?[]:idsC.filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id]));
+    const faltaVencC=faltaVencIds.concat(faltaKgIds), faltaKgC=faltaKgIds.length;
     programarBorradorConteo();
     const avisoVK=`${faltaKgC?`<div class="warn">Faltan los kilos totales de ${faltaKgC} ${faltaKgC===1?"sabor":"sabores"} para guardar el conteo.</div>`:""}${(faltaVencC.length-faltaKgC)>0?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length-faltaKgC} ${(faltaVencC.length-faltaKgC)===1?"producto":"productos"} para guardar el conteo.</div>`:""}`;
     const rc=conteoResumen();
     if(S.conteoRevisar){
       const pend=conteoFaltaConfirmar(rc);
-      inn.innerHTML=`<div class="sum">${pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`;
+      inn.innerHTML=`<div class="sum">${pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`;
     } else {
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${faltaVencC.length?"disabled":""}>Revisar y guardar</button>`;
     }
@@ -4609,7 +4661,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -4688,27 +4740,40 @@ async function guardarMovimiento(){
 async function guardarConteo(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
-  const items={}; S.sabores.forEach(s=>items[s.id]=S.conteo[s.id]||0);
+  const parcial=conteoParcialActivo();
+  const items={}; (parcial?saboresDelConteo():S.sabores).forEach(s=>items[s.id]=S.conteo[s.id]||0);
   const clienteId=uuid();
   const vencimientos={};
-  for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
+  if(!parcial) for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
   const kilosC={}; if(S.kilosReales) for(const id of Object.keys(items)){ if(items[id]>0 && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(k>0) kilosC[id]=k } }
-  const payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined};
-  const r = await api("conteo", payload);
+  let payload, accion="conteo", deltas={}, kilosDelta={};
+  if(parcial){
+    accion="conteoParcial";
+    const st=stockMap(), km=kilosMap();
+    Object.keys(items).forEach(id=>{ const d=items[id]-Math.max(0,st[id]||0); if(d!==0) deltas[id]=d });
+    if(S.kilosReales) Object.keys(items).forEach(id=>{ if(esVasquetaKilos(id)){ const d=Math.round(((kilosC[id]||0)-(km[id]||0))*100)/100; if(d!==0) kilosDelta[id]=d } });
+    payload={clienteId, local:S.local, rubro:S.conteoAlcance, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined};
+  } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined};
+  const r = await api(accion, payload);
   if(r && r.ok){
-    toast("Conteo guardado");
-    S.conteo=null; S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+    toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
+    S.conteoAlcance="todo"; S.conteo=null; S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
     await cargarDatos();
   } else if(r && r.offline){
-    colaAgregar("conteo", payload);
+    colaAgregar(accion, payload);
+    if(parcial){
+      // Conteo parcial: es un ajuste firmado (contado − stock), igual que un cambio de sabor.
+      agregarRegistroOptimista({clienteId, tipo:"cambio", subtipo:"conteo_parcial", local:S.local, items:deltas, kilos:kilosDelta, motivo:"Conteo parcial: "+S.conteoAlcance});
+    } else {
     // Un conteo fija el stock directo (no es un delta como salida/ingreso) —
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
     guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, registros:S.regs, stock:S.stock});
+    }
     toast("Sin conexión: el conteo se va a enviar solo.");
-    S.conteo=null; S.confirm=false; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
+    S.conteoAlcance="todo"; S.conteo=null; S.confirm=false; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
   } else {
     toast((r&&r.error)||"No se pudo guardar el conteo.");
   }
@@ -5074,7 +5139,7 @@ document.addEventListener("click", async e=>{
     renderApp();
     return;
   }
-  if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; iniciarConteo(); return }
+  if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; abrirElegirConteo(); return }
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
@@ -5117,13 +5182,13 @@ document.addEventListener("click", async e=>{
   if(t.id==="aplicarTodos"){
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     // «Todo el local» o solo lo que se está viendo (rubro y subcategoría elegidos, ej. Icepops › Frutales).
-    const objetivo=S.conteoAplicar==="todo" ? saboresDelLocal() : listaFiltrada(stockMap());
+    const objetivo=(S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap());
     objetivo.forEach(x=>{ S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id] }); // no cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }
   if(t.id==="cancelConteo"){
     if(Object.keys(S.conteoTocado).length && !confirm("¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia.")) return;
-    descartarBorradorConteo(); S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
+    descartarBorradorConteo(); S.conteoAlcance="todo"; S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
   if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
   if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); return }
   if(t.dataset.apl){ const iv=$("#aplicarTodosValor"); if(iv) S.conteoAplicarVal=iv.value; S.conteoAplicar=t.dataset.apl==="todo"?"todo":"visible"; renderApp(); return }
@@ -5961,7 +6026,8 @@ function ayudaTemas(){
     colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock con el motivo ya cargado.",
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b> la completa: te propone la fecha según la vida útil del producto y se puede cambiar; elegís cuántas unidades."])+nota("Las latas no tienen vencimiento.")});
   if(!colab) T.push({id:"conteo", titulo:"Conteo físico", sub:"Cómo recontar sin errores", html:li([
-    "Entrá a Stock › <b>Conteo físico</b>. Contá <b>una sola vez, de punta a punta</b>, sin movimientos en la cámara.",
+    "Entrá a Stock › <b>Conteo físico</b> y elegí qué vas a contar: <b>todo el local</b> o <b>solo un rubro</b> (ej. Vasquetas). Si es un rubro, el resto del stock <b>no se toca</b>.",
+    "Contá <b>una sola vez, de punta a punta</b>.",
     "Antes de empezar, poné <b>0</b> en «Poner el mismo número» y elegí si es para <b>todo el local</b> o solo el rubro que estás viendo (ej. Icepops › Frutales). Así ningún sabor arrastra el número viejo.",
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía.",
     S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",

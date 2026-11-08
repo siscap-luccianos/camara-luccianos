@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.69.0";
+const BACKEND_VERSION = "1.70.0";
 
 function doPost(e) {
   let resultado;
@@ -114,6 +114,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
+    case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
@@ -2091,6 +2092,73 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos) {
     }
     _invalidarCacheDatos(local);
     return { ok: true, ts: ts };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Conteo físico PARCIAL (solo un rubro): deja el stock de los sabores de ESE rubro en lo contado sin tocar nada
+ *  más. No pisa la hoja Stock ni el último conteo del local: se guarda UN movimiento tipo "cambio" (mismo que el cambio de sabor,
+ *  que ya suman todos los cálculos de stock y kilos) con subtipo "conteo_parcial" e items firmados = contado − stock actual
+ *  de cada sabor. Así los demás rubros, sus vencimientos y lo que se movió mientras se contaba quedan intactos; lo que sobre
+ *  en chocolatería queda «sin fecha» y lo que falte sale por FEFO. No cuenta como consumo. En locales con kilos reales las
+ *  vasquetas llevan sus kilos totales (`kilos`) y la diferencia de kilos (`kilosDelta`, calculada por el cliente). */
+function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDelta) {
+  if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  rubro = String(rubro || "");
+  if (RUBROS_LOCAL.indexOf(rubro) === -1) return { ok: false, error: "Elegí el rubro que vas a contar." };
+  if (!items || typeof items !== "object") return { ok: false, error: "Falta el conteo." };
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  if (filaLocal && _rubrosApagados(filaLocal).indexOf(rubro) !== -1) return { ok: false, error: "Este local no lleva ese rubro." };
+  const pais = _paisDeLocal(filaLocal);
+  const catalogo = _leerCrudo("Sabores");
+  const deRubro = {};
+  catalogo.forEach((sab) => { if (_rubroDeSabor(sab) === rubro && _saborEnPais(sab, pais)) deRubro[String(sab.id)] = sab; });
+  const contados = {};
+  let malos = false;
+  Object.keys(items).forEach((id) => {
+    if (!deRubro[String(id)]) return; // lo que no es de este rubro (o de este país) no se toca
+    const n = Number(items[id]);
+    if (!isFinite(n) || n < 0 || Math.floor(n) !== n) { malos = true; return; }
+    contados[String(id)] = n;
+  });
+  if (malos) return { ok: false, error: "Las cantidades tienen que ser números enteros, 0 o más." };
+  if (!Object.keys(contados).length) return { ok: false, error: "No hay nada para guardar en ese rubro." };
+  const esKg = (sab) => String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas";
+  const kilosReales = !!filaLocal && _esVerdadero(filaLocal.kilos_reales) === true;
+  const kilosDeltaOk = {};
+  if (kilosReales) {
+    const faltan = Object.keys(contados).filter((id) => esKg(deRubro[id]) && contados[id] > 0 && !(Number((kilos || {})[id]) > 0)).map((id) => deRubro[id].nombre);
+    if (faltan.length) return { ok: false, error: "Faltan los kilos totales de: " + faltan.join(", ") + "." };
+    Object.keys(contados).forEach((id) => {
+      if (!esKg(deRubro[id])) return;
+      const d = Math.round((Number((kilosDelta || {})[id]) || 0) * 100) / 100;
+      if (isFinite(d) && d !== 0) kilosDeltaOk[id] = d;
+    });
+  }
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (clienteId) {
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      if (existente) return { ok: true, id: existente.id, repetido: true };
+    }
+    const stock = _stockActualLocal(local);
+    const deltas = {};
+    Object.keys(contados).forEach((id) => { const d = contados[id] - (Number(stock[id]) || 0); if (d !== 0) deltas[id] = d; });
+    if (!Object.keys(deltas).length && !Object.keys(kilosDeltaOk).length) return { ok: true, sinCambios: true };
+    const total = Object.keys(deltas).reduce((a, id) => a + Math.abs(deltas[id]), 0);
+    const ts = Date.now();
+    const r = _escribirCrudo("Registros", {
+      clienteId: clienteId || "", tipo: "cambio", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
+      items: JSON.stringify(deltas), total: total, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "Conteo parcial: " + rubro,
+      foto_remito: "", subtipo: "conteo_parcial", kilos: Object.keys(kilosDeltaOk).length ? JSON.stringify(kilosDeltaOk) : "", vencimientos: "", pesos: "",
+    });
+    _auditar("conteo_parcial", empleado.id, empleado.nombre, local + ": conteo parcial de " + rubro + " (" + Object.keys(contados).length + " sabores contados, " + Object.keys(deltas).length + " cambian)");
+    _invalidarCacheDatos(local);
+    return { ok: true, id: r.id, ts: ts, cambios: Object.keys(deltas).length };
   } finally {
     lock.releaseLock();
   }

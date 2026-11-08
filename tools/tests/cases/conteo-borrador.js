@@ -24,7 +24,7 @@ const { chromium } = require("playwright");
   };
   const confirmarTodos = async () => { for (let i = 0; i < 20 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(120) } };
   await entrar();
-  await page.click("#conteoBtn"); await page.waitForTimeout(400);
+  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
 
   // 1) estado inicial: sabores con stock sin tocar = «Sin contar»; barra de avance
   const badge = id => page.$eval(`[data-cbadge="${id}"]`, e => e.hidden ? "" : e.textContent.trim());
@@ -84,7 +84,7 @@ const { chromium } = require("playwright");
   ok(await page.$(".cBorrador") === null, "ya no aparece el aviso de conteo sin terminar");
 
   // 7) descartar
-  await page.click("#conteoBtn"); await page.waitForTimeout(300);
+  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(300);
   await cargar(20, 7);
   await page.waitForTimeout(800);
   await page.click("#cancelConteo"); await page.waitForTimeout(300);

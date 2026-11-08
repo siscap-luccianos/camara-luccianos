@@ -46,6 +46,14 @@ function resp(b){
     const r={id:String(db.nextId++),clienteId:b.clienteId,tipo:"cambio",subtipo:"cambio",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items,kilos:kil,pesos:{},total:n,motivo:b.motivo,ts:Date.now()};
     db.regs.push(r); console.log("CAMBIO",JSON.stringify({d:b.desde,h:b.hacia,n,kilos:b.kilos,motivo:b.motivo})); return {ok:true,id:r.id};
   }
+  if(a==="conteoParcial"){
+    const items=b.items||{}, reg=db.regs.filter(r=>r.local===b.local&&!r.anulado), bs=db.stock[b.local]||{}, base=bs.base||{}, bts=bs.ts||0, deltas={};
+    Object.keys(items).forEach(id=>{ let st=+base[id]||0; reg.forEach(r=>{ if(r.ts<=bts) return; const sg=(r.tipo==="ingreso"||r.tipo==="cambio")?1:r.tipo==="salida"?-1:0; st+=sg*(+((r.items||{})[id])||0) }); const d=(+items[id])-st; if(d) deltas[id]=d });
+    if(l.kilosReales){ const f=Object.keys(items).filter(i=>vasq(i)&&items[i]>0&&!((b.kilos||{})[i]>0)); if(f.length) return {ok:false,error:"Faltan los kilos totales de: "+f.map(nom).join(", ")+"."} }
+    if(!Object.keys(deltas).length) return {ok:true,sinCambios:true};
+    const r={id:String(db.nextId++),clienteId:b.clienteId,tipo:"cambio",subtipo:"conteo_parcial",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:deltas,kilos:b.kilosDelta||{},pesos:{},total:Object.values(deltas).reduce((x,y)=>x+Math.abs(y),0),motivo:"Conteo parcial: "+b.rubro,ts:Date.now()};
+    db.regs.push(r); console.log("CONTEOPARCIAL",JSON.stringify({rubro:b.rubro,items:b.items,deltas,kilos:b.kilos,kilosDelta:b.kilosDelta})); return {ok:true,id:r.id,cambios:Object.keys(deltas).length};
+  }
   if(a==="cambiarVencimiento"){
     const k=Math.floor(+b.k), c=Math.floor(+b.c);
     if(k===c && b.f===b.de) return {ok:false,error:"No hay nada para cambiar: misma fecha y misma cantidad."};

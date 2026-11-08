@@ -68,7 +68,7 @@ Un conteo físico es **una foto absoluta del stock**: lo que se guarda **reempla
 
 ## 6. Mejoras propuestas para la app (todas necesitan mock antes de construir)
 
-> **Estado 08/11/2026:** las mejoras 1 a 4 de esta lista (resumen antes de guardar, alerta de saltos con confirmación, borrador automático y marca de «sin contar») ya están construidas en `/pruebas/` (front 1.132.0). El conteo parcial por rubro (5) queda pendiente.
+> **Estado 08/11/2026:** las mejoras 1 a 4 de esta lista (resumen antes de guardar, alerta de saltos con confirmación, borrador automático y marca de «sin contar») ya están construidas en `/pruebas/` (front 1.132.0). El conteo parcial por rubro (5) también está construido en `/pruebas/` (front 1.134.0, `Code.gs` 1.70.0): se guarda como un ajuste firmado (`conteoParcial`) y no toca los demás rubros ni sus vencimientos.
 
 Ordenadas por impacto y esfuerzo:
 
