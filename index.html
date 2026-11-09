@@ -1008,7 +1008,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.135.5";
+const FRONTEND_VERSION = "1.135.6";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4817,24 +4817,25 @@ async function eliminarRegistroDef(id, tipo, btn){
 /** Cambiar mi PIN: PIN actual + PIN nuevo dos veces. Cualquier rol. */
 function abrirCambiarPin(){
   if(document.getElementById("pinOv")) return;
+  const tienePin = !(S.empleado && S.empleado.tienePin===false);
   const ov=document.createElement("div"); ov.id="pinOv"; ov.className="mantenerOv";
   const campo=(id,lbl)=>`<label style="display:block;font-size:.78rem;font-weight:700;margin:10px 0 4px">${lbl}</label><input type="password" id="${id}" inputmode="numeric" maxlength="4" autocomplete="off" pattern="[0-9]*" style="width:100%;font-size:1.2rem;letter-spacing:.4em;text-align:center">`;
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="pinTit">
-    <p class="mantTit" id="pinTit" style="margin:0">Cambiar mi PIN</p>
-    <p class="mantSub">4 números. Te lo pide cada vez que entrás.</p>
-    ${campo("pinActual","PIN actual")}${campo("pinNuevo","PIN nuevo")}${campo("pinNuevo2","Repetí el PIN nuevo")}
+    <p class="mantTit" id="pinTit" style="margin:0">${tienePin?"Cambiar mi PIN":"Crear mi PIN"}</p>
+    <p class="mantSub">${tienePin?"4 números. Escribí el actual para confirmar que sos vos.":"Todavía no tenés PIN. Elegí uno de 4 números."}</p>
+    ${tienePin?campo("pinActual","PIN actual"):""}${campo("pinNuevo",tienePin?"PIN nuevo":"Elegí tu PIN")}${campo("pinNuevo2","Repetí el PIN nuevo")}
     <p id="pinMsg" style="color:var(--alert);font-size:.82rem;min-height:1.2em;margin:8px 0 0"></p>
     <div class="mantAcc"><button type="button" class="btn ghost" data-pin-cerrar>Cancelar</button><button type="button" class="btn" id="pinGuardar">Guardar PIN</button></div>
   </div>`;
   ov.addEventListener("click", e=>{ if(e.target===ov || e.target.closest("[data-pin-cerrar]")){ ov.remove(); return } if(e.target.closest("#pinGuardar")) guardarCambioPin() });
-  ov.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); const ids=["pinActual","pinNuevo","pinNuevo2"], i=ids.indexOf(e.target.id); if(i>=0 && i<2 && e.target.value.length===4){ document.getElementById(ids[i+1]).focus() } else guardarCambioPin() } if(e.key==="Escape") ov.remove() });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); const ids=tienePin?["pinActual","pinNuevo","pinNuevo2"]:["pinNuevo","pinNuevo2"], i=ids.indexOf(e.target.id); if(i>=0 && i<ids.length-1 && e.target.value.length===4){ document.getElementById(ids[i+1]).focus() } else guardarCambioPin() } if(e.key==="Escape") ov.remove() });
   ov.addEventListener("input", e=>{ e.target.value=e.target.value.replace(/\D/g,"").slice(0,4) });
   document.body.appendChild(ov);
-  document.getElementById("pinActual").focus();
+  document.getElementById(tienePin?"pinActual":"pinNuevo").focus();
 }
 async function guardarCambioPin(){
   const g=id=>document.getElementById(id), msg=g("pinMsg"), btn=g("pinGuardar"); if(!msg||!btn||btn.disabled) return;
-  const act=g("pinActual").value, n1=g("pinNuevo").value, n2=g("pinNuevo2").value;
+  const act=g("pinActual")?g("pinActual").value:"", n1=g("pinNuevo").value, n2=g("pinNuevo2").value;
   if(!/^\d{4}$/.test(n1)){ msg.textContent="El PIN nuevo tiene que ser de 4 números."; return }
   if(n1!==n2){ msg.textContent="Los dos PIN nuevos no coinciden."; return }
   btn.disabled=true; btn.textContent="Guardando…"; msg.textContent="";
@@ -4842,7 +4843,8 @@ async function guardarCambioPin(){
   if(r && r.ok){
     if(r.token){ S.token=r.token; if(!S.deviceLocal) guardarSesionPC() }
     const ov=g("pinOv"); if(ov) ov.remove();
-    toast("PIN cambiado");
+    if(S.empleado) S.empleado.tienePin=true;
+    toast("PIN guardado");
     return;
   }
   btn.disabled=false; btn.textContent="Guardar PIN";
@@ -5268,6 +5270,7 @@ document.addEventListener("keydown", e=>{
     } else if(e.key!=="ArrowUp") e.target.blur();
     return;
   }
+  if(e.key==="Enter" && e.target.id==="local"){ e.preventDefault(); aplicarLocalHeader(e.target); return }
   if(e.key==="Enter"){
     // authClave no va acá: Enter envía el formulario (formClave) y el
     // botón submit dispara el mismo click de siempre; así el navegador ve
@@ -5395,22 +5398,24 @@ document.addEventListener("change", e=>{
     renderApp();
     return;
   }
-  if(e.target.id==="local"){
-    const v=e.target.value.trim();
-    // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
-    if(v.toLowerCase()==="operaciones" && esOperador()){
-      irAOperaciones();
-      return;
-    }
-    const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
-    if(match && match.nombre!==S.local) setLocal(match.nombre);
-    else e.target.value=valorLocalHeader();
-  }
+  if(e.target.id==="local"){ aplicarLocalHeader(e.target); return }
   if(e.target.dataset.cambiarRol!==undefined){
     cambiarRolEmpleado(e.target.dataset.cambiarRol, e.target.value, e.target);
     return;
   }
 });
+/** Selector «Equipo» del encabezado: se aplica al elegir de la lista (change) y también con Enter. */
+function aplicarLocalHeader(input){
+  const v=input.value.trim();
+  // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
+  if(v.toLowerCase()==="operaciones" && esOperador()){
+    irAOperaciones();
+    return;
+  }
+  const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
+  if(match && match.nombre!==S.local) setLocal(match.nombre);
+  else input.value=valorLocalHeader();
+}
 async function conBotonCargando(form, fn){
   const btn=form.querySelector('button[type=submit]');
   if(!btn || btn.disabled) return;
