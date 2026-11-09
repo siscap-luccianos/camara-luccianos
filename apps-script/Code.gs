@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.74.0";
+const BACKEND_VERSION = "1.75.0";
 
 function doPost(e) {
   let resultado;
@@ -1165,6 +1165,12 @@ function _totalItems(items) {
  *    cargada (ej. un ingreso con una caja de 25/10 y otra de 12/11, o un conteo
  *    con lotes distintos). f vacío = sin fecha.
  *  Devuelve {ok, vencimientos} o {ok:false, error}. */
+/** El año de un vencimiento tiene que ser razonable: el campo de fecha del navegador deja «0002» o «0026» cuando se
+ *  tipea el año a medias, y eso se guardaba como un vencimiento del año 2. */
+function _anioVencOk(f) {
+  const y = Number(String(f || "").slice(0, 4));
+  return y >= 2020 && y <= new Date().getFullYear() + 10;
+}
 function _normalizarVencimientos(vencimientos, items, tipo) {
   const esFecha = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
   const venc = vencimientos || {};
@@ -1173,10 +1179,16 @@ function _normalizarVencimientos(vencimientos, items, tipo) {
     const cantidad = Math.floor(Number(items[id]) || 0);
     if (cantidad <= 0) continue;
     const v = venc[id];
-    if (typeof v === "string") { if (esFecha(v) || v === "sin-fecha") out[id] = v; continue; } // "sin-fecha": la salida se sacó del lote sin etiquetar
+    if (typeof v === "string") {
+      if (tipo !== "salida" && esFecha(v) && !_anioVencOk(v)) return { ok: false, error: "Hay un vencimiento con un año que no es válido (" + v.slice(0, 4) + "). Revisá la fecha." };
+      if (esFecha(v) || v === "sin-fecha") out[id] = v;
+      continue;
+    } // "sin-fecha": la salida se sacó del lote sin etiquetar
     if (!Array.isArray(v) || tipo === "salida") continue;
     const lotes = v.map((l) => ({ f: String((l && l.f) || ""), c: Math.floor(Number(l && l.c) || 0) })).filter((l) => l.c > 0);
     if (lotes.some((l) => l.f && !esFecha(l.f))) return { ok: false, error: "Hay un vencimiento con fecha inválida." };
+    const malAnio = lotes.filter((l) => l.f && !_anioVencOk(l.f))[0];
+    if (malAnio) return { ok: false, error: "Hay un vencimiento con un año que no es válido (" + malAnio.f.slice(0, 4) + "). Revisá la fecha." };
     if (lotes.reduce((a, l) => a + l.c, 0) !== cantidad) return { ok: false, error: "Los lotes de un producto no suman la cantidad cargada." };
     if (lotes.length) out[id] = lotes;
   }
@@ -1987,6 +1999,7 @@ function cambiarVencimiento(clienteId, local, id, de, f, k, c, empleado) {
   if (!id || !(nuevas >= 0) || actuales <= 0) return { ok: false, error: "Falta el producto o la cantidad." };
   if (!esFecha(de)) return { ok: false, error: "Las fechas no son válidas." };
   if (nuevas > 0 && !esFecha(f)) return { ok: false, error: "Las fechas no son válidas." };
+  if (nuevas > 0 && !_anioVencOk(f)) return { ok: false, error: "El año de la fecha no es válido (" + String(f).slice(0, 4) + "). Revisá la fecha." };
   if (nuevas === actuales && (f === de)) return { ok: false, error: "No hay nada para cambiar: misma fecha y misma cantidad." };
 
   const lock = LockService.getScriptLock();
