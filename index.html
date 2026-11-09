@@ -1019,7 +1019,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.136.6";
+const FRONTEND_VERSION = "1.136.7";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1883,12 +1883,12 @@ function lotesPanelHTML(clave, id, cantidad){
   }
   const principalRow = omitido
     ? `<div class="lpFila omit"><div class="lpCampo"><span>Vence</span><div class="lpSinFecha">Sin fecha</div></div><div class="lpCampo"><span>Unidades</span><div class="lpUds">${uds0}</div></div><button type="button" class="vencOmitir" data-venc-cargar="${clave}">Cargar fecha</button></div>`
-    : `<div class="lpFila${falta&&!principal&&c0>0?" falta":""}"><div class="lpCampo"><span>Vence</span><input type="date" ${attrP}="${id}" value="${esc(principal||"")}"></div><div class="lpCampo"><span>Unidades</span><div class="lpUds">${uds0}</div></div><span></span></div>`;
+    : `<div class="lpFila${falta&&!principal&&c0>0?" falta":""}"><div class="lpCampo"><span>Vence</span><input type="date" ${attrP}="${id}" ${VENC_ATTR_FECHA} value="${esc(principal||"")}"></div><div class="lpCampo"><span>Unidades</span><div class="lpUds">${uds0}</div></div><span></span></div>`;
   return `<div class="lotesPanel">
     <div class="lpHead"><span>${req?"Vencimientos":"Vencimiento · opcional"}</span><span class="lpEstado ${clase}">${estado}</span>${omitBtn}</div>
     ${principalRow}
     ${extra.map((l,i)=>`<div class="lpFila${req&&!l.f&&(+l.c||0)>0?" falta":""}">
-      <div class="lpCampo"><span>Vence</span><input type="date" data-lote-f="${clave}|${i}" value="${esc(l.f||"")}"></div>
+      <div class="lpCampo"><span>Vence</span><input type="date" data-lote-f="${clave}|${i}" ${VENC_ATTR_FECHA} value="${esc(l.f||"")}"></div>
       <div class="lpCampo"><span>Unidades</span><input type="number" min="0" inputmode="numeric" data-lote-c="${clave}|${i}" value="${l.c||""}"></div>
       <button type="button" class="lpQuitar" data-lote-quitar="${clave}|${i}" aria-label="Quitar este lote">×</button>
     </div>`).join("")}
@@ -1916,6 +1916,15 @@ function fechaVencCorta(iso){ const [y,m,d]=String(iso).split("-"); return y&&m&
    la pantalla. Lo vencido no se vende; el desperdicio sí puede sacarlo.
 ============================================================ */
 const LOTE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/** Un vencimiento es válido si tiene forma AAAA-MM-DD y el año es razonable. El campo de fecha del navegador deja
+ *  «0002» o «0026» cuando se tipea el año a medias o con 2 dígitos, y eso se guardaba como un vencimiento del año 2. */
+const VENC_ANIO_MIN = 2020;
+function fechaVencValida(v){
+  if(!LOTE_RE.test(String(v||""))) return false;
+  const y=+String(v).slice(0,4);
+  return y>=VENC_ANIO_MIN && y<=new Date().getFullYear()+10;
+}
+const VENC_ATTR_FECHA = `min="${VENC_ANIO_MIN}-01-01" max="${new Date().getFullYear()+10}-12-31"`;
 let _lotesMemo = null; // se borra en cada renderApp()
 /** Días calendario desde hoy hasta la fecha ISO (negativo = ya venció). */
 function diasHasta(iso){
@@ -2162,8 +2171,8 @@ function etiqMin(e){ return e.de ? 0 : 1 } // corrigiendo un lote se puede dejar
 function etiqSetCant(n){ if(!S.etiq) return; const v=Math.floor(+n); S.etiq.cant=Math.min(S.etiq.max, Math.max(etiqMin(S.etiq), isNaN(v)?etiqMin(S.etiq):v)); renderApp() }
 function etiqValida(e){
   if(e.cant<etiqMin(e) || e.cant>e.max) return false;
-  if(e.de){ if(e.cant===0) return true; return /^\d{4}-\d{2}-\d{2}$/.test(e.fecha) && !(e.fecha===e.de && e.cant===e.c0); }
-  return /^\d{4}-\d{2}-\d{2}$/.test(e.fecha);
+  if(e.de){ if(e.cant===0) return true; return fechaVencValida(e.fecha) && !(e.fecha===e.de && e.cant===e.c0); }
+  return fechaVencValida(e.fecha);
 }
 /** Qué va a pasar al confirmar una corrección (texto para la hoja y para la pregunta). */
 function etiqResumen(e){
@@ -2190,7 +2199,7 @@ function etiquetarSheetHTML(){
     <div class="etiqTitulo">${cambio?"Cambiar vencimiento":"Poner vencimiento"}</div>
     <div class="etiqSub">${esc(s.nombre||"")} · ${cambio?`vencen el ${fechaVencCorta(e.de)}: ${e.c0} ${unidad(e.id,e.c0)}`:`sin fecha: ${e.max} ${unidad(e.id,e.max)}`}</div>
     <label class="etiqLbl" for="etiqFecha">${cambio?"Fecha correcta":"Fecha de vencimiento"}</label>
-    <input id="etiqFecha" type="date" data-etiq-fecha value="${esc(e.fecha)}">
+    <input id="etiqFecha" type="date" data-etiq-fecha ${VENC_ATTR_FECHA} value="${esc(e.fecha)}">
     ${cambio?"":vida?`<button type="button" class="btn ghost" data-etiq-sugerida="${sugerida}">Usar la sugerida: ${fechaVencCorta(sugerida)} (${vida} días)</button>`:`<div class="meta">Este producto no tiene vida útil cargada: elegí la fecha a mano.</div>`}
     <label class="etiqLbl" for="etiqCant">${cambio?"Unidades con esta fecha":"Cantidad a etiquetar"}</label>
     <div class="etiqCant">
@@ -2352,6 +2361,8 @@ function valorVencimiento(clave, principal, cantidad){
 function loteProblema(clave, id, cantidad, principal){
   const extra=S.lotesExtra[clave]||[], suma=sumaExtra(extra);
   if(suma>cantidad) return "excede";
+  if(principal && !fechaVencValida(principal)) return "fecha";
+  if(extra.some(l=>l.f && !fechaVencValida(l.f))) return "fecha";
   if(requiereVencimiento(id) && extra.some(l=>(+l.c||0)>0 && !l.f)) return "falta";
   if(requiereVencimiento(id) && cantidad-suma>0 && !principal) return "falta";
   return null;
@@ -2380,6 +2391,16 @@ document.addEventListener("change", (e)=>{
   const campo=e.target.closest(".vencCampo");
   if(campo) campo.classList.toggle("falta", !e.target.value);
   renderBar();
+});
+/* Fechas de vencimiento: al salir del campo, un año de 2 dígitos entre 20 y 99 («26» queda «0026» en el campo del navegador) pasa a 20xx;
+   si el año sigue sin ser razonable (0002, 1999…) se avisa y el botón de confirmar queda apagado. */
+document.addEventListener("focusout", e=>{
+  const el=e.target;
+  if(!el || el.type!=="date" || !el.dataset || (el.dataset.venc===undefined && el.dataset.vencConteo===undefined && el.dataset.loteF===undefined && el.dataset.etiqFecha===undefined)) return;
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(el.value||""); if(!m) return;
+  const y=+m[1];
+  if(y>=20 && y<100){ el.value=String(2000+y)+"-"+m[2]+"-"+m[3]; el.dispatchEvent(new Event("input",{bubbles:true})); el.dispatchEvent(new Event("change",{bubbles:true})); return; }
+  if(!fechaVencValida(el.value)) toast("Revisá el año del vencimiento: tiene que ser "+VENC_ANIO_MIN+" o más.");
 });
 function registrarActividad(){ if(S.empleado && !S.bloqueado) reiniciarInactividad() }
 // la rueda del mouse sobre un número con foco lo cambiaba sin querer
