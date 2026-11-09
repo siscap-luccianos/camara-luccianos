@@ -63,7 +63,7 @@ const a=run('_leerCrudo("Locales")[0]'); a.nombre="X"; ok(run('_leerCrudo("Local
 // 5) Cache grande en trozos
 const grande="x".repeat(250000);
 run('(function(){var c=CacheService.getScriptCache(); _cachePonerGrande(c,"datos_T",'+JSON.stringify(grande)+',45);})()');
-ok(Object.keys(store).filter(k=>k.indexOf("datos_T#")===0&&k!=="datos_T#n").length===3,"250 KB se guardan en 3 trozos (cada uno bajo 100 KB)");
+ok(Object.keys(store).filter(k=>k.indexOf("datos_T#")===0&&k!=="datos_T#n").length===5,"250 KB se guardan en 5 trozos (cada uno bajo 100 KB)");
 ok(run('_cacheLeerGrande(CacheService.getScriptCache(),"datos_T")')===grande,"se rearma igual al leerlo");
 delete store["datos_T#1"]; ok(run('_cacheLeerGrande(CacheService.getScriptCache(),"datos_T")')===null,"si falta un trozo, devuelve null y se rearma");
 Object.keys(store).forEach(k=>delete store[k]);
@@ -79,4 +79,25 @@ console.log("   registros:",d1.registros&&d1.registros.length,"bytes:",JSON.stri
 ok(d1.ok&&d1.registros.length===400,"datos() trae los 400 movimientos");
 ok(l1===1&&(lecturas.Registros||0)===0,"la segunda llamada sale del cache (Registros leídos: "+l1+" y luego "+(lecturas.Registros||0)+")");
 ok(JSON.stringify(d1).length>100000,"el caso de prueba pasa de 100 KB ("+JSON.stringify(d1).length+")");
+// 7) Cache entre pedidos de Empleados / Sabores / Locales
+Object.keys(store).forEach(k=>delete store[k]);
+reset(); let rows=run('_leerCrudoCache("Empleados")'); const l0=lecturas.Empleados||0;
+reset(); run('_leerCrudoCache("Empleados")'); ok(l0===1&&(lecturas.Empleados||0)===0,"Empleados: la 2ª lectura sale del cache ("+l0+" y "+(lecturas.Empleados||0)+")");
+reset(); run('_leerCrudo("Empleados")'); ok((lecturas.Empleados||0)===1&&Object.keys(store).some(k=>k.indexOf("hoja_Empleados")===0),"leer con _leerCrudo no borra el cache");
+run('_sheet("Empleados")'); ok(!Object.keys(store).some(k=>k.indexOf("hoja_Empleados")===0),"pedir la hoja para escribir descarta el cache");
+run('_leerCrudoCache("Sabores"); _leerCrudoCache("Locales")'); run('_auditar("x","1","a","d")');
+ok(!Object.keys(store).some(k=>k.indexOf("hoja_")===0),"auditar descarta los tres caches");
+// sesión: usa el cache, pero un PIN recién cambiado se confirma contra la hoja
+const t=run('login("1","1234","","Alcorta","","")').token;
+reset(); let v1=run('_verificarSesion('+JSON.stringify(t)+')'); const le1=lecturas.Empleados||0;
+reset(); let v2=run('_verificarSesion('+JSON.stringify(t)+')');
+ok(v1.ok&&v2.ok&&(lecturas.Empleados||0)===0,"la sesión se valida desde el cache sin leer la hoja (1ª: "+le1+", 2ª: "+(lecturas.Empleados||0)+")");
+hojas.Empleados[1][4]="otro-hash"; // alguien cambió el PIN directo en la hoja
+Object.keys(store).forEach(k=>delete store[k]);
+let v3=run('_verificarSesion('+JSON.stringify(t)+')'); ok(!v3.ok&&/PIN cambió/.test(v3.error),"si el PIN cambió, el token viejo se rechaza");
+// baja: dentro de los segundos del cache aún pasa, pero al invalidar se corta
+hojas.Empleados[1][4]=run('(function(){return _hashPin("1234","uuid-1")})()'); Object.keys(store).forEach(k=>delete store[k]);
+ok(run('_verificarSesion('+JSON.stringify(t)+')').ok,"con el PIN original vuelve a valer");
+hojas.Empleados[1][6]="NO"; run('_auditar("baja","2","g","x")');
+ok(!run('_verificarSesion('+JSON.stringify(t)+')').ok,"una baja con auditoría corta la sesión al toque");
 console.log(f?"\n"+f+" FALLAS":"\nTODO OK"); process.exit(f?1:0);

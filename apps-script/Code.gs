@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.73.0";
+const BACKEND_VERSION = "1.74.0";
 
 function doPost(e) {
   let resultado;
@@ -212,7 +212,12 @@ function _verificarSesion(token) {
     return { ok: false, sesionInvalida: true, error: "Tu sesión expiró. Volvé a ingresar tu PIN." };
   }
 
-  const empleado = _empleadoPorId(empleadoId);
+  // Primero con la copia de pocos segundos; si ahí no cierra (no está, está de baja o cambió el PIN) se confirma
+  // contra la hoja real, así un alta o un PIN recién cambiado nunca se rechazan por una copia vieja.
+  const valido = (e) => !!e && _esVerdadero(e.activo) !== false && (version === undefined || version === _versionSesion(e));
+  let empleado = null;
+  try { empleado = _leerCrudoCache("Empleados").filter((e) => String(e.id) === String(empleadoId))[0] || null; } catch (err) { empleado = null; }
+  if (!valido(empleado)) empleado = _empleadoPorId(empleadoId);
   if (!empleado || _esVerdadero(empleado.activo) === false) {
     return { ok: false, sesionInvalida: true, error: "Tu acceso ya no está activo." };
   }
@@ -751,6 +756,7 @@ function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre, soloV
       sheet.getRange(fila + 1, col.pin_hash + 1).setValue(hash);
       sheet.getRange(fila + 1, col.salt + 1).setValue(salt);
       datos[fila][col.pin_hash] = hash; datos[fila][col.salt] = salt; // el empleado que armamos abajo ya lleva el PIN nuevo
+      _invalidarHojaCache("Empleados");
       sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
       sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
       _auditar("pin_creado", empleadoId, nombre, "Primer PIN creado");
@@ -899,8 +905,8 @@ function _datosSinCache(local, empleado) {
     .filter((r) => String(r.local || "").trim() === String(local).trim() && Number(r.ts) >= limite)
     .map(_registroPublico);
 
-  const saboresFilas = _leerCrudo("Sabores").filter((s) => _esVerdadero(s.activo) !== false);
-  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const saboresFilas = _leerCrudoCache("Sabores").filter((s) => _esVerdadero(s.activo) !== false);
+  const filaLocal = _leerCrudoCache("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const paisDelLocal = _paisDeLocal(filaLocal);
   const sabores = saboresFilas
     .map((s) => ({ id: String(s.id), nombre: _textoPorPais(s.nombre_paises, paisDelLocal, s.nombre), tipo: s.tipo, minimo: Number(s.minimo) || 0, orden: Number(s.orden) || 0, categoria: _textoPorPais(s.categoria_paises, paisDelLocal, s.categoria || "Cremas"), peso: _pesoDeSabor(s, paisDelLocal), familia: s.familia || "vasquetas", cantidad_maestra: Number(s.cantidad_maestra) || 0, vida_util_dias: Number(s.vida_util_dias) || 0, codigo_fabrica: _codigoFabrica(s.codigo_fabrica), plu: _plu(s.plu) }))
@@ -969,7 +975,7 @@ function _invalidarCacheDatos(local) {
 /** CacheService no guarda valores de más de 100 KB. Los locales con mucho movimiento (Unicenter, Obelisco, Recoleta...)
  *  se pasaban de ese tope, el cache fallaba en silencio y CADA sondeo (cada 30 s por dispositivo) releía las hojas
  *  enteras. Se parte el texto en trozos de 90 KB (clave#0, clave#1... y clave#n con la cantidad). */
-const CACHE_TROZO = 90000;
+const CACHE_TROZO = 60000; // en caracteres; el tope de CacheService es 100 KB en BYTES y los acentos pesan 2, así que se deja margen
 function _cachePonerGrande(cache, key, texto, segundos) {
   const n = Math.ceil(texto.length / CACHE_TROZO) || 1;
   const todo = {};
@@ -2859,6 +2865,9 @@ function toggleSaborLocal(saborId, local, empleado) {
 ============================================================ */
 
 function _auditar(accion, actorId, actorNombre, detalle) {
+  // Toda acción administrativa deja constancia DESPUÉS de escribir: es el momento seguro para descartar las copias
+  // de pocos segundos de Empleados/Sabores/Locales (cierra el hueco de un sondeo que las rearmó con datos viejos).
+  Object.keys(HOJAS_CACHE).forEach(_invalidarHojaCache);
   try {
     _escribirCrudo("Auditoria", { ts: Date.now(), accion: accion, actorId: actorId, actor: actorNombre, detalle: detalle || "" });
   } catch (err) {
@@ -2873,6 +2882,7 @@ function _auditar(accion, actorId, actorNombre, detalle) {
 function _sheet(nombre) {
   // Quien pide la hoja "en crudo" puede escribirla: se descarta lo que se había memorizado de ella.
   delete _MEMO_HOJAS[nombre];
+  if (HOJAS_CACHE[nombre]) _invalidarHojaCache(nombre);
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);
   if (!sheet) throw new Error("No existe la hoja '" + nombre + "'.");
   return sheet;
@@ -2883,6 +2893,34 @@ function _sheet(nombre) {
  *  alguien pide la hoja con _sheet() (ahí puede escribirla), así no se puede leer un dato viejo. */
 const _MEMO_HOJAS = {};
 const _HOJAS_MEMO = ["Locales", "Sabores"];
+
+/** Cache ENTRE pedidos de las hojas que casi no cambian (segundos de vida). Antes cada pedido —incluido el sondeo de
+ *  30 s de cada tablet— releía la hoja Empleados entera solo para validar la sesión, y cada cambio de local releía
+ *  Sabores y Locales. Lo usan SOLO la validación de sesión y datos(); todo lo que escribe sigue leyendo la hoja real.
+ *  Se descarta apenas alguien pide la hoja con _sheet() (ahí puede escribirla) y después de escribirla. Lo que se
+ *  edite a mano en la planilla se ve en hasta ese tiempo. */
+const HOJAS_CACHE = { Empleados: 15, Sabores: 30, Locales: 30 };
+function _invalidarHojaCache(nombre) {
+  try {
+    const cache = CacheService.getScriptCache(), key = "hoja_" + nombre;
+    const n = Number(cache.get(key + "#n") || 0);
+    const claves = [key + "#n"];
+    for (let i = 0; i < n; i++) claves.push(key + "#" + i);
+    cache.removeAll(claves);
+  } catch (err) { /* no crítico */ }
+}
+function _leerCrudoCache(hoja) {
+  const seg = HOJAS_CACHE[hoja];
+  if (!seg) return _leerCrudo(hoja);
+  const cache = CacheService.getScriptCache(), key = "hoja_" + hoja;
+  try {
+    const t = _cacheLeerGrande(cache, key);
+    if (t) return JSON.parse(t);
+  } catch (err) { /* sin cache: se lee la hoja */ }
+  const filas = _leerCrudo(hoja);
+  try { _cachePonerGrande(cache, key, JSON.stringify(filas), seg); } catch (err) { /* no crítico */ }
+  return filas;
+}
 
 /** Rubros que un local puede apagar entero: una columna Locales.lleva_<rubro> por rubro.
  *  Vacío = lo lleva (como siempre); NO = no lo lleva y desaparece de ese local. Baldes son tipo "b" (familia vasquetas). */
@@ -2925,7 +2963,12 @@ function _filasComoObjetos(sheet) {
 }
 
 function _leerCrudo(hoja) {
-  if (_HOJAS_MEMO.indexOf(hoja) === -1) return _filasComoObjetos(_sheet(hoja));
+  if (_HOJAS_MEMO.indexOf(hoja) === -1) {
+    // Leer no invalida el cache entre pedidos (eso solo lo hace quien pide la hoja con _sheet() para escribir).
+    const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(hoja);
+    if (!sh) throw new Error("No existe la hoja '" + hoja + "'.");
+    return _filasComoObjetos(sh);
+  }
   if (!_MEMO_HOJAS[hoja]) {
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(hoja);
     if (!sheet) throw new Error("No existe la hoja '" + hoja + "'.");
@@ -3033,6 +3076,7 @@ function _escribirCrudo(hoja, fila) {
   const nuevoId = _proximoId(sheet);
   const filaCompleta = Object.assign({}, fila, { id: nuevoId });
   _escribirFilaCompleta(sheet, headers, filaCompleta);
+  if (HOJAS_CACHE[hoja]) _invalidarHojaCache(hoja);
   return { ok: true, id: nuevoId };
 }
 
@@ -3042,6 +3086,7 @@ function _escribirCrudoConId(hoja, fila) {
   const sheet = _sheet(hoja);
   const headers = sheet.getDataRange().getValues()[0];
   _escribirFilaCompleta(sheet, headers, fila);
+  if (HOJAS_CACHE[hoja]) _invalidarHojaCache(hoja);
   return { ok: true, id: fila.id };
 }
 
@@ -3058,6 +3103,7 @@ function _actualizarCrudo(hoja, id, cambios) {
         if (col === -1) { noEncontradas.push(key); return; }
         _escribirCeldaSinAdivinar(sheet.getRange(i + 1, col + 1), _sanitizarCelda(cambios[key]));
       });
+      if (HOJAS_CACHE[hoja]) _invalidarHojaCache(hoja);
       if (noEncontradas.length > 0) return { ok: false, error: "Faltan columnas en \"" + hoja + "\": " + noEncontradas.join(", ") };
       return { ok: true };
     }
@@ -3071,7 +3117,7 @@ function _eliminarCrudo(hoja, id) {
   const headers = datos[0];
   const colId = headers.indexOf("id");
   for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][colId]) === String(id)) { sheet.deleteRow(i + 1); return { ok: true }; }
+    if (String(datos[i][colId]) === String(id)) { sheet.deleteRow(i + 1); if (HOJAS_CACHE[hoja]) _invalidarHojaCache(hoja); return { ok: true }; }
   }
   return { ok: false, error: "No se encontró id " + id + " en " + hoja };
 }
