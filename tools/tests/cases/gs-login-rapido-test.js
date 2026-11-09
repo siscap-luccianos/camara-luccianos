@@ -63,7 +63,7 @@ const a=run('_leerCrudo("Locales")[0]'); a.nombre="X"; ok(run('_leerCrudo("Local
 // 5) Cache grande en trozos
 const grande="x".repeat(250000);
 run('(function(){var c=CacheService.getScriptCache(); _cachePonerGrande(c,"datos_T",'+JSON.stringify(grande)+',45);})()');
-ok(Object.keys(store).filter(k=>k.indexOf("datos_T#")===0&&k!=="datos_T#n").length===3,"250 KB se guardan en 3 trozos (cada uno bajo 100 KB)");
+ok(Object.keys(store).filter(k=>k.indexOf("datos_T#")===0&&k!=="datos_T#n").length===5,"250 KB se guardan en 5 trozos (cada uno bajo 100 KB)");
 ok(run('_cacheLeerGrande(CacheService.getScriptCache(),"datos_T")')===grande,"se rearma igual al leerlo");
 delete store["datos_T#1"]; ok(run('_cacheLeerGrande(CacheService.getScriptCache(),"datos_T")')===null,"si falta un trozo, devuelve null y se rearma");
 Object.keys(store).forEach(k=>delete store[k]);

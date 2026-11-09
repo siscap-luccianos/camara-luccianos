@@ -975,7 +975,7 @@ function _invalidarCacheDatos(local) {
 /** CacheService no guarda valores de más de 100 KB. Los locales con mucho movimiento (Unicenter, Obelisco, Recoleta...)
  *  se pasaban de ese tope, el cache fallaba en silencio y CADA sondeo (cada 30 s por dispositivo) releía las hojas
  *  enteras. Se parte el texto en trozos de 90 KB (clave#0, clave#1... y clave#n con la cantidad). */
-const CACHE_TROZO = 90000;
+const CACHE_TROZO = 60000; // en caracteres; el tope de CacheService es 100 KB en BYTES y los acentos pesan 2, así que se deja margen
 function _cachePonerGrande(cache, key, texto, segundos) {
   const n = Math.ceil(texto.length / CACHE_TROZO) || 1;
   const todo = {};

@@ -2785,6 +2785,9 @@ function renderMain(){
   else if(S.tab==="equipo") h=teamView();
   else if(S.tab==="sabores") h=saboresView();
   else if(S.tab==="gestion") h=gestionView(st);
+  // Si la última carga falló y lo que se ve viene de la copia guardada en este equipo, se avisa (antes quedaba en
+  // silencio y faltaba lo que solo manda el servidor, como la solapa Gestión).
+  if(S.errorCarga && S.sabores.length) h = `<div class="note" style="border-color:var(--warn,#C98A1B)">No se pudieron actualizar los datos de este local: se muestra lo último guardado en este equipo y se reintenta solo.<br><button class="btn ghost" id="reintentarCarga" style="margin-top:8px">Reintentar ahora</button></div>` + h;
   return h;
 }
 
@@ -4657,7 +4660,7 @@ async function cargarDatos(){
   if(local!==S.local) return; // el usuario ya se movió a otro local, esta respuesta quedó vieja
   if(!r || !r.ok){
     S.errorCarga = (r&&r.error) || "No se pudo conectar. Se va a reintentar solo.";
-    if(!S.sabores.length) renderApp();
+    if(!S.sabores.length || !_estaEscribiendo()) renderApp();
     return;
   }
   S.errorCarga = null;
