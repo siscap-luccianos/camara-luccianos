@@ -31,10 +31,11 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.72.1";
+const BACKEND_VERSION = "1.73.0";
 
 function doPost(e) {
   let resultado;
+  Object.keys(_MEMO_HOJAS).forEach((k) => { delete _MEMO_HOJAS[k]; }); // cada pedido arranca sin nada memorizado
   try {
     const body = JSON.parse(e.postData.contents);
     resultado = _despachar(body);
@@ -177,10 +178,12 @@ function _finDeJornada(desde) {
  *  efecto al toque, sin esperar a que venza el token. Dura hasta el
  *  cierre de la jornada comercial (7am a 3am), no un tope fijo de
  *  horas — así nadie queda desconectado a mitad de turno. */
-function _emitirToken(empleadoId) {
-  SpreadsheetApp.flush(); // por si el PIN se acaba de crear en este mismo pedido
+function _emitirToken(empleadoId, empleadoConocido) {
+  // Si quien llama ya tiene al empleado con su pin_hash actualizado (login()), no hace falta
+  // vaciar escrituras pendientes ni releer toda la hoja Empleados: eso era lo más lento del login.
+  if (!empleadoConocido) SpreadsheetApp.flush(); // por si el PIN se acaba de crear en este mismo pedido
   const expira = _finDeJornada(Date.now());
-  const payloadB64 = Utilities.base64EncodeWebSafe(String(empleadoId) + "|" + expira + "|" + _versionSesion(_empleadoPorId(empleadoId)));
+  const payloadB64 = Utilities.base64EncodeWebSafe(String(empleadoId) + "|" + expira + "|" + _versionSesion(empleadoConocido || _empleadoPorId(empleadoId)));
   return payloadB64 + "." + _firmar(payloadB64);
 }
 
@@ -323,7 +326,7 @@ function _verificarCodigoAdmin(codigo) {
  *  para el control de intentos y el bloqueo de 5 min. Devuelve null si el PIN es correcto. */
 function _exigirPinAdmin(empleado, pin, local) {
   if (!_pinValido(pin)) return { ok: false, pidePin: true, error: "Escribí tu PIN de administrador." };
-  const r = login(empleado.id, pin, "", local, "", "");
+  const r = login(empleado.id, pin, "", local, "", "", true);
   if (r && r.ok) return null;
   if (r && r.primeraVez) return { ok: false, pidePin: true, error: "Tu cuenta de administrador todavía no tiene PIN. Creálo entrando primero a un local." };
   return { ok: false, pidePin: true, error: (r && r.error) || "PIN incorrecto." };
@@ -341,7 +344,7 @@ function loginAdminLocal(empleadoId, codigo, local, pin) {
   if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
   if (empleado.rol === "admin") { const e = _exigirPinAdmin(empleado, pin, local); if (e) return e; }
   _auditar("login_admin_codigo", empleado.id, empleado.nombre, "Entró a " + local + " con el código de admin" + (empleado.rol === "admin" ? " + PIN" : " (sin PIN)"));
-  return _resultadoLogin(empleado, local, false);
+  return _resultadoLogin(empleado, local, false, true);
 }
 
 /** Cambiar el PIN propio (cualquier rol): pide el PIN actual (con el mismo control de intentos del login).
@@ -692,7 +695,7 @@ function loginGestion(empleadoId, clave, local, pin) {
   if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "No corresponde." };
   if (empleado.rol === "admin") { const e = _exigirPinAdmin(empleado, pin, local); if (e) return e; }
   _auditar("login_gestion_sin_pin", empleado.id, empleado.nombre, "Entró a Operaciones con la contraseña del local" + (empleado.rol === "admin" ? " + PIN" : " (sin PIN)"));
-  return _resultadoLogin(empleado, local, true);
+  return _resultadoLogin(empleado, local, true, true);
 }
 
 /**
@@ -702,7 +705,7 @@ function loginGestion(empleadoId, clave, local, pin) {
  *  - Empleado con pin_hash: valida contra el hash guardado.
  * Bloquea 5 minutos tras 5 intentos incorrectos seguidos.
  */
-function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre) {
+function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre, soloVerificar) {
   if (!empleadoId) return { ok: false, error: "Falta elegir quién sos." };
   if (!_pinValido(pin)) return { ok: false, error: "El PIN tiene que ser de 4 números." };
 
@@ -747,6 +750,7 @@ function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre) {
       const hash = _hashPin(pin, salt);
       sheet.getRange(fila + 1, col.pin_hash + 1).setValue(hash);
       sheet.getRange(fila + 1, col.salt + 1).setValue(salt);
+      datos[fila][col.pin_hash] = hash; datos[fila][col.salt] = salt; // el empleado que armamos abajo ya lleva el PIN nuevo
       sheet.getRange(fila + 1, col.intentos + 1).setValue(0);
       sheet.getRange(fila + 1, col.bloqueado_hasta + 1).setValue("");
       _auditar("pin_creado", empleadoId, nombre, "Primer PIN creado");
@@ -780,12 +784,15 @@ function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre) {
     lock.releaseLock();
   }
 
+  // Solo comprobar el PIN (lo usa _exigirPinAdmin): sin token ni datos del local, que acá sobran.
+  if (soloVerificar) return { ok: true };
+
   // Soltamos el candado global ACÁ, antes de armar la respuesta — lo que
   // sigue (emitir el token y, si corresponde, traer los datos del local)
   // es de solo lectura y no necesita bloquear a otros locales mientras
   // tanto. Esto es lo que más recorta la espera cuando varias personas
   // entran casi al mismo tiempo en distintos locales.
-  return _resultadoLogin(empleado, local, false);
+  return _resultadoLogin(empleado, local, false, true);
 }
 
 /** Arma la respuesta del login. Si el cliente ya sabe con qué local va a
@@ -798,8 +805,8 @@ function login(empleadoId, pin, pinConfirm, local, equipoId, equipoNombre) {
  *  Operaciones, loginGestion() ya leyó Locales para validar la clave) —
  *  evita una lectura de más acá, que antes releía toda la hoja Locales
  *  para algo que el caller ya tenía resuelto. */
-function _resultadoLogin(empleado, local, esLocalDeGestion) {
-  const resultado = { ok: true, token: _emitirToken(empleado.id), empleado: _empleadoPublico(empleado) };
+function _resultadoLogin(empleado, local, esLocalDeGestion, empleadoActual) {
+  const resultado = { ok: true, token: _emitirToken(empleado.id, empleadoActual ? empleado : null), empleado: _empleadoPublico(empleado) };
   // Admin/supervisor entrando por Operaciones no aterriza en ningún local
   // real (el cliente arranca en "elegí el local arriba"), así que traer el
   // stock/historial de "Operaciones" es trabajo de más — ahí es donde más
@@ -950,7 +957,39 @@ function _cacheKeyDatos(local) {
  *  la propia persona ve su movimiento reflejado al toque en vez de
  *  esperar hasta 20s a que venza el cache. */
 function _invalidarCacheDatos(local) {
-  try { CacheService.getScriptCache().remove(_cacheKeyDatos(local)); } catch (err) { /* no crítico */ }
+  try {
+    const cache = CacheService.getScriptCache(), key = _cacheKeyDatos(local);
+    const n = Number(cache.get(key + "#n") || 0);
+    const claves = [key, key + "#n"];
+    for (let i = 0; i < n; i++) claves.push(key + "#" + i);
+    cache.removeAll(claves);
+  } catch (err) { /* no crítico */ }
+}
+
+/** CacheService no guarda valores de más de 100 KB. Los locales con mucho movimiento (Unicenter, Obelisco, Recoleta...)
+ *  se pasaban de ese tope, el cache fallaba en silencio y CADA sondeo (cada 30 s por dispositivo) releía las hojas
+ *  enteras. Se parte el texto en trozos de 90 KB (clave#0, clave#1... y clave#n con la cantidad). */
+const CACHE_TROZO = 90000;
+function _cachePonerGrande(cache, key, texto, segundos) {
+  const n = Math.ceil(texto.length / CACHE_TROZO) || 1;
+  const todo = {};
+  for (let i = 0; i < n; i++) todo[key + "#" + i] = texto.slice(i * CACHE_TROZO, (i + 1) * CACHE_TROZO);
+  todo[key + "#n"] = String(n);
+  cache.putAll(todo, segundos);
+}
+function _cacheLeerGrande(cache, key) {
+  const n = Number(cache.get(key + "#n") || 0);
+  if (!n) return null;
+  const claves = [];
+  for (let i = 0; i < n; i++) claves.push(key + "#" + i);
+  const trozos = cache.getAll(claves);
+  let texto = "";
+  for (let i = 0; i < n; i++) {
+    const t = trozos[key + "#" + i];
+    if (t === undefined || t === null) return null; // se venció o falta un trozo: se rearma
+    texto += t;
+  }
+  return texto;
 }
 
 function datos(local, empleado) {
@@ -961,13 +1000,13 @@ function datos(local, empleado) {
   const key = _cacheKeyDatos(local);
   let base;
   try {
-    const cacheado = cache.get(key);
+    const cacheado = _cacheLeerGrande(cache, key);
     if (cacheado) base = JSON.parse(cacheado);
   } catch (err) { /* si el cache falla, seguimos sin él */ }
 
   if (!base) {
     base = _datosSinCache(local, empleado);
-    try { cache.put(key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
+    try { _cachePonerGrande(cache, key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
   return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
@@ -2832,10 +2871,18 @@ function _auditar(accion, actorId, actorNombre, detalle) {
 ============================================================ */
 
 function _sheet(nombre) {
+  // Quien pide la hoja "en crudo" puede escribirla: se descarta lo que se había memorizado de ella.
+  delete _MEMO_HOJAS[nombre];
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);
   if (!sheet) throw new Error("No existe la hoja '" + nombre + "'.");
   return sheet;
 }
+
+/** Locales y Sabores se leían de 3 a 5 veces por pedido (login, datos, control de equipos...), cada una una ida
+ *  a Sheets. Se memorizan SOLO durante este pedido (cada ejecución arranca vacía) y se descartan apenas
+ *  alguien pide la hoja con _sheet() (ahí puede escribirla), así no se puede leer un dato viejo. */
+const _MEMO_HOJAS = {};
+const _HOJAS_MEMO = ["Locales", "Sabores"];
 
 /** Rubros que un local puede apagar entero: una columna Locales.lleva_<rubro> por rubro.
  *  Vacío = lo lleva (como siempre); NO = no lo lleva y desaparece de ese local. Baldes son tipo "b" (familia vasquetas). */
@@ -2878,7 +2925,14 @@ function _filasComoObjetos(sheet) {
 }
 
 function _leerCrudo(hoja) {
-  return _filasComoObjetos(_sheet(hoja));
+  if (_HOJAS_MEMO.indexOf(hoja) === -1) return _filasComoObjetos(_sheet(hoja));
+  if (!_MEMO_HOJAS[hoja]) {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(hoja);
+    if (!sheet) throw new Error("No existe la hoja '" + hoja + "'.");
+    _MEMO_HOJAS[hoja] = _filasComoObjetos(sheet);
+  }
+  // Copias sueltas: quien llama puede modificar los objetos sin ensuciar lo memorizado.
+  return _MEMO_HOJAS[hoja].map((f) => Object.assign({}, f));
 }
 
 /** Como _leerCrudo, pero solo lee las últimas `maxFilas` filas en vez de
