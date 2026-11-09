@@ -1019,7 +1019,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.136.4";
+const FRONTEND_VERSION = "1.136.5";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2573,7 +2573,7 @@ function renderHeader(){
   const puedeElegirLocal = S.empleado.rol==="admin" || S.empleado.rol==="supervisor";
   return `<header>
     <div class="brand">
-      <div class="tit"><h1><small>front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}${S.loginMs?` · login ${(S.loginMs/1000).toFixed(1)} s`:""}</small>LogiStock Lucciano's</h1></div>
+      <div class="tit"><h1><small>front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}${S.loginMs?` · login ${(S.loginMs/1000).toFixed(1)} s`:""}${S.cargaMs?` · datos ${(S.cargaMs/1000).toFixed(1)} s`:""}</small>LogiStock Lucciano's</h1></div>
       <div class="localSel">
         <label for="local">Equipo</label>
         ${puedeElegirLocal
@@ -4651,7 +4651,9 @@ function precargarDatosCache(local){
 async function cargarDatos(){
   if(!S.local || !S.token) return;
   const local=S.local; // por si cambia de local mientras esta llamada está en vuelo
+  const t0=Date.now();
   const r = await api("datos", {local});
+  if(r && r.ok) S.cargaMs = Date.now()-t0;
   if(local!==S.local) return; // el usuario ya se movió a otro local, esta respuesta quedó vieja
   if(!r || !r.ok){
     S.errorCarga = (r&&r.error) || "No se pudo conectar. Se va a reintentar solo.";
