@@ -11,6 +11,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LogiStock Lucciano's">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -142,6 +143,10 @@ html .timerInact.urgente{color:#F2C879}
 .btnTema svg{width:16px;height:16px}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4}
+/* Línea fina de color con brillo (iPhone y todos): arriba, justo bajo la hora/batería, y abajo, sobre la barra de inicio. Verde en producción, naranja en pruebas (sale del meta theme-color, igual que la barra de Android). El área de la hora va del color de la cabecera para que se lea con la barra translúcida. */
+body::before,body::after{content:"";position:fixed;left:0;right:0;z-index:2000;pointer-events:none}
+body::before{top:0;height:calc(env(safe-area-inset-top,0px) + 3px);background:linear-gradient(to bottom,var(--header-bg) calc(100% - 3px),var(--barra-sistema,#5E7A3F) calc(100% - 3px));box-shadow:0 0 12px 1px var(--barra-sistema,#5E7A3F)}
+body::after{bottom:0;height:calc(env(safe-area-inset-bottom,0px) + 3px);background:linear-gradient(to top,var(--barra-sistema,#5E7A3F) 3px,transparent 3px);box-shadow:0 0 12px 1px var(--barra-sistema,#5E7A3F)}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -926,6 +931,7 @@ body:has(.mantenerOv){overflow:hidden}
   main{padding:12mm 14mm 20mm!important;margin:0!important;min-height:0!important;max-width:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone}
   /* Relevar: hoja limpia en blanco y negro, sin vidrio ni colores del tema, tabla entera en el ancho de la hoja y TODO centrado */
   html,body{background:#fff!important;height:auto!important;min-height:0!important}
+  body::before,body::after{display:none!important}
   .rlv{display:block!important;padding:0!important;max-width:none!important}
   .rlv>*{margin-bottom:10px!important}
   .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
@@ -997,6 +1003,7 @@ body:has(.mantenerOv){overflow:hidden}
 <div class="toast" id="toast" hidden></div>
 
 <script>
+(function(){ try{ var m=document.querySelector('meta[name="theme-color"]'); if(m && m.content) document.documentElement.style.setProperty("--barra-sistema", m.content) }catch(e){} })();
 /* ============================================================
    LogiStock Lucciano's — cliente estático (GitHub Pages)
    Backend: Google Apps Script + Google Sheets (ver apps-script/).
@@ -1008,7 +1015,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.135.6";
+const FRONTEND_VERSION = "1.135.7";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
