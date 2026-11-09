@@ -12,5 +12,8 @@ const { chromium } = require("playwright");
   const txt=html.replace(/<[^>]+>/g," ").replace(/\s+/g," ");
   console.log(txt.slice(0,420));
   console.log("equipos sueltos:",(txt.match(/\bequipos?\b/gi)||[]).length,"| dispositivos:",(txt.match(/dispositivos?/gi)||[]).length);
+  const sinPendientes = !/esperando aprobación|Aprobar|Rechazar/.test(html);
+  console.log((sinPendientes ? "OK   " : "FALLA") + " Dispositivos no ofrece aprobar ni rechazar (solo código): los bloqueados ya no se listan");
   await b.close();
+  if (!sinPendientes) process.exit(1);
 })();

@@ -1019,7 +1019,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.136.5";
+const FRONTEND_VERSION = "1.136.6";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3970,7 +3970,7 @@ function teamViewEmpleados(){
 function teamView(){
   if(!S.controlEquipos) return teamViewEmpleados();
   const tab=(k,l)=>`<button type="button" class="tabCat" role="tab" data-sub-equipo="${k}" aria-selected="${S.subEquipo===k}">${l}</button>`;
-  const tabs=`<div class="tabsCat" role="tablist" style="margin-top:22px">${tab("empleados","Empleados")}${tab("equipos","Dispositivos"+((S.equipos&&S.equipos.pendientes&&S.equipos.pendientes.length)?" ("+S.equipos.pendientes.length+")":""))}</div>`;
+  const tabs=`<div class="tabsCat" role="tablist" style="margin-top:22px">${tab("empleados","Empleados")}${tab("equipos","Dispositivos")}</div>`;
   return tabs+(S.subEquipo==="equipos"?equiposView():teamViewEmpleados());
 }
 function equiposView(){
@@ -3983,15 +3983,10 @@ function equiposView(){
   const sigla=n=>String(n).trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase().slice(0,2)||"EQ";
   const ultimo=d=>d.ultimoTs?`Último acceso: ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" · "+esc(d.ultimoEmpleado):""}`:"Todavía no entró";
   return `<p class="sec" style="margin-top:6px">Dispositivos de ${esc(S.local)}</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} dispositivos aprobados. Un dispositivo nuevo queda bloqueado hasta que lo aprobás o le pasás un código.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.8rem;line-height:1.4">Este local puede tener hasta ${max} dispositivos aprobados. Un dispositivo nuevo queda bloqueado hasta que le pasás un código.</p>
   <div class="eqCard"><div class="eqCupo"><b>${usados} de ${max} dispositivos</b><span style="color:${lleno?"var(--alert)":"var(--accent)"}">${lleno?"Cupo lleno":(max-usados===1?"Queda 1 lugar":"Quedan "+(max-usados)+" lugares")}</span></div><div class="eqSegs">${seg}</div></div>
   ${S.equipoAviso?`<div class="note" role="status" style="margin:10px 0">${esc(S.equipoAviso)}</div>`:""}
   ${codigoEquipoHTML(lleno)}
-  ${e.pendientes.length?`<p class="sec">Bloqueados · esperando aprobación</p>`+e.pendientes.map(d=>`<div class="eqCard pend">
-    <div class="eqFila"><span class="eqIni warn">!</span><div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b><div class="meta">Intentó entrar ${esc(haceTexto(d.ultimoTs))}${d.ultimoEmpleado?" como "+esc(d.ultimoEmpleado):""}</div></div></div>
-    ${lleno?`<div class="warn" style="margin:8px 0 0">Sin lugar: ya hay ${max} dispositivos. Quitá uno de la lista para poder aprobar este.</div>`:`<input type="text" class="eqNombre" data-eq-nombre="${esc(d.clave)}" value="${esc(d.nombre)}" maxlength="60" aria-label="Nombre del dispositivo" placeholder="Nombre del dispositivo (ej. Tablet cámara)">`}
-    <div class="eqBtns"><button type="button" class="btn ghost" data-equipo-rechazar="${esc(d.clave)}">Rechazar</button><button type="button" class="btn" data-equipo-aprobar="${esc(d.clave)}" ${lleno?"disabled":""}>Aprobar</button></div>
-  </div>`).join(""):""}
   <p class="sec">Autorizados</p>
   ${e.aprobados.length?e.aprobados.map(d=>`<div class="eqCard">
     <div class="eqFila"><span class="eqIni">${esc(sigla(d.nombre))}</span><div style="flex:1;min-width:0"><b>${esc(d.nombre)}</b><div class="meta">${esc(d.detalle||"")}</div></div>
@@ -4989,8 +4984,6 @@ document.addEventListener("click", async e=>{
   if(t.dataset.irOperaciones){ irAOperaciones(t.dataset.irOperaciones==="sabores" ? "sabores" : undefined); return }
   if(t.dataset.subEquipo){ S.subEquipo=t.dataset.subEquipo; S.equipoAviso=""; S.equipoConfirmar=null; if(S.subEquipo==="equipos") S.equipos=undefined; renderApp(); return }
   if(t.dataset.equiposRecargar){ S.equipos=undefined; renderApp(); return }
-  if(t.dataset.equipoAprobar){ const c=t.dataset.equipoAprobar, inp=[...document.querySelectorAll("input[data-eq-nombre]")].find(i=>i.dataset.eqNombre===c); t.disabled=true; equipoDecidir(c,"aprobar",inp?inp.value.trim():""); return }
-  if(t.dataset.equipoRechazar){ t.disabled=true; equipoDecidir(t.dataset.equipoRechazar,"rechazar"); return }
   if(t.dataset.equipoPedirQuitar){ S.equipoConfirmar=t.dataset.equipoPedirQuitar; S.equipoAviso=""; renderApp(); return }
   if(t.dataset.equipoCancelar){ S.equipoConfirmar=null; renderApp(); return }
   if(t.dataset.equipoCodigo){ generarCodigoEquipo(); return }
