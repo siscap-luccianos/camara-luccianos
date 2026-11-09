@@ -22,7 +22,6 @@ Object.defineProperty(window,"localStorage",{value:w,configurable:true});}catch(
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LogiStock Lucciano's">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -154,13 +153,10 @@ html .timerInact.urgente{color:#F2C879}
 .btnTema svg{width:16px;height:16px}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4}
-/* Barras de color en la app instalada del iPhone, como las que Android pinta solo con theme_color (verde en producción, naranja en pruebas; el color sale del meta theme-color). Cubren el área de la hora/batería y la de la barra de inicio; en Android y en el navegador esas áreas miden 0 y no se ven. El contenido arranca debajo de la de arriba. */
-body::before,body::after{content:"";position:fixed;left:0;right:0;z-index:100000;pointer-events:none;background:var(--barra-sistema,#5E7A3F)}
-body::before{top:0;height:env(safe-area-inset-top,0px);background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 65%),var(--barra-sistema,#5E7A3F);box-shadow:0 0 14px 1px var(--barra-sistema,#5E7A3F)}
-body::after{bottom:0;height:env(safe-area-inset-bottom,0px);background:linear-gradient(0deg,rgba(255,255,255,.28),rgba(255,255,255,0) 65%),var(--barra-sistema,#5E7A3F);box-shadow:0 0 14px 1px var(--barra-sistema,#5E7A3F)}
-/* Android: las barras del sistema ya son de color; acá solo un resplandor fino pegado a cada una, para el mismo detalle. */
-html.android body::before,html.android body::after{height:2px}
-body{padding-top:env(safe-area-inset-top,0px)}
+/* Android: las barras del sistema ya se pintan solas con theme_color; acá solo un resplandor fino de 2 px pegado a cada una, para el mismo detalle. En iPhone no se dibuja nada (la barra de estado es la normal del sistema: probar barras propias con black-translucent hacía que iOS acomodara mal la pantalla hasta tocar algo). */
+html.android body::before,html.android body::after{content:"";position:fixed;left:0;right:0;height:2px;z-index:100000;pointer-events:none;background:var(--barra-sistema,#5E7A3F);box-shadow:0 0 12px 1px var(--barra-sistema,#5E7A3F)}
+html.android body::before{top:0}
+html.android body::after{bottom:0}
 /* Android: sin desenfoque (backdrop-filter) en cabecera, barra de pestañas y chips, que hace trabarse el scroll en celulares medios. */
 html.android header,html.android .bottomNav,html.android .userChip,html.android .alertPill,html.android .glass,html.android .bar,html.android .kpi,html.android .chip,html.android .segPer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 html.android header{background:rgb(var(--header-bg-rgb))!important}
@@ -950,7 +946,6 @@ body:has(.mantenerOv){overflow:hidden}
   /* Relevar: hoja limpia en blanco y negro, sin vidrio ni colores del tema, tabla entera en el ancho de la hoja y TODO centrado */
   html,body{background:#fff!important;height:auto!important;min-height:0!important}
   body::before,body::after{display:none!important}
-  body{padding-top:0!important}
   .rlv{display:block!important;padding:0!important;max-width:none!important}
   .rlv>*{margin-bottom:10px!important}
   .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
@@ -1036,7 +1031,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.136.2";
+const FRONTEND_VERSION = "1.136.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
