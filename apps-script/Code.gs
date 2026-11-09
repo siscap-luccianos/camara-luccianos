@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.72.0";
+const BACKEND_VERSION = "1.72.1";
 
 function doPost(e) {
   let resultado;
@@ -220,7 +220,7 @@ function _verificarSesion(token) {
 }
 
 function _empleadoPublico(empleado) {
-  return { id: empleado.id, nombre: empleado.nombre, rol: empleado.rol, local: empleado.local || "" };
+  return { id: empleado.id, nombre: empleado.nombre, rol: empleado.rol, local: empleado.local || "", tienePin: !!String(empleado.pin_hash || "") };
 }
 
 /** Cualquier empleado logueado puede corregir SU PROPIO nombre (typos al
