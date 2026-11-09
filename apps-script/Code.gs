@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.71.0";
+const BACKEND_VERSION = "1.72.0";
 
 function doPost(e) {
   let resultado;
@@ -108,6 +108,7 @@ function _despacharConSesion(accion, body, empleado) {
   switch (accion) {
     case "misDatos": return { ok: true, empleado: _empleadoPublico(empleado) };
     case "actualizarMiNombre": return actualizarMiNombre(body.nombre, empleado);
+    case "cambiarMiPin": return cambiarMiPin(body.pinActual, body.pinNuevo, empleado);
     case "datos": return datos(body.local, empleado);
     case "relevar": return relevar(empleado);
     case "preciosStock": return preciosStock(body.local, empleado);
@@ -341,6 +342,32 @@ function loginAdminLocal(empleadoId, codigo, local, pin) {
   if (empleado.rol === "admin") { const e = _exigirPinAdmin(empleado, pin, local); if (e) return e; }
   _auditar("login_admin_codigo", empleado.id, empleado.nombre, "Entró a " + local + " con el código de admin" + (empleado.rol === "admin" ? " + PIN" : " (sin PIN)"));
   return _resultadoLogin(empleado, local, false);
+}
+
+/** Cambiar el PIN propio (cualquier rol): pide el PIN actual (con el mismo control de intentos del login).
+ *  Si la persona todavía no tiene PIN (supervisor que entra por Operaciones), alcanza con la sesión.
+ *  Devuelve un token nuevo, porque cambiar el PIN invalida los tokens anteriores. */
+function cambiarMiPin(pinActual, pinNuevo, empleado) {
+  if (!_pinValido(pinNuevo)) return { ok: false, error: "El PIN nuevo tiene que ser de 4 números." };
+  const fila = _empleadoPorId(empleado.id);
+  if (!fila) return { ok: false, error: "No se encontró tu usuario." };
+  if (String(fila.pin_hash || "")) {
+    if (!_pinValido(pinActual)) return { ok: false, error: "Escribí tu PIN actual." };
+    if (String(pinActual) === String(pinNuevo)) return { ok: false, error: "El PIN nuevo tiene que ser distinto del actual." };
+    const r = login(fila.id, pinActual, "", "", "", "");
+    if (!r || !r.ok) return { ok: false, error: (r && r.error) || "El PIN actual no es correcto." };
+  }
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const salt = Utilities.getUuid();
+    const r = _actualizarCrudo("Empleados", fila.id, { pin_hash: _hashPin(pinNuevo, salt), salt: salt, intentos: 0, bloqueado_hasta: "" });
+    if (!r.ok) return r;
+    _auditar("cambio_pin_propio", fila.id, fila.nombre, "Cambió su propio PIN");
+  } finally {
+    lock.releaseLock();
+  }
+  return { ok: true, token: _emitirToken(fila.id) };
 }
 
 /* ============================================================

@@ -22,6 +22,7 @@ function resp(b){
   if(a==="localesActivos") return {ok:true,locales:locales.map(x=>({nombre:x.nombre,grupo:x.grupo,pais:x.pais,tieneClave:!!x.clave,esGestion:!!x.operaciones,controlEquipos:false}))};
   if(a==="verificarClaveLocal") return {ok:true};
   if(a==="empleadosGestion") return {ok:true,empleados:[{id:"1",nombre:"Gabi Busquets",rol:"admin"}]};
+  if(a==="cambiarMiPin") return (b.pinActual==="1234" && /^\d{4}$/.test(b.pinNuevo||"")) ? {ok:true,token:"t2"} : {ok:false,error:"PIN incorrecto (1/5)."};
   if(a==="loginGestion") return {ok:true,token:"t",empleado:{id:"1",nombre:"Gabi Busquets",rol:"admin",local:""}};
   if(a==="datos") return {ok:true,registros:db.regs.filter(r=>r.local===b.local),stock:db.stock[b.local]||null,sabores:sabores,excluidos:[],pais:"Argentina",fueraDePais:[],produccion:false,produccionRubros:[],produccionSabores:[],escanerPeso:!!l.kilosReales,kilosReales:!!l.kilosReales,ventaDia:true,chocoSoloDeposito:false,controlEquipos:false,stockValorizado:true,rol:"admin"};
   if(a==="preciosStock"){ console.log("PRECIOS pedidos para",b.local); return {ok:true,precios:{"4":7821.96,"20":9208.24,"5":10747.57,"49":1709.09}} }
