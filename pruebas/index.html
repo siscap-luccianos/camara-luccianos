@@ -1031,7 +1031,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.136.3";
+const FRONTEND_VERSION = "1.136.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1708,11 +1708,12 @@ async function authSubmit(){
   const a=S.auth;
   if(a.paso==="pin"){
     a.cargando=true; a.error=""; renderApp();
+    const t0 = Date.now();
     const r = a.pinGestion
       ? await api(a.codigoAdmin?"loginAdminLocal":"loginGestion", a.codigoAdmin ? { empleadoId:a.elegido.id, codigo:a.clave, local:a.local, pin:a.pin } : { empleadoId:a.elegido.id, clave:a.clave, local:a.local, pin:a.pin })
       : await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
     a.cargando=false;
-    if(r && r.ok){ aplicarLogin(r); return }
+    if(r && r.ok){ S.loginMs = Date.now()-t0; aplicarLogin(r); return }
     if(a.pinGestion){ a.error=(r&&r.error)||"No se pudo validar el PIN."; a.pin=""; renderApp(); return }
     if(r && r.equipo){ authEquipoBloqueado(r); return }
     if(r && r.primeraVez){ a.paso="pinConfirm"; a.pin1=""; renderApp(); return }
@@ -2584,7 +2585,7 @@ function renderHeader(){
   const puedeElegirLocal = S.empleado.rol==="admin" || S.empleado.rol==="supervisor";
   return `<header>
     <div class="brand">
-      <div class="tit"><h1><small>front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}</small>LogiStock Lucciano's</h1></div>
+      <div class="tit"><h1><small>front v${esc(FRONTEND_VERSION)}${S.backendVersion?` · back v${esc(S.backendVersion)}`:""}${S.loginMs?` · login ${(S.loginMs/1000).toFixed(1)} s`:""}</small>LogiStock Lucciano's</h1></div>
       <div class="localSel">
         <label for="local">Equipo</label>
         ${puedeElegirLocal
