@@ -1036,7 +1036,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.136.1";
+const FRONTEND_VERSION = "1.136.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2415,7 +2415,7 @@ function authLocalSlotHTML(a){
   const nom=(a && a.paso!=="local" && a.local) ? a.local : "";
   if(!nom) return "";
   const fijo=!!S.deviceLocal && S.deviceLocal===nom;
-  return `<div class="authLocalLbl">Local</div><div class="authLocalNom">${esc(nom)}</div>${fijo?`<div class="authFijo">🔒&nbsp; Local fijo en este dispositivo</div>`:""}`;
+  return `<div class="authLocalLbl">Equipo</div><div class="authLocalNom">${esc(nom)}</div>${fijo?`<div class="authFijo">🔒&nbsp; Local fijo en este dispositivo</div>`:""}`;
 }
 /** Filtra las tarjetas de perfil mientras se escribe en el buscador (sin rehacer la pantalla, para no perder el foco). */
 function authFiltrarPerfiles(q){
@@ -2432,9 +2432,9 @@ function renderAuth(){
     // Mismo lugar en todos los pasos: título, texto y "Volver" ocupan siempre el
     // mismo espacio (ocultos si corresponde), así los campos no se mueven.
     cuerpo=`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>
-      ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Bienvenido</h1><p style="visibility:hidden" aria-hidden="true">Elegí tu local para empezar.</p>`:`<h1>Bienvenido</h1>
-      <p>Elegí tu local para empezar.</p>`}
-      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu local…"}" autocomplete="off">
+      ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Bienvenido</h1><p style="visibility:hidden" aria-hidden="true">Elegí tu sucursal para empezar.</p>`:`<h1>Bienvenido</h1>
+      <p>Elegí tu sucursal para empezar.</p>`}
+      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu sucursal…"}" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
       
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
@@ -5021,8 +5021,9 @@ document.addEventListener("click", async e=>{
   if(t.id==="authLocalOk"){
     const v=$("#authLocal").value.trim();
     if(!v) return;
-    let match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase());
-    if(!match){ toast("Elegí un local de la lista"); return }
+    let match=resolverLocalEscrito(v, S.locales);
+    if(!match){ toast("Elegí una sucursal de la lista"); return }
+    $("#authLocal").value=match.nombre;
     // si el pedido inicial de locales todavía no terminó, esperamos ESE mismo pedido (no disparamos uno nuevo)
     // para no sumar una ida y vuelta extra al backend en el caso normal (que ya terminó hace rato)
     if(localesFetchPromise){
@@ -5335,6 +5336,13 @@ document.addEventListener("focusin", e=>{
   if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number"||(e.target.dataset&&e.target.dataset.remitoKg!==undefined)) e.target.select();
 });
 document.addEventListener("input", e=>{
+  // Elegir una sugerencia de la lista (clic o Enter sobre la marcada) sigue de una, sin otro clic en «Continuar».
+  if((e.target.id==="authLocal" || e.target.id==="local") && (e.inputType==="insertReplacementText" || !e.inputType)){
+    const v=e.target.value.trim();
+    if(e.target.id==="authLocal"){ if(S.locales.some(l=>l.nombre===v)){ const b=document.getElementById("authLocalOk"); if(b && !b.disabled) b.click() } }
+    else if(v==="Operaciones" || S.locales.some(l=>l.nombre===v && !l.esGestion)){ aplicarLocalHeader(e.target) }
+    return;
+  }
   if(e.target.id==="authBuscar"){ authFiltrarPerfiles(e.target.value); return }
   if(e.target.id==="rlvQ" || e.target.id==="rlvQL"){
     const R=relevarEstado(), id=e.target.id, pos=e.target.selectionStart;
@@ -5432,15 +5440,24 @@ document.addEventListener("change", e=>{
     return;
   }
 });
+/** Lo escrito en un buscador de local → el local: igual al nombre; si no, el único que empieza con eso; si no, el único que lo contiene (sin tildes ni mayúsculas). */
+function resolverLocalEscrito(texto, lista){
+  const n=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+  const q=n(texto); if(!q) return null;
+  const ex=lista.find(l=>n(l.nombre)===q); if(ex) return ex;
+  const emp=lista.filter(l=>n(l.nombre).indexOf(q)===0); if(emp.length===1) return emp[0];
+  if(emp.length>1) return null;
+  const con=lista.filter(l=>n(l.nombre).indexOf(q)!==-1); return con.length===1 ? con[0] : null;
+}
 /** Selector «Equipo» del encabezado: se aplica al elegir de la lista (change) y también con Enter. */
 function aplicarLocalHeader(input){
   const v=input.value.trim();
   // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
-  if(v.toLowerCase()==="operaciones" && esOperador()){
+  if(esOperador() && "operaciones".indexOf(v.toLowerCase())===0 && v.length>=3){
     irAOperaciones();
     return;
   }
-  const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
+  const match=resolverLocalEscrito(v, S.locales.filter(l=>!l.esGestion));
   if(match && match.nombre!==S.local) setLocal(match.nombre);
   else input.value=valorLocalHeader();
 }

@@ -11,6 +11,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="LogiStock Lucciano's">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -142,6 +143,17 @@ html .timerInact.urgente{color:#F2C879}
 .btnTema svg{width:16px;height:16px}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4}
+/* Barras de color en la app instalada del iPhone, como las que Android pinta solo con theme_color (verde en producción, naranja en pruebas; el color sale del meta theme-color). Cubren el área de la hora/batería y la de la barra de inicio; en Android y en el navegador esas áreas miden 0 y no se ven. El contenido arranca debajo de la de arriba. */
+body::before,body::after{content:"";position:fixed;left:0;right:0;z-index:100000;pointer-events:none;background:var(--barra-sistema,#5E7A3F)}
+body::before{top:0;height:env(safe-area-inset-top,0px);background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,0) 65%),var(--barra-sistema,#5E7A3F);box-shadow:0 0 14px 1px var(--barra-sistema,#5E7A3F)}
+body::after{bottom:0;height:env(safe-area-inset-bottom,0px);background:linear-gradient(0deg,rgba(255,255,255,.28),rgba(255,255,255,0) 65%),var(--barra-sistema,#5E7A3F);box-shadow:0 0 14px 1px var(--barra-sistema,#5E7A3F)}
+/* Android: las barras del sistema ya son de color; acá solo un resplandor fino pegado a cada una, para el mismo detalle. */
+html.android body::before,html.android body::after{height:2px}
+body{padding-top:env(safe-area-inset-top,0px)}
+/* Android: sin desenfoque (backdrop-filter) en cabecera, barra de pestañas y chips, que hace trabarse el scroll en celulares medios. */
+html.android header,html.android .bottomNav,html.android .userChip,html.android .alertPill,html.android .glass,html.android .bar,html.android .kpi,html.android .chip,html.android .segPer{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.android header{background:rgb(var(--header-bg-rgb))!important}
+html.android .bottomNav{background:rgba(var(--header-bg-rgb),.96)!important}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -926,6 +938,8 @@ body:has(.mantenerOv){overflow:hidden}
   main{padding:12mm 14mm 20mm!important;margin:0!important;min-height:0!important;max-width:none!important;box-decoration-break:clone;-webkit-box-decoration-break:clone}
   /* Relevar: hoja limpia en blanco y negro, sin vidrio ni colores del tema, tabla entera en el ancho de la hoja y TODO centrado */
   html,body{background:#fff!important;height:auto!important;min-height:0!important}
+  body::before,body::after{display:none!important}
+  body{padding-top:0!important}
   .rlv{display:block!important;padding:0!important;max-width:none!important}
   .rlv>*{margin-bottom:10px!important}
   .rlv,.rlv *{color:#1a1a1a!important;background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;text-shadow:none!important;filter:none!important}
@@ -997,6 +1011,8 @@ body:has(.mantenerOv){overflow:hidden}
 <div class="toast" id="toast" hidden></div>
 
 <script>
+(function(){ try{ if(/Android/i.test(navigator.userAgent)) document.documentElement.classList.add("android") }catch(e){} })();
+(function(){ try{ var m=document.querySelector('meta[name="theme-color"]'); if(m && m.content) document.documentElement.style.setProperty("--barra-sistema", m.content) }catch(e){} })();
 /* ============================================================
    LogiStock Lucciano's — cliente estático (GitHub Pages)
    Backend: Google Apps Script + Google Sheets (ver apps-script/).
@@ -1008,7 +1024,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.135.6";
+const FRONTEND_VERSION = "1.136.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2387,7 +2403,7 @@ function authLocalSlotHTML(a){
   const nom=(a && a.paso!=="local" && a.local) ? a.local : "";
   if(!nom) return "";
   const fijo=!!S.deviceLocal && S.deviceLocal===nom;
-  return `<div class="authLocalLbl">Local</div><div class="authLocalNom">${esc(nom)}</div>${fijo?`<div class="authFijo">🔒&nbsp; Local fijo en este dispositivo</div>`:""}`;
+  return `<div class="authLocalLbl">Equipo</div><div class="authLocalNom">${esc(nom)}</div>${fijo?`<div class="authFijo">🔒&nbsp; Local fijo en este dispositivo</div>`:""}`;
 }
 /** Filtra las tarjetas de perfil mientras se escribe en el buscador (sin rehacer la pantalla, para no perder el foco). */
 function authFiltrarPerfiles(q){
@@ -2404,9 +2420,9 @@ function renderAuth(){
     // Mismo lugar en todos los pasos: título, texto y "Volver" ocupan siempre el
     // mismo espacio (ocultos si corresponde), así los campos no se mueven.
     cuerpo=`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>
-      ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Bienvenido</h1><p style="visibility:hidden" aria-hidden="true">Elegí tu local para empezar.</p>`:`<h1>Bienvenido</h1>
-      <p>Elegí tu local para empezar.</p>`}
-      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu local…"}" autocomplete="off">
+      ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Bienvenido</h1><p style="visibility:hidden" aria-hidden="true">Elegí tu sucursal para empezar.</p>`:`<h1>Bienvenido</h1>
+      <p>Elegí tu sucursal para empezar.</p>`}
+      <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu sucursal…"}" autocomplete="off">
       <datalist id="authLocalList">${S.locales.map(l=>`<option value="${esc(l.nombre)}"></option>`).join("")}</datalist>
       
       <button class="btn" id="authLocalOk" style="width:100%">Continuar</button>`;
@@ -4993,8 +5009,9 @@ document.addEventListener("click", async e=>{
   if(t.id==="authLocalOk"){
     const v=$("#authLocal").value.trim();
     if(!v) return;
-    let match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase());
-    if(!match){ toast("Elegí un local de la lista"); return }
+    let match=resolverLocalEscrito(v, S.locales);
+    if(!match){ toast("Elegí una sucursal de la lista"); return }
+    $("#authLocal").value=match.nombre;
     // si el pedido inicial de locales todavía no terminó, esperamos ESE mismo pedido (no disparamos uno nuevo)
     // para no sumar una ida y vuelta extra al backend en el caso normal (que ya terminó hace rato)
     if(localesFetchPromise){
@@ -5307,6 +5324,13 @@ document.addEventListener("focusin", e=>{
   if(e.target.id==="local"||e.target.id==="authLocal"||e.target.type==="number"||(e.target.dataset&&e.target.dataset.remitoKg!==undefined)) e.target.select();
 });
 document.addEventListener("input", e=>{
+  // Elegir una sugerencia de la lista (clic o Enter sobre la marcada) sigue de una, sin otro clic en «Continuar».
+  if((e.target.id==="authLocal" || e.target.id==="local") && (e.inputType==="insertReplacementText" || !e.inputType)){
+    const v=e.target.value.trim();
+    if(e.target.id==="authLocal"){ if(S.locales.some(l=>l.nombre===v)){ const b=document.getElementById("authLocalOk"); if(b && !b.disabled) b.click() } }
+    else if(v==="Operaciones" || S.locales.some(l=>l.nombre===v && !l.esGestion)){ aplicarLocalHeader(e.target) }
+    return;
+  }
   if(e.target.id==="authBuscar"){ authFiltrarPerfiles(e.target.value); return }
   if(e.target.id==="rlvQ" || e.target.id==="rlvQL"){
     const R=relevarEstado(), id=e.target.id, pos=e.target.selectionStart;
@@ -5404,15 +5428,24 @@ document.addEventListener("change", e=>{
     return;
   }
 });
+/** Lo escrito en un buscador de local → el local: igual al nombre; si no, el único que empieza con eso; si no, el único que lo contiene (sin tildes ni mayúsculas). */
+function resolverLocalEscrito(texto, lista){
+  const n=t=>String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
+  const q=n(texto); if(!q) return null;
+  const ex=lista.find(l=>n(l.nombre)===q); if(ex) return ex;
+  const emp=lista.filter(l=>n(l.nombre).indexOf(q)===0); if(emp.length===1) return emp[0];
+  if(emp.length>1) return null;
+  const con=lista.filter(l=>n(l.nombre).indexOf(q)!==-1); return con.length===1 ? con[0] : null;
+}
 /** Selector «Equipo» del encabezado: se aplica al elegir de la lista (change) y también con Enter. */
 function aplicarLocalHeader(input){
   const v=input.value.trim();
   // Admin: "Operaciones" = vista general (habilitar/deshabilitar productos para todos los locales)
-  if(v.toLowerCase()==="operaciones" && esOperador()){
+  if(esOperador() && "operaciones".indexOf(v.toLowerCase())===0 && v.length>=3){
     irAOperaciones();
     return;
   }
-  const match=S.locales.find(l=>l.nombre.toLowerCase()===v.toLowerCase() && !l.esGestion);
+  const match=resolverLocalEscrito(v, S.locales.filter(l=>!l.esGestion));
   if(match && match.nombre!==S.local) setLocal(match.nombre);
   else input.value=valorLocalHeader();
 }
