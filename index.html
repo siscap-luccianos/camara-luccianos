@@ -1019,7 +1019,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.137.0";
+const FRONTEND_VERSION = "1.137.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3245,6 +3245,8 @@ async function leerRemitoFoto(base64, mime){
    Solo vasquetas, baldes, icepops y gluten free (no chocolatería, pastelería ni bollería). No cuenta como consumo.
 ============================================================ */
 const MOTIVOS_CAMBIO=["Caja mal rotulada","Error de fábrica"];
+// Local que solo fabrica (Marruecos): la «fábrica» es el propio local y no llegan cajas, así que los motivos hablan de producción propia.
+function motivosCambio(){ return ingresoEsProduccion() ? ["Vasqueta mal rotulada","Error al cargar la producción"] : MOTIVOS_CAMBIO }
 function puedeCambioSabor(){ return !!S.local && !!S.empleado && ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
 function resetCambio(){ S.cambio={desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""} }
 const CAMBIO_GRUPOS=["vasquetas","baldes","icepops","glutenfree"]; // no aplica a chocolatería (lotes), pastelería ni bollería
@@ -3259,10 +3261,13 @@ function cambioEstado(st){
   const c=S.cambio, d=c.desde, h=c.hacia;
   const max=d?(st[d]||0):0, cant=Math.min(Math.max(max,1),Math.max(1,Math.floor(+c.cant||1)));
   const kg=kilosNum(c.kilos), pideKg=!!(d && S.kilosReales && esVasquetaKilos(d));
-  return {max, cant, kg, pideKg, ok: !!d && !!h && d!==h && max>=1 && (!pideKg||kg>0) && !!cambioMotivoTxt()};
+  // Local que solo fabrica y todavía sin kilos reales: se pueden ajustar los kilos «por las dudas» (opcional, queda guardado en el movimiento).
+  const ofreceKg=!pideKg && !!(d && h && ingresoEsProduccion() && !S.kilosReales && esVasquetaPura(d) && esVasquetaPura(h));
+  return {max, cant, kg, pideKg, ofreceKg, ok: !!d && !!h && d!==h && max>=1 && (!pideKg||kg>0) && !!cambioMotivoTxt()};
 }
+function esVasquetaPura(id){ const s=S.saboresPorId[String(id)]; return !!(s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas") }
 function cambioAvisoKilos(e){
-  if(!e.pideKg || !(e.kg>0)) return "";
+  if(!(e.pideKg||e.ofreceKg) || !(e.kg>0)) return "";
   const por=e.kg/e.cant;
   return (por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta: no cuadra. Podés corregir los kilos (lo escrito manda) y registrar igual.</span>`:"";
 }
@@ -3284,22 +3289,24 @@ function gridCambioSabor(st){
   if(S.kilosReales && c.desde){ const kg=esVasquetaKilos(c.desde); idsHacia=idsHacia.filter(id=>esVasquetaKilos(id)===kg) }
   const km=S.kilosReales?kilosMap():{};
   const sug=(e.pideKg && km[c.desde]>0 && (st[c.desde]||0)>0) ? Math.round(km[c.desde]/st[c.desde]*e.cant*100)/100 : 0;
-  return `<p class="sec">Cambio de sabor</p>
-  <p style="margin:0 0 12px;color:var(--muted);font-size:.85rem;line-height:1.45">Una caja o vasqueta venía rotulada como un sabor y era otro. Pasá las unidades de un sabor al otro: no suma ni resta el total, solo corrige el sabor.</p>
+  const propia=ingresoEsProduccion();
+  return `<p class="sec">${propia?"Corregir sabor":"Cambio de sabor"}</p>
+  <p style="margin:0 0 12px;color:var(--muted);font-size:.85rem;line-height:1.45">${propia?"Una vasqueta quedó cargada o rotulada como un sabor y era otro.":"Una caja o vasqueta venía rotulada como un sabor y era otro."} Pasá las unidades de un sabor al otro: no suma ni resta el total, solo corrige el sabor.</p>
   <div class="cmbCampo"><label for="cmbDesde">Figura como</label><select id="cmbDesde"><option value="">Elegí el sabor del rótulo…</option>${optGruposSabor(idsDesde,c.desde)}</select>${c.desde?`<small>En cámara: ${st[c.desde]||0} ${unidad(c.desde,st[c.desde]||0)}${e.pideKg&&km[c.desde]!=null?` · ${fmtKg(km[c.desde])} kg`:""}</small>`:""}</div>
   ${c.desde?`<div class="cmbCampo"><label for="cmbHacia">Era en realidad</label><select id="cmbHacia"><option value="">Elegí el sabor que era…</option>${optGruposSabor(idsHacia,c.hacia)}</select>${c.hacia?`<small>En cámara: ${st[c.hacia]||0} ${unidad(c.hacia,st[c.hacia]||0)}${e.pideKg&&km[c.hacia]!=null?` · ${fmtKg(km[c.hacia])} kg`:""}</small>`:""}</div>`:""}
   ${c.desde&&c.hacia?`<div class="cmbCampo"><label>Cuántas ${unidad(c.desde,2)}</label><div class="stepper"><button type="button" data-cmb-dec aria-label="Restar">−</button><span class="n">${e.cant}</span><button type="button" data-cmb-inc aria-label="Sumar">+</button></div></div>
+  ${e.ofreceKg?`<div class="cmbCampo"><div class="kgFila"><label for="cmbKilos">Kilos de esas ${e.cant} <small style="font-weight:600;color:var(--muted)">(opcional)</small></label><input type="text" id="cmbKilos" inputmode="decimal" value="${esc(c.kilos)}" placeholder="0,00"> kg</div><small id="cmbKgAv">${cambioAvisoKilos(e)}</small><small>Si los sabés, ponelos: quedan anotados en el movimiento para cuando pasen a kilos reales.</small></div>`:""}
   ${e.pideKg?`<div class="cmbCampo"><div class="kgFila"><label for="cmbKilos">Kilos de esas ${e.cant}</label><input type="text" id="cmbKilos" inputmode="decimal" value="${esc(c.kilos)}" placeholder="0,00"> kg</div><small id="cmbKgAv">${cambioAvisoKilos(e)}</small>${sug>0?`<small>Sugerido: ${fmtKg(sug)} kg (promedio de lo que hay en cámara). <button type="button" class="chip" data-cmb-sug="${sug}">Usar sugerido</button></small>`:""}</div>`:""}
-  <div class="cmbCampo"><label>Motivo</label><div class="cmbChips">${MOTIVOS_CAMBIO.map(m=>`<button type="button" class="chip" data-cmb-motivo="${esc(m)}" aria-pressed="${c.motivo===m}">${esc(m)}</button>`).join("")}<button type="button" class="chip" data-cmb-motivo="otro" aria-pressed="${c.motivo==="otro"}">Otro…</button></div>${c.motivo==="otro"?`<input type="text" id="cmbOtro" maxlength="120" placeholder="Escribí el motivo" value="${esc(c.otro)}" style="margin-top:8px">`:""}</div>
+  <div class="cmbCampo"><label>Motivo</label><div class="cmbChips">${motivosCambio().map(m=>`<button type="button" class="chip" data-cmb-motivo="${esc(m)}" aria-pressed="${c.motivo===m}">${esc(m)}</button>`).join("")}<button type="button" class="chip" data-cmb-motivo="otro" aria-pressed="${c.motivo==="otro"}">Otro…</button></div>${c.motivo==="otro"?`<input type="text" id="cmbOtro" maxlength="120" placeholder="Escribí el motivo" value="${esc(c.otro)}" style="margin-top:8px">`:""}</div>
   <div id="cmbPreview">${cambioPreviewHTML(st)}</div>`:""}
-  <div class="cmbBtns"><button type="button" class="btn volver" id="cmbCancelar">Cancelar</button><button type="button" class="btn" id="cmbOk" ${e.ok&&!S.busy?"":"disabled"}>${S.busy?"Guardando…":"Registrar cambio de sabor"}</button></div>`;
+  <div class="cmbBtns"><button type="button" class="btn volver" id="cmbCancelar">Cancelar</button><button type="button" class="btn" id="cmbOk" ${e.ok&&!S.busy?"":"disabled"}>${S.busy?"Guardando…":(propia?"Registrar corrección":"Registrar cambio de sabor")}</button></div>`;
 }
 async function guardarCambioSabor(){
   if(S.busy) return;
   const st=stockMap(), e=cambioEstado(st); if(!e.ok) return;
   S.busy=true; renderApp();
   try{
-    const r=await api("cambioSabor",{clienteId:uuid(), local:S.local, desde:S.cambio.desde, hacia:S.cambio.hacia, cantidad:e.cant, kilos:e.pideKg?e.kg:undefined, motivo:cambioMotivoTxt()});
+    const r=await api("cambioSabor",{clienteId:uuid(), local:S.local, desde:S.cambio.desde, hacia:S.cambio.hacia, cantidad:e.cant, kilos:e.pideKg?e.kg:(e.ofreceKg&&e.kg>0?e.kg:undefined), motivo:cambioMotivoTxt()});
     if(r&&r.ok){ toast("Cambio de sabor registrado."); S.modoCambio=false; resetCambio(); S.busy=false; await cargarDatos(); }
     else if(r&&r.offline){ toast("Sin conexión: el cambio de sabor necesita señal. Probá de nuevo cuando vuelva.") }
     else toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
@@ -3403,7 +3410,7 @@ function gridProduccion(st){
   const cabeza=soloProd
     ? `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
   ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
-  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Llegó un sabor cambiado? Cambio de sabor</button>`:""}`
+  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Una vasqueta quedó mal rotulada? Corregir sabor</button>`:""}`
     : `<button class="btn produccion" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`;
   return `${cabeza}
   <p class="sec" style="margin-top:6px">${soloProd?"Ingreso de producción":"Producción"}</p>

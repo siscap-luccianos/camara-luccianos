@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.76.0";
+const BACKEND_VERSION = "1.76.1";
 
 function doPost(e) {
   let resultado;
@@ -2110,6 +2110,13 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const kilosReales = !!filaLocal && _esVerdadero(filaLocal.kilos_reales) === true;
   let kg = 0;
+  // Local que solo fabrica (Locales.ingreso_solo_produccion=SI + produccion=SI) sin kilos reales: los kilos son opcionales
+  // (se anotan «por las dudas» en el movimiento, para cuando pasen a kilos reales) y solo si las dos son vasquetas.
+  const soloProduce = !!filaLocal && _esVerdadero(filaLocal.produccion) === true && _esVerdadero(filaLocal.ingreso_solo_produccion) === true;
+  if (!kilosReales && soloProduce && esKg(sd) && esKg(sh) && Number(kilos) > 0) {
+    kg = Math.round(Number(kilos) * 100) / 100;
+    if (kg > 30 * n) return { ok: false, error: "Esos kilos no cuadran con la cantidad de vasquetas." };
+  }
   if (kilosReales && (esKg(sd) || esKg(sh))) {
     if (!(esKg(sd) && esKg(sh))) return { ok: false, error: "Con kilos reales, una vasqueta solo se cambia por otra vasqueta." };
     kg = Math.round((Number(kilos) || 0) * 100) / 100;
