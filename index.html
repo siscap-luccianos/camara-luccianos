@@ -924,7 +924,59 @@ body:has(.mantenerOv){overflow:hidden}
 :root[data-tema="dorado"] .rlvRow.cab{background:rgba(201,169,97,.08)}
 :root[data-tema="dorado"] .rlvRow.tot{border-top:1px solid rgba(201,169,97,.5);background:rgba(201,169,97,.10)}
 :root[data-tema="dorado"] .rlvRow:not(.cab):not(.tot):hover{background:rgba(201,169,97,.07)}
+/* Inventario del local */
+.invHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 6px}
+.invHead b{font-family:var(--display);font-size:1.25rem}
+.invHint{margin:0 0 12px;color:var(--muted);font-size:.84rem;line-height:1.45}
+.invPills{display:flex;gap:6px;flex-wrap:wrap}
+.invStep{display:flex;align-items:center;gap:4px;justify-self:end}
+.invStep button{width:34px;height:34px;border-radius:999px;border:0;font-weight:800;font-size:1.1rem;background:rgba(var(--header-bg-rgb),.08);color:var(--ink);cursor:pointer}
+.invStep .p{background:var(--accent);color:var(--accent-ink)}
+.invStep input{width:58px;height:38px;text-align:center;font-weight:800;font-size:1rem;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 4px;box-sizing:border-box}
+.invStep .r{width:26px;height:26px;font-size:.9rem;background:none;color:var(--muted)}
+.invRow.sin .invStep input{color:var(--muted);border-style:dashed}
+.invEq{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
+.invEqh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.invEqh b{font-size:.95rem}
+.invLnk{background:none;border:0;color:var(--accent);font-weight:800;font-size:.8rem;cursor:pointer;padding:4px 2px;text-decoration:underline;font-family:inherit}
+.invEqr{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1.15fr);gap:6px;align-items:center;text-align:center}
+.invEqr .q small{display:block;color:var(--muted);font-weight:700;font-size:.64rem;text-transform:uppercase;letter-spacing:.05em}
+.invEqr .q b{font-weight:800;font-size:.95rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.invEqr .q .u{display:block;color:var(--muted);font-weight:600;font-size:.64rem;margin-top:1px}
+.invEqr .q.t{background:#2A1E17;color:#F6F0E6;border-radius:10px;padding:6px 3px}.invEqr .q.t small{color:#CDBFAE}
+.invEqr .op{font-weight:700;font-size:1.1rem;color:var(--muted)}
+@media (max-width:420px){.invEqr .q b{font-size:.84rem}}
+.invVal{margin-top:8px;text-align:center;font-size:.8rem;color:var(--muted)}.invVal b{color:var(--ink);font-variant-numeric:tabular-nums}
+.invTot{background:#2A1E17;color:#F6F0E6;border-radius:14px;padding:12px;text-align:center;margin-bottom:10px}
+.invTot small{display:block;color:#CDBFAE;font-weight:700;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.invTot b{display:block;font-family:var(--display);font-size:1.7rem;font-variant-numeric:tabular-nums}
+.invTot span{font-size:.72rem;color:#CDBFAE}
+.invBusca{width:100%;margin-bottom:8px;box-sizing:border-box}
+.invCambio{background:var(--surface);border:1px solid var(--line);border-left:4px solid #D9A400;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px}
+.invCambio .v{font-weight:800;font-variant-numeric:tabular-nums;text-align:right}.invCambio small{grid-column:1/-1;color:var(--muted)}
+.invHist{display:grid;gap:3px;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px;font:inherit;color:inherit;cursor:pointer;box-sizing:border-box}
+.invHist .big{font-family:var(--display);font-size:1.25rem;font-weight:700}
+.invHist small{color:var(--muted)}
+.invHist .d{font-size:.78rem;font-weight:800}.invHist .d.up{color:#1E8A4C}.invHist .d.down{color:#C62828}
+.invTag{display:inline-block;font-weight:800;font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;background:#FBEFD9;border:1px solid #EBCB8B;border-radius:99px;padding:2px 8px;color:#7A5200}
+.invTbl{width:100%;border-collapse:collapse;table-layout:fixed}
+.invTbl th,.invTbl td{text-align:center;padding:7px 3px;font-size:.76rem;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.invTbl th:first-child,.invTbl td:first-child{text-align:left;width:34%;padding-left:8px}
+.invPrint{display:none}
+.defin{background:#2A1E17;color:#F6F0E6;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:.82rem;line-height:1.4}.defin b{color:#E9D094}
+.invBadgeDef{display:inline-block;background:#2A1E17;color:#E9D094;font-weight:800;font-size:.62rem;letter-spacing:.07em;text-transform:uppercase;border-radius:99px;padding:3px 9px;margin-left:8px;vertical-align:middle;font-family:var(--body)}
+.invDet th{font-size:.58rem;letter-spacing:0;white-space:normal;line-height:1.15}.invDet td{font-size:.72rem}.invDet th:first-child,.invDet td:first-child{width:30%}
 @media print{
+  /* Inventario del local: el PDF muestra solo la tabla completa (lo de pantalla va con noPrint) */
+  main .invPrint{display:block!important}
+  main .invPrintTot{margin:0 0 8px!important;padding:8px 12px!important;border:1px solid #bbb!important;border-radius:8px!important;text-align:center!important;font-size:10pt!important}
+  main .invPrintTot b{font-size:14pt!important}
+  main .invPrintTot small{display:block!important;font-size:7.5pt!important;color:#555!important}
+  main .invTbl td,main .invTbl th{text-align:center!important}
+  main .invTbl th:first-child,main .invTbl td:first-child{text-align:left!important}
+  main .tbl tr.invG td{background:#e6e6e6!important;font-weight:800!important;text-align:left!important;font-size:8pt!important;letter-spacing:.04em;text-transform:uppercase}
+  main .tbl tr.invSub td{background:#f0f0f0!important;border-top:2px solid #0d0c0a!important;font-weight:800!important}
+  main .invNotaP{margin:6px 0 0!important;font-size:7.5pt!important;color:#555!important}
   .noPrint,header,.bottomNav,.bar,.toast{display:none!important}
   body,.wrap,main{background:#fff!important}
   table{font-size:.74rem}
@@ -1019,7 +1071,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.137.1";
+const FRONTEND_VERSION = "1.138.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1083,7 +1135,7 @@ const S = {
   pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
-  conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", tipoHist: "todos", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
+  inv: null, invCor: null, conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", tipoHist: "todos", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
@@ -2568,7 +2620,7 @@ let tituloOriginal=null;
 function nombreArchivoInforme(){
   const f=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"numeric",month:"numeric",year:"2-digit"}).replace(/\//g,"-");
   const quien=(!S.local || document.querySelector(".rlv[data-rlv-n]")) ? "Relevamiento" : String(S.local).trim();
-  return ("LogiStock_"+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
+  return ("LogiStock_"+(document.querySelector("[data-inv-print]")?"StockDefinitivo_":"")+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
 }
 window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); if(tituloOriginal!==null){ document.title=tituloOriginal; tituloOriginal=null } });
 window.addEventListener("beforeprint",()=>{
@@ -3461,6 +3513,7 @@ function bannerBorradorConteoHTML(){
     <div class="b"><button type="button" class="btn" id="continuarConteo">Continuar donde quedé</button><button type="button" class="btn ghost" id="descartarBorradorBtn">Descartar</button></div></div>`;
 }
 function stockView(st){
+  if(S.inv) return inventarioView();
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
@@ -3510,11 +3563,18 @@ function stockViewGeneral(st){
     <span class="tx"><b>Pedido sugerido</b><span>${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
   </button>`:""}
+  ${puedeGestionar?`<button type="button" class="ctaCard glass" id="invBtn" style="margin-top:10px" aria-label="Stock definitivo del local">
+    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7l8-4 8 4v10l-8 4-8-4V7z" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/><path d="M4 7l8 4 8-4M12 11v10" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/></svg></span>
+    <span class="tx"><b>Stock definitivo del local</b><span>${invHayBorrador()?"Tenés uno sin terminar · tocá para seguir":"Conteo del local, cuando realizás tu stock definitivo."}</span></span>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button><div style="text-align:center;margin-top:6px"><button type="button" class="invLnk" id="invGuardadosBtn">Ver stock definitivos guardados</button></div>`:""}
   ${puedeGestionar?bannerBorradorConteoHTML():""}
-  <div class="tools" style="margin-top:16px">
-    <span class="grow" style="color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</span>
-    ${puedeGestionar?`<button class="chip" id="conteoBtn">Conteo físico</button>`:""}
-  </div>
+  ${puedeGestionar?`<button type="button" class="ctaCard glass" id="conteoBtn" style="margin-top:10px" aria-label="Conteo físico">
+    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span class="tx"><b>Conteo físico</b><span>Corrige el stock de la cámara. Se hace antes del stock definitivo si hay diferencias.</span></span>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>`:""}
+  <p style="margin:12px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
   ${chipFiltros()}
   <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
 }
@@ -3695,6 +3755,372 @@ function stockViewConteo(){
   ${chipFiltros()}
   <div class="rows" style="margin-top:14px">${list.map(row).join("")}</div>`;
 }
+
+/* ============================================================
+   INVENTARIO DEL LOCAL (mock aprobado por Gabi 10/11/2026)
+   Total del local = cámara (stock de LogiStock) + lo que hay en el local fuera de la cámara.
+   Vasquetas y Crumble/Granella en kilos; el resto por unidad. No cambia el stock ni cuenta como consumo.
+   Se guarda en la hoja Inventarios (acciones guardarInventario / corregirInventario / inventarios).
+   Corregir uno ya guardado pide motivo y deja registrado qué había, qué quedó, quién y cuándo.
+   El valor en pesos usa los precios de Gestión y solo lo ve quien ve la solapa Gestión.
+============================================================ */
+function invEsKg(s){ return !!s && (s.tipo==="k" || (s.tipo==="v" && grupoProductoDe(s)==="vasquetas")) }
+function invSabores(){ return saboresDelLocalBase() }
+function invGrupos(){ const sab=invSabores(); return GRUPO_PRODUCTO_ORDEN.filter(g=>sab.some(s=>grupoProductoDe(s)===g)) }
+function invClaveBorrador(){ return "inventarioBorrador:"+S.local }
+function invNum(s,txt){
+  const n=parseFloat(String(txt==null?"":txt).replace(",","."));
+  if(!isFinite(n) || n<0) return 0;
+  return invEsKg(s) ? Math.round(n*100)/100 : Math.round(n);
+}
+function invFmtNum(s,v){ return invEsKg(s) ? (Number(v)||0).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:2}) : Math.round(Number(v)||0).toLocaleString("es-AR") }
+function invCant(s,v){ return invFmtNum(s,v)+(invEsKg(s)?" kg":" u.") }
+function invTxtG(g,v,ap){ return (ap?"≈ ":"")+(g==="vasquetas" ? (Number(v)||0).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})+" kg" : Math.round(Number(v)||0).toLocaleString("es-AR")+" u.") }
+/** Lo que hay en la cámara según LogiStock: unidades y, en vasquetas, kilos (reales si el local los usa; si no, vasquetas × peso promedio, marcado como aproximado). */
+function invCamaraLive(){
+  const st=stockMap(), km=kilosMap(), out={};
+  invSabores().forEach(s=>{
+    const u=Math.max(0,st[s.id]||0);
+    if(!invEsKg(s)){ if(u>0) out[s.id]={u}; return }
+    let k, ap=false;
+    if(s.tipo==="k") k=u;
+    else if(S.kilosReales && km[s.id]!==null && km[s.id]!==undefined) k=km[s.id];
+    else { k=Math.round(u*(+s.peso||0)*100)/100; ap=u>0; }
+    if(u>0 || k>0) out[s.id]=ap?{u,k,ap:1}:{u,k};
+  });
+  return out;
+}
+function invPreciosVivos(){ return (S.stockValorizado && S.precios && S.preciosLocal===S.local) ? S.precios : null }
+/** Lo que se está mirando: el inventario en curso (cámara de ahora) o uno ya guardado (su foto). */
+function invDatos(){
+  const I=S.inv;
+  if(I.ver){ const x=I.ver; return {items:x.items||{}, camara:x.camara||{}, precios:x.precios||invPreciosVivos(), aprox:!!x.aprox, cambios:x.cambios||[], guardado:true, x}; }
+  const camara=invCamaraLive();
+  return {items:I.items, camara, precios:invPreciosVivos(), aprox:Object.values(camara).some(c=>c.ap), cambios:[], guardado:false, x:null};
+}
+function invFilas(d){
+  const orden={}; S.sabores.forEach((s,i)=>{ orden[s.id]=i });
+  const ids=new Set(Object.keys(d.items||{}).concat(Object.keys(d.camara||{})));
+  const out=[];
+  ids.forEach(id=>{
+    const s=S.saboresPorId[id]; if(!s) return;
+    const cam=(d.camara||{})[id]||{u:0}, loc=+(d.items||{})[id]||0, kg=invEsKg(s);
+    const camQ=kg?(+cam.k||0):(+cam.u||0), tot=camQ+loc;
+    if(!(tot>0)) return;
+    const pr=d.precios && d.precios[id] ? +d.precios[id] : 0;
+    out.push({id, s, g:grupoProductoDe(s), kg, cam, camQ, loc, tot, pr, val:pr?tot*pr:null});
+  });
+  out.sort((a,b)=>(orden[a.id]||0)-(orden[b.id]||0));
+  return out;
+}
+function invTotales(filas){
+  const t={};
+  filas.forEach(f=>{
+    const x=t[f.g]||(t[f.g]={camQ:0,loc:0,tot:0,val:0,ap:false,n:0,sinPrecio:0});
+    x.camQ+=f.camQ; x.loc+=f.loc; x.tot+=f.tot; x.n++;
+    if(f.val!==null) x.val+=f.val; else if(f.s.tipo!=="b") x.sinPrecio++;
+    if(f.kg && f.cam.ap) x.ap=true;
+  });
+  return t;
+}
+function invFecha(ts){ return new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) }
+function invGuardarBorrador(){
+  if(!S.inv || !S.local) return;
+  if(!Object.keys(S.inv.tocado).length){ try{ ls.del(invClaveBorrador()) }catch(e){} return }
+  try{ ls.set(invClaveBorrador(), JSON.stringify({ts:Date.now(), inicio:S.inv.inicio, rubro:S.inv.rubro, items:S.inv.items, tocado:S.inv.tocado})) }catch(e){}
+}
+function invHayBorrador(){
+  if(!S.local) return false;
+  try{ const b=JSON.parse(ls.get(invClaveBorrador(),"")||"null"); return !!(b && b.tocado && Object.keys(b.tocado).length && (Date.now()-(+b.ts||0))<48*36e5) }catch(e){ return false }
+}
+function invIniciar(){
+  let b=null;
+  try{ b=JSON.parse(ls.get(invClaveBorrador(),"")||"null") }catch(e){}
+  if(b && (Date.now()-(+b.ts||0))>48*36e5) b=null;
+  const grupos=invGrupos();
+  const items={}, tocado={};
+  if(b) Object.keys(b.items||{}).forEach(id=>{ if(S.saboresPorId[id]) items[id]=+b.items[id]||0 });
+  if(b) Object.keys(b.tocado||{}).forEach(id=>{ if(S.saboresPorId[id]) tocado[id]=1 });
+  S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
+  window.scrollTo(0,0); renderApp();
+}
+function invSalir(){ S.inv=null; renderApp(); window.scrollTo(0,0) }
+
+function inventarioView(){
+  const I=S.inv;
+  if(I.paso==="contar") return invContarHTML();
+  if(I.paso==="guardados") return invGuardadosHTML();
+  return invResultadoHTML();
+}
+function invContarHTML(){
+  const I=S.inv, grupos=invGrupos(), cam=invCamaraLive();
+  if(!grupos.includes(I.rubro)) I.rubro=grupos[0];
+  const lista=invSabores().filter(s=>grupoProductoDe(s)===I.rubro);
+  const kgR=I.rubro==="vasquetas";
+  const row=s=>{
+    const kg=invEsKg(s), v=I.items[s.id]||0, t=!!I.tocado[s.id], c=cam[s.id];
+    const camTxt=c?(kg?`${(+c.u)} vasq.${s.tipo==="v"?` · ${c.ap?"≈ ":""}${invFmtNum(s,c.k)} kg`:""}`:`${c.u} u.`):"sin stock";
+    return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
+      <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
+      <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):"0"}" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
+  };
+  const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
+  return `<div class="invHead"><b>Stock definitivo del local</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
+  <div class="defin"><b>Esto queda guardado como el stock definitivo del local.</b></div>
+  <p class="invHint">Contá solo lo que hay <b>en el local, fuera de la cámara</b>. ${kgR?"Las vasquetas van en <b>kilos</b>: una a la mitad suma media.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
+  ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
+  <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
+  <div class="rows" style="margin-top:12px">${lista.map(row).join("")||`<div class="note">No hay productos de este rubro en el local.</div>`}</div>
+  ${sinTocar?`<div class="note" style="margin-top:10px">Sin tocar: <b data-inv-sintocar>${sinTocar}</b>. Si no hay nada afuera de la cámara, queda en 0.</div>`:""}`;
+}
+function invResumenCargado(){
+  const I=S.inv, t={};
+  Object.keys(I.items).forEach(id=>{ const s=S.saboresPorId[id]; if(!s) return; const g=grupoProductoDe(s); t[g]=(t[g]||0)+(+I.items[id]||0) });
+  return t;
+}
+function invBar(inn){
+  const I=S.inv;
+  if(I.paso==="contar"){
+    const t=invResumenCargado(), partes=invGrupos().filter(g=>t[g]).map(g=>`<b>${invTxtG(g,t[g])}</b> ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}`);
+    inn.innerHTML=`<div class="sum">Inventario local: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div><button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invResBtn">Ver resultado</button>`;
+    return true;
+  }
+  if(I.paso==="resultado"){
+    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":"Guardar stock definitivo"}</button>`;
+    return true;
+  }
+  return false;
+}
+function invEqHTML(c,l,t,extra){
+  return `<div class="invEqr"><div class="q"><small>Cámara</small><b>${c}</b>${extra||""}</div><span class="op">+</span><div class="q"><small>Local</small><b>${l}</b></div><span class="op">=</span><div class="q t"><small>Total</small><b>${t}</b></div></div>`;
+}
+function invProdCardHTML(f,d){
+  const camTxt=(f.kg?(f.cam.ap?"≈ ":""):"")+invCant(f.s,f.camQ);
+  const extra=f.kg && f.s.tipo==="v" ? `<span class="u">${+f.cam.u} ${+f.cam.u===1?"vasqueta":"vasquetas"}</span>` : "";
+  const btn=d.guardado ? `<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>` : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
+  return `<div class="invEq"><div class="invEqh"><b>${esc(f.s.nombre)}</b>${btn}</div>${invEqHTML(camTxt,invCant(f.s,f.loc),(f.kg&&f.cam.ap?"≈ ":"")+invCant(f.s,f.tot),extra)}
+    ${f.pr&&d.precios?`<div class="invVal">${pesosAR(f.pr)} /${f.kg?"kg":"u."} · Valor <b>${pesosAR(f.val)}</b></div>`:""}</div>`;
+}
+function invListaProdHTML(filas,d){
+  const q=normalizar((S.inv.busca||"").trim());
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>filas.some(f=>f.g===g));
+  const html=grupos.map(g=>{
+    const xs=filas.filter(f=>f.g===g && (!q || normalizar(f.s.nombre).includes(q)));
+    return xs.length?`<p class="sec">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</p>${xs.map(f=>invProdCardHTML(f,d)).join("")}`:"";
+  }).join("");
+  return html||`<div class="note">Ningún producto coincide.</div>`;
+}
+function invCambiosHTML(d){
+  if(!d.cambios.length) return "";
+  return `<p class="sec">Cambios registrados</p>${d.cambios.slice().reverse().map(c=>{
+    const s=S.saboresPorId[c.s]||{nombre:"Producto "+c.s, tipo:"c"};
+    return `<div class="invCambio"><b>${esc(s.nombre)}</b><span class="v">${invFmtNum(s,c.antes)} → ${invFmtNum(s,c.despues)} ${invEsKg(s)?"kg":"u."}</span><small>${esc(invFecha(c.ts))} · ${esc(c.q)} · ${esc(c.mot)}</small></div>`;
+  }).join("")}`;
+}
+function invResultadoHTML(){
+  const I=S.inv, d=invDatos(), filas=invFilas(d), tot=invTotales(filas);
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>tot[g]);
+  const verValor=!!(S.stockValorizado && d.precios);
+  const valorTotal=filas.reduce((a,f)=>a+(f.val||0),0);
+  const sinPrecio=grupos.reduce((a,g)=>a+tot[g].sinPrecio,0);
+  const fechaTxt=d.guardado ? invFecha(d.x.ts) : invFecha(Date.now());
+  const quien=d.guardado ? d.x.empleado : (S.empleado?S.empleado.nombre:"");
+  const aproxAlgo=grupos.some(g=>tot[g].ap);
+  const resumenSin=!verValor ? grupos.map(g=>`${esc(GRUPO_PRODUCTO_LABEL[g]||g)}: <b>${invTxtG(g,tot[g].tot,tot[g].ap)}</b>`).join(" · ") : "";
+  const rubroCard=g=>{
+    const x=tot[g], abierto=I.det===g;
+    const un=g==="vasquetas"?"kg":"u.";
+    const det=abierto?`<div class="tbl"><table class="invTbl invDet"><thead><tr><th>Producto</th><th>Cámara (${un})</th><th>Local (${un})</th><th>Total (${un})</th>${verValor?"<th>Valor ($)</th>":""}</tr></thead><tbody>${filas.filter(f=>f.g===g).map(f=>`<tr><td>${esc(f.s.nombre)}</td><td>${f.kg&&f.cam.ap?"≈ ":""}${invFmtNum(f.s,f.camQ)}</td><td>${invFmtNum(f.s,f.loc)}</td><td><b>${f.kg&&f.cam.ap?"≈ ":""}${invFmtNum(f.s,f.tot)}</b></td>${verValor?`<td>${f.val!==null?Math.round(f.val).toLocaleString("es-AR"):"—"}</td>`:""}</tr>`).join("")}</tbody></table></div>`:"";
+    return `<div class="invEq"><div class="invEqh"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><button type="button" class="invLnk noPrint" data-inv-det="${g}">${abierto?"Ocultar sabores":"Ver sabores"}</button></div>${invEqHTML(invTxtG(g,x.camQ,x.ap),invTxtG(g,x.loc),invTxtG(g,x.tot,x.ap))}${verValor?`<div class="invVal">Valor <b>${pesosAR(x.val)}</b></div>`:""}${det}</div>`;
+  };
+  const pdfFilas=grupos.map(g=>`<tr class="invG"><td colspan="${verValor?5:4}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</td></tr>${filas.filter(f=>f.g===g).map(f=>`<tr><td>${esc(f.s.nombre)}</td><td>${f.kg&&f.cam.ap?"≈ ":""}${invCant(f.s,f.camQ)}</td><td>${invCant(f.s,f.loc)}</td><td><b>${f.kg&&f.cam.ap?"≈ ":""}${invCant(f.s,f.tot)}</b></td>${verValor?`<td>${f.val!==null?pesosAR(f.val):"—"}</td>`:""}</tr>`).join("")}<tr class="invSub"><td>Total ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}</td><td>${invTxtG(g,tot[g].camQ,tot[g].ap)}</td><td>${invTxtG(g,tot[g].loc)}</td><td>${invTxtG(g,tot[g].tot,tot[g].ap)}</td>${verValor?`<td>${pesosAR(tot[g].val)}</td>`:""}</tr>`).join("");
+  return `${informeCabHTML({etiqueta:"Informe de stock definitivo", titulo:"Stock definitivo del local", sub:(S.local||"")+" | cámara + local", lineaHTML:`${d.guardado?"Stock definitivo del":"Calculado el"} <b>${esc(fechaTxt)}</b> por <b>${esc(quien)}</b>`})}
+  ${informePieHTML("Stock definitivo del local · "+(S.local||""))}
+  <div class="invPrint" data-inv-print>
+    ${verValor?`<div class="invPrintTot">Valor del local (cámara + local): <b>${pesosAR(valorTotal)}</b> <small>Precio de lista · no es el precio al público</small></div>`:""}
+    <div class="tbl"><table class="invTbl"><thead><tr><th>Producto</th><th>Cámara</th><th>Local</th><th>Total</th>${verValor?"<th>Valor</th>":""}</tr></thead><tbody>${pdfFilas||`<tr><td colspan="${verValor?5:4}">Sin productos.</td></tr>`}</tbody></table></div>
+    ${aproxAlgo?`<p class="invNotaP">«≈»: kilos de la cámara calculados con el peso promedio de cada sabor.</p>`:""}
+    ${d.cambios.length?`<p class="invNotaP">Corregido ${d.cambios.length} ${d.cambios.length===1?"vez":"veces"} después de guardar (queda registrado en LogiStock).</p>`:""}
+  </div>
+  <div class="noPrint">
+  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">Stock definitivo</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
+  <p class="invHint">${esc(fechaTxt)} · <b>Cámara</b> (stock de LogiStock) + <b>Local</b> (inventario) = <b>Total</b>.${d.guardado?` Guardado por ${esc(quien)}.`:""}</p>
+  <div class="invTot">${verValor?`<small>Valor del local (cámara + local)</small><b>${pesosAR(valorTotal)}</b><span>Precio de lista · no es el precio al público</span>`:`<small>Total del local</small><span style="font-size:.9rem;color:inherit">${resumenSin||"Todavía no hay nada cargado."}</span>`}</div>
+  ${sinPrecio&&verValor?`<p class="note" style="margin:0 0 10px">${sinPrecio} ${sinPrecio===1?"producto no tiene":"productos no tienen"} precio de lista y no ${sinPrecio===1?"entra":"entran"} en el valor.</p>`:""}
+  <div class="invPills"><button type="button" class="chip" data-inv-res="rubro" aria-pressed="${I.res==="rubro"}">Por rubro</button><button type="button" class="chip" data-inv-res="prod" aria-pressed="${I.res==="prod"}">Por producto</button></div>
+  <div style="margin-top:12px">${I.res==="rubro" ? (grupos.map(rubroCard).join("")||`<div class="note">Todavía no hay nada cargado.</div>`) : `<input type="search" id="invBusca" class="invBusca" placeholder="Buscar producto…" value="${esc(I.busca||"")}" aria-label="Buscar producto"><div id="invLista">${invListaProdHTML(filas,d)}</div>`}</div>
+  ${aproxAlgo?`<p class="invHint" style="margin-top:6px">«≈»: los kilos de la cámara se calculan con el peso promedio de cada sabor. Con kilos reales pasan a ser exactos.</p>`:""}
+  ${d.guardado?`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0">Stock definitivo guardado. Si hay un error, tocá «Corregir» en el producto: queda registrado el cambio.</div>`:""}
+  ${d.guardado?invCambiosHTML(d):""}
+  <div class="tools" style="justify-content:center;gap:8px;margin:14px 0 0;flex-wrap:wrap">${d.guardado?`<button type="button" class="btn ghost" data-inv-guardados>Ver guardados</button><button type="button" class="btn ghost" id="invSalir">Terminar</button>`:""}<button type="button" class="btn ghost" id="invPdf">🖨 Exportar PDF</button></div>
+  </div>`;
+}
+function invGuardadosHTML(){
+  const I=S.inv;
+  const cab=`<div class="invHead"><b>Stock definitivo · guardados</b><button type="button" class="chip" id="invSalir">Salir</button></div>`;
+  if(I.lista===null) return cab+(I.errorLista?`<div class="note">${esc(I.errorLista)}<br><button class="btn ghost" id="invReintentar" style="margin-top:10px">Reintentar</button></div>`:`<div class="note">Cargando los inventarios…</div>`);
+  const lista=I.lista;
+  const resumen=x=>{ const filas=invFilas({items:x.items,camara:x.camara,precios:null}), t=invTotales(filas); return {t, kg:t.vasquetas?t.vasquetas.tot:0, ap:!!x.aprox && t.vasquetas && t.vasquetas.ap} };
+  const items=lista.map((x,i)=>{
+    const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=prev?r.kg-prev.kg:null;
+    const otros=GRUPO_PRODUCTO_ORDEN.filter(g=>g!=="vasquetas" && r.t[g]).map(g=>`${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())} ${invTxtG(g,r.t[g].tot)}`).join(" · ");
+    const valor=x.valor_total!==null&&x.valor_total!==undefined&&S.stockValorizado ? pesosAR(x.valor_total) : "";
+    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">Stock definitivo</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}${valor?" · "+valor:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
+  }).join("");
+  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+(items||`<div class="note">Todavía no hay stock definitivos guardados en este local.</div>`)+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el stock definitivo</button></div>`;
+}
+async function invCargarLista(){
+  const I=S.inv; if(!I) return;
+  I.lista=null; I.errorLista=null;
+  const r=await api("inventarios",{local:S.local});
+  if(!S.inv) return;
+  if(r && r.ok){ S.inv.lista=r.inventarios||[]; }
+  else S.inv.errorLista=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver los inventarios.":(r&&r.error)||"No se pudo conectar. Probá de nuevo.";
+  if(S.inv.paso==="guardados") renderApp();
+}
+async function invGuardarServidor(){
+  const I=S.inv; if(!I || I.guardando) return;
+  I.guardando=true; renderApp();
+  const camara=invCamaraLive(), camaraKg={};
+  Object.keys(camara).forEach(id=>{ if(camara[id].k!==undefined) camaraKg[id]={k:camara[id].k, ap:camara[id].ap?1:0} });
+  const items={}; Object.keys(I.items).forEach(id=>{ if(+I.items[id]>0) items[id]=+I.items[id] });
+  const clienteId="inv-"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const r=await api("guardarInventario",{clienteId, local:S.local, items, camaraKg});
+  if(!S.inv) return;
+  if(r && r.ok){
+    try{ ls.del(invClaveBorrador()) }catch(e){}
+    S.inv.guardando=false; S.inv.ver=r.inventario; S.inv.paso="ver"; S.inv.lista=null; S.inv.res="rubro"; S.inv.det=null; S.inv.busca="";
+    toast("Stock definitivo guardado"); renderApp(); window.scrollTo(0,0);
+  } else {
+    S.inv.guardando=false;
+    toast((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para guardar inventarios.":(r&&r.offline)?"Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal.":(r&&r.error)||"No se pudo guardar el inventario.");
+    renderApp();
+  }
+}
+/* ---- Confirmación antes de guardar el stock definitivo ---- */
+function invConfirmarGuardar(){
+  if(document.getElementById("invConfOv") || !S.inv || S.inv.guardando) return;
+  const ov=document.createElement("div"); ov.id="invConfOv"; ov.className="mantenerOv";
+  const hoy=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric"});
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="invConfTit">
+    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el stock definitivo?</p>
+    <p class="mantSub" style="margin:0">Vas a guardar el stock definitivo del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
+    <p class="mantSub" style="margin:0">Después solo se puede corregir dejando un motivo, y queda registrado.</p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar stock definitivo</button></div></div>`;
+  ov.addEventListener("click", e=>{
+    if(e.target===ov || e.target.closest("[data-inv-conf-no]")){ ov.remove(); return }
+    if(e.target.closest("[data-inv-conf-si]")){ ov.remove(); invGuardarServidor() }
+  });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove() });
+  document.body.appendChild(ov);
+}
+/* ---- Corrección de un producto ya guardado ---- */
+const INV_MOTIVOS=["Me confundí al tipear","Recontamos","Otro motivo"];
+function invAbrirCor(id){
+  if(document.getElementById("invCorOv") || !S.inv || !S.inv.ver) return;
+  const s=S.saboresPorId[id]; if(!s) return;
+  const actual=+(S.inv.ver.items||{})[id]||0;
+  S.invCor={id, mot:"", otro:""};
+  const ov=document.createElement("div"); ov.id="invCorOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="invCorTit">
+    <p class="mantTit" id="invCorTit" style="margin:0">Corregir inventario local</p>
+    <p class="mantSub" style="margin:0">${esc(s.nombre)} · hoy dice <b>${invCant(s,actual)}</b></p>
+    <div><label for="invCorVal" style="display:block;font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">Valor correcto (${invEsKg(s)?"kg":"u."})</label>
+    <input type="text" inputmode="decimal" id="invCorVal" autocomplete="off" value="${esc(String(actual).replace(".",","))}" style="width:100%;font-size:1.1rem;font-weight:800"></div>
+    <div><span style="display:block;font-size:.74rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">Motivo</span>
+    <div class="invPills" id="invCorMot">${INV_MOTIVOS.map(m=>`<button type="button" class="chip" data-inv-mot="${esc(m)}" aria-pressed="false">${esc(m)}</button>`).join("")}</div>
+    <input type="text" id="invCorOtro" placeholder="Escribí el motivo" maxlength="120" hidden style="width:100%;margin-top:8px"></div>
+    <p class="mantSub" style="margin:0">Queda registrado qué había, qué quedó, quién y cuándo. Lo anterior no se pierde.</p>
+    <p id="invCorMsg" style="color:var(--alert);font-size:.82rem;min-height:1.1em;margin:0"></p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-cor-cancel>Cancelar</button><button type="button" class="btn" id="invCorOk" disabled>Guardar corrección</button></div></div>`;
+  const motivoActual=()=>S.invCor.mot==="Otro motivo"?S.invCor.otro.trim():S.invCor.mot;
+  const refrescar=()=>{ ov.querySelector("#invCorOk").disabled=motivoActual().length<3 };
+  ov.addEventListener("click", async e=>{
+    if(e.target===ov || e.target.closest("[data-inv-cor-cancel]")){ ov.remove(); S.invCor=null; return }
+    const m=e.target.closest("[data-inv-mot]");
+    if(m){ S.invCor.mot=m.dataset.invMot; ov.querySelectorAll("[data-inv-mot]").forEach(b=>b.setAttribute("aria-pressed",String(b===m))); const o=ov.querySelector("#invCorOtro"); o.hidden=S.invCor.mot!=="Otro motivo"; if(!o.hidden) o.focus(); refrescar(); return }
+    if(e.target.closest("#invCorOk")){
+      const btn=ov.querySelector("#invCorOk"); if(btn.disabled) return;
+      const v=ov.querySelector("#invCorVal").value, msg=ov.querySelector("#invCorMsg");
+      if(!/^\s*\d+([.,]\d{1,2})?\s*$/.test(v)){ msg.textContent="Escribí un valor válido."; return }
+      btn.disabled=true; btn.textContent="Guardando…"; msg.textContent="";
+      const r=await api("corregirInventario",{local:S.local, inventarioId:S.inv.ver.id, saborId:S.invCor.id, valor:invNum(s,v), motivo:motivoActual()});
+      if(r && r.ok){
+        if(S.inv){ S.inv.ver=r.inventario; if(Array.isArray(S.inv.lista)) S.inv.lista=S.inv.lista.map(x=>String(x.id)===String(r.inventario.id)?r.inventario:x); }
+        ov.remove(); S.invCor=null; toast(r.sinCambios?"El valor no cambió.":"Corrección registrada"); renderApp();
+      } else { msg.textContent=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar la corrección."; btn.disabled=false; btn.textContent="Guardar corrección"; }
+    }
+  });
+  ov.addEventListener("input", e=>{
+    if(e.target.id==="invCorVal") e.target.value=e.target.value.replace(invEsKg(s)?/[^\d.,]/g:/[^\d]/g,"");
+    if(e.target.id==="invCorOtro"){ S.invCor.otro=e.target.value; refrescar(); }
+  });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Escape"){ ov.remove(); S.invCor=null } if(e.key==="Enter" && e.target.id!=="invCorOtro"){ e.preventDefault(); const b=ov.querySelector("#invCorOk"); if(!b.disabled) b.click() } });
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const i=ov.querySelector("#invCorVal"); if(i){ i.focus(); i.select() } },30);
+}
+/* ---- Cargar números en la pantalla de conteo (sin repintar todo, así no se pierde el foco) ---- */
+function invPonerValor(id,n,input){
+  const s=S.saboresPorId[id], I=S.inv; if(!s||!I) return;
+  if(n>0) I.items[id]=n; else delete I.items[id];
+  I.tocado[id]=1;
+  const row=document.querySelector(`[data-inv-row="${id}"]`);
+  if(row){ row.classList.remove("sin"); if(!row.querySelector("[data-inv-reset]")){ const r=document.createElement("button"); r.type="button"; r.className="r"; r.dataset.invReset=id; r.title="Deshacer"; r.setAttribute("aria-label","Deshacer lo cargado de "+s.nombre); r.textContent="↺"; row.querySelector(".invStep").appendChild(r) } }
+  const sin=document.querySelector("[data-inv-sintocar]");
+  if(sin){ const lista=invSabores().filter(x=>grupoProductoDe(x)===I.rubro), k=lista.filter(x=>!I.tocado[x.id]).length; sin.textContent=k; if(!k && sin.parentElement) sin.parentElement.hidden=true }
+  invGuardarBorrador(); renderBar();
+}
+function invClick(t){
+  const I=S.inv;
+  if(t.id==="invBtn"){ invIniciar(); return true }
+  if(t.id==="invGuardadosBtn"){ S.inv={paso:"guardados", rubro:invGrupos()[0], items:{}, tocado:{}, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:false, guardando:false, inicio:Date.now()}; renderApp(); invCargarLista(); return true }
+  if(!I) return false;
+  if(t.id==="invSalir"){ invSalir(); return true }
+  if(t.id==="invNuevo"){ invIniciar(); return true }
+  if(t.id==="invReintentar"){ invCargarLista(); renderApp(); return true }
+  if(t.id==="invResBtn"){ I.paso="resultado"; I.res="rubro"; I.det=null; renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invVolver"){ I.paso="contar"; renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invGuardar"){ invConfirmarGuardar(); return true }
+  if(t.id==="invPdf"){ window.print(); return true }
+  if(t.dataset.invGuardados!==undefined){ I.paso="guardados"; I.ver=null; renderApp(); window.scrollTo(0,0); invCargarLista(); return true }
+  if(t.dataset.invRub){ I.rubro=t.dataset.invRub; invGuardarBorrador(); renderApp(); return true }
+  if(t.dataset.invRes){ I.res=t.dataset.invRes; renderApp(); return true }
+  if(t.dataset.invDet){ I.det=I.det===t.dataset.invDet?null:t.dataset.invDet; renderApp(); return true }
+  if(t.dataset.invEdit){ I.paso="contar"; I.rubro=t.dataset.invEdit; renderApp(); window.scrollTo(0,0); return true }
+  if(t.dataset.invCor){ invAbrirCor(t.dataset.invCor); return true }
+  if(t.dataset.invAbrir){ const x=(I.lista||[]).find(z=>String(z.id)===t.dataset.invAbrir); if(x){ I.ver=x; I.paso="ver"; I.res="rubro"; I.det=null; I.busca=""; renderApp(); window.scrollTo(0,0) } return true }
+  if(t.dataset.invBorrar!==undefined){ if(!confirm("¿Borrar lo que cargaste y empezar de cero?")) return true; I.items={}; I.tocado={}; I.restaurado=false; try{ ls.del(invClaveBorrador()) }catch(e){} renderApp(); return true }
+  if(t.dataset.invInc || t.dataset.invDec){
+    const id=t.dataset.invInc||t.dataset.invDec, s=S.saboresPorId[id], input=document.querySelector(`[data-inv-in="${id}"]`);
+    const cur=invNum(s,input?input.value:I.items[id]), paso=invEsKg(s)?0.5:1, sig=Math.max(0,Math.round((cur+(t.dataset.invInc?paso:-paso))*100)/100);
+    if(input) input.value=String(sig).replace(".",",");
+    invPonerValor(id,sig,input); return true }
+  if(t.dataset.invReset){
+    const id=t.dataset.invReset, input=document.querySelector(`[data-inv-in="${id}"]`);
+    delete I.items[id]; delete I.tocado[id];
+    if(input) input.value="0";
+    const row=document.querySelector(`[data-inv-row="${id}"]`); if(row){ row.classList.add("sin"); const r=row.querySelector("[data-inv-reset]"); if(r) r.remove() }
+    invGuardarBorrador(); renderBar(); return true }
+  return false;
+}
+document.addEventListener("input", e=>{
+  const el=e.target; if(!el || !el.dataset || !S.inv) return;
+  if(el.dataset.invIn!==undefined){
+    const s=S.saboresPorId[el.dataset.invIn]; if(!s) return;
+    el.value=el.value.replace(invEsKg(s)?/[^\d.,]/g:/[^\d]/g,"");
+    if(el.value==="" && !S.inv.tocado[el.dataset.invIn]) return;   // solo letras: no cuenta como haber contado
+    invPonerValor(el.dataset.invIn, invNum(s,el.value), el);
+  }
+  if(el.id==="invBusca"){ S.inv.busca=el.value; const d=invDatos(); const l=document.getElementById("invLista"); if(l) l.innerHTML=invListaProdHTML(invFilas(d),d); }
+});
+document.addEventListener("focusin", e=>{ if(e.target && e.target.dataset && e.target.dataset.invIn!==undefined) e.target.select() });
+document.addEventListener("keydown", e=>{
+  const el=e.target; if(!el || !el.dataset || el.dataset.invIn===undefined) return;
+  if(e.key!=="Enter" && e.key!=="ArrowDown" && e.key!=="ArrowUp") return;
+  e.preventDefault();
+  const campos=[...document.querySelectorAll("[data-inv-in]")], i=campos.indexOf(el), n=campos[i+(e.key==="ArrowUp"?-1:1)];
+  if(n){ n.focus(); n.select(); n.scrollIntoView({block:"center"}) } else el.blur();
+});
 
 function puedeAnular(r){
   if(r.anulado) return false;
@@ -4612,7 +5038,8 @@ function cartKeyActual(){
 function renderBar(){
   const bar=$("#bar"); if(!bar) return; const inn=$("#barIn");
   let visible=false;
-  if(S.tab==="stock" && S.conteo){
+  if(S.tab==="stock" && S.inv){ visible=invBar(inn); }
+  else if(S.tab==="stock" && S.conteo){
     visible=true;
     const idsC=conteoParcialActivo()?saboresDelConteo().map(x=>String(x.id)):Object.keys(S.conteo);
     const faltaKgIds=S.kilosReales?idsC.filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[];
@@ -4709,7 +5136,7 @@ async function cargarDatos(){
   S.stock = r.stock;
   if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
   guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], ingresoSoloProduccion:!!r.ingresoSoloProduccion, registros:r.registros, stock:r.stock});
-  if(S.conteo){ renderBar(); return }
+  if(S.conteo || (S.inv && S.inv.paso==="contar")){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
 }
@@ -4724,7 +5151,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.conteo=null; S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.inv=null; S.conteo=null; S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -5079,8 +5506,9 @@ document.addEventListener("click", async e=>{
   if(t.id==="editarNombre"){ await editarMiNombre(); return }
   if(t.id==="cambiarPinBtn"){ abrirCambiarPin(); return }
 
+  if(invClick(t)) return;
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
+  if(t.dataset.t){ S.inv=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
@@ -6139,6 +6567,11 @@ function ayudaTemas(){
     "Elegí el sabor que figura en la caja y el que era en realidad.",
     "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
     "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
+  if(!colab) T.push({id:"inventario", titulo:"Stock definitivo del local", sub:"Inventario: lo de afuera de la cámara + la cámara", html:li([
+    "En <b>Stock</b> tocá <b>Stock definitivo del local</b>.",
+    "Contá solo lo que hay <b>en el local, fuera de la cámara</b>: las vasquetas en <b>kilos</b> (una a la mitad suma media) y el resto por unidad.",
+    "Tocá <b>Ver resultado</b>: ves cámara + local = total por rubro y por producto"+(S.stockValorizado?", con el valor en pesos":"")+".",
+    "Tocá <b>Guardar stock definitivo</b> y confirmá. Queda como una foto del día y se puede exportar a PDF."])+nota("No cambia el stock de la cámara ni cuenta como salida. Si te equivocaste antes de guardar, tocá «Editar» o «↺». Si ya guardaste, tocá «Corregir» en el producto: pide un motivo y queda registrado qué había, qué quedó, quién y cuándo.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
