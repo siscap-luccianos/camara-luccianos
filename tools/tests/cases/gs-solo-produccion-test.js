@@ -32,4 +32,18 @@ r=reg("d1","Unicenter",{"4":4}); ok(r.ok,"Unicenter (sin el flag) sigue aceptand
 r=reg("d2","Unicenter",{"4":4},"produccion"); ok(r.ok,"Unicenter acepta producción");
 r=reg("e1","Sin flag de producción",{"4":4}); ok(r.ok,"el flag no vale si el local no tiene produccion=SI");
 r=reg("f1","Obelisco CABA",{"4":4}); ok(r.ok,"un local común no cambia");
+
+// ---- Cambio de sabor: kilos opcionales en el local que solo fabrica
+sb.sabores2=[{id:"4",nombre:"Banana",tipo:"v",familia:"vasquetas"},{id:"5",nombre:"Cheesecake",tipo:"v",familia:"vasquetas"},{id:"49",nombre:"Icepop A",tipo:"i",familia:"icepops"},{id:"50",nombre:"Icepop B",tipo:"i",familia:"icepops"}];
+sb._leerCrudo=h=>h==="Locales"?locales:h==="Sabores"?sb.sabores2:[];
+sb._stockActualLocal=()=>({"4":10,"5":10,"49":30,"50":30});
+const cam=(loc,d,h,n,k)=>run(`cambioSabor("x${Math.random()}","${loc}","${d}","${h}",${n},${k===undefined?"undefined":k},"Vasqueta mal rotulada",emp)`);
+escritos=[];
+r=cam("Marruecos","5","4",2,undefined); ok(r.ok,"Marruecos: cambio de vasquetas SIN kilos pasa: "+JSON.stringify(r));
+ok(!escritos[escritos.length-1].kilos,"sin kilos no guarda kilos");
+r=cam("Marruecos","5","4",2,7.2); ok(r.ok,"Marruecos: con kilos pasa");
+let kil=JSON.parse(escritos[escritos.length-1].kilos||"{}"); ok(kil["5"]===-7.2&&kil["4"]===7.2,"guarda los kilos firmados: "+JSON.stringify(kil));
+r=cam("Marruecos","5","4",2,500); ok(!r.ok&&/no cuadran/.test(r.error||""),"kilos imposibles se rechazan: "+(r.error||""));
+r=cam("Marruecos","49","50",3,9); ok(r.ok&&!escritos[escritos.length-1].kilos,"Icepops: ignora los kilos");
+r=cam("Unicenter","5","4",2,7.2); ok(r.ok&&!escritos[escritos.length-1].kilos,"un local que no es solo-producción no guarda kilos si no usa kilos reales");
 console.log(f?"FALLAS "+f:"TODO OK");

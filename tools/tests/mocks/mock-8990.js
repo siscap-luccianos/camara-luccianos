@@ -1,6 +1,6 @@
 const http=require("http"),fs=require("fs"),path=require("path");
 const ROOT=require("path").join(__dirname,"..","..","..");
-const db={regs:[{id:"900",tipo:"ingreso",subtipo:"",local:"Marruecos",empleadoId:"1",empleado:"Gabi Busquets",items:{"162":120,"49":9,"5":10,"117":50},total:189,ts:Date.now()-3600000}],nextId:1};
+const db={lastCambio:null,regs:[{id:"900",tipo:"ingreso",subtipo:"",local:"Marruecos",empleadoId:"1",empleado:"Gabi Busquets",items:{"162":120,"49":9,"5":10,"117":50},total:189,ts:Date.now()-3600000}],nextId:1};
 const locales=[{nombre:"Marruecos",grupo:"Franquicias",pais:"Marruecos",produccion:true,soloProd:true},{nombre:"Unicenter",grupo:"Propios",pais:"Argentina",produccion:true},{nombre:"Obelisco CABA",grupo:"Propios",pais:"Argentina"},{nombre:"Operaciones",grupo:"Gestion",pais:"",operaciones:true,clave:"op2024"}];
 const peso=(s,pais)=>(s.peso_paises&&s.peso_paises[pais])||s.peso;
 const sabores=[
@@ -22,6 +22,7 @@ function resp(b){
   if(a==="guardarProduccionSabores"){const l=locales.find(x=>x.nombre===b.local); if(!l||!l.produccion) return {ok:false,error:"Este local no tiene Producción activada."}; if(!b.ids||!b.ids.length) return {ok:false,error:"Dejá al menos un sabor que producís."}; l.prodSab=b.ids.map(String); return {ok:true,ids:l.prodSab}}
   if(a==="toggleSaborLocal"){const l=locales.find(x=>x.nombre===b.local); l.exc=l.exc||[]; const i=l.exc.indexOf(String(b.saborId)); if(i<0) l.exc.push(String(b.saborId)); else l.exc.splice(i,1); return {ok:true,excluido:i<0}}
   if(a==="eliminarSabor"){const i=sabores.findIndex(x=>x.id===b.saborId); if(db.regs.some(r=>r.items&&Object.prototype.hasOwnProperty.call(r.items,b.saborId))) return {ok:false,error:"ya tiene movimientos"}; if(i>=0) sabores.splice(i,1); return {ok:true}}
+  if(a==="cambioSabor"){db.lastCambio=b; const it={}; it[b.desde]=-b.cantidad; it[b.hacia]=b.cantidad; const kg=b.kilos?{[b.desde]:-b.kilos,[b.hacia]:b.kilos}:{}; db.regs.push({id:String(db.nextId++),clienteId:b.clienteId,tipo:"cambio",subtipo:"cambio",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:it,kilos:kg,motivo:b.motivo,total:b.cantidad,ts:Date.now()}); return {ok:true}}
   if(a==="registrar"){if(b.tipo==="ingreso"&&!b.subtipo){const l0=locales.find(x=>x.nombre===b.local)||{}; if(l0.soloProd) return {ok:false,error:"En este local el helado se carga por Ingreso de producción, no como ingreso común."}}if(b.subtipo==="produccion"){const l=locales.find(x=>x.nombre===b.local)||{}; if((l.prodSab||[]).length){const no=Object.keys(b.items).filter(i=>l.prodSab.indexOf(String(i))===-1); if(no.length) return {ok:false,error:"Este local no produce: "+no.join(", ")+"."}}}
   const r={id:String(db.nextId++),clienteId:b.clienteId,tipo:b.tipo,subtipo:b.subtipo||"",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:b.items,kilos:b.kilos||{},total:Object.values(b.items).reduce((x,y)=>x+y,0),ts:Date.now()};db.regs.push(r);console.log("REGISTRAR",JSON.stringify({tipo:b.tipo,subtipo:b.subtipo,items:b.items,kilos:b.kilos}));return {ok:true,registro:r}}
   return {ok:true,sabores:[],empleados:[],locales:[]};
