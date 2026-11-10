@@ -16,11 +16,11 @@ const { chromium } = require("playwright");
   const stockAntes = await page.evaluate(() => JSON.stringify(stockMap()));
 
   // 1) entrada desde Stock
-  ok(!!(await page.$("#invBtn")), "Stock tiene la tarjeta «Inventario del local»");
+  ok(!!(await page.$("#invBtn")), "Stock tiene la tarjeta «Stock definitivo del local»");
   ok(!!(await page.$("#invGuardadosBtn")), "y el acceso a los inventarios guardados");
   await page.click("#invBtn"); await page.waitForTimeout(300);
   let txt = (await page.innerText("main")).replace(/\s+/g, " ");
-  ok(/Inventario del local/.test(txt) && /fuera de la cámara/.test(txt), "pantalla de conteo con la explicación");
+  ok(/Stock definitivo del local/i.test(txt) && /fuera de la cámara/.test(txt), "pantalla de conteo con la explicación");
   const rubros = await page.$$eval("[data-inv-rub]", e => e.map(x => x.textContent.trim()));
   ok(rubros.includes("Vasquetas") && rubros.includes("Icepops") && rubros.includes("Chocolatería"), "rubros: " + rubros.join(", "));
 
@@ -82,9 +82,13 @@ const { chromium } = require("playwright");
   ok((await page.evaluate(() => JSON.stringify(stockMap()))) === stockAntes, "el inventario NO toca el stock de la cámara");
 
   // 6) guardar
-  await page.click("#invGuardar"); await page.waitForTimeout(800);
+  await page.click("#invGuardar"); await page.waitForSelector("#invConfOv");
+  ok(/¿Guardar el stock definitivo\?/.test(await page.innerText("#invConfOv")), "antes de guardar pide confirmar el stock definitivo");
+  await page.click("[data-inv-conf-no]"); ok(!(await page.$("#invConfOv")) && !!(await page.$("#invGuardar")), "«Seguir revisando» vuelve sin guardar");
+  await page.click("#invGuardar"); await page.waitForSelector("#invConfOv"); await page.click("[data-inv-conf-si]"); await page.waitForTimeout(800);
+  ok(/Stock definitivo/i.test(await page.innerText(".invBadgeDef")), "queda la etiqueta «Stock definitivo»");
   txt = (await page.innerText("main")).replace(/\s+/g, " ");
-  ok(/Inventario guardado/i.test(txt), "se guarda y lo avisa");
+  ok(/Stock definitivo guardado/i.test(txt), "se guarda y lo avisa");
   ok(await page.$('[data-inv-cor]') !== null || (await page.click('[data-inv-res="prod"]'), await page.waitForTimeout(150), await page.$('[data-inv-cor]') !== null), "ya guardado ofrece «Corregir»");
   ok((await page.evaluate(() => localStorage.getItem("inventarioBorrador:Local prueba") || (typeof ls !== "undefined" ? ls.get("inventarioBorrador:Local prueba", "") : ""))) === "", "se borra el borrador");
 
@@ -110,7 +114,7 @@ const { chromium } = require("playwright");
   // 8) guardados
   await page.click("[data-inv-guardados]"); await page.waitForTimeout(600);
   txt = (await page.innerText("main")).replace(/\s+/g, " ");
-  ok(/Inventarios guardados/i.test(txt) && /Corregido ×2/i.test(txt), "Guardados lista el inventario con «Corregido ×2»");
+  ok(/guardados/i.test(txt) && /Corregido ×2/i.test(txt), "Guardados lista el inventario con «Corregido ×2»");
   await page.click("[data-inv-abrir]"); await page.waitForTimeout(300);
   ok(/Cambios registrados/i.test(await page.innerText("main")), "se puede abrir uno guardado y ver sus cambios");
 
