@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.75.0";
+const BACKEND_VERSION = "1.76.0";
 
 function doPost(e) {
   let resultado;
@@ -934,6 +934,9 @@ function _datosSinCache(local, empleado) {
   // los del rubro. Es independiente de sabores_excluidos («Lo tenemos»): un sabor que se produce sigue
   // en Producción, Salida y Stock aunque el local no lo reciba por remito.
   const produccionSabores = (produccion && filaLocal) ? _idsLista(filaLocal.produccion_sabores) : [];
+  // Locales.ingreso_solo_produccion=SI (y produccion=SI): el local solo fabrica (ej. Marruecos). Su pestaña Ingreso
+  // ES la pantalla de Producción (sin botón aparte, sin remito) y el servidor rechaza un ingreso común de helado.
+  const ingresoSoloProduccion = produccion && filaLocal ? _esVerdadero(filaLocal.ingreso_solo_produccion) === true : false;
   // Locales.escaner_peso=SI habilita, en Salida, el escaneo del código de barras
   // del rótulo de fábrica (peso por vasqueta). Piloto: hoy solo "Local prueba".
   // Locales.kilos_reales=SI: los kilos de las vasquetas son reales (remito, conteo y peso al sacar),
@@ -951,7 +954,7 @@ function _datosSinCache(local, empleado) {
   // Locales.stock_valorizado=SI: el local tiene la solapa Gestión (stock valorizado de referencia). Solo es la bandera:
   // los precios NO viajan acá, los entrega preciosStock() solo a los roles autorizados.
   const stockValorizado = filaLocal ? _esVerdadero(filaLocal.stock_valorizado) === true : false;
-  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, controlEquipos: controlEquipos, kilosReales: kilosReales };
+  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, ingresoSoloProduccion: ingresoSoloProduccion, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, controlEquipos: controlEquipos, kilosReales: kilosReales };
 }
 
 function _cacheKeyDatos(local) {
@@ -1015,7 +1018,7 @@ function datos(local, empleado) {
     try { _cachePonerGrande(cache, key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], ingresoSoloProduccion: !!base.ingresoSoloProduccion, escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
 }
 
 /** Quién ve la solapa Gestión (stock valorizado): admin, supervisor y responsable de local. */
@@ -1306,6 +1309,16 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
+  // Local que solo fabrica (Locales.ingreso_solo_produccion=SI + produccion=SI, ej. Marruecos): el helado
+  // entra únicamente por Producción. Un ingreso común (sin subtipo) de helado se rechaza aunque el cliente
+  // sea una versión vieja. Devolución, transferencia y producción tienen su subtipo y pasan.
+  if (tipo === "ingreso" && !subtipo) {
+    const filaLocalSoloProd = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+    if (filaLocalSoloProd && _esVerdadero(filaLocalSoloProd.produccion) === true && _esVerdadero(filaLocalSoloProd.ingreso_solo_produccion) === true) {
+      const helado = catalogoVenc.filter((sab) => Object.prototype.hasOwnProperty.call(items, String(sab.id)) && ["vasquetas", "baldes", "icepops", "glutenfree"].indexOf(_grupoProducto(sab)) !== -1);
+      if (helado.length) return { ok: false, error: "En este local el helado se carga por Ingreso de producción, no como ingreso común." };
+    }
+  }
   // En un local con «Venta del día» la chocolatería no se saca con una salida común: se
   // descuenta al cierre con la venta del día (Desperdicio sí puede sacarla).
   if (tipo === "salida" && !subtipo) {
