@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.76.1";
+const BACKEND_VERSION = "1.77.0";
 
 function doPost(e) {
   let resultado;
@@ -117,6 +117,9 @@ function _despacharConSesion(accion, body, empleado) {
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos);
     case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta);
+    case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado);
+    case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
+    case "inventarios": return inventarios(body.local, empleado);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
@@ -2280,6 +2283,198 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ============================================================
+   INVENTARIO DEL LOCAL (lo que hay fuera de la cámara)
+   Hoja Inventarios (se crea sola la primera vez). Cada fila es una foto: lo contado en el local (items), la cámara en ese
+   momento (camara: {id:{u: unidades, k: kilos|null, ap: 1 si los kilos son aproximados}}), los precios de lista y el valor.
+   NO toca el stock ni cuenta como consumo: el stock de la cámara sigue siendo el de LogiStock.
+   Vasquetas y tipo k (Crumble/Granella) se cuentan en kilos (hasta 2 decimales); el resto, en unidades enteras.
+============================================================ */
+
+const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios"];
+
+function _hojaInventarios() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName("Inventarios");
+  if (!sh) {
+    sh = ss.insertSheet("Inventarios");
+    sh.getRange(1, 1, 1, COLUMNAS_INVENTARIOS.length).setValues([COLUMNAS_INVENTARIOS]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function _jsonObj(texto, porDefecto) {
+  try { const v = JSON.parse(String(texto || "")); return v && typeof v === "object" ? v : porDefecto; } catch (e) { return porDefecto; }
+}
+
+/** ¿Este sabor se cuenta en kilos? Vasquetas (tipo v) y Crumble/Granella (tipo k). */
+function _invEsKg(sab) {
+  return String(sab.tipo || "v") === "k" || (String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas");
+}
+
+/** Valida y normaliza un valor contado: kilos con hasta 2 decimales, unidades enteras. null si es inválido. */
+function _invNormalizar(sab, valor) {
+  const n = Number(valor);
+  if (!isFinite(n) || n < 0) return null;
+  if (_invEsKg(sab)) { const r = Math.round(n * 100) / 100; return r > 5000 ? null : r; }
+  if (Math.floor(n) !== n || n > 1000000) return null;
+  return n;
+}
+
+/** Valor en pesos: (cámara + local) × precio de lista. Kilos para vasquetas/kilos, unidades para el resto. */
+function _invValor(items, camara, precios, catalogoPorId) {
+  let total = 0;
+  const ids = {};
+  Object.keys(items || {}).forEach((id) => { ids[id] = 1; });
+  Object.keys(camara || {}).forEach((id) => { ids[id] = 1; });
+  Object.keys(ids).forEach((id) => {
+    const pr = Number((precios || {})[id]) || 0, sab = catalogoPorId[id];
+    if (!pr || !sab) return;
+    const cam = (camara || {})[id] || {}, local = Number((items || {})[id]) || 0;
+    const qty = _invEsKg(sab) ? (Number(cam.k) || 0) + local : (Number(cam.u) || 0) + local;
+    total += qty * pr;
+  });
+  return Math.round(total);
+}
+
+function _invVerValor(filaLocal, empleado) {
+  return !!filaLocal && _paisDeLocal(filaLocal) === PAIS_DEFECTO && _ve_valorizado(_esVerdadero(filaLocal.stock_valorizado) === true, empleado);
+}
+
+function _inventarioPublico(r, verValor) {
+  return {
+    id: r.id, ts: Number(r.ts) || 0, fecha: String(r.fecha || ""), local: r.local, empleado: r.empleado,
+    items: _jsonObj(r.items, {}), camara: _jsonObj(r.camara, {}), aprox: _esVerdadero(r.aprox) === true,
+    cambios: _jsonObj(r.cambios, []),
+    precios: verValor ? _jsonObj(r.precios, null) : null,
+    valor_total: verValor && r.valor_total !== "" && r.valor_total !== undefined ? Number(r.valor_total) || 0 : null,
+  };
+}
+
+function _invPermiso(empleado, local) {
+  if (empleado.rol === "colaborador") return "No tenés permiso para hacer el inventario del local.";
+  if (!local) return "Falta el local.";
+  if (!_puedeVerLocal(empleado, local)) return "No tenés acceso a ese local.";
+  return "";
+}
+
+/** Guarda un inventario. items: {idSabor: lo contado en el local}; camaraKg: {idSabor: {k: kilos, ap: 1 si son aproximados}} (lo calcula el cliente con lo que ve). */
+function guardarInventario(clienteId, local, items, camaraKg, empleado) {
+  const err = _invPermiso(empleado, local);
+  if (err) return { ok: false, error: err };
+  if (!items || typeof items !== "object") return { ok: false, error: "Falta el inventario." };
+  _hojaInventarios();
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  if (!filaLocal) return { ok: false, error: "No se encontró ese local." };
+  const pais = _paisDeLocal(filaLocal);
+  const catalogo = {};
+  _leerCrudo("Sabores").forEach((s) => { if (_saborEnPais(s, pais)) catalogo[String(s.id)] = s; });
+  const contados = {};
+  let malos = false;
+  Object.keys(items).forEach((id) => {
+    const sab = catalogo[String(id)];
+    if (!sab) return;
+    const n = _invNormalizar(sab, items[id]);
+    if (n === null) { malos = true; return; }
+    if (n > 0) contados[String(id)] = n;
+  });
+  if (malos) return { ok: false, error: "Hay cantidades inválidas: los kilos de vasqueta pueden tener decimales; el resto va en unidades enteras." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (clienteId) {
+      const existente = _leerUltimasFilas("Inventarios", 50).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      if (existente) return { ok: true, repetido: true, inventario: _inventarioPublico(existente, _invVerValor(filaLocal, empleado)) };
+    }
+    const stock = _stockActualLocal(local);
+    const camara = {};
+    const aMirar = {};
+    Object.keys(stock).forEach((id) => { if ((Number(stock[id]) || 0) > 0) aMirar[id] = 1; });
+    Object.keys(contados).forEach((id) => { aMirar[id] = 1; });
+    let aprox = false;
+    Object.keys(aMirar).forEach((id) => {
+      const sab = catalogo[id];
+      if (!sab) return;
+      const u = Math.max(0, Number(stock[id]) || 0);
+      const c = { u: u };
+      if (_invEsKg(sab)) {
+        const dato = (camaraKg || {})[id] || {};
+        const k = Number(dato.k);
+        c.k = isFinite(k) && k >= 0 && k <= 100000 ? Math.round(k * 100) / 100 : 0;
+        if (dato.ap) { c.ap = 1; if (u > 0) aprox = true; }
+      }
+      if (u > 0 || contados[id]) camara[id] = c;
+    });
+    let precios = {};
+    const pr = _invVerValor(filaLocal, empleado) ? preciosStock(local, empleado) : null;
+    if (pr && pr.ok) precios = pr.precios || {};
+    const valor = Object.keys(precios).length ? _invValor(contados, camara, precios, catalogo) : "";
+    const ts = Date.now();
+    const fecha = Utilities.formatDate(new Date(ts - 4 * 3600 * 1000), "America/Argentina/Buenos_Aires", "yyyy-MM-dd");
+    const r = _escribirCrudo("Inventarios", {
+      clienteId: clienteId || "", local: local, ts: ts, fecha: fecha, empleadoId: empleado.id, empleado: empleado.nombre,
+      items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "",
+      valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]",
+    });
+    _auditar("guardar_inventario", empleado.id, empleado.nombre, local + ": inventario del local (" + Object.keys(contados).length + " productos con algo en el local)");
+    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Corrige UN producto de un inventario ya guardado. Pide motivo y deja registrado qué había, qué quedó, quién y cuándo. */
+function corregirInventario(local, inventarioId, saborId, valor, motivo, empleado) {
+  const err = _invPermiso(empleado, local);
+  if (err) return { ok: false, error: err };
+  motivo = String(motivo || "").trim().slice(0, 200);
+  if (motivo.length < 3) return { ok: false, error: "Escribí el motivo de la corrección." };
+  _hojaInventarios();
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const pais = _paisDeLocal(filaLocal);
+  const catalogo = {};
+  _leerCrudo("Sabores").forEach((s) => { if (_saborEnPais(s, pais)) catalogo[String(s.id)] = s; });
+  const sab = catalogo[String(saborId)];
+  if (!sab) return { ok: false, error: "No se encontró ese producto." };
+  const nuevo = _invNormalizar(sab, valor);
+  if (nuevo === null) return { ok: false, error: _invEsKg(sab) ? "Escribí los kilos (puede tener decimales)." : "Escribí una cantidad entera." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
+    if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese inventario." };
+    const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
+    const antes = Number(items[String(saborId)]) || 0;
+    if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
+    if (nuevo > 0) items[String(saborId)] = nuevo; else delete items[String(saborId)];
+    cambios.push({ ts: Date.now(), q: empleado.nombre, s: String(saborId), antes: antes, despues: nuevo, mot: motivo });
+    const precios = _jsonObj(fila.precios, null);
+    const valorTotal = precios && Object.keys(precios).length ? _invValor(items, camara, precios, catalogo) : (fila.valor_total === undefined ? "" : fila.valor_total);
+    _actualizarCrudo("Inventarios", fila.id, { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal });
+    _auditar("corregir_inventario", empleado.id, empleado.nombre, local + ": inventario " + fila.id + ", " + sab.nombre + " " + antes + " → " + nuevo + " (" + motivo + ")");
+    const publica = _inventarioPublico(Object.assign({}, fila, { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal }), _invVerValor(filaLocal, empleado));
+    return { ok: true, inventario: publica };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Últimos inventarios guardados de un local (los precios y el valor solo los ve quien puede ver el stock valorizado). */
+function inventarios(local, empleado) {
+  const err = _invPermiso(empleado, local);
+  if (err) return { ok: false, error: err };
+  _hojaInventarios();
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const verValor = _invVerValor(filaLocal, empleado);
+  const lista = _leerCrudo("Inventarios")
+    .filter((r) => String(r.local || "").trim() === String(local).trim())
+    .sort((a, b) => Number(b.ts) - Number(a.ts))
+    .slice(0, 12)
+    .map((r) => _inventarioPublico(r, verValor));
+  return { ok: true, inventarios: lista, verValor: verValor };
 }
 
 /* ============================================================
