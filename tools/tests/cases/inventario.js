@@ -132,13 +132,21 @@ const { chromium } = require("playwright");
   await page.click("#invSalir"); await page.waitForTimeout(300);
   ok(!!(await page.$("#invBtn")), "«Terminar» vuelve a Stock");
 
-  // 11) Gestión: tarjeta «Último stock definitivo» con su valor, y el link lleva a los guardados
+  // 11) Gestión: «Stock valorizado cámara» + tarjeta del stock definitivo (Cámara + Local = Total) y su detalle con Valor
   await page.click('#tabs [data-t="gestion"]'); await page.waitForTimeout(2500);
   const gv = (await page.innerText("main")).replace(/\s+/g, " ");
-  ok(/Último stock definitivo/.test(gv) && /\$ [\d.]+/.test(gv), "Gestión muestra la tarjeta «Último stock definitivo» con su valor: " + gv.slice(0, 200));
-  await page.click("#gvInvGuardados"); await page.waitForTimeout(600);
-  const gd = (await page.innerText("main")).replace(/\s+/g, " ");
-  ok(/Stock definitivo · guardados/.test(gd) && !/\$ [\d.]+/.test(gd), "el link abre los guardados, sin valor en pesos: " + gd.slice(0, 160));
+  ok(/Stock valorizado cámara/i.test(gv), "la tarjeta principal de Gestión dice «Stock valorizado cámara»: " + gv.slice(0, 120));
+  ok(/Stock definitivo ·/i.test(gv) && /Cámara/i.test(gv) && /\+ Local/i.test(gv) && /= Total/i.test(gv) && /\$ [\d.]+/.test(gv), "la tarjeta del stock definitivo muestra Cámara + Local = Total en pesos: " + gv.slice(0, 300));
+  await page.click("#gvDefAbrir"); await page.waitForTimeout(500);
+  const det = (await page.innerText("main")).replace(/\s+/g, " ");
+  ok(/Valor/i.test(det) && /Cámara/i.test(det) && /Local/i.test(det) && /\$ [\d.]+/.test(det), "el detalle tiene la columna Valor: " + det.slice(0, 200));
+  ok(await page.$("[data-gvd-id]") !== null, "el detalle ofrece las fechas para elegir el período");
+  await page.click('[data-gvd-rub="vasquetas"]'); await page.waitForTimeout(250);
+  ok(/Banana Split/.test(await page.innerText(".invDet")), "el rubro se despliega en productos con su valor");
+  const imp2 = await page.evaluate(() => { const e = document.querySelector("[data-inv-print]"); return e ? e.innerText : ""; });
+  ok(/Valor/.test(imp2) && /\$ [\d.]+/.test(imp2), "el PDF del detalle lleva la columna Valor");
+  await page.click("#gvDefVolver"); await page.waitForTimeout(300);
+  ok(/Stock valorizado cámara/i.test(await page.innerText("main")), "«Volver a Gestión» vuelve a Gestión");
 
   ok(err.length === 0, "sin errores de consola: " + err.join(" | "));
   await b.close(); console.log(fallas ? "FALLAS " + fallas : "TODO OK"); process.exit(fallas ? 1 : 0);

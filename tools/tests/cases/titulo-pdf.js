@@ -8,7 +8,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   const orig=await page.title();
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(700);
-  await page.click("#tabs [data-t='gestion']"); await page.waitForFunction(()=>/Valor de referencia/.test(document.querySelector("main").textContent),{timeout:6000});
+  await page.click("#tabs [data-t='gestion']"); await page.waitForFunction(()=>/Stock valorizado cámara/.test(document.querySelector("main").textContent),{timeout:6000});
   const r=await page.evaluate(()=>{ window.dispatchEvent(new Event("beforeprint")); const durante=document.title; window.dispatchEvent(new Event("afterprint")); return {durante, despues:document.title} });
   console.log(JSON.stringify(r),"original:",orig);
   const hoy=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"numeric",month:"numeric",year:"2-digit"}).replace(/\//g,"-");
