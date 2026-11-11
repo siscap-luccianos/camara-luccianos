@@ -601,6 +601,9 @@ body:has(.etiqOv){overflow:hidden}
 .escLista .escRow.dup small{color:#7A4B00!important}
 .escLista .escRow>span{flex:1;min-width:0}
 .escLista .escCab{border:0;padding:0;font-size:.74rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cEscTag{margin-top:4px;font-size:.74rem;font-weight:700;color:var(--accent);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cEscTag button{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;font-size:.72rem;font-weight:700;padding:2px 8px;cursor:pointer}
+.escPreg{border:1.5px solid #E0A93B;background:#FFF1D6;color:#2A2118;border-radius:12px;padding:10px 12px;font-size:.88rem;margin:8px 0}
 .escX{flex:none;width:34px;height:34px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--alert);font-weight:800;font-size:1rem;padding:0;cursor:pointer}
 .escDupAviso{margin:-4px 0 12px;padding:10px 12px;border-radius:12px;background:#F2B400;color:#2A2118;font-size:.88rem;font-weight:700;display:flex;gap:10px;align-items:center;justify-content:space-between}
 .escDupAviso .btn{flex:none;padding:6px 12px;min-height:0;height:34px;font-size:.82rem;background:#fff;color:#2A2118;border-color:#fff}
@@ -1083,7 +1086,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.138.2";
+const FRONTEND_VERSION = "1.139.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2325,7 +2328,7 @@ function iniciarConteo(conBorrador, alcance){
   S.conteoAlcance=bor?(bor.alcance||"todo"):(alcance||"todo");
   if(S.conteoAlcance!=="todo"){ S.filtroFamilia=S.conteoAlcance; S.filtroCategoria="todas"; S.catAbierta=false; S.q=""; S.soloAlerta=false; S.conteoAplicar="visible" }
   S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
-  S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false; S.conteoAplicar="visible"; S.conteoAplicarVal="";
+  S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false; S.conteoAplicar="visible"; S.conteoAplicarVal=""; resetConteoEsc();
   Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
   if(conBorrador){ const b=borradorConteo(); if(b) aplicarBorradorConteo(b) } else descartarBorradorConteo();
   S.confirm=false; renderApp();
@@ -2357,6 +2360,7 @@ function aplicarBorradorConteo(b){
   S.conteoTocado=Object.assign({},b.tocados||{});
   S.vencConteo=Object.assign({},b.venc||{}); S.kilosConteo=Object.assign({},b.kilos||{}); S.vencOmit=Object.assign({},b.omit||{});
   limpiarLotesExtra("conteo:"); Object.keys(b.lotes||{}).forEach(k=>{ S.lotesExtra[k]=b.lotes[k] });
+  if(b.esc && Array.isArray(b.esc.items)) S.conteoEsc={items:b.esc.items, n:+b.esc.n||0, previo:b.esc.previo||{}};
   S.conteoInicio=+b.inicio||Date.now();
 }
 let _borradorTimer=null;
@@ -2371,7 +2375,7 @@ function guardarBorradorConteo(){
   if(!Object.keys(vals).length && !Object.keys(S.conteoTocado).length) { descartarBorradorConteo(); return }
   const lotes={}; Object.keys(S.lotesExtra).forEach(k=>{ if(k.indexOf("conteo:")===0) lotes[k]=S.lotesExtra[k] });
   if(!S.conteoInicio) S.conteoInicio=Date.now();
-  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, alcance:S.conteoAlcance, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, omit:S.vencOmit, lotes})) }catch(e){}
+  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, alcance:S.conteoAlcance, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, omit:S.vencOmit, lotes, esc:ceEsc()})) }catch(e){}
 }
 /** Estado de cada sabor del conteo respecto del stock del sistema: sin (sin contar), igual, cambia, cero (queda en 0), salto (cambio raro). */
 function conteoEstadoDe(id, prev, v){
@@ -3755,11 +3759,12 @@ function stockViewConteo(){
   if(S.conteoRevisar) return conteoRevisarView();
   const cont=S.conteo, st0=stockMap(), parcial=conteoParcialActivo();
   const list=listaFiltrada(st0);
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}</div>
+  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
     <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   return `${parcial?`<div class="cParcial"><b>Contando solo ${esc(etiquetaRubroConteo())}.</b> El resto del local no se toca al guardar.</div>`:""}<div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
   <p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
   <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar, poné <b>0</b> en «Poner el mismo número» y tocá «Aplicar» antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar. Elegí si es para <b>todo el local</b> o solo para el rubro que estás viendo.</p>
+  ${conteoEscCardHTML()}
   ${(()=>{ const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
     return `<div class="aplicarBox"><div class="aplicarT">Poner el mismo número en:</div>
     <div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo||parcial}">Solo ${esc(rub)} · ${list.length}</button>${parcial?"":`<button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button>`}</div>
@@ -5163,7 +5168,7 @@ function iniciarPolling(){
 function setLocal(local){
   S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
-  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.inv=null; S.conteo=null; S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
+  S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.inv=null; S.conteo=null; resetConteoEsc(); S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
   // mientras se refresca en segundo plano — evita la pantalla en blanco al
   // cambiar de sucursal, que es lo más lento de esta app (Apps Script).
@@ -5259,7 +5264,7 @@ async function guardarConteo(){
   const r = await api(accion, payload);
   if(r && r.ok){
     toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
-    S.conteoAlcance="todo"; S.conteo=null; S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+    S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
     await cargarDatos();
   } else if(r && r.offline){
@@ -5275,7 +5280,7 @@ async function guardarConteo(){
     guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
     }
     toast("Sin conexión: el conteo se va a enviar solo.");
-    S.conteoAlcance="todo"; S.conteo=null; S.confirm=false; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
+    S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
   } else {
     toast((r&&r.error)||"No se pudo guardar el conteo.");
   }
@@ -5538,7 +5543,9 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; recortarPesos(t.dataset.wsub,"desperdicio"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
-  if(t.dataset.ccaja){ const id=t.dataset.ccaja; S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
+  if(t.id==="escConteoBtn"){ abrirEscanerConteo(); return }
+  if(t.dataset.cescMano){ ceMano(t.dataset.cescMano); programarBorradorConteo(); renderApp(); return }
+  if(t.dataset.ccaja){ const id=t.dataset.ccaja; ceMano(id); S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.devchip){ const [did,di]=t.dataset.devchip.split(":"); const a=S.devSel[did]||(S.devSel[did]=[]); const k=a.indexOf(+di); if(k>=0) a.splice(k,1); else a.push(+di); syncDevolucion(); S.confirm=false; scheduleRender(); return }
@@ -5723,12 +5730,12 @@ document.addEventListener("click", async e=>{
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     // «Todo el local» o solo lo que se está viendo (rubro y subcategoría elegidos, ej. Icepops › Frutales).
     const objetivo=(S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap());
-    objetivo.forEach(x=>{ S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id] }); // no cuenta como haber contado: hay que tocar cada sabor
+    objetivo.forEach(x=>{ ceMano(x.id); S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id] }); // no cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }
   if(t.id==="cancelConteo"){
     if(Object.keys(S.conteoTocado).length && !confirm("¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia.")) return;
-    descartarBorradorConteo(); S.conteoAlcance="todo"; S.conteo=null; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
+    descartarBorradorConteo(); S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
   if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
   if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); return }
   if(t.dataset.apl){ const iv=$("#aplicarTodosValor"); if(iv) S.conteoAplicarVal=iv.value; S.conteoAplicar=t.dataset.apl==="todo"?"todo":"visible"; renderApp(); return }
@@ -5831,6 +5838,7 @@ document.addEventListener("input", e=>{
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
   if(e.target.dataset.c){
     const n=Math.max(0,parseInt(e.target.value,10)||0);
+    if(ceMano(e.target.dataset.c)){ const tg=e.target.closest(".row"), tag=tg&&tg.querySelector(".cEscTag"); if(tag) tag.remove() }
     S.conteo[e.target.dataset.c]=n;
     S.conteoTocado[e.target.dataset.c]=true; delete S.conteoAck[e.target.dataset.c];
     mostrarVencRenglon(e.target, e.target.dataset.c, "conteo:", "data-venc-conteo", n);
@@ -6282,10 +6290,17 @@ function parseCodigoRotulo(txt){
     if(!(kg>0&&kg<=30)) return null;
     return {plu:String(+d.slice(1,7)), kg, lote:"etiqueta de producción", crudo:d};
   }
+  if(d.length===28){
+    // Rótulo de CAJA (2 vasquetas): 99 + producto(4) + tara(6) + peso neto de las 2 vasquetas, centésimas de kg (5) + lote DDMMAA(6) + grupo(2) + operario(3)
+    if(d.slice(0,2)!=="99") return null;
+    const kg=Number(d.slice(12,17))/100, dd=+d.slice(17,19), mm=+d.slice(19,21);
+    if(!(kg>0&&kg<=60)||dd<1||dd>31||mm<1||mm>12) return null;
+    return {tipo:"caja", codigo:d.slice(2,6), kg, lote:d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23), crudo:d};
+  }
   if(d.length!==20) return null;
   const kg=Number(d.slice(4,9))/100, dd=+d.slice(9,11), mm=+d.slice(11,13);
   if(!(kg>0&&kg<=30)||dd<1||dd>31||mm<1||mm>12) return null;
-  return {codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15), crudo:d};
+  return {tipo:"vasq", codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15), crudo:d};
 }
 function pitido(ok){
   try{
@@ -6346,6 +6361,7 @@ function cerrarEscaner(){
 }
 function renderEscaner(){
   const e=S.escaner; if(!e) return;
+  if(e.modo==="conteo") return renderEscanerConteo();
   reconciliarEsc();
   const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
   if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…" }
@@ -6362,9 +6378,11 @@ function renderEscaner(){
   if(v) v.classList.toggle("on", !!e.camara);
   if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
 }
-function procesarEscaneo(txt){
+function procesarEscaneo(txt, cam){
   const e=S.escaner; if(!e) return;
+  if(e.modo==="conteo") return procesarEscaneoConteo(txt, cam);
   const p=parseCodigoRotulo(txt);
+  if(p && p.tipo==="caja"){ e.msg={tipo:"err", t:"Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta."}; pitido(false); renderEscaner(); return }
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
   if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
@@ -6382,6 +6400,159 @@ function procesarEscaneo(txt){
   sumarPesada.silencio=repetido; sumarPesada("salida", s.id, p.kg); sumarPesada.silencio=false;
   if(repetido) pitido("dup");
   renderEscaner();
+  const i=document.getElementById("escCodigo"); if(i) i.focus();
+}
+/* ---- Contar escaneando (Conteo físico, solo vasquetas; es una opción más, la carga a mano sigue igual) ----
+   Piloto: solo donde escanerDisponible() (Locales.escaner_peso=SI). Caja cerrada = +2 vasquetas con el peso del rótulo de la caja;
+   caja abierta o con dudas: se escanea cada vasqueta (+1) y NO la caja. El primer escaneo de un sabor pisa el número
+   que venía del sistema; lo que no se escanea queda «Sin contar». El código no es único: repetido avisa pero no bloquea. */
+function resetConteoEsc(){ S.conteoEsc={items:[],n:0,previo:{}}; S.escAsig={} }
+function ceEsc(){ return S.conteoEsc||(S.conteoEsc={items:[],n:0,previo:{}}) }
+function esVasquetaEsc(s){ return !!s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas" }
+function conteoEscActivo(){ return escanerDisponible() && !!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas") }
+function conteoEscVisible(){ return conteoEscActivo() && (ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
+function ceItemsDe(id){ return ceEsc().items.filter(x=>String(x.id)===String(id)) }
+function ceAplicar(id){
+  const E=ceEsc(), its=ceItemsDe(id);
+  if(its.length){
+    if(!E.previo[id]) E.previo[id]={c:S.conteo[id], k:S.kilosConteo[id], t:!!S.conteoTocado[id]};
+    S.conteo[id]=its.reduce((a,x)=>a+x.u,0);
+    if(S.kilosReales) S.kilosConteo[id]=String(Math.round(its.reduce((a,x)=>a+x.kg,0)*100)/100).replace(".",",");
+    S.conteoTocado[id]=true;
+  } else if(E.previo[id]){
+    const p=E.previo[id]; S.conteo[id]=p.c;
+    if(p.k===undefined) delete S.kilosConteo[id]; else S.kilosConteo[id]=p.k;
+    if(p.t) S.conteoTocado[id]=true; else delete S.conteoTocado[id];
+    delete E.previo[id];
+  }
+  delete S.conteoAck[id]; S.confirm=false; programarBorradorConteo();
+}
+function ceQuitar(n){ const E=ceEsc(), i=E.items.findIndex(x=>x.n===n); if(i<0) return; const id=E.items[i].id; E.items.splice(i,1); ceAplicar(id) }
+/** Lo cargado a mano o con «Pasar a mano» saca las lecturas de ese sabor (el número queda como está). */
+function ceMano(id){ const E=ceEsc(); if(!E.items.some(x=>String(x.id)===String(id))) return false; E.items=E.items.filter(x=>String(x.id)!==String(id)); delete E.previo[id]; return true }
+function ceTagHTML(id){
+  const its=ceItemsDe(id); if(!its.length) return "";
+  const cajas=its.filter(x=>x.t==="caja").length, vasq=its.filter(x=>x.t!=="caja").length, kg=its.reduce((a,x)=>a+x.kg,0);
+  const partes=[]; if(cajas) partes.push(cajas+(cajas===1?" caja":" cajas")); if(vasq) partes.push(vasq+(vasq===1?" vasqueta":" vasquetas"));
+  return `<div class="cEscTag">📷 Escaneado: ${partes.join(" + ")} · ${fmtKg(kg)} kg <button type="button" data-cesc-mano="${id}">Pasar a mano</button></div>`;
+}
+function conteoEscCardHTML(){
+  if(!conteoEscVisible()) return "";
+  const E=ceEsc(), n=E.items.length, sab=new Set(E.items.map(x=>String(x.id))).size;
+  return `<button type="button" class="ctaCard glass" id="escConteoBtn" style="margin:0 0 12px" aria-label="Contar escaneando"><span style="font-size:1.4rem">📷</span><span style="flex:1;text-align:left"><b style="display:block">Contar escaneando</b><small style="color:var(--muted)">${n?`${n} ${n===1?"lectura":"lecturas"} · ${sab} ${sab===1?"sabor":"sabores"}. Tocá para seguir.`:"Opcional. Cajas o vasquetas sueltas; a mano también anda."}</small></span></button>`;
+}
+function abrirEscanerConteo(){
+  if(S.escaner || !conteoEscActivo()) return;
+  S.escaner={modo:"conteo", camara:false, msg:null, ultimo:null, stream:null, timer:null, pregunta:null, asignar:null};
+  const ov=document.createElement("div"); ov.id="escanerOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="escTit">
+    <p class="mantTit" id="escTit">Contar escaneando</p>
+    <p class="mantSub"><b>Caja cerrada:</b> escaneá la caja (suma 2 vasquetas). <b>Caja abierta o con dudas:</b> escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema.</p>
+    <input type="text" id="escCodigo" class="escCampo" inputmode="none" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
+    <video id="escVideo" class="escVideo" playsinline muted></video>
+    <div class="escMsg" id="escMsg" role="status" aria-live="polite">Esperando el código…</div>
+    <div id="escPreg"></div>
+    <div class="escLista" id="escLista"></div>
+    <div class="mantAcc">
+      <button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>
+      <button type="button" class="btn" data-esc-cerrar>Listo</button>
+    </div>
+  </div>`;
+  const foco=()=>{ const i=document.getElementById("escCodigo"); if(i) i.focus() };
+  ov.addEventListener("click", e=>{
+    if(e.target===ov){ cerrarEscaner(); return }
+    const b=e.target.closest("button"); if(!b) return;
+    const E=S.escaner; if(!E) return;
+    if(b.dataset.escQuitar!==undefined){ ceQuitar(+b.dataset.escQuitar); scheduleRender(); renderEscanerConteo(); foco(); return }
+    if(b.dataset.escCajan!==undefined){
+      const pr=E.pregunta; E.pregunta=null; const k=+b.dataset.escCajan;
+      if(pr && k>0) ceCommit(pr.p, pr.s, k); else { E.msg={tipo:"", t:"Caja descartada."}; renderEscanerConteo() }
+      foco(); return;
+    }
+    if(b.dataset.escAsigOk!==undefined){
+      const sel=document.getElementById("escAsigSel"), as=E.asignar; if(!as||!sel||!sel.value) return;
+      E.asignar=null; (S.escAsig=S.escAsig||{})[as.p.codigo]=sel.value;
+      ceProcesar(as.p, S.saboresPorId[sel.value]); foco(); return;
+    }
+    if(b.dataset.escAsigNo!==undefined){ E.asignar=null; E.msg={tipo:"", t:"Lectura descartada."}; renderEscanerConteo(); foco(); return }
+    if(b.dataset.escCerrar!==undefined) cerrarEscaner();
+    else if(b.dataset.escCamara!==undefined){ if(E.camara) apagarCamara(); else iniciarCamara() }
+  });
+  let t=null;
+  ov.addEventListener("input", e=>{
+    if(e.target.id!=="escCodigo") return;
+    clearTimeout(t);
+    t=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28){ i.value=""; procesarEscaneoConteo(d) } },180);
+  });
+  ov.addEventListener("keydown", e=>{
+    if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); clearTimeout(t); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneoConteo(v) }
+  });
+  document.body.appendChild(ov);
+  renderEscanerConteo();
+  setTimeout(foco,50);
+}
+function renderEscanerConteo(){
+  const e=S.escaner; if(!e||e.modo!=="conteo") return;
+  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]"), q=document.getElementById("escPreg");
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…" }
+  if(q){
+    if(e.pregunta){
+      const pr=e.pregunta;
+      q.innerHTML=`<div class="escPreg"><b>Esta caja pesa ${fmtKg(pr.p.kg)} kg</b> y ${esc(pr.s.nombre)} pesa unos ${fmtKg(+pr.s.peso)} kg por vasqueta. ¿Cuántas vasquetas trae?<div class="mantAcc" style="margin-top:8px"><button type="button" class="btn" data-esc-cajan="2">2 vasquetas</button><button type="button" class="btn ghost" data-esc-cajan="1">1 sola</button><button type="button" class="btn ghost" data-esc-cajan="0">Descartar</button></div></div>`;
+    } else if(e.asignar){
+      const as=e.asignar, op=saboresDelConteo().filter(esVasquetaEsc).map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join("");
+      q.innerHTML=`<div class="escPreg"><b>Código ${esc(as.p.codigo)} sin asignar en la planilla</b> (${fmtKg(as.p.kg)} kg · lote ${esc(as.p.lote)}). ¿Qué sabor es?<select id="escAsigSel" style="width:100%;margin-top:8px"><option value="">Elegí el sabor…</option>${op}</select><div class="mantAcc" style="margin-top:8px"><button type="button" class="btn" data-esc-asig-ok>Asignar y sumar</button><button type="button" class="btn ghost" data-esc-asig-no>Descartar</button></div><small style="display:block;margin-top:6px;color:var(--muted)">Vale solo para este conteo. Para que el sistema lo reconozca siempre, cargá el código en Sabores.codigo_fabrica.</small></div>`;
+    } else q.innerHTML="";
+  }
+  if(l){
+    const E=ceEsc(), items=E.items.slice().reverse(), vistos={}, dup=new Set();
+    E.items.forEach(x=>{ if(vistos[x.crudo]) dup.add(x.n); vistos[x.crudo]=true });
+    const u=E.items.reduce((a,x)=>a+x.u,0), kg=Math.round(E.items.reduce((a,x)=>a+x.kg,0)*100)/100;
+    l.innerHTML = items.length
+      ? `<div class="escCab"><span>Escaneado en este conteo</span><span>${u} ${u===1?"vasqueta":"vasquetas"} · ${fmtKg(kg)} kg</span></div>`
+        + items.map(x=>`<div class="escRow${dup.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dup.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">${x.t==="caja"?(x.u===2?"caja ×2":"caja ×"+x.u):"vasqueta ×1"} · lote ${esc(x.lote)}${dup.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="Quitar esta lectura">✕</button></div>`).join("")
+        + `<div style="border:0;font-size:.78rem;color:var(--muted);display:block">La ✕ quita solo esa lectura y recalcula el sabor. Si un rótulo no se lee, cerrá y escribí el número a mano.</div>`
+      : "";
+  }
+  if(v) v.classList.toggle("on", !!e.camara);
+  if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
+}
+function procesarEscaneoConteo(txt, cam){
+  const e=S.escaner; if(!e||e.modo!=="conteo") return;
+  if(e.pregunta||e.asignar){ e.msg={tipo:"warn", t:"Primero respondé la pregunta de abajo."}; renderEscanerConteo(); return }
+  const p=parseCodigoRotulo(txt);
+  if(!p || p.plu!==undefined){ e.msg={tipo:"err", t:"No se pudo leer ese código: la vasqueta trae 20 números y la caja 28 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y escribí el número a mano."}; pitido(false); renderEscanerConteo(); return }
+  const ahora=Date.now();
+  if(cam){ // la cámara repite la misma lectura varios cuadros seguidos; el lector de mano no, así que dos cajas iguales seguidas sí cuentan
+    if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return }
+    e.ultimo={crudo:p.crudo, ts:ahora};
+  }
+  const asig=(S.escAsig||{})[p.codigo];
+  const s=asig ? S.saboresPorId[asig] : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
+  if(!s){ e.asignar={p}; e.msg={tipo:"warn", titulo:"Código sin asignar", t:"No sé a qué sabor corresponde el código "+p.codigo+"."}; pitido(false); renderEscanerConteo(); return }
+  ceProcesar(p,s);
+}
+function ceProcesar(p,s){
+  const e=S.escaner; if(!e) return;
+  if(!esVasquetaEsc(s)){ e.msg={tipo:"err", t:s.nombre+" no es una vasqueta: contalo a mano."}; pitido(false); renderEscanerConteo(); return }
+  if(S.conteo[s.id]===undefined || !saboresDelConteo().some(x=>String(x.id)===String(s.id))){ e.msg={tipo:"err", t:s.nombre+" no está en este conteo."}; pitido(false); renderEscanerConteo(); return }
+  if(p.tipo==="caja"){
+    const pr=+s.peso;
+    if(pr>0 && Math.abs(p.kg/2-pr)/pr>0.35){ e.pregunta={p,s}; e.msg={tipo:"warn", titulo:"Revisá la caja", t:s.nombre+" · "+fmtKg(p.kg)+" kg en la caja."}; pitido("dup"); renderEscanerConteo(); return }
+    ceCommit(p,s,2);
+  } else ceCommit(p,s,1);
+}
+function ceCommit(p,s,u){
+  const e=S.escaner, E=ceEsc();
+  const repetido=E.items.some(x=>x.crudo===p.crudo);
+  E.items.push({n:++E.n, id:s.id, nombre:s.nombre, t:p.tipo, u, kg:p.kg, lote:p.lote, crudo:p.crudo});
+  ceAplicar(s.id);
+  const que=p.tipo==="caja"?"caja ×"+u:"vasqueta";
+  if(e) e.msg = repetido
+    ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+". ¿Es otra "+(p.tipo==="caja"?"caja":"vasqueta")+" igual o la pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
+    : {tipo:"ok", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+" → ahora "+S.conteo[s.id]};
+  pitido(repetido?"dup":true);
+  scheduleRender(); renderEscanerConteo();
   const i=document.getElementById("escCodigo"); if(i) i.focus();
 }
 function cargarZxing(){
@@ -6405,7 +6576,7 @@ async function iniciarCamara(){
   let detector=null;
   if("BarcodeDetector" in window){ try{ const f=await BarcodeDetector.getSupportedFormats(); const fm=["itf","ean_13"].filter(x=>f.indexOf(x)!==-1); if(fm.length) detector=new BarcodeDetector({formats:fm}) }catch(_){} }
   if(detector){
-    e.timer=setInterval(async()=>{ if(!e.camara||v.readyState<2) return; try{ const r=await detector.detect(v); if(r&&r[0]) procesarEscaneo(r[0].rawValue) }catch(_){} }, 250);
+    e.timer=setInterval(async()=>{ if(!e.camara||v.readyState<2) return; try{ const r=await detector.detect(v); if(r&&r[0]) procesarEscaneo(r[0].rawValue, true) }catch(_){} }, 250);
     return;
   }
   try{ await cargarZxing() }catch(_){ e.msg={tipo:"err", t:"No se pudo cargar el lector de la cámara. Usá el lector o escribí el número."}; apagarCamara(); return }
@@ -6417,7 +6588,7 @@ async function iniciarCamara(){
       canvas.width=v.videoWidth; canvas.height=v.videoHeight;
       const ctx=canvas.getContext("2d",{willReadFrequently:true}); ctx.drawImage(v,0,0);
       const r=await ZXingWASM.readBarcodes(ctx.getImageData(0,0,canvas.width,canvas.height),{formats:["ITF","EAN-13"],tryHarder:true,maxNumberOfSymbols:1});
-      if(e.camara&&r&&r[0]&&r[0].text) procesarEscaneo(r[0].text);
+      if(e.camara&&r&&r[0]&&r[0].text) procesarEscaneo(r[0].text, true);
     }catch(_){ /* sin código en este cuadro */ }
     ocupado=false;
   }, 300);
@@ -6567,7 +6738,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.kilosDlg){ ce
 /* ---- Ayuda fija («?» en la cabecera): índice de temas, cada uno se despliega con sus pasos ---- */
 function ayudaTemas(){
   const rol=S.empleado&&S.empleado.rol, colab=rol==="colaborador";
-  const li=a=>`<ol class="ayPasos">${a.map(x=>`<li>${x}</li>`).join("")}</ol>`;
+  const li=a=>`<ol class="ayPasos">${a.filter(Boolean).map(x=>`<li>${x}</li>`).join("")}</ol>`;
   const nota=t=>`<div class="ayNota">${t}</div>`;
   const T=[];
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
@@ -6612,6 +6783,7 @@ function ayudaTemas(){
     "Contá <b>una sola vez, de punta a punta</b>.",
     "Antes de empezar, poné <b>0</b> en «Poner el mismo número» y elegí si es para <b>todo el local</b> o solo el rubro que estás viendo (ej. Icepops › Frutales). Así ningún sabor arrastra el número viejo.",
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía.",
+    escanerDisponible()?"En <b>Vasquetas</b> también podés <b>Contar escaneando</b> (opcional): <b>caja cerrada</b> → escaneá la caja (suma 2); <b>caja abierta o con dudas</b> → escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema; si un rótulo no se lee, escribí el número a mano. Si pasás dos veces el mismo código te avisa en amarillo (puede ser otra caja igual): quitá con la ✕ el que sobre.":null,
     S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",
     "En la revisión mirá cómo queda el stock. Los sabores que pasan a <b>0</b> o saltan de golpe piden que los confirmes con <b>Está bien, así es</b>.",
     "Guardá <b>una sola vez</b>. Tu avance se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
