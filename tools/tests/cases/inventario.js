@@ -62,7 +62,9 @@ const { chromium } = require("playwright");
   await page.click("#invResBtn"); await page.waitForTimeout(400);
   txt = (await page.innerText("main")).replace(/\s+/g, " ");
   ok(/Total del local/i.test(txt) && /Cámara/.test(txt) && /Local/.test(txt) && /Total/.test(txt), "resultado con Cámara + Local = Total");
-  ok(/Valor del local/i.test(txt) && /\$ [\d.]+/.test(txt), "muestra el valor en pesos del local");
+  ok(!/Valor del local/i.test(txt) && !/\$ [\d.]+/.test(txt), "Stock definitivo NO muestra pesos (el valorizado vive en Gestión)");
+  ok(/Helado en el local/i.test(txt) && /kg/.test(txt), "arriba muestra los kilos de helado");
+  ok(/¿Querés ver cuánto vale\?/.test(txt) === !!(await page.evaluate(() => S.stockValorizado)), "el aviso de Gestión sale solo para quien ve Gestión");
   ok(/≈/.test(txt) || true, "kilos de la cámara");
   const camaraBanana = await page.evaluate(() => invCamaraLive()["4"]);
   ok(camaraBanana && camaraBanana.u === 20, "cámara de Banana Split: 20 vasquetas según LogiStock");
@@ -72,7 +74,7 @@ const { chromium } = require("playwright");
   const prod = (await page.innerText("#invLista")).replace(/\s+/g, " ");
   ok(/Banana Split/.test(prod) && !/Frutilla icepop/.test(prod), "«Por producto» filtra con el buscador");
   ok(/vasquetas/.test(prod) && /1,0 kg/.test(prod), "el producto muestra vasquetas en cámara y los kilos del local: " + prod.slice(0, 120));
-  ok(/Valor/.test(prod) && /\$ [\d.]+ \/kg/.test(prod), "con precio por kilo y valor");
+  ok(!/Valor/.test(prod) && !/\$ /.test(prod), "el producto no muestra precio ni valor");
   ok(await page.$('[data-inv-edit]') !== null && await page.$('[data-inv-cor]') === null, "antes de guardar ofrece «Editar», no «Corregir»");
   await page.fill("#invBusca", ""); await page.waitForTimeout(100);
   await page.click('[data-inv-res="rubro"]'); await page.click('[data-inv-det="vasquetas"]'); await page.waitForTimeout(200);
@@ -122,13 +124,21 @@ const { chromium } = require("playwright");
   await page.emulateMedia({ media: "print" }); await page.waitForTimeout(150);
   const imp = await page.evaluate(() => ({ cab: !!document.querySelector(".informeCab") && getComputedStyle(document.querySelector(".informeCab")).display !== "none", tabla: getComputedStyle(document.querySelector(".invPrint")).display, pantalla: getComputedStyle(document.querySelector("main .noPrint")).display, filas: document.querySelectorAll(".invPrint tbody tr").length }));
   ok(imp.cab && imp.tabla === "block" && imp.pantalla === "none" && imp.filas >= 5, "al imprimir: franja del informe + tabla completa, sin los botones de pantalla " + JSON.stringify(imp));
-  const tpl = await page.innerText(".invPrint"); ok(/Total vasquetas/i.test(tpl) && /Valor del local/.test(tpl), "el PDF trae subtotales por rubro y el valor del local");
+  const tpl = await page.innerText(".invPrint"); ok(/Total vasquetas/i.test(tpl) && !/Valor/.test(tpl) && !/\$ /.test(tpl), "el PDF trae subtotales por rubro y ningún valor en pesos");
   await page.emulateMedia({ media: "screen" });
   await page.pdf({ path: "inventario.pdf", format: "A4", printBackground: true });
 
   // 10) Salir vuelve a Stock
   await page.click("#invSalir"); await page.waitForTimeout(300);
   ok(!!(await page.$("#invBtn")), "«Terminar» vuelve a Stock");
+
+  // 11) Gestión: tarjeta «Último stock definitivo» con su valor, y el link lleva a los guardados
+  await page.click('#tabs [data-t="gestion"]'); await page.waitForTimeout(2500);
+  const gv = (await page.innerText("main")).replace(/\s+/g, " ");
+  ok(/Último stock definitivo/.test(gv) && /\$ [\d.]+/.test(gv), "Gestión muestra la tarjeta «Último stock definitivo» con su valor: " + gv.slice(0, 200));
+  await page.click("#gvInvGuardados"); await page.waitForTimeout(600);
+  const gd = (await page.innerText("main")).replace(/\s+/g, " ");
+  ok(/Stock definitivo · guardados/.test(gd) && !/\$ [\d.]+/.test(gd), "el link abre los guardados, sin valor en pesos: " + gd.slice(0, 160));
 
   ok(err.length === 0, "sin errores de consola: " + err.join(" | "));
   await b.close(); console.log(fallas ? "FALLAS " + fallas : "TODO OK"); process.exit(fallas ? 1 : 0);
