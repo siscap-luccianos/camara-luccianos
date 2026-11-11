@@ -1086,7 +1086,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.139.1";
+const FRONTEND_VERSION = "1.139.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -5062,17 +5062,19 @@ function renderBar(){
     visible=true;
     const idsC=conteoParcialActivo()?saboresDelConteo().map(x=>String(x.id)):Object.keys(S.conteo);
     const faltaKgIds=S.kilosReales?idsC.filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[];
-    const faltaKgTocados=faltaKgIds.filter(id=>S.conteoTocado[id]);
-    const nContados=Object.keys(S.conteoTocado).filter(id=>conteoIdsContables().indexOf(String(id))!==-1).length;
+    const contadosIds=idsContados(), faltaKgTocados=faltaKgIds.filter(id=>contadosIds.indexOf(String(id))!==-1);
+    const nContados=contadosIds.length;
     const faltaVencIds=conteoParcialActivo()?[]:idsC.filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id]));
-    const faltaVencC=faltaVencIds.concat(faltaKgIds), faltaKgC=faltaKgIds.length;
+    const parc=conteoParcialActivo(); // en «solo un rubro» solo se guarda (y exige kilos) lo que se contó
+    const faltaKgBloq=faltaKgTocados; // lo que no se contó queda como está: no se pide nada de eso
+    const faltaVencC=faltaVencIds.concat(faltaKgBloq), faltaKgC=faltaKgBloq.length;
     const faltaOtros=faltaVencIds.length>0;
     programarBorradorConteo();
-    const avisoVK=`${faltaKgTocados.length?`<div class="warn">Faltan los kilos totales de ${faltaKgTocados.length} ${faltaKgTocados.length===1?"sabor que contaste":"sabores que contaste"}.</div>`:(faltaKgC&&S.conteoRevisar?`<div class="warn">Para guardar todo el conteo faltan los kilos de ${faltaKgC} ${faltaKgC===1?"sabor sin contar":"sabores sin contar"}. Podés guardar solo lo contado y seguir.</div>`:"")}${(faltaVencC.length-faltaKgC)>0?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length-faltaKgC} ${(faltaVencC.length-faltaKgC)===1?"producto":"productos"} para guardar el conteo.</div>`:""}`;
+    const avisoVK=`${faltaKgTocados.length?`<div class="warn">Faltan los kilos totales de ${faltaKgTocados.length} ${faltaKgTocados.length===1?"sabor que contaste":"sabores que contaste"}.</div>`:""}${(faltaVencC.length-faltaKgC)>0?`<div class="warn">Revisá el vencimiento de ${faltaVencC.length-faltaKgC} ${(faltaVencC.length-faltaKgC)===1?"producto":"productos"} para guardar el conteo.</div>`:""}`;
     const rc=conteoResumen();
     if(S.conteoRevisar){
       const pend=conteoFaltaConfirmar(rc);
-      inn.innerHTML=`<div class="sum">${pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button>${conteoParcialActivo()?"":`<button class="btn ghost" id="okContado" ${(S.busy||faltaKgTocados.length||faltaOtros||pend.length||!nContados)?"disabled":""}>Guardar solo lo contado y seguir</button>`}<button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length)?"disabled":""}>${S.busy?"Guardando…":"Guardar conteo"}</button>`;
+      inn.innerHTML=`<div class="sum">${pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button>${rc.sinContar.length?`<button class="btn ghost" id="okContado" ${(S.busy||faltaKgTocados.length||faltaOtros||pend.length||!nContados)?"disabled":""}>Guardar y seguir contando</button>`:""}<button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":(rc.sinContar.length?"Guardar lo contado":"Guardar conteo")}</button>`;
     } else {
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar y guardar</button>`;
     }
@@ -5250,16 +5252,22 @@ async function guardarMovimiento(){
   }
 }
 function conteoIdsContables(){ return saboresDelConteo().map(x=>String(x.id)) }
+/** Sabores que se contaron: los que se tocaron o cuyo número ya difiere del sistema (ej. «Poner el mismo número»). El resto queda como está. */
+function idsContados(){ const st=stockMap(); return conteoIdsContables().filter(id=>S.conteo[id]!==undefined && (S.conteoTocado[id] || S.conteo[id]!==Math.max(0,st[id]||0))) }
 /** «Guardar solo lo contado y seguir»: guarda únicamente los sabores que se contaron (por rubro, como conteo parcial) y se sigue contando.
  *  Lo no contado no se toca. Usa la acción conteoParcial (no hace falta tocar Code.gs). */
-async function guardarContado(){
+async function guardarContado(terminar){
   if(S.busy) return;
-  const ids=Object.keys(S.conteoTocado).filter(id=>S.conteoTocado[id] && S.conteo[id]!==undefined && conteoIdsContables().indexOf(String(id))!==-1);
+  const ids=idsContados();
   if(!ids.length){ toast("Todavía no contaste ningún sabor."); return }
   const porRubro={};
   ids.forEach(id=>{ const s=S.saboresPorId[String(id)]; if(!s) return; (porRubro[grupoProductoDe(s)]=porRubro[grupoProductoDe(s)]||[]).push(String(id)) });
   const nombres=ids.slice(0,4).map(id=>(S.saboresPorId[id]||{}).nombre||id).join(", ")+(ids.length>4?" y "+(ids.length-4)+" más":"");
-  if(!confirm("Se guarda el stock de "+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+".\nLo que no contaste no se toca y podés seguir contando. ¿Guardar?")) return;
+  const resto=conteoResumen().sinContar.length;
+  const txt=terminar
+    ? "¿Solo es esto?\nContaste "+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+".\nLos otros "+resto+" quedan como están en el sistema.\n\nAceptar = guardar solo esto. Cancelar = seguir contando."
+    : "Se guarda el stock de "+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+".\nLo que no contaste no se toca y podés seguir contando. ¿Guardar?";
+  if(!confirm(txt)) return;
   S.busy=true; renderBar();
   let ok=0, offline=false;
   try{
@@ -5279,14 +5287,20 @@ async function guardarContado(){
         offline=true; ok+=porRubro[rubro].length; porRubro[rubro].forEach(id=>{ S.conteoGuardado[id]=true; delete S.conteoAck[id] });
       } else { toast((r&&r.error)||"No se pudo guardar lo contado."); break }
     }
-    if(ok){ toast(offline?"Sin conexión: lo contado se va a enviar solo.":"Guardado: "+ok+" "+(ok===1?"sabor":"sabores")+". Seguí contando."); S.conteoRevisar=false; if(!offline) await cargarDatos(); programarBorradorConteo() }
+    if(ok){
+      toast(offline?"Sin conexión: lo contado se va a enviar solo.":"Guardado: "+ok+" "+(ok===1?"sabor":"sabores")+(terminar?".":". Seguí contando."));
+      S.conteoRevisar=false; if(!offline) await cargarDatos();
+      if(terminar){ S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:"); clearTimeout(_borradorTimer); descartarBorradorConteo() }
+      else programarBorradorConteo();
+    }
   } finally { S.busy=false; renderApp() }
 }
 async function guardarConteo(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
   const parcial=conteoParcialActivo();
-  const items={}; (parcial?saboresDelConteo():S.sabores).forEach(s=>items[s.id]=S.conteo[s.id]||0);
+  const items={}; (parcial?saboresDelConteo().filter(s=>idsContados().indexOf(String(s.id))!==-1):S.sabores).forEach(s=>items[s.id]=S.conteo[s.id]||0);
+  if(parcial && !Object.keys(items).length){ toast("Todavía no contaste ningún sabor."); S.busy=false; renderApp(); return }
   const clienteId=uuid();
   const vencimientos={};
   if(!parcial) for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
@@ -5783,7 +5797,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="continuarConteo"){ iniciarConteo(true); return }
   if(t.id==="descartarBorradorBtn"){ if(!confirm("¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia.")) return; descartarBorradorConteo(); renderApp(); return }
   if(t.id==="okContado"){ guardarContado(); return }
-  if(t.id==="ok"){ if(S.tab==="stock"&&S.conteo) guardarConteo(); else guardarMovimiento(); return }
+  if(t.id==="ok"){ if(S.tab==="stock"&&S.conteo){ if(conteoResumen().sinContar.length) guardarContado(true); else guardarConteo() } else guardarMovimiento(); return }
 });
 /** Los teclados numéricos del PIN (login y bloqueo de pantalla en PC) son
  *  paneles táctiles, pero en PC hace falta poder tipear con el teclado
@@ -6825,7 +6839,7 @@ function ayudaTemas(){
     escanerDisponible()?"En <b>Vasquetas</b> también podés <b>Contar escaneando</b> (opcional): <b>caja cerrada</b> → escaneá la caja (suma 2); <b>caja abierta o con dudas</b> → escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema; si un rótulo no se lee, escribí el número a mano. Si pasás dos veces el mismo código te avisa en amarillo (puede ser otra caja igual): quitá con la ✕ el que sobre.":null,
     S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",
     "En la revisión mirá cómo queda el stock. Los sabores que pasan a <b>0</b> o saltan de golpe piden que los confirmes con <b>Está bien, así es</b>.",
-    "Si tenés que cortar antes de terminar, en la revisión tocá <b>Guardar solo lo contado y seguir</b>: guarda únicamente los sabores que contaste (queda «Guardado ✓») y el resto no se toca. Al terminar, <b>Guardar conteo</b>. Tu avance también se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
+    "Si contaste solo algunos sabores, tocá <b>Guardar lo contado</b>: te pregunta «¿Solo es esto?» y guarda únicamente esos sabores; <b>los demás quedan como están en el sistema</b>. Con <b>Guardar y seguir contando</b> guarda lo contado (queda «Guardado ✓») y podés seguir. Tu avance también se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
     "Revisá lo que leyó: los renglones en <b>amarillo</b> con «?» son los que no pudo identificar; elegí el sabor a mano o ignorá el renglón. Las cantidades se pueden corregir.",
