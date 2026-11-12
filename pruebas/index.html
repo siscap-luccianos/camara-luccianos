@@ -1095,7 +1095,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.141.0";
+const FRONTEND_VERSION = "1.141.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2856,8 +2856,9 @@ function renderNav(){
     const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : "inicio";
     return `<nav role="tablist" id="tabs" class="bottomNav navCorta">${tabsOp.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${act===t}">${ICONOS_TAB[t]}<span>${l}</span></button>`).join("")}</nav>`;
   }
-  if(!S.sabores.length) return "";
-  const st=stockMap(), al=alertas(st);
+  // La barra se arma por rol, sin esperar los datos del local (antes aparecía recién cuando llegaban los sabores).
+  if(!S.empleado) return "";
+  const al = S.sabores.length ? alertas(stockMap()) : [];
   const esColaborador = S.empleado.rol==="colaborador";
   const tabs = [["salida","Salida"], esColaborador?["devolucion","Devolución"]:["ingreso","Ingreso"]];
   if(!esColaborador) tabs.push(["stock","Stock"]);
@@ -5210,6 +5211,7 @@ function precargarDatosCache(local){
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
     S.escanerPeso = !!d.escanerPeso; S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!d.ingresoSoloProduccion;
+    S.stockValorizado = !!d.stockValorizado; S.controlEquipos = !!d.controlEquipos; // para que la solapa Gestión salga desde el primer dibujo
     S.regs = d.registros; S.stock = d.stock;
     return true;
   }catch(e){ return false; }
