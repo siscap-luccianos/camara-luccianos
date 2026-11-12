@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.77.0";
+const BACKEND_VERSION = "1.78.0";
 
 function doPost(e) {
   let resultado;
@@ -946,6 +946,11 @@ function _datosSinCache(local, empleado) {
   // sin peso promedio. Implica el peso por vasqueta al sacar (pad «¿Cuánto pesa?» y escáner).
   const kilosReales = filaLocal ? _esVerdadero(filaLocal.kilos_reales) === true : false;
   const escanerPeso = kilosReales || (filaLocal ? _esVerdadero(filaLocal.escaner_peso) === true : false);
+  // Escáner por función, independiente de los kilos: Locales.escaner_salida=SI → «Escanear vasqueta» en Salida/Desperdicio;
+  // Locales.escaner_conteo=SI → «Contar escaneando» en Conteo físico. Ninguno pide el peso al tocar un sabor ni activa kilos reales.
+  // escaner_peso (piloto de peso) y kilos_reales siguen prendiendo los dos, como antes.
+  const escanerSalida = escanerPeso || (filaLocal ? _esVerdadero(filaLocal.escaner_salida) === true : false);
+  const escanerConteo = escanerPeso || (filaLocal ? _esVerdadero(filaLocal.escaner_conteo) === true : false);
   // Locales.sin_escaner=SI: el local pesa por pad («¿Cuánto pesa?») y no ve el botón de escanear (ej. Unicenter: su balanza imprime otra etiqueta).
   const sinEscaner = filaLocal ? _esVerdadero(filaLocal.sin_escaner) === true : false;
   // Locales.venta_dia=SI habilita, en Salida, "Venta del día" (chocolatería): una
@@ -957,7 +962,7 @@ function _datosSinCache(local, empleado) {
   // Locales.stock_valorizado=SI: el local tiene la solapa Gestión (stock valorizado de referencia). Solo es la bandera:
   // los precios NO viajan acá, los entrega preciosStock() solo a los roles autorizados.
   const stockValorizado = filaLocal ? _esVerdadero(filaLocal.stock_valorizado) === true : false;
-  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, ingresoSoloProduccion: ingresoSoloProduccion, escanerPeso: escanerPeso, sinEscaner: sinEscaner, ventaDia: ventaDia, controlEquipos: controlEquipos, kilosReales: kilosReales };
+  return { stockValorizado: stockValorizado, registros: registros, stock: stock, sabores: sabores, excluidos: excluidos, pais: pais, fueraDePais: fueraDePais, produccion: produccion, produccionRubros: produccionRubros, produccionSabores: produccionSabores, ingresoSoloProduccion: ingresoSoloProduccion, escanerPeso: escanerPeso, escanerSalida: escanerSalida, escanerConteo: escanerConteo, sinEscaner: sinEscaner, ventaDia: ventaDia, controlEquipos: controlEquipos, kilosReales: kilosReales };
 }
 
 function _cacheKeyDatos(local) {
@@ -1021,7 +1026,7 @@ function datos(local, empleado) {
     try { _cachePonerGrande(cache, key, JSON.stringify(base), DATOS_CACHE_SEGUNDOS); } catch (err) { /* no crítico */ }
   }
 
-  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], ingresoSoloProduccion: !!base.ingresoSoloProduccion, escanerPeso: !!base.escanerPeso, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
+  return { ok: true, registros: base.registros, stock: base.stock, sabores: base.sabores, excluidos: base.excluidos, pais: base.pais || PAIS_DEFECTO, fueraDePais: base.fueraDePais || [], produccion: base.produccion, produccionRubros: base.produccionRubros, produccionSabores: base.produccionSabores || [], ingresoSoloProduccion: !!base.ingresoSoloProduccion, escanerPeso: !!base.escanerPeso, escanerSalida: !!base.escanerSalida, escanerConteo: !!base.escanerConteo, sinEscaner: !!base.sinEscaner, ventaDia: !!base.ventaDia, controlEquipos: !!base.controlEquipos, kilosReales: !!base.kilosReales, stockValorizado: (base.pais || PAIS_DEFECTO) === PAIS_DEFECTO && _ve_valorizado(base.stockValorizado, empleado), rol: empleado.rol };
 }
 
 /** Quién ve la solapa Gestión (stock valorizado): admin, supervisor y responsable de local. */
@@ -1289,7 +1294,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const pesos2 = normPesos.pesos;
   if (Object.keys(pesos2).length) {
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-    if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true)) return { ok: false, error: "Este local no tiene el escáner de peso activado." };
+    if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true && _esVerdadero(filaLocalPeso.escaner_salida) !== true)) return { ok: false, error: "Este local no tiene el escáner activado." };
     const esDevolConPeso = tipo === "ingreso" && subtipo === "devolucion";
     if (!esDevolConPeso && (tipo !== "salida" || (subtipo && subtipo !== "desperdicio"))) return { ok: false, error: "El peso por vasqueta solo se carga en una salida, un desperdicio o una devolución." };
   }

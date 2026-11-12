@@ -1083,7 +1083,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.141.2";
+const FRONTEND_VERSION = "1.142.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1138,7 +1138,7 @@ const S = {
   auth: null, // pantalla de login en curso
   locales: [],
   local: null,
-  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], ingresoSoloProduccion: false, escanerPeso: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, invGestion: null, invGestionLocal: "", gvDef: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false,
+  sabores: [], saboresPorId: {}, saboresExcluidos: [], produccionLocal: false, produccionRubros: [], produccionSabores: [], ingresoSoloProduccion: false, escanerPeso: false, escanerSalida: false, escanerConteo: false, sinEscaner: false, kilosReales: false, stockValorizado: false, precios: null, preciosLocal: "", errorPrecios: null, invGestion: null, invGestionLocal: "", gvDef: null, filtroValor: "todos", catValor: "todas", catValorAbierta: false, kilosConteo: {}, ventaDia: false,
   controlEquipos: false, equipos: undefined, subEquipo: "empleados", subSabLocal: "tenemos", equipoAviso: "", equipoConfirmar: null,
   regs: [], stock: null,
   tab: "salida",
@@ -1821,7 +1821,7 @@ function aplicarLogin(r){
     // Vino en la misma respuesta del login — nos ahorramos una ida y vuelta más a Apps Script.
     S.sabores = r.datos.sabores; S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = r.datos.excluidos || []; S.saboresFuera = r.datos.fueraDePais || []; S.paisLocal = r.datos.pais || "";
-    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!r.datos.ingresoSoloProduccion;
+    S.controlEquipos = !!r.datos.controlEquipos; S.escanerPeso = !!r.datos.escanerPeso; S.escanerSalida = !!(r.datos.escanerSalida||r.datos.escanerPeso); S.escanerConteo = !!(r.datos.escanerConteo||r.datos.escanerPeso); S.sinEscaner = !!r.datos.sinEscaner; S.kilosReales = !!r.datos.kilosReales; S.stockValorizado = !!r.datos.stockValorizado; S.ventaDia = !!r.datos.ventaDia; S.produccionLocal = !!r.datos.produccion; S.produccionRubros = r.datos.produccionRubros || []; S.produccionSabores = (r.datos.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!r.datos.ingresoSoloProduccion;
     S.regs = r.datos.registros; S.stock = r.datos.stock;
     // Lo guardamos ya mismo (no solo cuando corra el próximo cargarDatos()) —
     // si el dispositivo se queda sin señal antes del primer polling (30 s),
@@ -2978,7 +2978,7 @@ function gridSalida(st){
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
   ${accionesSalidaHTML()}
-  ${S.escanerPeso?resumenPesosHTML("salida"):""}
+  ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("salida"):""}
   ${chipFiltros()}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">${GRUPOS_PAD.includes(S.filtroFamilia)?"Tocá un producto y escribí cuántas unidades":"Tocá un sabor para sumar una unidad"}</p>
@@ -2988,7 +2988,9 @@ function gridSalida(st){
  *  solo «Escanear vasqueta» se destaca (mock 7B aprobado por Gabi 06/11/2026). */
 /** Locales con Locales.sin_escaner=SI (ej. Unicenter: la balanza de producción imprime otra etiqueta): sacan las vasquetas por pad («¿Cuánto pesa?»), sin escáner.
  *  El decodificador de la etiqueta de la balanza (PLU) queda en el código por si después se pone un lector de barras. */
-function escanerDisponible(){ return !!S.escanerPeso && !S.sinEscaner }
+function escanerDisponible(){ return !!S.escanerSalida && !S.sinEscaner } // escáner en Salida/Desperdicio (Locales.escaner_salida, o el piloto escaner_peso / kilos_reales)
+/** Escáner en Conteo físico (Locales.escaner_conteo, o el piloto escaner_peso / kilos_reales). Es independiente del de Salida y de los kilos. */
+function escanerConteoDisponible(){ return !!S.escanerConteo && !S.sinEscaner }
 function accionesSalidaHTML(){
   const t=[];
   if(escanerDisponible()) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
@@ -3016,7 +3018,7 @@ function gridDesperdicio(st){
   <p class="sec" style="margin-top:6px">Desperdicio</p>
   <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
-  ${S.escanerPeso?resumenPesosHTML("desperdicio"):""}
+  ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("desperdicio"):""}
   ${chipFiltros()}
   <p class="sec" style="margin-top:16px">${GRUPOS_PAD.includes(S.filtroFamilia)?"Tocá un producto y escribí cuántas unidades":"Tocá un sabor para sumar una unidad"}</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -4674,7 +4676,7 @@ async function toggleSaborProduccion(saborId){
   if(r && r.ok){
     S.produccionSabores = (r.ids||[...set]).map(String);
     toast(set.has(id)?"Lo producimos":"Ya no lo producimos");
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, escanerSalida:S.escanerSalida, escanerConteo:S.escanerConteo, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
     renderApp();
   } else toast((r&&r.error)||"No se pudo ajustar.");
 }
@@ -5198,7 +5200,7 @@ function precargarDatosCache(local){
     const d = JSON.parse(cache);
     S.sabores = d.sabores; S.saboresPorId={}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
     S.saboresExcluidos = d.excluidos || []; S.saboresFuera = d.fueraDePais || []; S.paisLocal = d.pais || "";
-    S.escanerPeso = !!d.escanerPeso; S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!d.ingresoSoloProduccion;
+    S.escanerPeso = !!d.escanerPeso; S.escanerSalida = !!(d.escanerSalida||d.escanerPeso); S.escanerConteo = !!(d.escanerConteo||d.escanerPeso); S.sinEscaner = !!d.sinEscaner; S.kilosReales = !!d.kilosReales; S.ventaDia = !!d.ventaDia; S.produccionLocal = !!d.produccion; S.produccionRubros = d.produccionRubros || []; S.produccionSabores = (d.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!d.ingresoSoloProduccion;
     S.stockValorizado = !!d.stockValorizado; S.controlEquipos = !!d.controlEquipos; // para que la solapa Gestión salga desde el primer dibujo
     S.regs = d.registros; S.stock = d.stock;
     return true;
@@ -5220,11 +5222,11 @@ async function cargarDatos(){
   S.sabores = r.sabores;
   S.saboresPorId = {}; S.sabores.forEach(s=>S.saboresPorId[s.id]=s);
   S.saboresExcluidos = r.excluidos || []; S.saboresFuera = r.fueraDePais || []; S.paisLocal = r.pais || "";
-  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!r.ingresoSoloProduccion;
+  S.controlEquipos = !!r.controlEquipos; S.escanerPeso = !!r.escanerPeso; S.escanerSalida = !!(r.escanerSalida||r.escanerPeso); S.escanerConteo = !!(r.escanerConteo||r.escanerPeso); S.sinEscaner = !!r.sinEscaner; S.kilosReales = !!r.kilosReales; S.stockValorizado = !!r.stockValorizado; S.ventaDia = !!r.ventaDia; S.produccionLocal = !!r.produccion; S.produccionRubros = r.produccionRubros || []; S.produccionSabores = (r.produccionSabores||[]).map(String); S.ingresoSoloProduccion = !!r.ingresoSoloProduccion;
   S.regs = r.registros;
   S.stock = r.stock;
   if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
-  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], ingresoSoloProduccion:!!r.ingresoSoloProduccion, registros:r.registros, stock:r.stock});
+  guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, escanerSalida:!!(r.escanerSalida||r.escanerPeso), escanerConteo:!!(r.escanerConteo||r.escanerPeso), sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], ingresoSoloProduccion:!!r.ingresoSoloProduccion, registros:r.registros, stock:r.stock});
   if(S.conteo || (S.inv && S.inv.paso==="contar")){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -5268,7 +5270,7 @@ function agregarRegistroOptimista(payload){
     remito: payload.remito||"", ts: payload.fecha ? tsVentaDe(payload.fecha) : Date.now(), anulado:false, anulado_por:"", motivo: payload.motivo||"",
     foto_remito: payload.fotoRemito||"", subtipo: payload.subtipo||"", kilos: payload.kilos||{}, vencimientos: payload.vencimientos||{}, pesos: payload.pesos||{},
   });
-  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
+  guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, escanerSalida:S.escanerSalida, escanerConteo:S.escanerConteo, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
 }
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
@@ -5394,7 +5396,7 @@ async function guardarConteo(){
     // acá actualizamos S.stock con lo recién contado para que la pantalla
     // ya lo refleje, por la misma razón que agregarRegistroOptimista().
     S.stock = {local:S.local, base:items, ts:Date.now(), empleado:S.empleado.nombre};
-    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
+    guardarDatosCache(S.local, {sabores:S.sabores, excluidos:S.saboresExcluidos, produccion:S.produccionLocal, escanerPeso:S.escanerPeso, escanerSalida:S.escanerSalida, escanerConteo:S.escanerConteo, sinEscaner:S.sinEscaner, kilosReales:S.kilosReales, ventaDia:S.ventaDia, produccionRubros:S.produccionRubros, produccionSabores:S.produccionSabores, ingresoSoloProduccion:S.ingresoSoloProduccion, registros:S.regs, stock:S.stock});
     }
     toast("Sin conexión: el conteo se va a enviar solo.");
     S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
@@ -6525,13 +6527,13 @@ function procesarEscaneo(txt, cam){
   const i=document.getElementById("escCodigo"); if(i) i.focus();
 }
 /* ---- Contar escaneando (Conteo físico, solo vasquetas; es una opción más, la carga a mano sigue igual) ----
-   Piloto: solo donde escanerDisponible() (Locales.escaner_peso=SI). Caja cerrada = +2 vasquetas con el peso del rótulo de la caja;
+   Solo donde escanerConteoDisponible() (Locales.escaner_conteo=SI; también lo prenden escaner_peso y kilos_reales). Caja cerrada = +2 vasquetas con el peso del rótulo de la caja;
    caja abierta o con dudas: se escanea cada vasqueta (+1) y NO la caja. El primer escaneo de un sabor pisa el número
    que venía del sistema; lo que no se escanea queda «Sin contar». El código no es único: repetido avisa pero no bloquea. */
 function resetConteoEsc(){ S.conteoEsc={items:[],n:0,previo:{}}; S.escAsig={}; S.conteoGuardado={} }
 function ceEsc(){ return S.conteoEsc||(S.conteoEsc={items:[],n:0,previo:{}}) }
 function esVasquetaEsc(s){ return !!s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas" }
-function conteoEscActivo(){ return escanerDisponible() && !!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas") }
+function conteoEscActivo(){ return escanerConteoDisponible() && !!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas") }
 function conteoEscVisible(){ return conteoEscActivo() && (ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
 function ceItemsDe(id){ return ceEsc().items.filter(x=>String(x.id)===String(id)) }
 function ceAplicar(id){
@@ -6905,7 +6907,7 @@ function ayudaTemas(){
     "Contá <b>una sola vez, de punta a punta</b>.",
     "Antes de empezar, poné <b>0</b> en «Poner el mismo número» y elegí si es para <b>todo el local</b> o solo el rubro que estás viendo (ej. Icepops › Frutales). Así ningún sabor arrastra el número viejo.",
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía.",
-    escanerDisponible()?"En <b>Vasquetas</b> también podés <b>Contar escaneando</b> (opcional): <b>caja cerrada</b> → escaneá la caja (suma 2); <b>caja abierta o con dudas</b> → escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema; si un rótulo no se lee, escribí el número a mano. Si pasás dos veces el mismo código te avisa en amarillo (puede ser otra caja igual): quitá con la ✕ el que sobre.":null,
+    escanerConteoDisponible()?"En <b>Vasquetas</b> también podés <b>Contar escaneando</b> (opcional): <b>caja cerrada</b> → escaneá la caja (suma 2); <b>caja abierta o con dudas</b> → escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema; si un rótulo no se lee, escribí el número a mano. Si pasás dos veces el mismo código te avisa en amarillo (puede ser otra caja igual): quitá con la ✕ el que sobre.":null,
     S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",
     "En la revisión mirá cómo queda el stock. Los sabores que pasan a <b>0</b> o saltan de golpe piden que los confirmes con <b>Está bien, así es</b>.",
     "Si contaste solo algunos sabores, tocá <b>Guardar lo contado</b>: te pregunta «¿Solo es esto?» y guarda únicamente esos sabores; <b>los demás quedan como están en el sistema</b>. Con <b>Guardar y seguir contando</b> guarda lo contado (queda «Guardado ✓») y podés seguir. Tu avance también se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
