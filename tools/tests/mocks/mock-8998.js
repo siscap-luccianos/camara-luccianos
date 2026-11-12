@@ -1,7 +1,7 @@
 const http=require("http"),fs=require("fs"),path=require("path");
 const ROOT=require("path").join(__dirname,"..","..","..");
 const db={regs:[{id:"900",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"5":1},kilos:{},pesos:{},total:1,ts:Date.now()}],stock:{"Local prueba":{local:"Local prueba",base:{"4":20,"5":3,"20":6,"107":0,"49":0},ts:Date.now()-3600000,empleado:"Gabi Busquets"}},nextId:1000};
-const locales=[{nombre:"Local prueba",grupo:"Propios",pais:"Argentina",kilosReales:true,sv:true},{nombre:"Obelisco CABA",grupo:"Propios",pais:"Argentina"},{nombre:"Operaciones",grupo:"Gestion",pais:"",operaciones:true,clave:"op2024"}];
+const locales=[{nombre:"Local prueba",grupo:"Propios",pais:"Argentina",kilosReales:true,sv:true},{nombre:"Obelisco CABA",grupo:"Propios",pais:"Argentina"},{nombre:"Local conteo",grupo:"Propios",pais:"Argentina",escanerConteo:true},{nombre:"Local salida",grupo:"Propios",pais:"Argentina",escanerSalida:true},{nombre:"Operaciones",grupo:"Gestion",pais:"",operaciones:true,clave:"op2024"}];
 db.regs.push({id:"800",tipo:"conteo",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"4":20,"5":3,"20":6},kilos:{"4":80.4,"5":12.6,"20":24},total:0,ts:db.stock["Local prueba"].ts});
 db.regs.push({id:"802",tipo:"ingreso",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"117":15},kilos:{},pesos:{},total:15,ts:Date.now()-500});
 const sabores=[
@@ -24,7 +24,7 @@ function resp(b){
   if(a==="empleadosGestion") return {ok:true,empleados:[{id:"1",nombre:"Gabi Busquets",rol:"admin"}]};
   if(a==="cambiarMiPin") return (b.pinActual==="1234" && /^\d{4}$/.test(b.pinNuevo||"")) ? {ok:true,token:"t2"} : {ok:false,error:"PIN incorrecto (1/5)."};
   if(a==="loginGestion") return {ok:true,token:"t",empleado:{id:"1",nombre:"Gabi Busquets",rol:"admin",local:""}};
-  if(a==="datos") return {ok:true,registros:db.regs.filter(r=>r.local===b.local),stock:db.stock[b.local]||null,sabores:sabores,excluidos:[],pais:"Argentina",fueraDePais:[],produccion:false,produccionRubros:[],produccionSabores:[],escanerPeso:!!l.kilosReales,kilosReales:!!l.kilosReales,ventaDia:true,chocoSoloDeposito:false,controlEquipos:false,stockValorizado:true,rol:"admin"};
+  if(a==="datos") return {ok:true,registros:db.regs.filter(r=>r.local===b.local),stock:db.stock[b.local]||null,sabores:sabores,excluidos:[],pais:"Argentina",fueraDePais:[],produccion:false,produccionRubros:[],produccionSabores:[],escanerPeso:!!l.kilosReales,escanerSalida:!!l.escanerSalida,escanerConteo:!!l.escanerConteo,kilosReales:!!l.kilosReales,ventaDia:true,chocoSoloDeposito:false,controlEquipos:false,stockValorizado:true,rol:"admin"};
   if(a==="preciosStock"){ console.log("PRECIOS pedidos para",b.local); return {ok:true,precios:{"4":7821.96,"20":9208.24,"5":10747.57,"49":1709.09}} }
   if(a==="leerRemito") return {ok:true,remitos:["00079-00035154"],fecha:"04/11/2026",fotoUrl:"",bultosDeclaradosSabores:null,bultosLeidosSabores:12,items:[
     {nombreDetectado:"SABORES - BANANA SPLIT",cantidad:4,bultos:4,kilos:14.57,saborId:"4",nombreSabor:"Banana Split",confianza:"alta"},
