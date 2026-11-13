@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.78.0";
+const BACKEND_VERSION = "1.79.0";
 
 function doPost(e) {
   let resultado;
@@ -1296,12 +1296,14 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true && _esVerdadero(filaLocalPeso.escaner_salida) !== true)) return { ok: false, error: "Este local no tiene el escáner activado." };
     const esDevolConPeso = tipo === "ingreso" && subtipo === "devolucion";
-    if (!esDevolConPeso && (tipo !== "salida" || (subtipo && subtipo !== "desperdicio"))) return { ok: false, error: "El peso por vasqueta solo se carga en una salida, un desperdicio o una devolución." };
+    const esTransfConPeso = subtipo === "transferencia"; // enviada (salida) o recibida (ingreso con lector)
+    if (!esDevolConPeso && !esTransfConPeso && (tipo !== "salida" || (subtipo && subtipo !== "desperdicio"))) return { ok: false, error: "El peso por vasqueta solo se carga en una salida, un desperdicio, una devolución o una transferencia." };
   }
   // Kilos reales (Locales.kilos_reales=SI): solo vasquetas (tipo "v" de la familia vasquetas; no baldes, ni granella/crumble).
   // Cada vasqueta que sale se pesa y todo ingreso (remito, devolución, producción) trae los kilos totales del sabor.
   const filaLocalKilos = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-  if (filaLocalKilos && _esVerdadero(filaLocalKilos.kilos_reales) === true && ["venta", "giftcard", "sincargo", "baja", "transferencia"].indexOf(subtipo) === -1) {
+  // (Las salidas de chocolatería —venta, gift card, sin cargo, baja— no llevan kilos. La transferencia, enviada o recibida, sí: se pesa lo que sale y se cargan los kilos de lo que entra.)
+  if (filaLocalKilos && _esVerdadero(filaLocalKilos.kilos_reales) === true && ["venta", "giftcard", "sincargo", "baja"].indexOf(subtipo) === -1) {
     const vasquetasK = Object.keys(items).filter((id) => {
       const sab = catalogoVenc.filter((x) => String(x.id) === String(id))[0];
       return sab && String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas" && (Number(items[id]) || 0) > 0;
@@ -1344,6 +1346,9 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   // «transferencia» también existe como ingreso: es la mercadería que recibe (o le prestan) a este local.
   const esTransfIngreso = subtipo === "transferencia" && tipo === "ingreso";
   const esSalidaChoco = SUBTIPOS_CHOCO.indexOf(subtipo) !== -1 && !esTransfIngreso;
+  // La transferencia ENVIADA (salida) vale para cualquier rubro: helado, Icepops, chocolatería…; el resto de las salidas por
+  // subtipo (venta, gift card, sin cargo, baja) son solo de chocolatería.
+  const esTransfSalida = subtipo === "transferencia" && tipo === "salida";
   if (esSalidaChoco && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (esTransfIngreso) {
     const filaLocalTr = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
@@ -1362,7 +1367,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     if (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true) return { ok: false, error: "Este local no tiene la salida de chocolatería activada." };
     if (empleado.rol === "colaborador") return { ok: false, error: "Esta salida la carga un responsable." };
     const noChoco = Object.keys(items).filter((id) => familiaVenc[String(id)] !== "chocolateria");
-    if (noChoco.length) return { ok: false, error: "Esta salida es solo de chocolatería." };
+    if (noChoco.length && !esTransfSalida) return { ok: false, error: "Esta salida es solo de chocolatería." };
     if ((subtipo === "sincargo" || subtipo === "transferencia") && !String(motivo || "").trim()) return { ok: false, error: subtipo === "transferencia" ? "Falta el local de destino de la transferencia." : "Falta el motivo de la salida sin cargo." };
     if (fecha) {
       const tz = "America/Argentina/Buenos_Aires";
