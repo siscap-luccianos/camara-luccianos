@@ -1083,7 +1083,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.142.0";
+const FRONTEND_VERSION = "1.142.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -6470,12 +6470,19 @@ function abrirEscaner(){
     if(b.dataset.escCerrar!==undefined) cerrarEscaner();
     else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
   });
-  ov.addEventListener("input", e=>{ if(e.target.id==="escCodigo"){ const d=e.target.value.replace(/\D/g,""); if(d.length>=20){ e.target.value=""; procesarEscaneo(d) } } });
+  // Se espera un instante a que el lector termine de "tipear": antes se procesaba al llegar a 20 dígitos y, si el código tenía 28 (caja), se cortaba y los 8 que sobraban ensuciaban el próximo escaneo.
+  let tIn=null;
+  ov.addEventListener("input", e=>{
+    if(e.target.id!=="escCodigo") return;
+    clearTimeout(tIn);
+    tIn=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28){ i.value=""; procesarEscaneo(d) } },180);
+  });
   ov.addEventListener("keydown", e=>{
-    if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
+    if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); clearTimeout(tIn); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
   });
   document.body.appendChild(ov);
   renderEscaner();
+  precargarLectorCamara();
   setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(i) i.focus() },50);
 }
 function cerrarEscaner(){
@@ -6613,6 +6620,7 @@ function abrirEscanerConteo(){
   });
   document.body.appendChild(ov);
   renderEscanerConteo();
+  precargarLectorCamara();
   setTimeout(foco,50);
 }
 function renderEscanerConteo(){
@@ -6687,20 +6695,29 @@ function cargarZxing(){
     sc.onerror=()=>mal(new Error("zxing")); document.head.appendChild(sc);
   });
 }
+/* Si el navegador no trae BarcodeDetector (iPhone, Windows) la cámara usa ZXing (JS + 950 KB de WASM):
+   se baja y compila al abrir el escáner, no recién al tocar «Usar la cámara», así el primer código no espera. */
+function precargarLectorCamara(){ if(!("BarcodeDetector" in window)) cargarZxing().catch(()=>{}) }
 async function iniciarCamara(){
   const e=S.escaner, v=document.getElementById("escVideo"); if(!e||!v) return;
   try{
-    e.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1280}}, audio:false});
+    // Los códigos ITF de 20/28 dígitos son largos: hace falta resolución y foco continuo (con el foco automático "a ratos" se leía lento o no leía)
+    e.stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}, width:{ideal:1920}, height:{ideal:1080}}, audio:false});
   }catch(err){
     e.msg={tipo:"err", t:err&&err.name==="NotAllowedError"?"Falta el permiso de la cámara.":"No se pudo abrir la cámara. Probá con el lector o escribí el número."}; renderEscaner(); return;
   }
   if(!S.escaner){ e.stream.getTracks().forEach(t=>t.stop()); return }
+  try{
+    const tr=e.stream.getVideoTracks()[0], cap=(tr&&tr.getCapabilities)?tr.getCapabilities():{};
+    if(cap.focusMode && cap.focusMode.indexOf("continuous")!==-1) await tr.applyConstraints({advanced:[{focusMode:"continuous"}]});
+  }catch(_){ /* el navegador no deja tocar el foco: sigue con el automático */ }
   v.srcObject=e.stream; try{ await v.play() }catch(_){}
   e.camara=true; e.msg={tipo:"", t:"Apuntá al código de barras del rótulo."}; renderEscaner();
   let detector=null;
   if("BarcodeDetector" in window){ try{ const f=await BarcodeDetector.getSupportedFormats(); const fm=["itf","ean_13"].filter(x=>f.indexOf(x)!==-1); if(fm.length) detector=new BarcodeDetector({formats:fm}) }catch(_){} }
   if(detector){
-    e.timer=setInterval(async()=>{ if(!e.camara||v.readyState<2) return; try{ const r=await detector.detect(v); if(r&&r[0]) procesarEscaneo(r[0].rawValue, true) }catch(_){} }, 250);
+    let leyendo=false; // no pisar una lectura que todavía no terminó (en tablets lentas se amontonaban)
+    e.timer=setInterval(async()=>{ if(leyendo||!e.camara||v.readyState<2) return; leyendo=true; try{ const r=await detector.detect(v); if(r&&r[0]) procesarEscaneo(r[0].rawValue, true) }catch(_){} leyendo=false }, 200);
     return;
   }
   try{ await cargarZxing() }catch(_){ e.msg={tipo:"err", t:"No se pudo cargar el lector de la cámara. Usá el lector o escribí el número."}; apagarCamara(); return }
