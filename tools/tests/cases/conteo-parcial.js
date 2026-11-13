@@ -43,7 +43,7 @@ const { chromium } = require("playwright");
   const rev = (await page.innerText("main")).replace(/\s+/g, " ");
   ok(/Solo se reemplaza el stock de Vasquetas/i.test(rev), "la revisión dice «Solo se reemplaza el stock de Vasquetas»");
   ok(/Los demás rubros no se tocan/.test(rev), "y que los demás rubros no se tocan");
-  for (let i = 0; i < 10 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(100) }
+  for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   ok(!(await page.$eval("#ok", e => e.disabled)), "con todo confirmado se puede guardar");
   await page.click("#ok"); await page.waitForTimeout(1300);
 

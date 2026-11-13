@@ -22,7 +22,7 @@ const { chromium } = require("playwright");
   await cargar(4, 30, "117");
   ok(!(await page.$eval("#go", e => e.disabled)), "con un solo sabor contado «Revisar y guardar» NO queda bloqueado por los demás");
   await page.click("#go"); await page.waitForTimeout(400);
-  for (let i = 0; i < 10 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(100) }
+  for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   ok(await page.$("#okContado") !== null && !(await page.$eval("#okContado", e => e.disabled)), "aparece «Guardar y seguir contando» habilitado");
   ok(!(await page.$eval("#ok", e => e.disabled)) && /Guardar lo contado/.test(await page.innerText("#ok")), "«Guardar lo contado» NO queda bloqueado por los sabores sin contar");
   await page.click("#okContado"); await page.waitForTimeout(1200);
@@ -33,13 +33,13 @@ const { chromium } = require("playwright");
   // seguir: contar Frutilla y volver a guardar
   await cargar(20, 7, "25,5");
   await page.click("#go"); await page.waitForTimeout(400);
-  for (let i = 0; i < 10 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(100) }
+  for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   await page.click("#okContado"); await page.waitForTimeout(1200);
   ok(await stock("20") === 7 && await stock("4") === 30 && await stock("5") === s5, "segundo guardado: Frutilla 7, Banana Split sigue en 30, Cheesecake sin tocar");
   // terminar: «Guardar lo contado» pregunta «¿Solo es esto?» y cierra el conteo sin tocar el resto
   await cargar(5, 11, "34");
   await page.click("#go"); await page.waitForTimeout(400);
-  for (let i = 0; i < 10 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(100) }
+  for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   let pregunta = ""; page.removeAllListeners("dialog"); page.on("dialog", d => { pregunta = d.message(); d.accept() });
   await page.click("#ok"); await page.waitForTimeout(1200);
   ok(/¿Solo es esto\?/.test(pregunta) && /quedan como están/.test(pregunta), "pregunta «¿Solo es esto?» y avisa que el resto queda como está");
@@ -50,7 +50,7 @@ const { chromium } = require("playwright");
   await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click('[data-ce="rubro"]'); await page.click('[data-ce-rubro="vasquetas"]'); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
   await cargar(5, 9, "28,5");
   await page.click("#go"); await page.waitForTimeout(400);
-  for (let i = 0; i < 10 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(100) }
+  for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   ok(!(await page.$eval("#ok", e => e.disabled)), "parcial: «Guardar lo contado» habilitado aunque falten los kilos de los sin contar");
   ok(!(await page.$eval("#okContado", e => e.disabled)), "parcial: «Guardar y seguir contando» también");
   await page.click("#ok"); await page.waitForTimeout(1200);

@@ -88,7 +88,7 @@ const { chromium } = require("playwright");
   await page.fill('[data-kc="4"]', "19,4"); await page.dispatchEvent('[data-kc="4"]', "input");
   await page.fill('[data-kc="20"]', "21"); await page.dispatchEvent('[data-kc="20"]', "input");
   await page.click("#go"); await page.waitForTimeout(400);
-  for (let i = 0; i < 10 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(100) }
+  for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   await page.click("#ok"); await page.waitForTimeout(1300);
   ok(await S_(() => S.conteo) === null, "el conteo se guardó");
   ok(await S_(() => stockMap()["5"]) === 2, "Cheesecake quedó en 2 (escaneado)");

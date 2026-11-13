@@ -64,7 +64,7 @@ const { chromium } = require("playwright");
   ok(/Total del local/i.test(txt) && /Cámara/.test(txt) && /Local/.test(txt) && /Total/.test(txt), "resultado con Cámara + Local = Total");
   ok(!/Valor del local/i.test(txt) && !/\$ [\d.]+/.test(txt), "Stock definitivo NO muestra pesos (el valorizado vive en Gestión)");
   ok(/Helado en el local/i.test(txt) && /kg/.test(txt), "arriba muestra los kilos de helado");
-  ok(/¿Querés ver cuánto vale\?/.test(txt) === !!(await page.evaluate(() => S.stockValorizado)), "el aviso de Gestión sale solo para quien ve Gestión");
+  ok(!/¿Querés ver cuánto vale\?/.test(txt), "ya no aparece el aviso «¿Querés ver cuánto vale?»");
   ok(/≈/.test(txt) || true, "kilos de la cámara");
   const camaraBanana = await page.evaluate(() => invCamaraLive()["4"]);
   ok(camaraBanana && camaraBanana.u === 20, "cámara de Banana Split: 20 vasquetas según LogiStock");

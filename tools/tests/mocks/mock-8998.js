@@ -67,7 +67,7 @@ function resp(b){
     db.regs.push(r); console.log("CAMBIARVENC",JSON.stringify(b)); return {ok:true,id:r.id};
   }
   if(a==="registrar"){
-    if(l.kilosReales && b.subtipo!=="transferencia"){
+    if(l.kilosReales && !["venta","giftcard","sincargo","baja"].includes(b.subtipo)){
       const ids=Object.keys(b.items).filter(i=>vasq(i)&&b.items[i]>0);
       if(b.tipo==="salida"){const f=ids.filter(i=>((b.pesos||{})[i]||[]).length!==b.items[i]); if(f.length) return {ok:false,error:"Falta pesar cada vasqueta de: "+f.map(nom).join(", ")+"."}}
       else {const f=ids.filter(i=>!((b.kilos||{})[i]>0)); if(f.length) return {ok:false,error:"Faltan los kilos totales de: "+f.map(nom).join(", ")+"."}}

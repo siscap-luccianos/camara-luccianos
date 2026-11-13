@@ -518,6 +518,68 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .pill.desperdicio{background:var(--alert-soft);color:var(--alert)}
 .pill.venta{background:rgba(var(--accent-rgb),.14);color:var(--accent)}
 .pill.produccion{background:var(--accent);color:var(--accent-ink)}
+/* Etiquetas de colores por tipo de movimiento (13/11/2026) */
+.pill.salida{background:#F0E7DA;color:#4A3F38}
+.pill.ingreso{background:#E1ECD3;color:#2F5A22}
+.pill.transf{background:#DCE8F5;color:#1F4E79}
+.pill.conteo{background:#EFE3F5;color:#5A2D7A}
+.pill.venta{background:#FBEBC8;color:#7A4E00}
+.pill.desperdicio{background:#F8DDD5;color:#8F2A17}
+/* Historial › Movimientos por jornada */
+.hist>.hDia{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:14px 18px 12px;box-shadow:0 8px 24px rgba(74,63,56,.06)}
+.hDiaCab{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.hDiaCab .t{font-family:'Fraunces',serif;font-weight:600;font-size:1.25rem}
+.hDiaCab .s{font-size:.8rem;color:var(--muted);font-weight:600}
+.hDiaCab .n{margin-left:auto;font-size:.78rem;font-weight:700;color:var(--accent)}
+.hMovWrap{border-top:1px solid var(--line)}
+.hMovWrap.anulado .hMov{opacity:.55}
+.hMov{display:grid;grid-template-columns:150px 140px minmax(0,1fr) 78px 70px 28px;align-items:center;gap:12px;width:100%;min-height:52px;padding:6px 2px;background:none;border:0;font-family:inherit;color:inherit;text-align:left;cursor:pointer}
+.hMov .pill{text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:13px;padding:5px 10px}
+.hMov .who{font-weight:800;font-size:.86rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hMov .det{font-size:.84rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hMov time{font-size:.78rem;color:var(--muted);text-align:right;white-space:nowrap}
+.hMov .tot{font-family:'Fraunces',serif;font-weight:600;font-size:1rem;text-align:right;white-space:nowrap}
+.hMov .chev{width:28px;height:28px;border-radius:14px;background:var(--line);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.hMov .chev.up{transform:rotate(180deg);background:var(--ink);color:var(--surface)}
+.hDet{margin:2px 0 10px;border-radius:16px;background:rgba(var(--accent-rgb),.06);border:1px solid var(--line);padding:4px 16px 12px}
+.hGrupo{display:flex;justify-content:space-between;gap:10px;margin-top:12px;padding:7px 12px;border-radius:10px;background:var(--ink);color:var(--surface);font-size:.7rem;letter-spacing:.14em;font-weight:800;text-transform:uppercase}
+.hGrupo span:last-child{letter-spacing:.02em;text-transform:none;opacity:.85;font-weight:700}
+.hSub{margin-top:10px;font-size:.68rem;letter-spacing:.14em;font-weight:800;color:var(--muted);text-transform:uppercase}
+.hCols{display:block}
+@media (min-width:760px){.hCols{column-count:2;column-gap:28px}.hCols.uno{column-count:1}}
+.hLinP{padding:6px 0 8px;border-top:1px solid var(--line);break-inside:avoid}
+.hLinP .hLin{border-top:0;padding:2px 0}
+.hFichas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.hFicha{height:26px;padding:0 10px;border-radius:13px;background:var(--surface);border:1.5px solid var(--line);font-size:.78rem;font-weight:700;display:flex;align-items:center;white-space:nowrap}
+.hProm{font-size:.76rem;color:var(--muted);font-weight:600;margin-left:4px}
+.hLin{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);break-inside:avoid;font-size:.86rem}
+.hLin .n{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hLin .q{font-weight:800;white-space:nowrap}
+.hLin .d{font-size:.76rem;color:var(--muted);white-space:nowrap;max-width:48%;overflow:hidden;text-overflow:ellipsis}
+.hLin .v{min-width:66px;text-align:right;font-family:'Fraunces',serif;font-weight:600;white-space:nowrap}
+.hTotal{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:2px solid var(--ink);font-weight:800;font-size:.9rem}
+.hTotal span:last-child{font-family:'Fraunces',serif;font-size:1.1rem}
+.hNota{margin-top:8px;font-size:.78rem;color:var(--muted);line-height:1.4}
+.hPie{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;font-size:.74rem;color:var(--muted)}
+.hBtns{display:flex;gap:6px;align-items:center}
+.hBtns .anularBtn{margin-top:0!important}
+.hDet .anulTag,.hDet .pendienteTag{margin-top:0}
+.hVerWrap{display:flex;justify-content:center;padding-top:8px}
+.hVer{height:28px;padding:0 14px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+@media (max-width:759px){
+  .hMov{grid-template-columns:auto minmax(0,1fr) auto 26px;grid-template-areas:"pill who time chev" "det det tot tot";gap:4px 8px;padding:9px 2px}
+  .hMov .pill{grid-area:pill}.hMov .who{grid-area:who}.hMov time{grid-area:time}.hMov .chev{grid-area:chev;width:24px;height:24px}.hMov .det{grid-area:det}.hMov .tot{grid-area:tot}
+  .hist>.hDia{padding:12px 12px 10px;border-radius:18px}
+  .hLin .d{max-width:40%}
+}
+.transfCampo{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 16px;border-radius:18px;background:#FFF8E6;border:2px solid #D9B869;color:#2A201A}
+.transfCampo .tcIco{width:40px;height:40px;border-radius:13px;background:#D9B869;color:#2B2018;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.transfCampo label{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.transfCampo small{font-size:.66rem;letter-spacing:.12em;font-weight:800;color:#8A6A3A}
+.transfCampo input{border:0;background:transparent;font-family:'Fraunces',serif;font-size:1.15rem;font-weight:600;padding:2px 0;outline:none;width:100%;color:#2A201A;box-shadow:none}
+.transfCampo em{font-size:.74rem;color:#6A5B50;font-style:normal;line-height:1.3}
+@media print{.hMov .chev{display:none}}
+
 .hist{display:flex;flex-direction:column;gap:8px}
 .h{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .h.anulado{opacity:.55}
@@ -558,7 +620,7 @@ body:has(.etiqOv){overflow:hidden}
 .etiqSheet.etiqEnviando .btn{opacity:.75}
 .etiqGuardando{font-weight:600}
 .btn.escaner{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.pesosResumen{margin:-4px 0 12px;font-size:.88rem;color:var(--muted)}
+.pesosResumen{margin:14px 4px 14px;font-size:.88rem;color:var(--muted)}
 .pesosResumen b{color:var(--ink)}
 .escBox{max-height:92vh;overflow:auto}
 .escBox>*{flex-shrink:0}
@@ -578,12 +640,135 @@ body:has(.etiqOv){overflow:hidden}
 .escMsg.warn{background:#F2B400;color:#2A2118}
 .accGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .accGrid.impar .accTile:last-child{grid-column:1/-1}
-.accTile{display:flex;flex-direction:column;gap:2px;justify-content:center;text-align:left;min-height:64px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
+.accTile{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left;min-height:64px;padding:10px 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(74,63,56,.06)}
+.accTile .accIco{flex:none;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(var(--accent-rgb),.12);color:var(--ink)}
+.accTile .accTx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .accTile b{font-size:.95rem;line-height:1.2}
 .accTile small{font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.25}
 .accTile.m{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .accTile.m small{color:inherit;opacity:.85}
+.accTile.m .accIco{background:rgba(255,255,255,.2);color:inherit}
+.accTile.dest{background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.45)}
 .accTile:active{transform:scale(.98)}
+@media(min-width:900px){
+  .accGrid.n3{grid-template-columns:repeat(3,1fr)}
+  .accGrid.n4{grid-template-columns:repeat(4,1fr)}
+  .accGrid.impar.n3 .accTile:last-child,.accGrid.impar.n4 .accTile:last-child{grid-column:auto}
+  .accTile{min-height:84px;padding:0 18px;gap:14px;border-radius:24px}
+  .accTile .accIco{width:46px;height:46px;border-radius:15px}
+  .accTile b{font-size:1rem}
+  .accTile small{font-size:.78rem}
+}
+@media(min-width:700px){
+  .rows.stkCols{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;background:none;border:0}
+  .rows.stkCols .row{border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+}
+.revTit{font-family:Fraunces,serif;font-weight:600;font-size:1.7rem;letter-spacing:-.02em;margin:2px 0 4px}
+.revSub{margin:0 0 12px;color:var(--muted);font-size:.85rem;line-height:1.4}
+.revGrupo{margin:14px 4px 6px;font-size:.7rem;letter-spacing:.14em;font-weight:800;color:var(--muted);text-transform:uppercase}
+.revProd{border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;box-shadow:0 6px 18px rgba(74,63,56,.06)}
+.revCab{display:flex;align-items:center;gap:12px}
+.revCab .plate{width:52px;height:52px;flex:none}
+.revNm{flex:1;min-width:0}
+.revNm b{display:block;font-size:.98rem;line-height:1.2}
+.revNm small{color:var(--muted);font-weight:600;font-size:.78rem}
+.revQuitar{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:transparent;color:var(--alert,#8F2A17);font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;flex:none}
+.revLin{display:flex;align-items:center;gap:10px;min-height:42px;padding:0 6px 0 12px;border-radius:13px;background:rgba(var(--accent-rgb),.06);border:1px solid var(--line)}
+.revLin.dup{background:#FFF1CC;border-color:#E9C45A}
+.revLin .n{width:20px;font-size:.75rem;font-weight:800;color:var(--muted)}
+.revLin b{font-family:Fraunces,serif;font-weight:600;font-size:1rem;min-width:72px}
+.revLin .sub{flex:1;min-width:0;font-size:.74rem;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.revLin.dup .sub{color:#7A4E00;font-weight:800}
+.revLin .x{width:34px;height:34px;border-radius:17px;border:1px solid var(--line);background:var(--surface);color:var(--alert,#8F2A17);font-size:1rem;font-weight:800;cursor:pointer;flex:none}
+.revStep{display:flex;align-items:center;gap:10px}
+.revStep button{width:38px;height:38px;border-radius:19px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.2rem;font-weight:700;cursor:pointer;font-family:inherit}
+.revStep button.p{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.revStep span{min-width:30px;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.3rem}
+.revAviso{border-radius:14px;background:#FFF1CC;border:1px solid #E9C45A;color:#7A4E00;font-size:.8rem;font-weight:700;padding:10px 12px;margin-bottom:10px}
+.stkAcc{display:flex;flex-direction:column;gap:12px;margin:22px 0 6px}
+.stkLbl{margin:0 0 8px;font-size:.68rem;letter-spacing:.14em;font-weight:800;color:#6A5B50}
+.stkDiv{display:none}
+.stkSep{display:none}
+.stkPedido{display:flex;align-items:center;gap:14px;text-align:left;border:1px solid #D5E2C3;background:#EEF3E6;color:#2A3A22;border-radius:24px;padding:16px 18px;font-family:inherit;cursor:pointer}
+.stkPedTop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none}
+.stkPedIco{width:46px;height:46px;border-radius:16px;background:#DCE8CB;color:#2F5A22;display:flex;align-items:center;justify-content:center}
+.stkPedBajos{display:none;height:28px;padding:0 12px;border-radius:14px;background:#F8DDD5;color:#8F2A17;font-size:.78rem;font-weight:800;align-items:center}
+.stkPedTx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stkPedTx small{font-size:.66rem;letter-spacing:.14em;font-weight:800;color:#4F6F3A}
+.stkPedTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.2rem;letter-spacing:-.01em}
+.stkPedTx span{font-size:.82rem;color:#4F5F45}
+.stkPasos{display:flex;flex-direction:column;gap:8px}
+.stkPaso{display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;gap:12px;text-align:left;border:1px solid #E8DFD2;background:#FFFDF9;color:#2A201A;border-radius:22px;padding:14px 16px;font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(74,63,56,.06)}
+.stkPasoTop{display:flex;align-items:center;gap:12px;flex:none}
+.stkNum{width:28px;height:28px;border-radius:14px;background:#2A201A;color:#F8F1E6;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.stkPasoIco{display:none;width:40px;height:40px;border-radius:14px;background:#EADFD3;color:#4A3F38;align-items:center;justify-content:center}
+.stkPasoChev{display:none}
+.stkPasoTx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.stkPasoTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.1rem;letter-spacing:-.01em}
+.stkPasoTx span{font-size:.82rem;color:#6A5B50;line-height:1.35}
+.stkPaso.osc{background:#2B2018;border-color:#2B2018;color:#F8F1E6;box-shadow:0 10px 24px rgba(43,32,24,.25)}
+.stkPaso.osc .stkNum{background:#D9B869;color:#2B2018}
+.stkPaso.osc .stkPasoIco{background:#4A3A2E;color:#D9B869}
+.stkPaso.osc .stkPasoTx span{color:#DCCFC1}
+@media(max-width:899px){
+  .stkPaso{flex-direction:row}
+  .stkPaso .stkPasoTop{order:0}
+  .stkPaso::after{content:"";width:18px;height:18px;flex:none;background:currentColor;opacity:.55;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat}
+  .stkPaso.osc::after{background:#D9B869;opacity:1}
+}
+@media(min-width:900px){
+  .stkAcc{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,3.3fr);gap:28px;align-items:stretch;margin:26px 0 10px}
+  .stkAcc.solo{grid-template-columns:1fr}
+  .stkDiv{display:block;background:#E2D7C8}
+  .stkPedido{flex-direction:column;align-items:stretch;justify-content:space-between;gap:16px;border-radius:26px;padding:22px 24px;min-height:164px}
+  .stkPedTop{align-items:flex-start}
+  .stkPedIco{width:48px;height:48px}
+  .stkPedBajos{display:flex}
+  .stkPedTx b{font-size:1.45rem}
+  .stkPedTx span{font-size:.88rem}
+  .stkFisico{display:flex;flex-direction:column}
+  .stkPasos{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr) 26px minmax(0,1fr);align-items:center;gap:0;flex-grow:1}
+  .stkSep{display:flex;justify-content:center;color:#B09A7E}
+  .stkPaso{flex-direction:column;align-items:stretch;justify-content:space-between;gap:14px;height:100%;min-height:128px;border-radius:26px;padding:20px 22px}
+  .stkPasoTop{justify-content:flex-start}
+  .stkPasoIco{display:flex}
+  .stkPaso.osc .stkPasoTop{width:100%}
+  .stkPaso.osc .stkPasoChev{display:block;margin-left:auto;color:#D9B869}
+  .stkPasoTx b{font-size:1.3rem}
+  .stkPasoTx span{font-size:.88rem}
+}
+.cntTit{margin:0 0 14px}
+.cntKick{font-size:.7rem;letter-spacing:.16em;font-weight:800;color:#8A6A3A}
+.cntTit h1{margin:4px 0 0;font-family:Fraunces,serif;font-weight:600;font-size:2rem;letter-spacing:-.02em;line-height:1.05}
+.cntTit p{margin:6px 0 0;color:var(--muted);font-size:.88rem;line-height:1.4}
+.cProg{margin:4px 0 14px}
+.cProgTx b{font-size:.92rem}
+.cProgBar i{background:#D9B869}
+.cntGrid{display:grid;grid-template-columns:1fr;gap:10px;background:none;border:0}
+.cntGrid .row{grid-template-columns:auto minmax(0,1fr) auto;border:1px solid #E8DFD2;border-radius:20px;background:var(--surface);padding:12px 14px;box-shadow:0 6px 18px rgba(74,63,56,.06)}
+.cntGrid .row[data-cestado="cambia"],.cntGrid .row[data-cestado="cero"],.cntGrid .row[data-cestado="salto"]{background:#FFF8E6;border:2px solid #D9B869}
+.cntGrid .row[data-cestado="guardado"]{border-color:#9DBE7A}
+.cStep{display:inline-flex;align-items:center;gap:8px}
+.cStep button{width:38px;height:38px;border-radius:19px;border:1.5px solid #CDBFAE;background:var(--surface);color:var(--ink);font-size:1.15rem;font-weight:700;cursor:pointer;font-family:inherit}
+.cStep button.cP{background:#2A201A;border-color:#2A201A;color:#F8F1E6}
+.cStep input{width:56px;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.3rem;border:0;background:transparent;padding:0}
+.rcLista{display:flex;flex-direction:column;gap:10px}
+.rcLin{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;border:1px solid #E8DFD2;background:var(--surface)}
+.rcLin.raro{background:#FFF1CC;border-color:#E9C45A}
+.rcLin .plate{width:44px;height:44px;flex:none}
+.rcNm{flex:1;min-width:0}.rcNm b{display:block;font-size:.95rem;line-height:1.2}.rcNm small{color:var(--muted);font-weight:600;font-size:.76rem}
+.rcLin.raro .rcNm small{color:#7A4E00;font-weight:800}
+.rcNum{display:flex;align-items:center;gap:7px;font-family:Fraunces,serif;font-weight:600;font-size:1.2rem}
+.rcNum .a{color:#9C8E80;text-decoration:line-through}.rcNum .f{color:#9C8E80;font-size:.85rem}
+.rcOk{height:34px;padding:0 12px;border-radius:17px;border:1.5px solid #E9C45A;background:#fff;color:#7A4E00;font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer;flex:none}
+.rcOk.on{background:#14653A;border-color:#14653A;color:#fff}
+.rcX{width:34px;height:34px;border-radius:17px;border:1px solid var(--line);background:var(--surface);color:#8F2A17;font-weight:800;cursor:pointer;flex:none}
+.rcResto{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;margin-top:10px;border-radius:20px;border:1px solid #E8DFD2;background:var(--surface);font-size:.9rem}
+.rcResto span{color:var(--muted);font-weight:700}.rcResto .v{color:#2F5A22}
+@media(min-width:900px){.cntGrid{grid-template-columns:1fr 1fr;gap:12px 16px}.cntTit h1{font-size:3rem}}
+.segIng{display:inline-flex;padding:4px;border-radius:999px;background:rgba(var(--accent-rgb),.12);gap:4px;margin:0 0 12px}
+.segIng button{height:36px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+.segIng button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 .escLista div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .escLista .escRow{align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--surface)}
 .escLista .escRow.dup{background:#FFF1D6;border-color:#E0A93B;color:#2A2118}
@@ -1083,7 +1268,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.142.1";
+const FRONTEND_VERSION = "1.146.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1144,10 +1329,10 @@ const S = {
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
   detVenta: {}, // de dónde vino cada unidad del carrito de la venta: {idSabor:{x6,x10,x6s,x10s,lata5}} en unidades (el resto son sueltas)
-  pesos: {salida:{},desperdicio:{},devolucion:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
+  pesos: {salida:{},desperdicio:{},devolucion:{},ingreso:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
-  inv: null, invCor: null, conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", tipoHist: "todos", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
+  inv: null, invCor: null, conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicarAbierto: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", tipoHist: "todos", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
   lotePick: {}, // chocolatería (Salida/Desperdicio): lote elegido a mano por sabor (YYYY-MM-DD); sin entrada = automático (el que vence antes)
   lotesExtra: {}, // chocolatería: lotes además del principal por renglón ("ing:<id>" / "conteo:<id>") → [{f,c}]
   elegirLote: null, // id del sabor con el diálogo "¿De qué lote sale?" abierto
@@ -1161,6 +1346,9 @@ const S = {
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
   modoVenta: false, // viendo "Venta del día" (chocolatería) desde adentro de Salida
   tipoIngreso: "remito", // Ingreso en un local con Venta del día: remito de fábrica | transferencia recibida
+  salidaTransf: false, // Salida: «Transferencia» a otro local (cualquier rubro); el destino va en destinoTransf
+  escItemsIng: [], // lo escaneado en un Ingreso por transferencia recibida (lector)
+  histDiaMas: {}, histAbierto: {}, // Historial: días desplegados («Ver más») y movimientos abiertos
   tipoChoco: "venta", bajaMotivo: "vencimiento", motivoChoco: "", destinoTransf: "", // tipo de salida de chocolatería (venta|giftcard|sincargo|baja) y sus datos
   fechaVenta: "", // "" = la jornada de hoy; si no, YYYY-MM-DD de la venta que se olvidaron de cargar
   modoProduccion: false, // viendo Producción desde adentro de Ingreso (local con Locales.produccion=SI)
@@ -2411,7 +2599,7 @@ function actualizarEstadoConteoDom(id){
 }
 function conteoProgresoHTML(r){
   const pct=r.total?Math.round(r.contados/r.total*100):100;
-  return `<div class="cProgTx"><b>${r.contados} de ${r.total} contados</b><span>Se guarda solo en este equipo</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
+  return `<div class="cProgTx"><b>${r.contados} de ${r.total} contados</b><span>Lo que no toques queda como está</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
 }
 /** Lotes extra de un renglón (además del principal): "+ Otro vencimiento". */
 function sumaExtra(extra){ return extra.reduce((a,l)=>a+(+l.c||0),0) }
@@ -2941,10 +3129,68 @@ function listaFiltrada(st){
   return saboresDelLocal().filter(s=>grupoProductoDe(s)===grupoActivo&&(!q||normalizar(s.nombre).includes(q))&&(S.filtroCategoria==="todas"||(s.categoria||"Cremas")===S.filtroCategoria)&&(!S.soloAlerta||estadoSabor(s.id,st)));
 }
 
+/** Revisión de la Salida antes de guardar (pedido de Gabi 13/11/2026, mock aprobado): una línea por cosa, con ✕ para sacar una vasqueta puntual.
+ *  Lo que se ve acá es lo que se guarda. Se abre al tocar «Registrar salida» y no guarda nada hasta «Confirmar». */
+function revisarSalidaHTML(st){
+  reconciliarEsc();
+  const cart=S.cart.salida, pes=pesosDe("salida");
+  const ent=Object.entries(cart).filter(([,q])=>q>0);
+  const dupN=new Set(escDuplicados().map(x=>x.n));
+  const usados=new Set();
+  const prod=([id,q])=>{
+    const sab=S.saboresPorId[String(id)], pa=pes[id]||[];
+    const sinPeso=q-pa.length;
+    const lineas=pa.map((kg,i)=>{
+      const x=S.escItems.find(e=>String(e.id)===String(id) && e.kg===kg && !usados.has(e.n));
+      if(x) usados.add(x.n);
+      const dup=!!(x&&dupN.has(x.n));
+      const sub=x?((dup?"Código repetido · ya estaba en la salida · ":"Escaneada · ")+(/^etiqueta/.test(x.lote)?esc(x.lote):"lote "+esc(x.lote))):"Pesada a mano";
+      return `<div class="revLin${dup?" dup":""}"><span class="n">${i+1}</span><b>${fmtKg(kg)} kg</b><span class="sub">${sub}</span><button type="button" class="x" data-rev-x="${id}:${i}" aria-label="Quitar esta vasqueta">✕</button></div>`;
+    }).join("");
+    const kgTxt=pa.length?` · ${fmtKg(pa.reduce((a,b)=>a+b,0))} kg`:"";
+    const pesable=esPesable(id);
+    const stepper=(sinPeso>0)?`<div class="revStep"><button type="button" data-rev-menos="${id}" aria-label="Restar una">−</button><span>${pa.length?sinPeso:q}</span>${pesable?"":`<button type="button" class="p" data-rev-mas="${id}" aria-label="Sumar una">+</button>`}${pa.length?`<small style="color:var(--muted);font-weight:600">sin peso</small>`:""}</div>`:"";
+    return `<div class="revProd">
+      <div class="revCab">${plateHTML(id)}<div class="revNm"><b>${esc(sab?sab.nombre:nombre(id))}</b><small>${q} ${unidad(id,q)}${kgTxt}</small></div><button type="button" class="revQuitar" data-rev-quitar="${id}">✕ Quitar</button></div>
+      ${lineas?`<div style="display:flex;flex-direction:column;gap:6px">${lineas}</div>`:""}
+      ${stepper}
+    </div>`;
+  };
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>ent.some(([id])=>S.saboresPorId[String(id)]&&grupoProductoDe(S.saboresPorId[String(id)])===g));
+  const bloques=grupos.map(g=>{
+    const es=ent.filter(([id])=>S.saboresPorId[String(id)]&&grupoProductoDe(S.saboresPorId[String(id)])===g);
+    const n=es.reduce((a,[,q])=>a+q,0);
+    const kg=es.reduce((a,[id])=>a+(pes[id]||[]).reduce((x,y)=>x+y,0),0);
+    return `<p class="revGrupo">${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${n}${kg>0?" · "+fmtKg(kg)+" kg":""}</p>`+es.map(prod).join("");
+  }).join("");
+  const nDup=dupN.size;
+  const transf=salidaEsTransf();
+  return `<p class="sec">Revisá antes de confirmar</p>
+  <h2 class="revTit">${transf?"Lo que vas a transferir":"Lo que vas a sacar"}</h2>
+  <p class="revSub">${transf?`Va a <b>${esc(S.destinoTransf.trim()||"…")}</b>. `:""}Tocá la ✕ de una línea para sacarla. Se guarda tal cual la ves.</p>
+  ${nDup?`<div class="revAviso">⚠ ${nDup===1?"1 código repetido":nDup+" códigos repetidos"}. Revisalo: si no es otra vasqueta, quitá esa línea con la ✕.</div>`:""}
+  ${bloques||`<div class="empty">No hay nada cargado.</div>`}`;
+}
+function revisarAccion(t){
+  const c=S.cart.salida, pes=pesosDe("salida");
+  const fin=()=>{ if(!Object.values(c).some(q=>q>0)) S.confirm=false; scheduleRender() };
+  if(t.dataset.revX){
+    const [id,i]=t.dataset.revX.split(":"), a=pes[id]; const k=+i; if(!a||a[k]===undefined) return true;
+    const kg=a[k]; a.splice(k,1); if(!a.length) delete pes[id];
+    const j=S.escItems.findIndex(e=>String(e.id)===String(id)&&e.kg===kg); if(j>=0) S.escItems.splice(j,1);
+    c[id]=Math.max(0,(c[id]||0)-1); if(!c[id]) delete c[id];
+    fin(); return true;
+  }
+  if(t.dataset.revMenos){ const id=t.dataset.revMenos; if((c[id]||0)>(pes[id]||[]).length){ c[id]=c[id]-1; if(!c[id]) delete c[id] } fin(); return true }
+  if(t.dataset.revMas){ const id=t.dataset.revMas; if((c[id]||0)>=vendibleDe(id)){ toast("No queda más stock para sacar."); return true } c[id]=(c[id]||0)+1; fin(); return true }
+  if(t.dataset.revQuitar){ const id=t.dataset.revQuitar; delete c[id]; delete pes[id]; S.escItems=S.escItems.filter(e=>String(e.id)!==String(id)); fin(); return true }
+  return false;
+}
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
   if(S.modoVenta) return gridVentaDia(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
+  if(S.confirm && Object.values(S.cart.salida).some(q=>q>0)) return revisarSalidaHTML(st);
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   // Local con «Salida de chocolatería»: la pestaña Chocolatería se ve para consultar stock y vencimientos, pero no se saca acá (08/11/2026).
@@ -2960,6 +3206,7 @@ function gridSalida(st){
       </div></div>`};
   if(consulta){
     return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
+  ${segSalidaHTML()}
   ${accionesSalidaHTML()}
   ${chipFiltros()}
   <div class="consultaAviso"><div><b>Solo informativo</b>La chocolatería se descuenta con «Salida de chocolatería». Acá ves cuánto hay y qué vence primero.</div>${S.empleado.rol!=="colaborador"?`<button type="button" class="btn consultaGo" id="irVentaDia2">Ir a Salida de chocolatería</button>`:`<div class="consultaNota">La carga un responsable.</div>`}</div>
@@ -2977,6 +3224,7 @@ function gridSalida(st){
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
+  ${segSalidaHTML()}
   ${accionesSalidaHTML()}
   ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("salida"):""}
   ${chipFiltros()}
@@ -2991,15 +3239,47 @@ function gridSalida(st){
 function escanerDisponible(){ return !!S.escanerSalida && !S.sinEscaner } // escáner en Salida/Desperdicio (Locales.escaner_salida, o el piloto escaner_peso / kilos_reales)
 /** Escáner en Conteo físico (Locales.escaner_conteo, o el piloto escaner_peso / kilos_reales). Es independiente del de Salida y de los kilos. */
 function escanerConteoDisponible(){ return !!S.escanerConteo && !S.sinEscaner }
+const ACC_ICONOS={
+  scan:'<path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3"/><path d="M8 9v6M11 9v6M14 9v6M17 9v6"/>',
+  trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
+  choco:'<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 12h16M12 5v14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  back:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+  swap:'<path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/>',
+  prod:'<path d="M4 20V10l6 3V10l6 3V6h4v14z"/>',
+  pedido:'<path d="M4 7h16M4 12h16M4 17h10"/>',
+  conteo:'<path d="M5 12l4.5 4.5L19 7"/>',
+  inv:'<path d="M4 7l8-4 8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/>'
+};
+/** Tarjeta de acción de arriba (Salida e Ingreso): ícono + título + una línea que explica. Mock aprobado por Gabi 13/11/2026 (solo cambia lo de arriba, la lista de sabores sigue igual). */
+function accTileHTML(id,titulo,sub,icono,clase,attrs){
+  return `<button type="button" class="accTile${clase?" "+clase:""}" ${id?`id="${id}"`:""} ${attrs||""}><span class="accIco"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ACC_ICONOS[icono]||""}</svg></span><span class="accTx"><b>${titulo}</b><small>${sub}</small></span></button>`;
+}
+function accGridHTML(t){ return `<div class="accGrid n${t.length}${t.length%2?" impar":""}">${t.join("")}</div>` }
+/** Salida «Transferencia»: mercadería que sale hacia otro local (cualquier rubro). Descuenta stock, lleva el local de destino y no cuenta como consumo. */
+function salidaEsTransf(){ return S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio && !!S.salidaTransf && !!S.ventaDia && S.empleado.rol!=="colaborador" }
+function transfCampoHTML(id,etiqueta,valor,ph,nota){
+  return `<div class="transfCampo"><span class="tcIco"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg></span><label for="${id}"><small>${etiqueta}</small><input type="text" id="${id}" placeholder="${ph}" value="${esc(valor)}" autocomplete="off"><em>${nota}</em></label></div>`;
+}
+function segSalidaHTML(){
+  if(!S.ventaDia || S.empleado.rol==="colaborador") return "";
+  const t=salidaEsTransf();
+  return `<div class="segIng"><button type="button" data-sal-tipo="comun" aria-pressed="${!t}">Salida común</button><button type="button" data-sal-tipo="transferencia" aria-pressed="${t}">Transferencia</button></div>`
+    + (t?transfCampoHTML("destinoSalida","TRANSFERENCIA · ¿A QUÉ LOCAL VA?",S.destinoTransf,"Ej: Obelisco CABA","Obligatorio. Queda registrado como transferencia enviada; no cuenta como consumo."):"");
+}
 function accionesSalidaHTML(){
   const t=[];
-  if(escanerDisponible()) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
-  t.push(`<button type="button" class="accTile" id="irDesperdicio"><b>Desperdicio</b><small>roto, caído, vencido</small></button>`);
-  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(`<button type="button" class="accTile" id="irVentaDia"><b>Salida de chocolatería</b><small>venta, gift card, baja…</small></button>`);
+  if(escanerDisponible()) t.push(accTileHTML("irEscaner","Escanear vasqueta","con el lector o la cámara","scan","m"));
+  if(salidaEsTransf()){
+    const rv0=resumenVenc(), pv=rv0.rojo.l+rv0.amarillo.l;
+    t.push(accTileHTML("","Ver vencimientos",rv0.rojo.l?`${rv0.rojo.l} ${rv0.rojo.l===1?"lote vence":"lotes vencen"} pronto`:pv?`${pv} por vencer`:"lotes por vencer","clock","","data-ver-venc"));
+    return accGridHTML(t);
+  }
+  t.push(accTileHTML("irDesperdicio","Desperdicio","roto, caído, vencido","trash"));
+  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(accTileHTML("irVentaDia","Salida de chocolatería","venta, gift card, baja…","choco"));
   const rv=resumenVenc(), porVencer=rv.rojo.l+rv.amarillo.l;
-  t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>${rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:porVencer?`${porVencer} por vencer`:"lotes por vencer"}</small></button>`);
-  const grilla=`<div class="accGrid${t.length%2?" impar":""}">${t.join("")}</div>`;
-  return grilla+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
+  t.push(accTileHTML("","Ver vencimientos",rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:porVencer?`${porVencer} por vencer`:"lotes por vencer","clock","","data-ver-venc"));
+  return accGridHTML(t)+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
 }
 function gridDesperdicio(st){
   const cart=S.cart.desperdicio;
@@ -3045,7 +3325,7 @@ const TIPOS_CHOCO = [["venta","Venta del día"],["giftcard","Gift card"],["sinca
 const LABEL_SUBTIPO_CHOCO = {venta:"venta del día", giftcard:"gift card", sincargo:"sin cargo", baja:"baja por vencimiento", transferencia:"transferencia enviada"};
 /** Etiqueta del movimiento: una transferencia es «enviada» si es salida y «recibida» si es ingreso. */
 function etiquetaSubtipoChoco(r){ return r.subtipo==="transferencia"&&r.tipo==="ingreso" ? "transferencia recibida" : LABEL_SUBTIPO_CHOCO[r.subtipo] }
-function resetTipoChoco(){ S.tipoIngreso="remito"; S.tipoChoco="venta"; S.bajaMotivo="vencimiento"; S.motivoChoco=""; S.destinoTransf=""; }
+function resetTipoChoco(){ S.tipoIngreso="remito"; S.salidaTransf=false; S.tipoChoco="venta"; S.bajaMotivo="vencimiento"; S.motivoChoco=""; S.destinoTransf=""; }
 /** Subtipo que se guarda en Registros: venta | giftcard | sincargo | baja | transferencia. */
 /** La venta del día y la gift card se pueden cargar con la fecha en que ocurrieron. */
 function chocoConFecha(){ const st=subtipoChoco(); return st==="venta"||st==="giftcard" }
@@ -3382,6 +3662,15 @@ async function guardarCambioSabor(){
     else toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
   } finally { S.busy=false; renderApp() }
 }
+/** Tarjetas de arriba de Ingreso (Producción, Devolución, Cambio de sabor): mismo formato que las de Salida. */
+function accionesIngresoHTML(hayPendiente,soloProd){
+  const t=[];
+  if(!soloProd && S.ventaDia && S.tipoIngreso==="transferencia" && S.empleado.rol!=="colaborador" && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Escanear vasqueta","pic, pic, pic: cada rótulo suma 1","scan","m"));
+  if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
+  if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
+  if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor cambiado?","swap"));
+  return t.length?accGridHTML(t):"";
+}
 function gridIngreso(st){
   if(S.lectorRemito) return lectorRemitoView();
   if(S.modoCambio) return gridCambioSabor(st);
@@ -3402,10 +3691,8 @@ function gridIngreso(st){
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${S.produccionLocal?`<button type="button" class="btn produccion" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
-  ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
-  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Llegó un sabor cambiado? Cambio de sabor</button>`:""}
-  ${S.ventaDia&&puedeRemito?`<div style="display:flex;gap:8px;margin:0 0 10px"><button type="button" class="chip" data-ing-tipo="remito" aria-pressed="${S.tipoIngreso!=="transferencia"}">Remito de fábrica</button><button type="button" class="chip" data-ing-tipo="transferencia" aria-pressed="${S.tipoIngreso==="transferencia"}">Transferencia recibida</button></div>`:""}
+  ${accionesIngresoHTML(hayPendiente,false)}
+  ${S.ventaDia&&puedeRemito?`<div class="segIng"><button type="button" data-ing-tipo="remito" aria-pressed="${S.tipoIngreso!=="transferencia"}">Remito de fábrica</button><button type="button" data-ing-tipo="transferencia" aria-pressed="${S.tipoIngreso==="transferencia"}">Transferencia recibida</button></div>`:""}
   ${chipFiltros()}
   ${puedeRemito&&S.ventaDia&&S.tipoIngreso==="transferencia"?`<div class="remitoRow"><label for="remito" style="font-weight:700">Local de origen</label><input type="text" id="remito" placeholder="Ej: Obelisco CABA" value="${esc(S.remito)}"></div>
   <p style="margin:8px 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">Mercadería que te mandó o te prestó otro local. Suma al stock y no cuenta como compra a fábrica.</p>`:puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}"></div>
@@ -3479,8 +3766,7 @@ function gridProduccion(st){
   const hayPendiente=soloProd && Object.keys(pendienteDevolucionHoy()).length>0;
   const cabeza=soloProd
     ? `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
-  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Una vasqueta quedó mal rotulada? Corregir sabor</button>`:""}`
+  ${accionesIngresoHTML(hayPendiente,true)}`
     : `<button class="btn produccion" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`;
   return `${cabeza}
   <p class="sec" style="margin-top:6px">${soloProd?"Ingreso de producción":"Producción"}</p>
@@ -3535,7 +3821,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return `<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`+stockViewGeneral(st);
+  return stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -3576,25 +3862,37 @@ function stockViewGeneral(st){
     ${km?`<div class="kpi"><span class="lbl">Kilos de helado en cámara</span><span class="val">${fmtKg(kgReal)} kg</span><span class="sub">${sinKilos?`${sinKilos} ${sinKilos===1?"sabor sin kilos cargados":"sabores sin kilos cargados"}: se cargan con un conteo con kilos`:"Lo que entró menos lo que salió, pesado"}</span></div>`:""}
     ${(!km&&kgTotal>0)?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
-  ${puedePedido?`<button type="button" class="ctaCard glass" id="verPedidoBtn" style="margin-top:12px" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
-    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="#7A3E1D" stroke-width="2.2" stroke-linecap="round"/></svg></span>
-    <span class="tx"><b>Pedido sugerido</b><span>${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>`:""}
-  ${puedeGestionar?`<button type="button" class="ctaCard glass" id="invBtn" style="margin-top:10px" aria-label="Stock definitivo del local">
-    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7l8-4 8 4v10l-8 4-8-4V7z" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/><path d="M4 7l8 4 8-4M12 11v10" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/></svg></span>
-    <span class="tx"><b>Stock definitivo del local</b><span>${invHayBorrador()?"Tenés uno sin terminar · tocá para seguir":"Conteo del local, cuando realizás tu stock definitivo."}</span></span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button><div style="text-align:center;margin-top:6px"><button type="button" class="invLnk" id="invGuardadosBtn">Ver stock definitivos guardados</button></div>`:""}
-  ${puedeGestionar?bannerBorradorConteoHTML():""}
-  ${puedeGestionar?`<button type="button" class="ctaCard glass" id="conteoBtn" style="margin-top:10px" aria-label="Conteo físico">
-    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    <span class="tx"><b>Conteo físico</b><span>Corrige el stock de la cámara. Se hace antes del stock definitivo si hay diferencias.</span></span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>`:""}
-  <p style="margin:12px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
+  ${bannerBorradorConteoHTML_si(puedeGestionar)}
+  ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal)}
+  <p style="margin:20px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
   ${chipFiltros()}
-  <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
+  <div class="rows stkCols" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
+}
+function bannerBorradorConteoHTML_si(ok){ return ok?bannerBorradorConteoHTML():"" }
+/** Tarjetas de arriba de Stock, tal cual el mock aprobado por Gabi (13/11/2026): «Pedido sugerido» aparte, en verde suave, y «Stock físico · en orden»
+ *  con tres pasos numerados (1 Conteo físico → 2 Stock de local → 3 Stock definitivo, este último oscuro y dorado). Desde acá no se hace ningún movimiento.
+ *  Paso 2 abre el conteo del local (ex «Stock definitivo del local»); paso 3 abre los stock definitivos guardados. */
+function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
+  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const pedido=puedePedido?`<button type="button" class="stkPedido" id="verPedidoBtn" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
+      <span class="stkPedTop"><span class="stkPedIco">${ic('<path d="M8 6h12M8 12h12M8 18h8"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>')}</span>${al.length?`<span class="stkPedBajos">${al.length} ${al.length===1?"bajo":"bajos"}</span>`:""}</span>
+      <span class="stkPedTx"><small>PARA PEDIR</small><b>Pedido sugerido</b><span>${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"} por pedir</span></span>
+    </button>`:"";
+  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
+      <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
+      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span>
+    </button>`;
+  const fisico=puedeGestionar?`<div class="stkFisico"><p class="stkLbl">STOCK FÍSICO · EN ORDEN</p>
+    <div class="stkPasos">
+      ${paso(1,"conteoBtn","Conteo físico","Corrige el stock de la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo físico")}
+      <span class="stkSep">${chev}</span>
+      ${paso(2,"invBtn","Stock de local",invHayBorrador()?"Tenés uno sin terminar.":"Lo que tenés afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Stock de local")}
+      <span class="stkSep">${chev}</span>
+      ${paso(3,"invGuardadosBtn","Stock definitivo","1 + 2. Ver por período.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Stock definitivo guardados")}
+    </div></div>`:"";
+  if(!pedido&&!fisico) return "";
+  return `<div class="stkAcc${pedido&&fisico?"":" solo"}">${pedido}${pedido&&fisico?`<span class="stkDiv"></span>`:""}${fisico}</div>`;
 }
 
 function stockViewPedido(st){
@@ -3739,40 +4037,40 @@ function stockViewResumen(st){
 
 function conteoRevisarView(){
   const r=conteoResumen(), pend=conteoFaltaConfirmar(r);
-  const delta=r.despues-r.antes, col=delta===0?"#14653A":(delta<0?"#B3261E":"#1F3E75");
-  const mostradas=S.conteoVerTodos ? r.filas.filter(f=>f.e!=="igual0") : r.cambian;
-  const tabla=mostradas.length ? mostradas.map(f=>`<div class="cvRow c-${f.e}"><div class="nm">${esc(f.s.nombre)}</div><div>${f.prev}</div><div><b>${f.v}</b><small>${f.e==="sin"?"sin contar · igual":esc(CONTEO_BADGE[f.e]||"")}</small></div></div>`).join("") : `<div class="cvVacio">No cambia ningún número.</div>`;
-  const flags=r.flags.map(f=>{
-    const ok=!!S.conteoAck[f.s.id];
-    const motivo=f.e==="cero" ? `Tenía ${f.prev} y lo dejaste en 0. ¿De verdad no queda nada?` : (f.v>f.prev ? `Sube más de ${CONTEO_SALTO_X} veces (de ${f.prev} a ${f.v}). ¿Está bien el número?` : `Baja a menos de un tercio (de ${f.prev} a ${f.v}). ¿Está bien el número?`);
-    return `<div class="cvFlag c-${f.e}"><div class="top"><b>${esc(f.s.nombre)}</b><span>${f.prev} → ${f.v}</span></div><div class="mot">${motivo}</div><button type="button" class="btn ghost ${ok?"ok":""}" data-cack="${f.s.id}">${ok?"Confirmado ✓":"Está bien, así es"}</button></div>`;
-  }).join("");
-  const sin=r.sinContar.slice(0,12).map(f=>esc(f.s.nombre)).join(", ")+(r.sinContar.length>12?` y ${r.sinContar.length-12} más`:"");
-  return `<div class="cvTitulo">Revisá antes de guardar</div>
-  ${conteoParcialActivo()?`<div class="cParcial"><b>Solo se reemplaza el stock de ${esc(etiquetaRubroConteo())}.</b> Los demás rubros no se tocan.</div>`:""}
-  <div class="cvKpis"><div><b>${r.cambian.length}</b><span>sabores cambian</span></div><div class="mal"><b>${r.ceros.length}</b><span>quedan en 0</span></div><div class="aviso"><b>${r.saltos.length}</b><span>saltos raros</span></div><div><b>${r.sinContar.length}</b><span>sin contar</span></div></div>
-  <div class="cvCard"><div class="cvHead"><div class="t">Así queda el stock</div><div>Total: <b>${r.antes}</b> → <b>${r.despues}</b> <span style="font-weight:800;color:${col}">(${delta>0?"+":""}${delta} unidades)</span></div></div>
-    <div class="cvRow cvCab"><div class="nm">Sabor</div><div>Antes</div><div>Después</div></div>${tabla}
-    <button type="button" class="btn ghost cvToggle" data-cver-todos>${S.conteoVerTodos?"Ver solo los que cambian":"Ver todos los sabores"}</button></div>
-  ${r.flags.length?`<div class="cvSec">Confirmá estos números${r.flags.length>3?` <button type="button" class="chip" data-cack-todos>${pend.length?"Confirmar todos":"Quitar confirmaciones"}</button>`:""}</div>${flags}`:""}
-  ${r.sinContar.length?`<div class="cvSec">Sin contar: quedan con el stock actual</div><div class="cvSin">${sin}.</div>`:""}`;
+  const flag=new Set(r.flags.map(f=>f.s.id));
+  const linea=f=>{
+    const raro=flag.has(f.s.id), ok=!!S.conteoAck[f.s.id];
+    const motivo=raro ? (f.e==="cero" ? `Tenía ${f.prev} y lo dejaste en 0. ¿De verdad no queda nada?` : `Salto grande: de ${f.prev} a ${f.v}. ¿Está bien?`) : (f.v>f.prev?`Sube ${f.v-f.prev}`:`Baja ${f.prev-f.v}`);
+    return `<div class="rcLin${raro&&!ok?" raro":""}">${plateHTML(f.s.id)}<div class="rcNm"><b>${esc(f.s.nombre)}</b><small>${motivo}</small></div>
+      <div class="rcNum"><span class="a">${f.prev}</span><span class="f">→</span><span>${f.v}</span></div>
+      ${raro?`<button type="button" class="rcOk${ok?" on":""}" data-cack="${f.s.id}">${ok?"Confirmado ✓":"Está bien"}</button>`:""}
+      <button type="button" class="rcX" data-cdeshacer="${f.s.id}" aria-label="Deshacer ${esc(f.s.nombre)}">✕</button></div>`;
+  };
+  const iguales=r.filas.filter(f=>f.e==="igual"||f.e==="guardado");
+  return `<p class="sec">Revisá antes de guardar</p>
+  <h2 class="revTit">Lo que contaste</h2>
+  <p class="revSub">${conteoParcialActivo()?`Solo se reemplaza el stock de ${esc(etiquetaRubroConteo())}. Los demás rubros no se tocan. `:""}Se guarda tal cual lo ves. Tocá la ✕ para volver un sabor a como estaba.</p>
+  ${r.cambian.length?`<p class="revGrupo">Cambian · ${r.cambian.length}${r.flags.length>3?` <button type="button" class="chip" data-cack-todos>${pend.length?"Confirmar todos":"Quitar confirmaciones"}</button>`:""}</p><div class="rcLista">${r.cambian.map(linea).join("")}</div>`:`<div class="empty">No cambia ningún número.</div>`}
+  ${iguales.length?`<div class="rcResto"><b>Igual al sistema</b><span class="v">${iguales.length} ${iguales.length===1?"sabor":"sabores"} ✓</span></div>`:""}
+  ${r.sinContar.length?`<div class="rcResto"><b>Sin contar</b><span>${r.sinContar.length} ${r.sinContar.length===1?"sabor":"sabores"} · quedan como están</span></div>`:""}`;
 }
 function stockViewConteo(){
   if(S.conteoRevisar) return conteoRevisarView();
   const cont=S.conteo, st0=stockMap(), parcial=conteoParcialActivo();
   const list=listaFiltrada(st0);
-  const row=s=>`<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}">${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
-  return `${parcial?`<div class="cParcial"><b>Contando solo ${esc(etiquetaRubroConteo())}.</b> El resto del local no se toca al guardar.</div>`:""}<div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
-  <p style="margin:0 0 4px;font-size:.85rem;line-height:1.45"><b>Conteo físico:</b> contá todo lo que hay en la cámara ahora y cargá el número real de cada sabor. Al guardar, este conteo <b>reemplaza tu stock actual</b> — no se suma, queda así directamente.</p>
-  <p style="margin:0 0 12px;color:var(--muted);font-size:.8rem;line-height:1.45">Tip: si vas a recontar, poné <b>0</b> en «Poner el mismo número» y tocá «Aplicar» antes de empezar — así no se te escapa ningún sabor con el número viejo sin tocar. Elegí si es para <b>todo el local</b> o solo para el rubro que estás viendo.</p>
-  ${conteoEscCardHTML()}
-  ${(()=>{ const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
-    return `<div class="aplicarBox"><div class="aplicarT">Poner el mismo número en:</div>
-    <div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo||parcial}">Solo ${esc(rub)} · ${list.length}</button>${parcial?"":`<button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button>`}</div>
-    <div class="remitoRow"><input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0" value="${esc(S.conteoAplicarVal)}"><button class="btn ghost" id="aplicarTodos" type="button">Aplicar</button></div></div>`})()}
+  const row=s=>`<div class="row" data-cestado="${conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0)}">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+  const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
+  const tEsc=conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Escanear vasqueta",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"suma con el rótulo y su peso","scan","m") })():"";
+  const tApl=accTileHTML("aplicarAbrir","Poner todo en 0","para empezar de cero y contar todo","swap","",`aria-expanded="${!!S.conteoAplicarAbierto}"`);
+  return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>Conteo físico</h1><p>Cargá lo que hay hoy en la cámara. Reemplaza el stock de cada sabor que toques.</p></div>
+  ${parcial?`<div class="cParcial"><b>Contando solo ${esc(etiquetaRubroConteo())}.</b> El resto del local no se toca al guardar.</div>`:""}
+  ${accGridHTML([tEsc,tApl].filter(Boolean))}
+  ${S.conteoAplicarAbierto?`<div class="aplicarBox"><div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo||parcial}">Solo ${esc(rub)} · ${list.length}</button>${parcial?"":`<button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button>`}</div>
+    <div class="remitoRow"><input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0" value="${esc(S.conteoAplicarVal)}"><button class="btn ghost" id="aplicarTodos" type="button">Aplicar</button></div></div>`:""}
+  <div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
   ${chipFiltros()}
-  <div class="rows" style="margin-top:14px">${list.map(row).join("")}</div>`;
+  <div class="rows cntGrid" style="margin-top:14px">${list.map(row).join("")}</div>`;
 }
 
 /* ============================================================
@@ -3960,7 +4258,6 @@ function invResultadoHTML(){
   <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">Stock definitivo</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
   <p class="invHint">${esc(fechaTxt)} · <b>Cámara</b> (stock de LogiStock) + <b>Local</b> (inventario) = <b>Total</b>.${d.guardado?` Guardado por ${esc(quien)}.`:""}</p>
   <div class="invTot">${helado?`<small>Helado en el local</small><b>${invTxtG("vasquetas",helado.tot,helado.ap)}</b><span>Cámara ${invTxtG("vasquetas",helado.camQ,helado.ap)} + local ${invTxtG("vasquetas",helado.loc)}</span>`:`<small>Total del local</small><span style="font-size:.9rem;color:inherit">${otrosTxt||"Todavía no hay nada cargado."}</span>`}${helado&&otrosTxt?`<span style="display:block;margin-top:6px">${otrosTxt}</span>`:""}</div>
-  ${S.stockValorizado?`<div class="note" style="margin:0 0 10px"><b>¿Querés ver cuánto vale?</b> El valorizado está en la solapa <button type="button" class="invLnk" data-t="gestion">Gestión</button>. Esta pantalla solo cuenta producto.</div>`:""}
   <div class="invPills"><button type="button" class="chip" data-inv-res="rubro" aria-pressed="${I.res==="rubro"}">Por rubro</button><button type="button" class="chip" data-inv-res="prod" aria-pressed="${I.res==="prod"}">Por producto</button></div>
   <div style="margin-top:12px">${I.res==="rubro" ? (grupos.map(rubroCard).join("")||`<div class="note">Todavía no hay nada cargado.</div>`) : `<input type="search" id="invBusca" class="invBusca" placeholder="Buscar producto…" value="${esc(I.busca||"")}" aria-label="Buscar producto"><div id="invLista">${invListaProdHTML(filas,d)}</div>`}</div>
   ${aproxAlgo?`<p class="invHint" style="margin-top:6px">«≈»: los kilos de la cámara se calculan con el peso promedio de cada sabor. Con kilos reales pasan a ser exactos.</p>`:""}
@@ -4233,6 +4530,121 @@ function filaMovimiento(r){
     ${!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:""}
     </div>`;
 }
+/* ============================================================
+   HISTORIAL › MOVIMIENTOS por jornada (mock aprobado por Gabi 13/11/2026)
+   Cada jornada (corte 04:00) es una tarjeta con las 3 filas más recientes y «Ver N más»; al tocar una fila se abre el detalle
+   por sabor (agrupado por rubro, en el orden del remito: vasquetas, gluten free, icepops, chocolatería…; alfabético dentro de cada sección).
+============================================================ */
+const GRUPO_DETALLE_ORDEN=["vasquetas","baldes","glutenfree","icepops","chocolateria","pasteleria","bolleria"];
+const MOV_FILAS_VISIBLES=3;
+function claveNombre(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase() }
+function destinoDeTransf(r){ return String(r.motivo||"").replace(/^Transferencia (a|de) /i,"").trim() }
+/** Clase de color y texto de la etiqueta de un movimiento (salida, ingreso, transferencia, conteo, venta, desperdicio…). */
+function etiquetaMov(r){
+  const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+  if(parcial) return {clase:"conteo", label:"conteo parcial"};
+  if(r.tipo==="conteo") return {clase:"conteo", label:"conteo"};
+  if(r.tipo==="cambio") return {clase:"cambio", label:"cambio de sabor"};
+  if(r.subtipo==="transferencia"){
+    const d=!r.anulado?destinoDeTransf(r):"";
+    return {clase:"transf", label:r.tipo==="ingreso" ? "transferencia"+(d?" ← "+d:" recibida") : "transferencia"+(d?" → "+d:" enviada")};
+  }
+  if(r.subtipo==="devolucion") return {clase:"devolucion", label:"devolución"};
+  if(r.subtipo==="desperdicio") return {clase:"desperdicio", label:"desperdicio"};
+  if(r.subtipo==="produccion") return {clase:"produccion", label:"producción"};
+  if(CLASES_CHOCO.includes(r.subtipo)) return {clase:"venta", label:etiquetaSubtipoChoco(r)};
+  return {clase:r.tipo, label:r.tipo};
+}
+/** Productos del movimiento que se muestran (con un filtro de categoría activo, solo los de esa categoría). */
+function entradasMov(r){
+  const cat=S.categoriaHist||"todas";
+  const filtra=r.tipo!=="conteo" && r.tipo!=="cambio" && !["todas","desperdicio","produccion"].includes(cat);
+  return Object.entries(r.items||{}).filter(([id,q])=>+q && (!filtra || grupoHistDe(id)===cat));
+}
+function resumenMov(r){
+  const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+  if(r.tipo==="conteo") return `Conteo físico de ${Object.keys(r.items||{}).length} sabores`;
+  const en=entradasMov(r);
+  if(r.tipo==="cambio" && !parcial){ const de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0); return `${de?nombre(de[0]):"?"} → ${ha?nombre(ha[0]):"?"}` }
+  const nombres=en.slice().sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>parcial?`${nombre(id)} ${+q>0?"+":"−"}${Math.abs(+q)}`:`${nombre(id)} ×${q}`);
+  return (r.remito?`Remito ${r.remito} · `:"")+(nombres.join(", ")||"Sin diferencias");
+}
+function totalMov(r){
+  const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+  if(r.tipo==="conteo"||parcial||r.tipo==="cambio") return "";
+  const en=entradasMov(r), n=en.reduce((a,[,q])=>a+(+q||0),0);
+  const soloVasq=en.length && en.every(([id])=>esVasquetaKilos(id)||(S.saboresPorId[id]&&S.saboresPorId[id].tipo==="v"&&grupoProductoDe(S.saboresPorId[id])==="vasquetas"));
+  return n?`${n} ${soloVasq?(n===1?"vasq.":"vasq."):"u."}`:"";
+}
+function lineaMovHTML(r,id,q){
+  const pe=(r.pesos&&r.pesos[id])||[];
+  const kgR=(r.kilos&&+r.kilos[id])||0;
+  const kg=pe.length?pe.reduce((a,b)=>a+b,0):kgR;
+  const det=[];
+  if(pe.length){
+    // Con pesos: el sabor ocupa su propia fila (cantidad y total) y debajo va el peso de cada vasqueta en fichas, que bajan de renglón y no se cortan.
+    const vto2=textoVencRegistro(r,id).replace(/^ · /,"");
+    return `<div class="hLinP"><div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(vto2)}</span><span class="v">${fmtKg(kg)} kg</span></div><div class="hFichas">${pe.map(k=>`<span class="hFicha">${fmtKg(k)}</span>`).join("")}<span class="hProm">${pe.length>1?"promedio "+fmtKg(kg/pe.length)+" kg":""}${pe.length<+q?`${pe.length>1?" · ":""}${pe.length} de ${q} pesadas`:""}</span></div></div>`;
+  }
+  else if(kgR && r.subtipo!=="produccion") det.push("kilos del remito");
+  const vto=textoVencRegistro(r,id).replace(/^ · /,""); if(vto) det.push(vto);
+  return `<div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(det.join(" · "))}</span><span class="v">${kg>0?fmtKg(kg)+" kg":""}</span></div>`;
+}
+function detalleMovHTML(r){
+  const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+  let cuerpo="";
+  if(r.tipo==="conteo"){
+    cuerpo=`<div class="hNota">Conteo físico de ${Object.keys(r.items||{}).length} sabores. Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`;
+  } else if(parcial){
+    cuerpo=`<div class="hGrupo">Sabores ajustados</div>`+Object.entries(r.items||{}).filter(([,q])=>+q).sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>`<div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">${+q>0?"+":"−"}${Math.abs(+q)}</span><span class="d"></span><span class="v"></span></div>`).join("")
+      +`<div class="hNota">${esc((r.motivo||"Conteo parcial").replace(/^Conteo parcial: ?/,"Conteo parcial de ").replace(/de (\w+)/,(m,g)=>"de "+(GRUPO_PRODUCTO_LABEL[g]||g)))}: dejó cada sabor en lo contado. Las diferencias son contra el stock de ese momento.</div>`;
+  } else if(r.tipo==="cambio"){
+    const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
+    cuerpo=`<div class="hLin"><span class="n">${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b></span><span class="q"></span><span class="d">${r.motivo&&!r.anulado?esc(r.motivo):""}</span><span class="v">${kg?fmtKg(kg)+" kg":""}</span></div>`;
+  } else {
+    const en=entradasMov(r), porGrupo={};
+    en.forEach(([id,q])=>{ const sb=S.saboresPorId[String(id)]||{tipo:"v"}; (porGrupo[grupoProductoDe(sb)]=porGrupo[grupoProductoDe(sb)]||[]).push([id,q]) });
+    const orden=GRUPO_DETALLE_ORDEN.filter(g=>porGrupo[g]).concat(Object.keys(porGrupo).filter(g=>!GRUPO_DETALLE_ORDEN.includes(g)));
+    const porNombre=(a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])));
+    let kgTot=0, nTot=0;
+    cuerpo=orden.map(g=>{
+      const lista=porGrupo[g], n=lista.reduce((a,[,q])=>a+(+q||0),0);
+      nTot+=n; lista.forEach(([id])=>{ const pe=(r.pesos&&r.pesos[id])||[]; kgTot+=pe.length?pe.reduce((a,b)=>a+b,0):((r.kilos&&+r.kilos[id])||0) });
+      const kgG=lista.reduce((a,[id])=>{ const pe=(r.pesos&&r.pesos[id])||[]; return a+(pe.length?pe.reduce((x,y)=>x+y,0):((r.kilos&&+r.kilos[id])||0)) },0);
+      let filas;
+      if(["icepops","chocolateria","pasteleria","bolleria"].includes(g)){
+        const porCat={}; lista.forEach(it=>{ const c=(S.saboresPorId[String(it[0])]||{}).categoria||""; (porCat[c]=porCat[c]||[]).push(it) });
+        filas=Object.keys(porCat).sort((a,b)=>claveNombre(a).localeCompare(claveNombre(b))).map(c=>`${c?`<div class="hSub">${esc(c)}</div>`:""}<div class="hCols">${porCat[c].sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`).join("");
+      } else filas=`<div class="hCols${lista.some(([id])=>(r.pesos&&r.pesos[id]||[]).length)?" uno":""}">${lista.slice().sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`;
+      return `<div class="hGrupo"><span>${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${lista.length}</span><span>${n} ${g==="vasquetas"||g==="baldes"?(n===1?"vasqueta":"vasquetas"):"u."}${kgG>0?" · "+fmtKg(kgG)+" kg":""}</span></div>${filas}`;
+    }).join("");
+    if(en.length>1||kgTot>0) cuerpo+=`<div class="hTotal"><span>Total · ${nTot} ${nTot===1?"unidad":"unidades"}</span><span>${kgTot>0?fmtKg(kgTot)+" kg":""}</span></div>`;
+    if(r.subtipo==="desperdicio"&&r.motivo&&!r.anulado) cuerpo+=`<div class="hNota">Motivo: ${esc(r.motivo)}</div>`;
+    if(r.subtipo==="transferencia"&&!r.anulado&&destinoDeTransf(r)) cuerpo+=`<div class="hNota">${r.tipo==="ingreso"?"Viene de":"Va a"}: <b>${esc(destinoDeTransf(r))}</b></div>`;
+  }
+  const pie=esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:"";
+  const elim=!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:"";
+  return `<div class="hDet">${cuerpo}<div class="hPie"><span>${textoJornada(r.ts)}${r.remito?" · Remito "+esc(r.remito):""}</span><span class="hBtns">${pie}${elim}</span></div></div>`;
+}
+function filaMovCompactaHTML(r){
+  const e=etiquetaMov(r), abierto=!!S.histAbierto[r.id];
+  const hora=new Date(r.ts).toLocaleString("es-AR",{weekday:"short",hour:"2-digit",minute:"2-digit"});
+  return `<div class="hMovWrap${r.anulado?" anulado":""}"><button type="button" class="hMov" data-mov-abrir="${esc(String(r.id))}" aria-expanded="${abierto}"><span class="pill ${e.clase}">${esc(e.label)}</span><span class="who">${esc(r.empleado||"Sin nombre")}</span><span class="det">${esc(resumenMov(r))}</span><time>${esc(hora)}</time><b class="tot">${esc(totalMov(r))}</b><span class="chev${abierto?" up":""}" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>${abierto?detalleMovHTML(r):""}</div>`;
+}
+/** Agrupa por jornada (descendente): título, cantidad, 3 filas y «Ver N más de este día». */
+function listaMovimientosDiaHTML(regs){
+  const dias=new Map();
+  regs.forEach(r=>{ const j=jornadaDe(r.ts); if(!dias.has(j)) dias.set(j,[]); dias.get(j).push(r) });
+  const hoy=jornadaDe();
+  return [...dias.entries()].sort((a,b)=>b[0]-a[0]).map(([j,lista])=>{
+    const mas=!!S.histDiaMas[j], vis=mas?lista:lista.slice(0,MOV_FILAS_VISIBLES), resto=lista.length-MOV_FILAS_VISIBLES;
+    const f=new Date(j).toLocaleDateString("es-AR",{weekday:"short",day:"2-digit",month:"2-digit"});
+    const rel=j===hoy?"hoy":j===hoy-864e5?"ayer":"";
+    return `<section class="hDia"><div class="hDiaCab"><span class="t">Jornada ${esc(f)}</span>${rel?`<span class="s">${rel}</span>`:""}<span class="n">${lista.length} ${lista.length===1?"movimiento":"movimientos"}</span></div>
+      ${vis.map(filaMovCompactaHTML).join("")}
+      ${resto>0?`<div class="hVerWrap"><button type="button" class="hVer" data-mov-dia="${j}">${mas?"Ver menos":`Ver ${resto} más de este día`}</button></div>`:""}</section>`;
+  }).join("");
+}
 /** Historial del Colaborador (decidido por Gabi 14/10/2026: "que no estén
  *  tocando todo... se empiezan a jugar y hacen lío") — nada de pills de
  *  categoría/período ni tablas resumen (eso es para Encargado/Turno/
@@ -4358,7 +4770,7 @@ function histView(){
   const chipsTipo=[["todos","Todos",regsCategoria.length]].concat(TIPOS_HIST.filter(([v])=>cuentaTipo[v]||S.tipoHist===v).map(([v,l])=>[v,l,cuentaTipo[v]||0]))
     .map(([v,l,n])=>`<button type="button" class="chip" data-tipo-hist="${v}" aria-pressed="${S.tipoHist===v}">${l} · ${n}</button>`).join("");
   const regsLista=S.tipoHist==="todos" ? regsCategoria : regsCategoria.filter(r=>tipoMovHist(r)===S.tipoHist);
-  const lista=regsLista.slice(0,150).map(filaMovimiento).join("");
+  const lista=listaMovimientosDiaHTML(regsLista.slice(0,150));
   return `${informeCabHTML({etiqueta:"Informe de historial", titulo:tituloTabla, sub:(S.local||"")+" | "+rango.label, lineaHTML:`Generado el <span class="rlvFechaPrint">${esc(fechaHoraRelevamiento())}</span> por <b>${esc(S.empleado?S.empleado.nombre:"")}</b>`})}
   ${informePieHTML(tituloTabla+" · "+(S.local||""))}
   <div class="tools noPrint" style="justify-content:center"><button type="button" class="btn ghost" id="exportarHist">🖨 Exportar</button></div>
@@ -5145,12 +5557,12 @@ function renderBar(){
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar y guardar</button>`;
     }
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia";
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia", enTransfOut=cartKey==="salida" && salidaEsTransf();
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
     if(tot){
       visible=true;
-      const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":enVenta?LABEL_SUBTIPO_CHOCO[subtipoChoco()]:enTransfIn?"transferencia recibida":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
-      const faltaMotivo=(enDesperdicio && !S.motivoDesperdicio.trim()) || (enVenta && chocoFaltaMotivo()) || (enTransfIn && !S.remito.trim());
+      const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":enVenta?LABEL_SUBTIPO_CHOCO[subtipoChoco()]:enTransfIn?"transferencia recibida":enTransfOut?"transferencia":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
+      const faltaMotivo=(enDesperdicio && !S.motivoDesperdicio.trim()) || (enVenta && chocoFaltaMotivo()) || (enTransfIn && !S.remito.trim()) || (enTransfOut && !S.destinoTransf.trim());
       // Venta de un día anterior al último conteo: ese conteo ya la incluye, descontaría dos veces.
       const fechaAntesConteo=enVenta && chocoConFecha() && !!S.fechaVenta && tsVentaDe(S.fechaVenta)<=((S.stock&&S.stock.ts)||0);
       const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
@@ -5158,23 +5570,23 @@ function renderBar(){
       const kilosTotal=enProduccion?ent.reduce((a,[id])=>a+kilosDe(id),0):0;
       const conPeso=(cartKey==="salida"||cartKey==="desperdicio"), kgEscan=conPeso?sumaPesos(cartKey):0, nEscan=conPeso?cantPesos(cartKey):0;
       // Kilos reales: cada vasqueta que sale se pesa; todo ingreso de vasquetas trae sus kilos totales.
-      const faltaKilos = !S.kilosReales ? [] : conPeso ? ent.filter(([id,q])=>esVasquetaKilos(id) && ((pesosDe(cartKey)[id]||[]).length<q)) : (cartKey==="ingreso"&&!enTransfIn||enDevolucion||enProduccion) ? ent.filter(([id])=>esVasquetaKilos(id) && !(kilosNum(S.kilosProduccion[id])>0)) : [];
+      const faltaKilos = !S.kilosReales ? [] : conPeso ? ent.filter(([id,q])=>esVasquetaKilos(id) && ((pesosDe(cartKey)[id]||[]).length<q)) : (cartKey==="ingreso"||enDevolucion||enProduccion) ? ent.filter(([id])=>esVasquetaKilos(id) && !(kilosNum(S.kilosProduccion[id])>0)) : [];
       const nDup=(cartKey==="salida")?escDuplicados().length:0;
-      const avisoDup = nDup ? `<div class="warn" style="background:#F2B400;color:#2A2118;border-radius:10px;padding:6px 10px">⚠ ${nDup===1?"1 código repetido":nDup+" códigos repetidos"} en lo escaneado: revisalo antes de confirmar (tocá Escanear vasqueta y la ✕ de esa fila).</div>` : "";
+      const avisoDup = nDup ? `<div class="warn" style="background:#F2B400;color:#2A2118;border-radius:10px;padding:6px 10px">⚠ ${nDup===1?"1 código repetido":nDup+" códigos repetidos"} en lo escaneado: revisalo antes de confirmar (${S.confirm&&cartKey==="salida"?"quitá esa línea con la ✕":"tocá Escanear vasqueta y la ✕ de esa fila"}).</div>` : "";
       const avisoKilos = avisoDup + (faltaKilos.length ? `<div class="warn">${conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "");
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
         const dup=cartKey==="ingreso" && !enTransfIn ? remitoDuplicado(S.remito, S.local) : null;
-        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}${enVenta?`<br>${subtipoChoco()==="venta"?`Venta del <b>${fechaVentaTexto(fechaVentaEfectiva())}</b>`:`<b>${esc(motivoChoco())}</b>`}`:""}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
+        inn.innerHTML = `<div class="sum"><b>${esc(S.empleado.nombre)}</b> · ${esc(S.local)}${enTransfOut?`<br>Transferencia a <b>${esc(S.destinoTransf.trim())}</b>`:""}${enTransfIn?`<br>Transferencia de <b>${esc(S.remito.trim())}</b>`:""}${enVenta?`<br>${subtipoChoco()==="venta"?`Venta del <b>${fechaVentaTexto(fechaVentaEfectiva())}</b>`:`<b>${esc(motivoChoco())}</b>`}`:""}<br>${ent.map(([id,q])=>enProduccion&&kilosDe(id)?`${esc(nombre(id))} ×${q} (${kilosDe(id).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:`${esc(nombre(id))} ×${q}`).join(" · ")}
           ${kgEscan>0?`<br>Con peso: ${nEscan} · <b>${fmtKg(kgEscan)} kg</b>`:""}
           ${avisoKilos}
           ${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior.</div>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
-          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
+          <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>${cartKey==="salida"?"Seguir cargando":"Volver"}</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">Escribí el motivo arriba para poder registrarlo.</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">${enTransfOut?"Escribí a qué local va para poder registrarla.":enTransfIn?"Escribí de qué local viene para poder registrarla.":"Escribí el motivo arriba para poder registrarlo."}</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
@@ -5275,7 +5687,7 @@ function agregarRegistroOptimista(payload){
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia";
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia", enTransfOut=cartKey==="salida" && salidaEsTransf();
     const tipo = (enDevolucion||enProduccion) ? "ingreso" : S.tab; // devolución y producción son un ingreso con subtipo, el backend no tiene un tercer/cuarto tipo de movimiento
     const cart=S.cart[cartKey];
     const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
@@ -5285,29 +5697,29 @@ async function guardarMovimiento(){
       if(tipo==="ingreso"&&!enDevolucion&&!enProduccion){ const v=valorVencimiento("ing:"+id, S.vencimientos[id], items[id]); if(v) venc[id]=v }
       else if(tipo==="salida"&&!enVenta&&S.lotePick[id]) venc[id]=S.lotePick[id];
     }
-    const kilos={}; if(enProduccion || (S.kilosReales && tipo==="ingreso" && !enTransfIn)) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
+    const kilos={}; if(enProduccion || (S.kilosReales && tipo==="ingreso")) for(const id of Object.keys(items)){ const k=parseFloat(String(S.kilosProduccion[id]||"").replace(",",".")); if(k>0) kilos[id]=k; }
     const clienteId=uuid();
     const pesosEnv={};
-    if((tipo==="salida"&&!enVenta) || (enDevolucion&&S.kilosReales)) for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
+    if((tipo==="salida"&&!enVenta) || (enDevolucion&&S.kilosReales) || enTransfIn) for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? (S.fotoRemitoUrl||undefined) : undefined,
-      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? subtipoChoco() : enTransfIn ? "transferencia" : undefined,
-      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : enTransfIn ? "Transferencia de "+S.remito.trim() : undefined,
+      subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? subtipoChoco() : (enTransfIn||enTransfOut) ? "transferencia" : undefined,
+      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : enTransfIn ? "Transferencia de "+S.remito.trim() : enTransfOut ? "Transferencia a "+S.destinoTransf.trim() : undefined,
       fecha: enVenta && chocoConFecha() && S.fechaVenta ? S.fechaVenta : undefined,
       kilos: Object.keys(kilos).length ? kilos : undefined,
       vencimientos: Object.keys(venc).length ? venc : undefined,
       pesos: Object.keys(pesosEnv).length ? pesosEnv : undefined};
     const r = await api("registrar", payload);
     if(r && r.ok){
-      toast((enDesperdicio?"Desperdicio registrado: ":enTransfIn?"Transferencia recibida registrada: ":enVenta?(LABEL_SUBTIPO_CHOCO[subtipoChoco()].charAt(0).toUpperCase()+LABEL_SUBTIPO_CHOCO[subtipoChoco()].slice(1)+" registrada: "):enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      toast((enDesperdicio?"Desperdicio registrado: ":enTransfIn?"Transferencia recibida registrada: ":enTransfOut?"Transferencia enviada registrada: ":enVenta?(LABEL_SUBTIPO_CHOCO[subtipoChoco()].charAt(0).toUpperCase()+LABEL_SUBTIPO_CHOCO[subtipoChoco()].slice(1)+" registrada: "):enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -5656,6 +6068,7 @@ document.addEventListener("click", async e=>{
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
     c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender(); return;
   }
+  if((t.dataset.revX||t.dataset.revMenos||t.dataset.revMas||t.dataset.revQuitar) && revisarAccion(t)) return;
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; recortarPesos(t.dataset.sub,"salida"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.wadd){
     const id=t.dataset.wadd, c=S.cart.desperdicio, disponible=stockMap()[id]||0;
@@ -5680,6 +6093,8 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
+  if(t.dataset.movAbrir){ const k=t.dataset.movAbrir; if(S.histAbierto[k]) delete S.histAbierto[k]; else S.histAbierto[k]=true; renderApp(); return }
+  if(t.dataset.movDia){ const k=t.dataset.movDia; if(S.histDiaMas[k]) delete S.histDiaMas[k]; else S.histDiaMas[k]=true; renderApp(); return }
   if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
   if(t.dataset.tipoHist){ S.tipoHist=t.dataset.tipoHist; renderApp(); return }
   if(t.dataset.rangoMenu){ S.rangoMenu=!S.rangoMenu; renderApp(); return }
@@ -5756,7 +6171,7 @@ document.addEventListener("click", async e=>{
   }
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
-  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; resetSelPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
+  if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irCambioSabor"){ resetCambio(); S.modoCambio=true; S.confirm=false; renderApp(); return }
   if(t.id==="cmbCancelar"){ S.modoCambio=false; resetCambio(); renderApp(); return }
@@ -5770,8 +6185,10 @@ document.addEventListener("click", async e=>{
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
+  if(t.id==="irEscanerIng"){ abrirEscaner("ingreso"); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="irVentaDia" || t.id==="irVentaDia2"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
+  if(t.dataset.salTipo){ const quiere=t.dataset.salTipo==="transferencia"; if(quiere!==!!S.salidaTransf){ S.salidaTransf=quiere; S.destinoTransf=""; S.confirm=false; renderApp() } return }
   if(t.dataset.ingTipo){ S.tipoIngreso=t.dataset.ingTipo; S.remito=""; S.confirm=false; renderApp(); return }
   if(t.dataset.vdAdd){
     const id=t.dataset.vdAdd, n=Number(t.dataset.n)||0;
@@ -5859,8 +6276,18 @@ document.addEventListener("click", async e=>{
   if(t.id==="cancelConteo"){
     if(Object.keys(S.conteoTocado).length && !confirm("¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia.")) return;
     descartarBorradorConteo(); S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
+  if(t.dataset.cdec||t.dataset.cinc){
+    const id=t.dataset.cdec||t.dataset.cinc, inp=document.querySelector(`input[data-c="${id}"]`); if(!inp) return;
+    inp.value=Math.max(0,(parseInt(inp.value,10)||0)+(t.dataset.cinc?1:-1)); inp.dispatchEvent(new Event("input",{bubbles:true})); return;
+  }
+  if(t.id==="aplicarAbrir"){ S.conteoAplicarAbierto=!S.conteoAplicarAbierto; renderApp(); return }
+  if(t.dataset.cdeshacer){
+    const id=t.dataset.cdeshacer, st=stockMap(); ceMano(id);
+    S.conteo[id]=Math.max(0,st[id]||0); delete S.conteoTocado[id]; delete S.conteoAck[id]; delete S.kilosConteo[id]; delete S.vencConteo[id];
+    programarBorradorConteo(); renderApp(); renderBar(); return;
+  }
   if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
-  if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); return }
+  if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); if(S.tab==="salida"&&cartKeyActual()==="salida") window.scrollTo(0,0); return }
   if(t.dataset.apl){ const iv=$("#aplicarTodosValor"); if(iv) S.conteoAplicarVal=iv.value; S.conteoAplicar=t.dataset.apl==="todo"?"todo":"visible"; renderApp(); return }
   if(t.dataset.cack){ const id=t.dataset.cack; if(S.conteoAck[id]) delete S.conteoAck[id]; else S.conteoAck[id]=true; renderApp(); return }
   if(t.dataset.cackTodos!==undefined){ const r=conteoResumen(), pend=conteoFaltaConfirmar(r); if(pend.length) r.flags.forEach(f=>S.conteoAck[f.s.id]=true); else S.conteoAck={}; renderApp(); return }
@@ -5956,7 +6383,7 @@ document.addEventListener("input", e=>{
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
   if(e.target.id==="remito"){ S.remito=e.target.value; if(S.tipoIngreso==="transferencia") renderBar() }
   if(e.target.id==="motivoChoco"){ S.motivoChoco=e.target.value; S.confirm=false; renderBar() }
-  if(e.target.id==="destinoTransf"){ S.destinoTransf=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.id==="destinoTransf" || e.target.id==="destinoSalida"){ S.destinoTransf=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="motivoDesperdicio"){ S.motivoDesperdicio=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
@@ -6342,7 +6769,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape" && S.cantDlg){ cer
 const ZXING_SRC="vendor/zxing-wasm-reader-3.1.6.iife.js", ZXING_WASM="vendor/zxing_reader-3.1.6.wasm";
 const GRUPOS_PESABLES=["vasquetas","baldes"]; // lo que viene en vasqueta/balde con peso; Gluten Free viene por pote armado (por unidad), Icepops y chocolatería tampoco
 function fmtKg(k){ return (Number(k)||0).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}) }
-function limpiarPesos(){ S.pesos={salida:{},desperdicio:{},devolucion:{}}; S.escaneadas=[]; S.escItems=[]; resetSelPesos(); }
+function limpiarPesos(){ S.pesos={salida:{},desperdicio:{},devolucion:{},ingreso:{}}; S.escaneadas=[]; S.escItems=[]; S.escItemsIng=[]; resetSelPesos(); }
 function resetSelPesos(){ S.devSel={}; S.devTip={}; }
 function pesosDe(c){ c=c||"salida"; return S.pesos[c]||(S.pesos[c]={}) }
 function cantPesos(c){ return Object.values(pesosDe(c)).reduce((a,l)=>a+l.length,0) }
@@ -6447,26 +6874,27 @@ function sumarPesada(c, id, kg){
 }
 
 /* ---- Escáner (solo Salida) ---- */
-function abrirEscaner(){
+function abrirEscaner(modo){
   if(S.escaner) return;
-  S.escaner={camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
+  const ing=modo==="ingreso";
+  S.escaner={modo:ing?"ingreso":undefined, camara:false, msg:null, lista:[], ultimo:null, stream:null, timer:null};
   const ov=document.createElement("div"); ov.id="escanerOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="escTit">
     <p class="mantTit" id="escTit">Escanear vasqueta</p>
-    <p class="mantSub">Pasá el lector por cada rótulo: pip, pip, pip. Si uno no se lee, tocá «Listo» y tocá el sabor para poner el peso.</p>
+    <p class="mantSub">${ing?`Transferencia de <b>${esc(S.remito.trim()||"otro local")}</b>. Pasá el lector por cada rótulo de lo que recibís: pip, pip, pip. Una caja cerrada suma 2 vasquetas. Si un rótulo no se lee, cerrá y cargalo a mano.`:"Pasá el lector por cada rótulo: pip, pip, pip. Si uno no se lee, tocá «Listo» y tocá el sabor para poner el peso."}</p>
     <input type="text" id="escCodigo" class="escCampo" inputmode="none" autocomplete="off" autocapitalize="off" placeholder="Código del rótulo" aria-label="Código del rótulo">
     <video id="escVideo" class="escVideo" playsinline muted></video>
     <div class="escMsg" id="escMsg" role="status" aria-live="polite">Esperando el código…</div>
     <div class="escLista" id="escLista"></div>
     <div class="mantAcc">
       <button type="button" class="btn ghost" data-esc-camara>Usar la cámara</button>
-      <button type="button" class="btn" data-esc-cerrar>Listo</button>
+      <button type="button" class="btn" data-esc-cerrar>${ing?"Listo, sumar al ingreso":"Listo"}</button>
     </div>
   </div>`;
   ov.addEventListener("click", e=>{
     if(e.target===ov){ cerrarEscaner(); return }
     const b=e.target.closest("button"); if(!b) return;
-    if(b.dataset.escQuitar!==undefined){ quitarEscItem(+b.dataset.escQuitar); renderEscaner(); const i=document.getElementById("escCodigo"); if(i) i.focus(); return }
+    if(b.dataset.escQuitar!==undefined){ if(S.escaner&&S.escaner.modo==="ingreso") quitarEscItemIng(+b.dataset.escQuitar); else quitarEscItem(+b.dataset.escQuitar); renderEscaner(); const i=document.getElementById("escCodigo"); if(i) i.focus(); return }
     if(b.dataset.escCerrar!==undefined) cerrarEscaner();
     else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
   });
@@ -6493,6 +6921,7 @@ function cerrarEscaner(){
 function renderEscaner(){
   const e=S.escaner; if(!e) return;
   if(e.modo==="conteo") return renderEscanerConteo();
+  if(e.modo==="ingreso") return renderEscanerIng();
   reconciliarEsc();
   const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
   if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…" }
@@ -6512,6 +6941,7 @@ function renderEscaner(){
 function procesarEscaneo(txt, cam){
   const e=S.escaner; if(!e) return;
   if(e.modo==="conteo") return procesarEscaneoConteo(txt, cam);
+  if(e.modo==="ingreso") return procesarEscaneoIng(txt, cam);
   const p=parseCodigoRotulo(txt);
   if(p && p.tipo==="caja"){ e.msg={tipo:"err", t:"Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta."}; pitido(false); renderEscaner(); return }
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
@@ -6531,6 +6961,77 @@ function procesarEscaneo(txt, cam){
   sumarPesada.silencio=repetido; sumarPesada("salida", s.id, p.kg); sumarPesada.silencio=false;
   if(repetido) pitido("dup");
   renderEscaner();
+  const i=document.getElementById("escCodigo"); if(i) i.focus();
+}
+/* ---- Escáner en Ingreso: «Transferencia recibida» (13/11/2026, pedido de Gabi) ----
+   Lo que llega de otro local se escanea: cada rótulo de vasqueta suma 1 con su peso; el rótulo de una caja cerrada suma 2.
+   No hay tope de stock (es mercadería que entra). Los kilos totales del sabor se completan solos con la suma de los pesos
+   (editables). Si un rótulo no se lee, se carga a mano como siempre. El remito de fábrica no usa lector: ya trae cantidad y kilos. */
+function reconciliarEscIng(){
+  const copia={}; Object.entries(pesosDe("ingreso")).forEach(([id,a])=>copia[id]=a.slice());
+  S.escItemsIng=S.escItemsIng.filter(x=>{
+    const ok=x.pesos.every(k=>{ const a=copia[x.id]; const i=a?a.indexOf(k):-1; if(i<0) return false; return true });
+    if(!ok) return false;
+    x.pesos.forEach(k=>{ const a=copia[x.id], i=a.indexOf(k); a.splice(i,1) });
+    return true;
+  });
+}
+function kilosIngDesdePesos(id){
+  if(!S.kilosReales) return;
+  const a=pesosDe("ingreso")[id]||[];
+  if(!a.length) delete S.kilosProduccion[id];
+  else S.kilosProduccion[id]=String(Math.round(a.reduce((x,y)=>x+y,0)*100)/100).replace(".",",");
+}
+function quitarEscItemIng(n){
+  const x=S.escItemsIng.find(i=>i.n===n); if(!x) return;
+  const a=pesosDe("ingreso")[x.id]||[];
+  x.pesos.forEach(k=>{ const i=a.indexOf(k); if(i>=0) a.splice(i,1) });
+  if(!a.length) delete pesosDe("ingreso")[x.id];
+  const c=S.cart.ingreso; c[x.id]=Math.max(0,(c[x.id]||0)-x.u); if(!c[x.id]) delete c[x.id];
+  S.escItemsIng=S.escItemsIng.filter(i=>i.n!==n);
+  kilosIngDesdePesos(x.id);
+  S.confirm=false; scheduleRender();
+}
+function renderEscanerIng(){
+  const e=S.escaner; if(!e) return;
+  reconciliarEscIng();
+  const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…" }
+  if(l){
+    const items=S.escItemsIng.slice().reverse(), vistos={}, dupN=new Set();
+    S.escItemsIng.forEach(x=>{ if(vistos[x.crudo]) dupN.add(x.n); vistos[x.crudo]=true });
+    const nVasq=S.escItemsIng.reduce((a,x)=>a+x.u,0), kg=Math.round(S.escItemsIng.reduce((a,x)=>a+x.kg,0)*100)/100;
+    l.innerHTML = items.length
+      ? `<div class="escCab"><span>Recibidas hasta ahora</span><span>${nVasq} ${nVasq===1?"vasqueta":"vasquetas"} · ${fmtKg(kg)} kg</span></div>`
+        + items.map(x=>`<div class="escRow${dupN.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dupN.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">${x.t==="caja"?"Caja (2 vasquetas) · ":""}${/^etiqueta/.test(x.lote)?esc(x.lote):"lote "+esc(x.lote)}${dupN.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="Quitar ${x.t==="caja"?"esta caja":"esta vasqueta"}">✕</button></div>`).join("")
+        + `<div style="border:0;font-size:.78rem;color:var(--muted);display:block">La ✕ quita solo esa lectura: baja el sabor y saca ese peso.</div>`
+      : "";
+  }
+  if(v) v.classList.toggle("on", !!e.camara);
+  if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
+}
+function procesarEscaneoIng(txt, cam){
+  const e=S.escaner; if(!e) return;
+  const p=parseCodigoRotulo(txt);
+  if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código ("+String(txt).replace(/\D/g,"").length+" números). Si el rótulo está dañado, cerrá y cargá el sabor a mano."}; pitido(false); renderEscaner(); return }
+  const ahora=Date.now();
+  if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
+  e.ultimo={crudo:p.crudo, ts:ahora};
+  const s=p.plu!==undefined ? saboresDelLocal().find(x=>x.plu && String(+x.plu)===p.plu) : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
+  if(!s){ e.msg={tipo:"err", t:(p.plu!==undefined?"PLU "+p.plu:"Código de sabor "+p.codigo)+" sin asignar en la planilla ("+fmtKg(p.kg)+" kg). Cerrá y cargalo a mano."}; pitido(false); renderEscaner(); return }
+  if(!esVasquetaEsc(s)){ e.msg={tipo:"err", t:s.nombre+" no es una vasqueta: cargalo a mano (cerrá y tocá el sabor)."}; pitido(false); renderEscaner(); return }
+  reconciliarEscIng();
+  const caja=p.tipo==="caja", u=caja?2:1;
+  const pesos=caja ? (()=>{ const a=Math.round(p.kg/2*100)/100; return [a, Math.round((p.kg-a)*100)/100] })() : [p.kg];
+  const repetido=S.escItemsIng.some(x=>x.crudo===p.crudo);
+  e.msg = repetido
+    ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":" · lote "+p.lote)+". ¿Es otra igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
+    : {tipo:"ok", t:(caja?"Caja de ":"")+s.nombre+" · "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":" · lote "+p.lote)+(caja?" · +2 vasquetas":"")};
+  S.cart.ingreso[s.id]=(S.cart.ingreso[s.id]||0)+u;
+  (pesosDe("ingreso")[s.id]=pesosDe("ingreso")[s.id]||[]).push(...pesos);
+  S.escItemsIng.push({n:++S.escN, id:s.id, nombre:s.nombre, kg:p.kg, u, t:caja?"caja":"vasq", lote:p.lote, crudo:p.crudo, pesos});
+  kilosIngDesdePesos(s.id);
+  S.confirm=false; pitido(repetido?"dup":true); scheduleRender(); renderEscaner();
   const i=document.getElementById("escCodigo"); if(i) i.focus();
 }
 /* ---- Contar escaneando (Conteo físico, solo vasquetas; es una opción más, la carga a mano sigue igual) ----
@@ -6907,6 +7408,10 @@ function ayudaTemas(){
     "Si suena triple y sale <b>amarillo</b>, ese código ya se escaneó. Si fue un error, tocá la <b>✕</b> de esa fila para quitar solo esa vasqueta.",
     "Si un rótulo no se lee: cerrá, tocá el sabor y escribí cuánto pesa (con coma, ej. 3,40). Con «Agregar otra» cargás varias seguidas.",
     "Revisá el total de abajo y tocá <b>Confirmar salida</b>."])+nota("Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran.")});
+  if(S.ventaDia && !colab) T.push({id:"transf", titulo:"Transferencias entre locales", sub:"Cuando enviás o recibís mercadería de otro local", html:`<div class="ayCards">
+    <div class="ayCard"><span class="ayTag a">Enviás mercadería</span><b>Salida › Transferencia</b><p>En <b>Salida</b> tocá <b>Transferencia</b>, escribí <b>a qué local va</b> (es obligatorio) y cargá lo que sale, a mano${escanerDisponible()?" o con <b>Escanear vasqueta</b>":""}. Sirve para cualquier rubro.</p></div>
+    <div class="ayCard"><span class="ayTag b">Recibís mercadería</span><b>Ingreso › Transferencia</b><p>En <b>Ingreso</b> tocá <b>Transferencia</b>, escribí <b>de qué local viene</b> y cargá lo que llegó${escanerDisponible()?": con <b>Escanear vasqueta</b> hacés pic, pic, pic (una caja cerrada suma 2 vasquetas)":""}.</p></div>
+    <div class="ayCard"><span class="ayTag c">Cómo queda</span><b>Mueve el stock, no cuenta como consumo</b><p>Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia».</p></div></div>`});
   if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Salida de chocolatería", sub:"Venta del día, gift card, sin cargo y baja", html:li([
     "En este local la chocolatería <b>no se saca por la Salida común</b>: se carga en <b>Salida de chocolatería</b>.",
     "Elegí el tipo: <b>Venta del día</b> (lo que dice la caja al cerrar), <b>Gift card</b>, <b>Sin cargo</b> (regalo, evento o muestra: pide motivo) o <b>Baja</b> (por vencimiento, o transferencia a otro local: pide el destino).",
