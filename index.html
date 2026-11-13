@@ -578,12 +578,32 @@ body:has(.etiqOv){overflow:hidden}
 .escMsg.warn{background:#F2B400;color:#2A2118}
 .accGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .accGrid.impar .accTile:last-child{grid-column:1/-1}
-.accTile{display:flex;flex-direction:column;gap:2px;justify-content:center;text-align:left;min-height:64px;padding:12px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
+.accTile{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left;min-height:64px;padding:10px 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(74,63,56,.06)}
+.accTile .accIco{flex:none;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(var(--accent-rgb),.12);color:var(--ink)}
+.accTile .accTx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .accTile b{font-size:.95rem;line-height:1.2}
 .accTile small{font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.25}
 .accTile.m{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .accTile.m small{color:inherit;opacity:.85}
+.accTile.m .accIco{background:rgba(255,255,255,.2);color:inherit}
+.accTile.dest{background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.45)}
 .accTile:active{transform:scale(.98)}
+@media(min-width:900px){
+  .accGrid.n3{grid-template-columns:repeat(3,1fr)}
+  .accGrid.n4{grid-template-columns:repeat(4,1fr)}
+  .accGrid.impar.n3 .accTile:last-child,.accGrid.impar.n4 .accTile:last-child{grid-column:auto}
+  .accTile{min-height:84px;padding:0 18px;gap:14px;border-radius:24px}
+  .accTile .accIco{width:46px;height:46px;border-radius:15px}
+  .accTile b{font-size:1rem}
+  .accTile small{font-size:.78rem}
+}
+@media(min-width:700px){
+  .rows.stkCols{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;background:none;border:0}
+  .rows.stkCols .row{border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+}
+.segIng{display:inline-flex;padding:4px;border-radius:999px;background:rgba(var(--accent-rgb),.12);gap:4px;margin:0 0 12px}
+.segIng button{height:36px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+.segIng button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 .escLista div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:6px}
 .escLista .escRow{align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--surface)}
 .escLista .escRow.dup{background:#FFF1D6;border-color:#E0A93B;color:#2A2118}
@@ -1083,7 +1103,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.142.1";
+const FRONTEND_VERSION = "1.143.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2991,15 +3011,31 @@ function gridSalida(st){
 function escanerDisponible(){ return !!S.escanerSalida && !S.sinEscaner } // escáner en Salida/Desperdicio (Locales.escaner_salida, o el piloto escaner_peso / kilos_reales)
 /** Escáner en Conteo físico (Locales.escaner_conteo, o el piloto escaner_peso / kilos_reales). Es independiente del de Salida y de los kilos. */
 function escanerConteoDisponible(){ return !!S.escanerConteo && !S.sinEscaner }
+const ACC_ICONOS={
+  scan:'<path d="M4 8V5a1 1 0 011-1h3M16 4h3a1 1 0 011 1v3M20 16v3a1 1 0 01-1 1h-3M8 20H5a1 1 0 01-1-1v-3"/><path d="M8 9v6M11 9v6M14 9v6M17 9v6"/>',
+  trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',
+  choco:'<rect x="4" y="5" width="16" height="14" rx="3"/><path d="M4 12h16M12 5v14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  back:'<path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',
+  swap:'<path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/>',
+  prod:'<path d="M4 20V10l6 3V10l6 3V6h4v14z"/>',
+  pedido:'<path d="M4 7h16M4 12h16M4 17h10"/>',
+  conteo:'<path d="M5 12l4.5 4.5L19 7"/>',
+  inv:'<path d="M4 7l8-4 8 4v10l-8 4-8-4V7z"/><path d="M4 7l8 4 8-4M12 11v10"/>'
+};
+/** Tarjeta de acción de arriba (Salida e Ingreso): ícono + título + una línea que explica. Mock aprobado por Gabi 13/11/2026 (solo cambia lo de arriba, la lista de sabores sigue igual). */
+function accTileHTML(id,titulo,sub,icono,clase,attrs){
+  return `<button type="button" class="accTile${clase?" "+clase:""}" ${id?`id="${id}"`:""} ${attrs||""}><span class="accIco"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ACC_ICONOS[icono]||""}</svg></span><span class="accTx"><b>${titulo}</b><small>${sub}</small></span></button>`;
+}
+function accGridHTML(t){ return `<div class="accGrid n${t.length}${t.length%2?" impar":""}">${t.join("")}</div>` }
 function accionesSalidaHTML(){
   const t=[];
-  if(escanerDisponible()) t.push(`<button type="button" class="accTile m" id="irEscaner"><b>Escanear vasqueta</b><small>con el lector o la cámara</small></button>`);
-  t.push(`<button type="button" class="accTile" id="irDesperdicio"><b>Desperdicio</b><small>roto, caído, vencido</small></button>`);
-  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(`<button type="button" class="accTile" id="irVentaDia"><b>Salida de chocolatería</b><small>venta, gift card, baja…</small></button>`);
+  if(escanerDisponible()) t.push(accTileHTML("irEscaner","Escanear vasqueta","con el lector o la cámara","scan","m"));
+  t.push(accTileHTML("irDesperdicio","Desperdicio","roto, caído, vencido","trash"));
+  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(accTileHTML("irVentaDia","Salida de chocolatería","venta, gift card, baja…","choco"));
   const rv=resumenVenc(), porVencer=rv.rojo.l+rv.amarillo.l;
-  t.push(`<button type="button" class="accTile" data-ver-venc><b>Ver vencimientos</b><small>${rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:porVencer?`${porVencer} por vencer`:"lotes por vencer"}</small></button>`);
-  const grilla=`<div class="accGrid${t.length%2?" impar":""}">${t.join("")}</div>`;
-  return grilla+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
+  t.push(accTileHTML("","Ver vencimientos",rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:porVencer?`${porVencer} por vencer`:"lotes por vencer","clock","","data-ver-venc"));
+  return accGridHTML(t)+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
 }
 function gridDesperdicio(st){
   const cart=S.cart.desperdicio;
@@ -3382,6 +3418,14 @@ async function guardarCambioSabor(){
     else toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
   } finally { S.busy=false; renderApp() }
 }
+/** Tarjetas de arriba de Ingreso (Producción, Devolución, Cambio de sabor): mismo formato que las de Salida. */
+function accionesIngresoHTML(hayPendiente,soloProd){
+  const t=[];
+  if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
+  if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
+  if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor cambiado?","swap"));
+  return t.length?accGridHTML(t):"";
+}
 function gridIngreso(st){
   if(S.lectorRemito) return lectorRemitoView();
   if(S.modoCambio) return gridCambioSabor(st);
@@ -3402,10 +3446,8 @@ function gridIngreso(st){
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${S.produccionLocal?`<button type="button" class="btn produccion" id="irProduccion" style="margin-bottom:12px">Producción</button>`:""}
-  ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
-  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Llegó un sabor cambiado? Cambio de sabor</button>`:""}
-  ${S.ventaDia&&puedeRemito?`<div style="display:flex;gap:8px;margin:0 0 10px"><button type="button" class="chip" data-ing-tipo="remito" aria-pressed="${S.tipoIngreso!=="transferencia"}">Remito de fábrica</button><button type="button" class="chip" data-ing-tipo="transferencia" aria-pressed="${S.tipoIngreso==="transferencia"}">Transferencia recibida</button></div>`:""}
+  ${accionesIngresoHTML(hayPendiente,false)}
+  ${S.ventaDia&&puedeRemito?`<div class="segIng"><button type="button" data-ing-tipo="remito" aria-pressed="${S.tipoIngreso!=="transferencia"}">Remito de fábrica</button><button type="button" data-ing-tipo="transferencia" aria-pressed="${S.tipoIngreso==="transferencia"}">Transferencia recibida</button></div>`:""}
   ${chipFiltros()}
   ${puedeRemito&&S.ventaDia&&S.tipoIngreso==="transferencia"?`<div class="remitoRow"><label for="remito" style="font-weight:700">Local de origen</label><input type="text" id="remito" placeholder="Ej: Obelisco CABA" value="${esc(S.remito)}"></div>
   <p style="margin:8px 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">Mercadería que te mandó o te prestó otro local. Suma al stock y no cuenta como compra a fábrica.</p>`:puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}"></div>
@@ -3479,8 +3521,7 @@ function gridProduccion(st){
   const hayPendiente=soloProd && Object.keys(pendienteDevolucionHoy()).length>0;
   const cabeza=soloProd
     ? `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${hayPendiente?`<button type="button" class="btn ghost" id="irDevolucion" style="margin-bottom:12px">¿Es una devolución de algo que sacaste? Tocá acá</button>`:""}
-  ${puedeCambioSabor()?`<button type="button" class="btn ghost" id="irCambioSabor" style="margin-bottom:12px">¿Una vasqueta quedó mal rotulada? Corregir sabor</button>`:""}`
+  ${accionesIngresoHTML(hayPendiente,true)}`
     : `<button class="btn produccion" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`;
   return `${cabeza}
   <p class="sec" style="margin-top:6px">${soloProd?"Ingreso de producción":"Producción"}</p>
@@ -3535,7 +3576,7 @@ function stockView(st){
   if(S.conteo) return stockViewConteo();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
-  return `<button type="button" class="btn verVenc" data-ver-venc style="margin-bottom:12px">Ver vencimientos</button>`+stockViewGeneral(st);
+  return stockViewGeneral(st);
 }
 function stockViewGeneral(st){
   const al=alertas(st);
@@ -3576,25 +3617,23 @@ function stockViewGeneral(st){
     ${km?`<div class="kpi"><span class="lbl">Kilos de helado en cámara</span><span class="val">${fmtKg(kgReal)} kg</span><span class="sub">${sinKilos?`${sinKilos} ${sinKilos===1?"sabor sin kilos cargados":"sabores sin kilos cargados"}: se cargan con un conteo con kilos`:"Lo que entró menos lo que salió, pesado"}</span></div>`:""}
     ${(!km&&kgTotal>0)?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
-  ${puedePedido?`<button type="button" class="ctaCard glass" id="verPedidoBtn" style="margin-top:12px" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
-    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="#7A3E1D" stroke-width="2.2" stroke-linecap="round"/></svg></span>
-    <span class="tx"><b>Pedido sugerido</b><span>${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}</span></span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>`:""}
-  ${puedeGestionar?`<button type="button" class="ctaCard glass" id="invBtn" style="margin-top:10px" aria-label="Stock definitivo del local">
-    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7l8-4 8 4v10l-8 4-8-4V7z" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/><path d="M4 7l8 4 8-4M12 11v10" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/></svg></span>
-    <span class="tx"><b>Stock definitivo del local</b><span>${invHayBorrador()?"Tenés uno sin terminar · tocá para seguir":"Conteo del local, cuando realizás tu stock definitivo."}</span></span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button><div style="text-align:center;margin-top:6px"><button type="button" class="invLnk" id="invGuardadosBtn">Ver stock definitivos guardados</button></div>`:""}
-  ${puedeGestionar?bannerBorradorConteoHTML():""}
-  ${puedeGestionar?`<button type="button" class="ctaCard glass" id="conteoBtn" style="margin-top:10px" aria-label="Conteo físico">
-    <span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12l4.5 4.5L19 7" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-    <span class="tx"><b>Conteo físico</b><span>Corrige el stock de la cámara. Se hace antes del stock definitivo si hay diferencias.</span></span>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-  </button>`:""}
+  ${bannerBorradorConteoHTML_si(puedeGestionar)}
+  ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal)}
   <p style="margin:12px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
   ${chipFiltros()}
-  <div class="rows" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
+  <div class="rows stkCols" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
+}
+function bannerBorradorConteoHTML_si(ok){ return ok?bannerBorradorConteoHTML():"" }
+/** Tarjetas de arriba de Stock (solo para mirar, no se hace ningún movimiento desde acá): Pedido sugerido aparte y, en fila, Conteo físico y Stock definitivo.
+ *  Mock aprobado por Gabi 13/11/2026. */
+function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
+  const t=[];
+  if(puedePedido) t.push(accTileHTML("verPedidoBtn","Pedido sugerido",`${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}`,"pedido","dest",`aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}"`));
+  if(puedeGestionar){
+    t.push(accTileHTML("conteoBtn","Conteo físico","corrige el stock de la cámara","conteo","",`aria-label="Conteo físico"`));
+    t.push(accTileHTML("invBtn","Stock definitivo",invHayBorrador()?"tenés uno sin terminar":"conteo del local · cámara + local","inv","",`aria-label="Stock definitivo del local"`));
+  }
+  return (t.length?accGridHTML(t):"")+(puedeGestionar?`<div style="text-align:center;margin:-4px 0 6px"><button type="button" class="invLnk" id="invGuardadosBtn">Ver stock definitivos guardados</button></div>`:"");
 }
 
 function stockViewPedido(st){

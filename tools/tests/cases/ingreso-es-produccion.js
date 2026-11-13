@@ -21,7 +21,7 @@ const { chromium } = require("playwright");
   ok(await page.$("#volverIngreso")===null, "no hay «Volver a Ingreso»");
   ok(await page.$("#remito")===null && await page.$("#btnLeerRemitoFoto")===null, "no hay N° de remito ni lector de fotos");
   ok(await page.$("[data-kilos]")!==null && await page.$("[data-prodinc]")!==null, "vasquetas: kilos + vasquetas resultantes");
-  ok(await page.$("#irCambioSabor")!==null && /Una vasqueta quedó mal rotulada\? Corregir sabor/.test(await page.innerText("#irCambioSabor")), "el botón dice «¿Una vasqueta quedó mal rotulada? Corregir sabor»");
+  ok(await page.$("#irCambioSabor")!==null && /Corregir sabor/.test(await page.innerText("#irCambioSabor"))&&/mal rotulada/.test(await page.innerText("#irCambioSabor")), "el botón dice «¿Una vasqueta quedó mal rotulada? Corregir sabor»");
   await page.click(".tabCat[data-familia='icepops']"); await page.waitForTimeout(300);
   ok(await page.$("[data-kilos]")===null && await page.$$eval("[data-uni]",e=>e.length)>=3, "icepops: unidades con el pad, sin kilos");
   await page.click(".tabCat[data-familia='vasquetas']"); await page.waitForTimeout(300);
