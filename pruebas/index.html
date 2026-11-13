@@ -557,7 +557,12 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .hGrupo span:last-child{letter-spacing:.02em;text-transform:none;opacity:.85;font-weight:700}
 .hSub{margin-top:10px;font-size:.68rem;letter-spacing:.14em;font-weight:800;color:var(--muted);text-transform:uppercase}
 .hCols{display:block}
-@media (min-width:760px){.hCols{column-count:2;column-gap:28px}}
+@media (min-width:760px){.hCols{column-count:2;column-gap:28px}.hCols.uno{column-count:1}}
+.hLinP{padding:6px 0 8px;border-top:1px solid var(--line);break-inside:avoid}
+.hLinP .hLin{border-top:0;padding:2px 0}
+.hFichas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.hFicha{height:26px;padding:0 10px;border-radius:13px;background:var(--surface);border:1.5px solid var(--line);font-size:.78rem;font-weight:700;display:flex;align-items:center;white-space:nowrap}
+.hProm{font-size:.76rem;color:var(--muted);font-weight:600;margin-left:4px}
 .hLin{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);break-inside:avoid;font-size:.86rem}
 .hLin .n{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hLin .q{font-weight:800;white-space:nowrap}
@@ -1275,7 +1280,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.146.0";
+const FRONTEND_VERSION = "1.146.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4588,7 +4593,11 @@ function lineaMovHTML(r,id,q){
   const kgR=(r.kilos&&+r.kilos[id])||0;
   const kg=pe.length?pe.reduce((a,b)=>a+b,0):kgR;
   const det=[];
-  if(pe.length) det.push(pe.map(fmtKg).join(" · ")+" kg"+(pe.length<+q?`, ${pe.length} de ${q} pesadas`:""));
+  if(pe.length){
+    // Con pesos: el sabor ocupa su propia fila (cantidad y total) y debajo va el peso de cada vasqueta en fichas, que bajan de renglón y no se cortan.
+    const vto2=textoVencRegistro(r,id).replace(/^ · /,"");
+    return `<div class="hLinP"><div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(vto2)}</span><span class="v">${fmtKg(kg)} kg</span></div><div class="hFichas">${pe.map(k=>`<span class="hFicha">${fmtKg(k)}</span>`).join("")}<span class="hProm">${pe.length>1?"promedio "+fmtKg(kg/pe.length)+" kg":""}${pe.length<+q?`${pe.length>1?" · ":""}${pe.length} de ${q} pesadas`:""}</span></div></div>`;
+  }
   else if(kgR && r.subtipo!=="produccion") det.push("kilos del remito");
   const vto=textoVencRegistro(r,id).replace(/^ · /,""); if(vto) det.push(vto);
   return `<div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(det.join(" · "))}</span><span class="v">${kg>0?fmtKg(kg)+" kg":""}</span></div>`;
@@ -4618,7 +4627,7 @@ function detalleMovHTML(r){
       if(["icepops","chocolateria","pasteleria","bolleria"].includes(g)){
         const porCat={}; lista.forEach(it=>{ const c=(S.saboresPorId[String(it[0])]||{}).categoria||""; (porCat[c]=porCat[c]||[]).push(it) });
         filas=Object.keys(porCat).sort((a,b)=>claveNombre(a).localeCompare(claveNombre(b))).map(c=>`${c?`<div class="hSub">${esc(c)}</div>`:""}<div class="hCols">${porCat[c].sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`).join("");
-      } else filas=`<div class="hCols">${lista.slice().sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`;
+      } else filas=`<div class="hCols${lista.some(([id])=>(r.pesos&&r.pesos[id]||[]).length)?" uno":""}">${lista.slice().sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`;
       return `<div class="hGrupo"><span>${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${lista.length}</span><span>${n} ${g==="vasquetas"||g==="baldes"?(n===1?"vasqueta":"vasquetas"):"u."}${kgG>0?" · "+fmtKg(kgG)+" kg":""}</span></div>${filas}`;
     }).join("");
     if(en.length>1||kgTot>0) cuerpo+=`<div class="hTotal"><span>Total · ${nTot} ${nTot===1?"unidad":"unidades"}</span><span>${kgTot>0?fmtKg(kgTot)+" kg":""}</span></div>`;
