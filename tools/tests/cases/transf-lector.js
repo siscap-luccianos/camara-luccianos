@@ -16,6 +16,7 @@ const { chromium } = require("playwright");
   const banana = "0004" + "00389" + "290926" + "21" + "015";
   const bananaB = "0004" + "00391" + "290926" + "21" + "016";
   const cajaFrut = "99" + "0020" + "000355" + "00728" + "290926" + "21" + "015";
+  await page.evaluate(async () => { await api("registrar", { clienteId: uuid(), tipo: "ingreso", local: S.local, items: { "49": 10 }, remito: "T-1" }); await cargarDatos() }); await page.waitForTimeout(400); // stock de Icepops para poder transferir
   // ---------- SALIDA · Transferencia ----------
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
   ok(await page.$("[data-sal-tipo='comun']") && await page.$("[data-sal-tipo='transferencia']"), "Salida tiene el selector «Salida común | Transferencia»");

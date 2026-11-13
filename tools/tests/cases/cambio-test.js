@@ -45,6 +45,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   ok(st.b===18 && st.c===4, "stock: Banana 18, Cheesecake 4 (dio "+st.b+" / "+st.c+")");
   ok(Math.abs(st.kb-72.36)<0.01 && st.kc===null, "kilos: Banana 72,36; Cheesecake queda «sin kilos» porque ya tenía una salida sin pesar (dio "+st.kb+" / "+st.kc+")");
   await page.click("[data-t='historial']"); await page.waitForTimeout(500);
+  await page.evaluate(()=>{ S.rangoHist="d60" }); await page.click(".hMov"); await page.waitForTimeout(250); // el movimiento se abre al tocar la fila
   const hist=await page.$eval("#app",e=>e.textContent.replace(/\s+/g," "));
   ok(/cambio de sabor/.test(hist) && /Banana Split\s*−2\s*→\s*Cheesecake al pistacchio\s*\+2/.test(hist) && /Caja mal rotulada/.test(hist), "Historial muestra el cambio de sabor con motivo");
   ok(await page.$("[data-anular]")!==null, "se puede anular");
