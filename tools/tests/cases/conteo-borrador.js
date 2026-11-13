@@ -22,7 +22,7 @@ const { chromium } = require("playwright");
     await page.waitForTimeout(1200);
     await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
   };
-  const confirmarTodos = async () => { for (let i = 0; i < 20 && await page.$(".cvFlag button:not(.ok)"); i++) { await page.click(".cvFlag button:not(.ok)"); await page.waitForTimeout(120) } };
+  const confirmarTodos = async () => { for (let i = 0; i < 20 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(120) } };
   await entrar();
   await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
 
@@ -52,9 +52,9 @@ const { chromium } = require("playwright");
   // 4) revisar: resumen + confirmaciones obligatorias
   await page.click("#go"); await page.waitForTimeout(400);
   const txt = (await page.innerText("main")).replace(/\s+/g, " ");
-  ok(/Revisá antes de guardar/.test(txt), "abre la pantalla de revisión");
-  ok(/Así queda el stock/i.test(txt) && /Total:/.test(txt), "muestra «Así queda el stock» con el total antes y después");
-  ok(await page.$$eval(".cvFlag", e => e.length) === 2, "pide confirmar los 2 números raros");
+  ok(/Revisá antes de guardar/i.test(txt), "abre la pantalla de revisión");
+  ok(/Lo que contaste/i.test(txt) && /Cambian/i.test(txt), "muestra «Lo que contaste» con los que cambian");
+  ok(await page.$$eval(".rcLin.raro", e => e.length) === 2, "pide confirmar los 2 números raros");
   ok(await page.$eval("#ok", e => e.disabled), "«Guardar conteo» queda apagado sin confirmar");
   ok(/Confirmá 2 números/.test(await page.innerText("#bar")), "la barra dice cuántos faltan confirmar");
   await confirmarTodos();

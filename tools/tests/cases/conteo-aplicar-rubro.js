@@ -17,7 +17,7 @@ const { chromium } = require("playwright");
 
   const valor = id => page.$eval(`[data-c="${id}"]`, e => e.value);
   const rubro = async f => { await page.click(`.tabCat[data-familia='${f}']`); await page.waitForTimeout(250) };
-  const aplicar = async v => { await page.fill("#aplicarTodosValor", String(v)); await page.click("#aplicarTodos"); await page.waitForTimeout(300) };
+  const aplicar = async v => { if(!(await page.$("#aplicarTodosValor"))){ await page.click("#aplicarAbrir"); await page.waitForTimeout(150) } await page.fill("#aplicarTodosValor", String(v)); await page.click("#aplicarTodos"); await page.waitForTimeout(300) };
 
   // Icepops: cargo un número a mano para ver que después no se pisa
   await rubro("icepops");
@@ -27,6 +27,7 @@ const { chromium } = require("playwright");
   // 1) Por defecto: solo el rubro seleccionado
   await rubro("vasquetas");
   ok(Number(await valor("4")) > 0, "Banana Split arranca con stock: " + await valor("4"));
+  if(!(await page.$(".aplicarOp"))){ await page.click("#aplicarAbrir"); await page.waitForTimeout(150) }
   const opciones = (await page.innerText(".aplicarOp")).replace(/\s+/g, " ");
   ok(/Solo Vasquetas · \d+/.test(opciones) && /Todo el local · \d+/.test(opciones), "ofrece «Solo Vasquetas» y «Todo el local»: " + opciones);
   ok(await page.$eval('[data-apl="visible"]', e => e.getAttribute("aria-pressed")) === "true", "por defecto está elegido «Solo <rubro>»");
