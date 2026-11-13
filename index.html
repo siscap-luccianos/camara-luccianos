@@ -623,6 +623,58 @@ body:has(.etiqOv){overflow:hidden}
 .revStep button.p{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .revStep span{min-width:30px;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.3rem}
 .revAviso{border-radius:14px;background:#FFF1CC;border:1px solid #E9C45A;color:#7A4E00;font-size:.8rem;font-weight:700;padding:10px 12px;margin-bottom:10px}
+.stkAcc{display:flex;flex-direction:column;gap:12px;margin:22px 0 6px}
+.stkLbl{margin:0 0 8px;font-size:.68rem;letter-spacing:.14em;font-weight:800;color:#6A5B50}
+.stkDiv{display:none}
+.stkSep{display:none}
+.stkPedido{display:flex;align-items:center;gap:14px;text-align:left;border:1px solid #D5E2C3;background:#EEF3E6;color:#2A3A22;border-radius:24px;padding:16px 18px;font-family:inherit;cursor:pointer}
+.stkPedTop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none}
+.stkPedIco{width:46px;height:46px;border-radius:16px;background:#DCE8CB;color:#2F5A22;display:flex;align-items:center;justify-content:center}
+.stkPedBajos{display:none;height:28px;padding:0 12px;border-radius:14px;background:#F8DDD5;color:#8F2A17;font-size:.78rem;font-weight:800;align-items:center}
+.stkPedTx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.stkPedTx small{font-size:.66rem;letter-spacing:.14em;font-weight:800;color:#4F6F3A}
+.stkPedTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.2rem;letter-spacing:-.01em}
+.stkPedTx span{font-size:.82rem;color:#4F5F45}
+.stkPasos{display:flex;flex-direction:column;gap:8px}
+.stkPaso{display:flex;flex-direction:row-reverse;align-items:center;justify-content:space-between;gap:12px;text-align:left;border:1px solid #E8DFD2;background:#FFFDF9;color:#2A201A;border-radius:22px;padding:14px 16px;font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(74,63,56,.06)}
+.stkPasoTop{display:flex;align-items:center;gap:12px;flex:none}
+.stkNum{width:28px;height:28px;border-radius:14px;background:#2A201A;color:#F8F1E6;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.stkPasoIco{display:none;width:40px;height:40px;border-radius:14px;background:#EADFD3;color:#4A3F38;align-items:center;justify-content:center}
+.stkPasoChev{display:none}
+.stkPasoTx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.stkPasoTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.1rem;letter-spacing:-.01em}
+.stkPasoTx span{font-size:.82rem;color:#6A5B50;line-height:1.35}
+.stkPaso.osc{background:#2B2018;border-color:#2B2018;color:#F8F1E6;box-shadow:0 10px 24px rgba(43,32,24,.25)}
+.stkPaso.osc .stkNum{background:#D9B869;color:#2B2018}
+.stkPaso.osc .stkPasoIco{background:#4A3A2E;color:#D9B869}
+.stkPaso.osc .stkPasoTx span{color:#DCCFC1}
+@media(max-width:899px){
+  .stkPaso{flex-direction:row}
+  .stkPaso .stkPasoTop{order:0}
+  .stkPaso::after{content:"";width:18px;height:18px;flex:none;background:currentColor;opacity:.55;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") center/contain no-repeat}
+  .stkPaso.osc::after{background:#D9B869;opacity:1}
+}
+@media(min-width:900px){
+  .stkAcc{display:grid;grid-template-columns:minmax(0,1fr) 1px minmax(0,3.3fr);gap:28px;align-items:stretch;margin:26px 0 10px}
+  .stkAcc.solo{grid-template-columns:1fr}
+  .stkDiv{display:block;background:#E2D7C8}
+  .stkPedido{flex-direction:column;align-items:stretch;justify-content:space-between;gap:16px;border-radius:26px;padding:22px 24px;min-height:164px}
+  .stkPedTop{align-items:flex-start}
+  .stkPedIco{width:48px;height:48px}
+  .stkPedBajos{display:flex}
+  .stkPedTx b{font-size:1.45rem}
+  .stkPedTx span{font-size:.88rem}
+  .stkFisico{display:flex;flex-direction:column}
+  .stkPasos{display:grid;grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr) 26px minmax(0,1fr);align-items:center;gap:0;flex-grow:1}
+  .stkSep{display:flex;justify-content:center;color:#B09A7E}
+  .stkPaso{flex-direction:column;align-items:stretch;justify-content:space-between;gap:14px;height:100%;min-height:128px;border-radius:26px;padding:20px 22px}
+  .stkPasoTop{justify-content:flex-start}
+  .stkPasoIco{display:flex}
+  .stkPaso.osc .stkPasoTop{width:100%}
+  .stkPaso.osc .stkPasoChev{display:block;margin-left:auto;color:#D9B869}
+  .stkPasoTx b{font-size:1.3rem}
+  .stkPasoTx span{font-size:.88rem}
+}
 .segIng{display:inline-flex;padding:4px;border-radius:999px;background:rgba(var(--accent-rgb),.12);gap:4px;margin:0 0 12px}
 .segIng button{height:36px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
 .segIng button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
@@ -1125,7 +1177,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.144.0";
+const FRONTEND_VERSION = "1.144.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3698,21 +3750,35 @@ function stockViewGeneral(st){
   </div>
   ${bannerBorradorConteoHTML_si(puedeGestionar)}
   ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal)}
-  <p style="margin:12px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
+  <p style="margin:20px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
   ${chipFiltros()}
   <div class="rows stkCols" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
 }
 function bannerBorradorConteoHTML_si(ok){ return ok?bannerBorradorConteoHTML():"" }
-/** Tarjetas de arriba de Stock (solo para mirar, no se hace ningún movimiento desde acá): Pedido sugerido aparte y, en fila, Conteo físico y Stock definitivo.
- *  Mock aprobado por Gabi 13/11/2026. */
+/** Tarjetas de arriba de Stock, tal cual el mock aprobado por Gabi (13/11/2026): «Pedido sugerido» aparte, en verde suave, y «Stock físico · en orden»
+ *  con tres pasos numerados (1 Conteo físico → 2 Stock de local → 3 Stock definitivo, este último oscuro y dorado). Desde acá no se hace ningún movimiento.
+ *  Paso 2 abre el conteo del local (ex «Stock definitivo del local»); paso 3 abre los stock definitivos guardados. */
 function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
-  const t=[];
-  if(puedePedido) t.push(accTileHTML("verPedidoBtn","Pedido sugerido",`${al.length} ${al.length===1?"sabor bajo":"sabores bajos"} · ${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"}`,"pedido","dest",`aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}"`));
-  if(puedeGestionar){
-    t.push(accTileHTML("conteoBtn","Conteo físico","corrige el stock de la cámara","conteo","",`aria-label="Conteo físico"`));
-    t.push(accTileHTML("invBtn","Stock definitivo",invHayBorrador()?"tenés uno sin terminar":"conteo del local · cámara + local","inv","",`aria-label="Stock definitivo del local"`));
-  }
-  return (t.length?accGridHTML(t):"")+(puedeGestionar?`<div style="text-align:center;margin:-4px 0 6px"><button type="button" class="invLnk" id="invGuardadosBtn">Ver stock definitivos guardados</button></div>`:"");
+  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const pedido=puedePedido?`<button type="button" class="stkPedido" id="verPedidoBtn" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
+      <span class="stkPedTop"><span class="stkPedIco">${ic('<path d="M8 6h12M8 12h12M8 18h8"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>')}</span>${al.length?`<span class="stkPedBajos">${al.length} ${al.length===1?"bajo":"bajos"}</span>`:""}</span>
+      <span class="stkPedTx"><small>PARA PEDIR</small><b>Pedido sugerido</b><span>${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"} por pedir</span></span>
+    </button>`:"";
+  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
+      <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
+      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span>
+    </button>`;
+  const fisico=puedeGestionar?`<div class="stkFisico"><p class="stkLbl">STOCK FÍSICO · EN ORDEN</p>
+    <div class="stkPasos">
+      ${paso(1,"conteoBtn","Conteo físico","Corrige el stock de la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo físico")}
+      <span class="stkSep">${chev}</span>
+      ${paso(2,"invBtn","Stock de local",invHayBorrador()?"Tenés uno sin terminar.":"Lo que tenés afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Stock de local")}
+      <span class="stkSep">${chev}</span>
+      ${paso(3,"invGuardadosBtn","Stock definitivo","1 + 2. Ver por período.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Stock definitivo guardados")}
+    </div></div>`:"";
+  if(!pedido&&!fisico) return "";
+  return `<div class="stkAcc${pedido&&fisico?"":" solo"}">${pedido}${pedido&&fisico?`<span class="stkDiv"></span>`:""}${fisico}</div>`;
 }
 
 function stockViewPedido(st){
