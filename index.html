@@ -547,6 +547,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .hSub{margin-top:10px;font-size:.68rem;letter-spacing:.14em;font-weight:800;color:var(--muted);text-transform:uppercase}
 .hCols{display:block}
 @media (min-width:760px){.hCols{column-count:2;column-gap:28px}.hCols.uno{column-count:1}}
+.kgInline{width:64px;text-align:right;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface);color:var(--ink);font-family:inherit;font-size:.9rem}
 .hLinP{padding:6px 0 8px;border-top:1px solid var(--line);break-inside:avoid}
 .hLinP .hLin{border-top:0;padding:2px 0}
 .hFichas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
@@ -1268,7 +1269,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.146.1";
+const FRONTEND_VERSION = "1.147.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1502,6 +1503,17 @@ function kilosFilaHTML(id,q){
   if(!esVasquetaKilos(id) || !(q>0)) return "";
   const v=S.kilosProduccion[id]||"", kg=kilosNum(v), por=kg>0?kg/q:0, raro=kg>0 && (por<2 || por>6);
   return `<div class="lotesFull"><div class="kgFila"><label for="kg-${id}">Kilos totales de ${q} ${unidad(id,q)}</label><input type="text" inputmode="decimal" id="kg-${id}" data-kilos="${id}" value="${esc(v)}" placeholder="0,00"> kg${raro?`<span class="kgAv">Ojo: da ${fmtKg(por)} kg por vasqueta — revisá los kilos.</span>`:""}</div></div>`;
+}
+/** Kilos en la misma fila que las unidades (como en Producción): el campo va al lado del más y el menos, sin fila aparte.
+ *  Solo vasquetas en locales con kilos reales. El aviso «da X kg por vasqueta» queda debajo solo si los kilos no cierran. */
+function kilosInlineHTML(id){
+  if(!esVasquetaKilos(id)) return "";
+  return `<input type="text" inputmode="decimal" id="kg-${id}" data-kilos="${id}" class="kgInline" placeholder="kg" aria-label="Kilos totales" value="${esc(S.kilosProduccion[id]||"")}">`;
+}
+function kilosAvisoHTML(id,q){
+  if(!esVasquetaKilos(id) || !(q>0)) return "";
+  const kg=kilosNum(S.kilosProduccion[id]||""), por=kg>0?kg/q:0;
+  return kg>0 && (por<2||por>6) ? `<div class="lotesFull"><div class="kgFila"><span class="kgAv">Ojo: da ${fmtKg(por)} kg por vasqueta — revisá los kilos.</span></div></div>` : "";
 }
 /** Jornada operativa: el día de trabajo arranca a las 04:00, así que lo que se
  *  carga entre 00:00 y 04:00 cuenta en la jornada del día anterior. El ts real
@@ -3683,10 +3695,11 @@ function gridIngreso(st){
       <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
       ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
+        ${kilosInlineHTML(s.id)}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
     ${usaLotes(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
-    ${kilosFilaHTML(s.id,q)}
+    ${kilosAvisoHTML(s.id,q)}
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
@@ -3726,8 +3739,8 @@ function gridDevolucion(st){
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">Pendiente de devolver: ${max} ${unidad(s.id,max)}</div></div>
-      <div class="stepper"><button type="button" data-ddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-dinc="${s.id}" data-max="${max}" aria-label="Sumar">+</button></div>
-      ${kilosFilaHTML(s.id,q)}
+      <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">${kilosInlineHTML(s.id)}<div class="stepper"><button type="button" data-ddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-dinc="${s.id}" data-max="${max}" aria-label="Sumar">+</button></div></div>
+      ${kilosAvisoHTML(s.id,q)}
     </div>`};
   return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
