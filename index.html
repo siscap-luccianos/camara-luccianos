@@ -246,6 +246,9 @@ select{max-width:220px}
 .pedNom{display:flex;align-items:center;gap:10px;min-width:0;border:0;background:none;padding:0;cursor:pointer;font:inherit;color:var(--ink);text-align:left}
 .pedNom .nm{min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700}
 .pedNom .meta{font-size:.78rem;color:var(--muted);font-weight:400}
+.pedVer{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;margin-top:4px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:.72rem;font-weight:800;letter-spacing:.01em}
+.pedTip{display:flex;align-items:center;gap:10px;margin:2px 0 12px;padding:11px 14px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-size:.86rem;font-weight:700;line-height:1.35}
+.pedTip b{font-weight:900}
 .pedHay{text-align:center;font-weight:800;font-size:1rem}
 .pedDetalle{padding:4px 0 12px 64px}
 .pedTend{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:8px}
@@ -1288,7 +1291,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.148.0";
+const FRONTEND_VERSION = "1.148.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4045,7 +4048,7 @@ function stockViewPedido(st){
     return `<div class="pedFila">
         <button type="button" class="pedNom" data-pdet="${s.id}" aria-expanded="${abierto}">
           ${plateHTML(s.id)}
-          <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} desde el ${fechaCorta(D.ult)}</span></span>
+          <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} desde el ${fechaCorta(D.ult)}</span><span class="pedVer">${abierto?"Ocultar detalle":"Ver cómo se calcula"}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="transform:rotate(${abierto?180:0}deg)"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span></span>
         </button>
         <span class="pedHay">${st[s.id]}</span>
         <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>
@@ -4083,7 +4086,8 @@ function stockViewPedido(st){
   </button>
   <div class="rubroCarrusel" role="tablist" aria-label="Rubros">${grupos.map(tarjetaRubro).join("")}</div>
   <p class="sec" style="margin:4px 0 4px">${esc(GRUPO_PRODUCTO_LABEL[rubroActivo]||rubroActivo)} · qué pedir</p>
-  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió desde tu último pedido y lo que se espera hasta que llegue. Podés cambiar cualquier número con − y +. Tocá un sabor para ver de dónde sale.</p>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió desde tu último pedido y lo que se espera hasta que llegue. Podés cambiar cualquier número con − y +.</p>
+  <div class="pedTip"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 7.6v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Tocá cualquier sabor para ver <b>cómo se calcula su número</b>.</span></div>
   <div class="pedTabla">
     <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Pedir</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
