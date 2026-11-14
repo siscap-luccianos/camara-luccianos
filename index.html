@@ -926,7 +926,7 @@ body:has(.mantenerOv){overflow:hidden}
 .llegaFila{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:.9rem}
 .llegaFila button{width:32px;height:32px;border-radius:50%;border:1px solid rgba(var(--header-bg-rgb),.22);background:var(--surface);color:var(--ink);font-size:1.1rem;font-weight:800;line-height:1}
 .pedDetalle.pd{padding:4px 4px 14px}
-.pdTit{display:flex;justify-content:space-between;align-items:center;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pdTit{display:flex;justify-content:flex-start;gap:14px;align-items:center;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pdTit b{color:var(--ink);font-size:.85rem;text-transform:none}
 .pdTrend{max-width:320px;margin:6px auto 0}
 .pdLinea{display:block;width:100%;height:auto}
@@ -1326,7 +1326,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.149.2";
+const FRONTEND_VERSION = "1.149.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
