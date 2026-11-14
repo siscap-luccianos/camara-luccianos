@@ -34,10 +34,10 @@ const { chromium } = require("playwright");
   };
   const leer = () => page.evaluate(() => ({ st: stockMap()["4"], ped: pedidoSugerido("4", stockMap()), sin: pedidoSinAjuste("4", stockMap()), N: datosProyeccion().N, vent: datosProyeccion().ventana }));
 
-  ok(await page.locator("[data-ultped]").count() === 14, "hay 14 días para marcar el último pedido");
-  ok(await page.locator("[data-llega]").count() === 14, "hay 14 días para marcar la llegada");
+  ok(await page.locator("[data-ultped]").count() === 7, "hay 7 días para marcar el último pedido");
+  ok(await page.locator("[data-llega]").count() === 7, "hay 7 días para marcar la llegada");
   ok((await page.locator('[data-llega="4"]').getAttribute("aria-pressed")) === "true", "la llegada en 4 días está marcada");
-  ok(/Llega el .* · 4 días/.test(await page.innerText(".llegaFila")), "dice cuándo llega: " + (await page.innerText(".llegaFila")).replace(/\n/g, " "));
+  ok(/Llega el .* · en 4 días/.test(await page.innerText(".llegaFila")), "dice cuándo llega: " + (await page.innerText(".llegaFila")).replace(/\n/g, " "));
   let r = await leer();
   ok(r.N === 7 && r.vent === 21, "sin nada marcado: último pedido hace 7 días y muestra de 3 semanas (N=" + r.N + ", ventana=" + r.vent + ")");
   ok(r.sin === esperado(4, r.st), "el pedido sale de los mismos días de la semana: " + r.sin + " (esperado " + esperado(4, r.st) + ", stock " + r.st + ")");
@@ -49,10 +49,10 @@ const { chromium } = require("playwright");
   ok(await page.evaluate(() => S.diasEntrega) === 3, "el + suma un día");
   await page.click('[data-llega="4"]'); await page.waitForTimeout(150);
 
-  await page.click("[data-ultped]:nth-child(5)"); await page.waitForTimeout(200);
+  await page.click("[data-pdmas]"); await page.waitForTimeout(150); ok(await page.locator("[data-ultped]").count() === 14, "«Ver más días» muestra 14"); await page.click("[data-ultped]:nth-child(4)"); await page.waitForTimeout(200);
   r = await leer();
   ok(r.N === 10, "marcar otro día de último pedido cambia los días medidos (N=" + r.N + ")");
-  ok(/Pasaron 10 días/.test(await page.innerText(".kpis")), "dice «Pasaron 10 días»");
+  ok(/Pasaron 10 días/.test(await page.innerText(".pdFechas")), "dice «Pasaron 10 días»");
   ok(/ultimoPedido/.test(await page.evaluate(() => Object.keys(localStorage).join(","))), "se recuerda por local");
 
   const fila = page.locator('[data-pdet="4"]'); await fila.click(); await page.waitForTimeout(200);
