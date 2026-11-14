@@ -246,6 +246,18 @@ select{max-width:220px}
 .pedNom{display:flex;align-items:center;gap:10px;min-width:0;border:0;background:none;padding:0;cursor:pointer;font:inherit;color:var(--ink);text-align:left}
 .pedNom .nm{min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700}
 .pedNom .meta{font-size:.78rem;color:var(--muted);font-weight:400}
+.pedTend,.pedCons{display:none}
+.pedLn.sube{color:var(--accent)}.pedLn.baja{color:#3F7A58}.pedLn.igual{color:var(--muted)}
+@media(min-width:900px){
+.pedHead,.pedFila{grid-template-columns:minmax(0,2.1fr) minmax(0,1.9fr) minmax(0,1.1fr) 70px 150px}
+.pedHead span:nth-child(n+2){text-align:center}
+.pedTend{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pedCons{display:block;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.25rem}
+.pedCons small{font-family:Manrope,sans-serif;font-size:.72rem;color:var(--muted);font-weight:600}
+.pedTend .tl{display:grid;grid-template-columns:repeat(3,1fr);width:160px;text-align:center;font-weight:700;font-size:.85rem;color:var(--muted)}
+.pedTend .tl b{color:var(--ink);font-weight:800}
+.pedTend .tt{font-size:.74rem;font-weight:800}
+}
 .pedVer{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;margin-top:4px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:.72rem;font-weight:800;letter-spacing:.01em}
 .pedTip{display:flex;align-items:center;gap:10px;margin:2px 0 12px;padding:11px 14px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-size:.86rem;font-weight:700;line-height:1.35}
 .pedTip b{font-weight:900}
@@ -1298,7 +1310,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.148.2";
+const FRONTEND_VERSION = "1.149.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4062,6 +4074,8 @@ function stockViewPedido(st){
           ${plateHTML(s.id)}
           <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} desde el ${fechaCorta(D.ult)}</span><span class="pedAcc"><span class="pedVer">${abierto?"Ocultar detalle":"Ver cómo se calcula"}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="transform:rotate(${abierto?180:0}deg)"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${(()=>{ const sm=D.semana[s.id]; if(!sm||!(sm[0]+sm[1]+sm[2])) return ""; const tn=tendDe(sm); return `<span class="pedTendB ${tn.cls}">${tn.flecha} ${tn.txt}</span>` })()}</span></span>
         </button>
+        ${(()=>{ const sm=D.semana[s.id]||[0,0,0], tn=tendDe(sm), mx=Math.max(...sm), mn=Math.min(...sm), rg=Math.max(1,mx-mn), y=sm.map(v=>mx===mn?24:Math.round(38-(v-mn)/rg*30)); const tot=proyeccionDias(s.id).reduce((a,x)=>a+x.v,0)/(S.diasEntrega+1);
+          return `<span class="pedTend"><svg width="160" height="44" viewBox="0 0 160 44" class="pedLn ${tn.cls}" aria-hidden="true"><polyline points="27,${y[0]} 80,${y[1]} 133,${y[2]}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/><circle cx="27" cy="${y[0]}" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="80" cy="${y[1]}" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="133" cy="${y[2]}" r="5" fill="currentColor"/></svg><span class="tl"><span>${sm[0]}</span><span>${sm[1]}</span><b>${sm[2]}</b></span><span class="tt pedLn ${tn.cls}">${tn.txt}</span></span><span class="pedCons">${coma(tot)} <small>/día</small></span>` })()}
         <span class="pedHay">${st[s.id]}</span>
         <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>
       </div>
@@ -4079,7 +4093,7 @@ function stockViewPedido(st){
   const bloqueProducir = aProducir.length ? `<p class="sec" style="margin:18px 0 4px">A producir</p>
   <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${totalProducir} ${totalProducir===1?"unidad":"unidades"} · lo que ${esc(S.local)} fabrica. Es un aviso interno, no va a fábrica.</p>
   <div class="pedTabla">
-    <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Producir</span></div>
+    <div class="pedHead"><span>Sabor</span><span class="pedTend" style="flex-direction:row">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Hay hoy</span><span>Producir</span></div>
     ${aProducir.map(sabor).join("")}
   </div>
   <button type="button" class="btn ghost" id="copiarProducir" style="width:100%;margin-top:10px">Copiar lista para producción</button>` : "";
@@ -4099,9 +4113,9 @@ function stockViewPedido(st){
   <div class="rubroCarrusel" role="tablist" aria-label="Rubros">${grupos.map(tarjetaRubro).join("")}</div>
   <p class="sec" style="margin:4px 0 4px">${esc(GRUPO_PRODUCTO_LABEL[rubroActivo]||rubroActivo)} · qué pedir</p>
   <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió desde tu último pedido y lo que se espera hasta que llegue. Podés cambiar cualquier número con − y +.</p>
-  <div class="pedTip"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 7.6v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Tocá cualquier sabor para ver <b>cómo se calcula su número</b>.</span></div>
+  <div class="pedTip"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 7.6v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Calculado con lo que salió desde tu último pedido y lo que te queda. Podés cambiar cualquier número con − y +. <b>Tocá «Ver cómo se calcula»</b> en un sabor para ver la cuenta completa.</span></div>
   <div class="pedTabla">
-    <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Pedir</span></div>
+    <div class="pedHead"><span>Sabor</span><span class="pedTend" style="flex-direction:row">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Hay hoy</span><span>Pedir</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
   </div>${bloqueProducir}`;
 }
