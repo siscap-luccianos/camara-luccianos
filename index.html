@@ -888,6 +888,25 @@ body:has(.mantenerOv){overflow:hidden}
 .kpi .val.crit{color:var(--alert)}
 .kpi .sub{font-size:.78rem;color:var(--muted)}
 .diasChips{display:flex;gap:6px;flex-wrap:wrap}
+.dStrip{display:flex;gap:6px;flex-wrap:wrap}
+.dChip{height:auto;min-height:50px;width:48px;padding:4px 0;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+.dChip small{font-size:.58rem;letter-spacing:.06em;opacity:.7;font-weight:700}
+.dChip b{font-family:var(--display);font-size:1.05rem}
+.llegaFila{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:.9rem}
+.llegaFila button{width:32px;height:32px;border-radius:50%;border:1px solid rgba(var(--header-bg-rgb),.22);background:var(--surface);color:var(--ink);font-size:1.1rem;font-weight:800;line-height:1}
+.pedDetalle.pd{padding:4px 4px 14px}
+.pdTit{display:flex;justify-content:space-between;align-items:center;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pdTit b{color:var(--ink);font-size:.85rem;text-transform:none}
+.pdLinea{display:block;width:100%;height:34px;margin-top:6px}
+.pdNums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center;font-size:.85rem;font-weight:700;color:var(--muted)}
+.pdNums b{color:var(--ink)}
+.pdDias{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.pdDia{min-width:42px;text-align:center;border:1px solid rgba(var(--header-bg-rgb),.18);border-radius:10px;padding:4px 3px;background:var(--surface)}
+.pdDia.proy{border-style:dashed}
+.pdDia small{display:block;font-size:.55rem;letter-spacing:.04em;color:var(--muted);font-weight:700}
+.pdDia b{font-family:var(--display);font-size:.95rem}
+.pdCuenta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.8rem;font-weight:700;margin-top:12px}
+.pdCuenta span{padding:6px 10px;border-radius:12px;background:var(--surface);border:1px solid rgba(var(--header-bg-rgb),.18)}
 .waPanel{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px}
 .waBubbleBox{max-height:280px;overflow:auto;padding:16px;border-radius:14px;background:var(--wa-panel)}
 .waBubble{padding:12px 14px;border-radius:12px 12px 4px 12px;background:var(--wa-bubble);color:var(--wa-bubble-ink);font-size:.88rem;line-height:1.55;white-space:pre-line}
@@ -1269,7 +1288,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.147.1";
+const FRONTEND_VERSION = "1.148.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1363,6 +1382,9 @@ const S = {
   // Días hasta la próxima entrega del pedido sugerido: se recuerda POR LOCAL (cada local tiene su ritmo de pedido).
   get diasEntrega(){ return Number(ls.get("diasEntrega:"+(this.local||""), ls.get("diasEntrega","3")))||3 },
   set diasEntrega(v){ ls.set("diasEntrega:"+(this.local||""), String(v)) },
+  // Fecha del último pedido (también POR LOCAL): {iso:"AAAA-MM-DD", marcado:"AAAA-MM-DD del día en que se marcó"}.
+  get ultimoPedido(){ try{ return JSON.parse(ls.get("ultimoPedido:"+(this.local||""),"null")) }catch(e){ return null } },
+  set ultimoPedido(v){ ls.set("ultimoPedido:"+(this.local||""), JSON.stringify(v)) },
   categoriaHist: "todas", // todas|vasquetas|icepops|desperdicio|produccion — pills de categoría de Historial
   rangoHist: "s0", // d1/d60 = Hoy/Todo (últimos N días) — segmento Hoy/Semana/Mes/Todo, s0 = esta semana (lunes a domingo), m0 = este mes, s0..s3 = semana actual..hace 3 semanas, m0/m1 = mes actual/pasado, c<desde>|<hasta> = rango del calendario (YYYY-MM-DD) — tabla de Historial
   calHist: null, // calendario de Historial abierto: {mes, d, h} (d/h = YYYY-MM-DD elegidos), null = cerrado
@@ -1692,12 +1714,79 @@ function ventanaConsumo(){
   const disponibles = isFinite(primero) ? Math.ceil((jornadaDe()-primero)/864e5)+1 : 7;
   return Math.max(7, Math.min(objetivo, disponibles));
 }
+/* ---- Pedido sugerido por días de la semana ----
+   El consumo se mide desde el último pedido (mínimo 3 semanas de muestra) y se proyecta día por día, con el promedio de
+   ese mismo día de la semana, desde hoy hasta que llega la mercadería (día de llegada incluido: es el día de seguridad). */
+function addDias(ts,k){ const d=new Date(ts); return new Date(d.getFullYear(),d.getMonth(),d.getDate()+k).getTime()+CORTE_JORNADA_MS }
+function diaISO(ts){ return isoDeFecha(new Date(jornadaDe(ts))) }
+const DOW_CORTO=["DOM","LUN","MAR","MIÉ","JUE","VIE","SÁB"], DOW_LARGO=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function fechaCorta(ts){ const d=new Date(ts); return `${d.getDate()}/${d.getMonth()+1}` }
+/** Jornada (04:00) del último pedido. Si lo marcaron hoy vale esa fecha; si no, se asume que piden siempre el mismo día de
+ *  la semana: el último de esos días antes de hoy. Sin nada marcado: hace 7 días. */
+function ultimoPedidoTs(){
+  const hoy=jornadaDe(), u=S.ultimoPedido;
+  if(u && u.iso){
+    const d=isoALocal(u.iso)+CORTE_JORNADA_MS;
+    if(u.marcado===diaISO(hoy)) return Math.min(d,hoy);
+    const w=new Date(d).getDay();
+    for(let k=1;k<=7;k++){ const t=addDias(hoy,-k); if(new Date(t).getDay()===w) return t; }
+  }
+  return addDias(hoy,-7);
+}
+let _proyMemo={k:"",d:null};
+function datosProyeccion(){
+  const hoy=jornadaDe(), ult=ultimoPedidoTs();
+  const key=[S.local,S.regs.length,(S.regs[S.regs.length-1]||{}).id,S.regs.reduce((a,r)=>a+(r.anulado_por?1:0),0),hoy,ult].join("|");
+  if(_proyMemo.k===key) return _proyMemo.d;
+  const N=Math.max(1,Math.round((hoy-ult)/864e5));
+  let primero=Infinity;
+  for(const r of regsActivos()) if(r.tipo==="salida" && r.ts<primero) primero=r.ts;
+  const disp=isFinite(primero)?Math.max(0,Math.round((hoy-jornadaDe(primero))/864e5)):0;   // jornadas completas con historial
+  const ventana=Math.min(Math.max(21,N),disp), desde=addDias(hoy,-ventana);
+  const cuentaDow=[0,0,0,0,0,0,0];
+  for(let i=1;i<=ventana;i++) cuentaDow[new Date(addDias(hoy,-i)).getDay()]++;
+  const suma={}, total={}, desdeUlt={};
+  for(const r of regsActivos()){
+    if(r.tipo!=="salida"||r.subtipo==="transferencia") continue;
+    const j=jornadaDe(r.ts), w=new Date(j).getDay();
+    for(const [id,q] of Object.entries(r.items||{})){
+      const n=+q||0; if(!n) continue;
+      if(j>=ult) desdeUlt[id]=(desdeUlt[id]||0)+n;
+      if(j>=desde && j<hoy){ (suma[id]||(suma[id]=[0,0,0,0,0,0,0]))[w]+=n; total[id]=(total[id]||0)+n; }
+    }
+  }
+  const d={hoy,ult,N,ventana,cuentaDow,suma,total,desdeUlt};
+  _proyMemo={k:key,d};
+  return d;
+}
+/** Lo que se espera que salga cada día, desde hoy hasta el día de llegada (incluido). */
+function proyeccionDias(id){
+  const D=datosProyeccion(), k=S.diasEntrega, s=D.suma[id], plano=D.ventana>0?(D.total[id]||0)/D.ventana:0, out=[];
+  for(let i=0;i<=k;i++){
+    const ts=addDias(D.hoy,i), w=new Date(ts).getDay();
+    const v = D.ventana>=7 ? ((s&&D.cuentaDow[w]>0)?s[w]/D.cuentaDow[w]:0) : plano;
+    out.push({ts,w,v});
+  }
+  return out;
+}
+/** Lo que salió cada día de un sabor, de `ts0` en adelante (n días). */
+function salidasPorDia(id,ts0,n){
+  const a=new Array(n).fill(0);
+  for(const r of regsActivos()){
+    if(r.tipo!=="salida"||r.subtipo==="transferencia") continue;
+    const q=+(r.items||{})[id]||0; if(!q) continue;
+    const i=Math.round((jornadaDe(r.ts)-ts0)/864e5);
+    if(i>=0&&i<n) a[i]+=q;
+  }
+  return a;
+}
+function pedidoSinAjuste(id,st){
+  const proy=proyeccionDias(id).reduce((a,x)=>a+x.v,0);
+  const m=multiploPedido(id);
+  return Math.ceil(Math.max(0,Math.ceil(proy-st[id]))/m)*m;
+}
 function pedidoSugerido(id, st){
-  const ventana=ventanaConsumo(), sV=salidasDias(ventana), promedioDiario=(sV[id]||0)/ventana;
-  let sug=Math.max(0, Math.ceil(promedioDiario*(S.diasEntrega+1) - st[id]));
-  const multiplo=multiploPedido(id);
-  sug = Math.ceil(sug/multiplo)*multiplo;
-  return Math.max(0, sug + (S.pedidoAdj[id]||0));
+  return Math.max(0, pedidoSinAjuste(id,st) + (S.pedidoAdj[id]||0));
 }
 
 /* ============================================================
@@ -3909,8 +3998,7 @@ function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
 }
 
 function stockViewPedido(st){
-  const s7=salidasDias(7);
-  const tendencia=tendenciaSemanas();
+  const D=datosProyeccion();
   // En un local que produce, lo que fabrica no se pide a fábrica: va aparte, en «A producir».
   const aProducir=saboresDelLocal().filter(s=>esProducido(s.id));
   const sabores=saboresDelLocal().filter(s=>!esProducido(s.id));
@@ -3922,42 +4010,47 @@ function stockViewPedido(st){
   const totalDe=g=>delRubro(g).reduce((a,s)=>a+pedidoDe(s),0);
   const saboresCon=g=>delRubro(g).filter(s=>pedidoDe(s)>0).length;
   const totalTodo=grupos.reduce((a,g)=>a+totalDe(g),0);
-  const dias=[2,3,4,7,15,21,30];
+  const coma=n=>(Math.round(n*10)/10).toString().replace(".",",");
+  const diaBtn=(ts,atrib,on)=>`<button type="button" class="chip dChip" ${atrib} aria-pressed="${on}" aria-label="${DOW_LARGO[new Date(ts).getDay()]} ${fechaCorta(ts)}"><small>${DOW_CORTO[new Date(ts).getDay()]}</small><b>${new Date(ts).getDate()}</b></button>`;
+  const tiraUlt=Array.from({length:14},(_,i)=>addDias(D.hoy,-(14-i))).map(ts=>diaBtn(ts,`data-ultped="${diaISO(ts)}"`,ts===D.ult)).join("");
+  const tiraLlega=Array.from({length:14},(_,i)=>addDias(D.hoy,i+1)).map((ts,i)=>diaBtn(ts,`data-llega="${i+1}"`,S.diasEntrega===i+1)).join("");
+  const tsLlega=addDias(D.hoy,S.diasEntrega);
+  const pocaData=D.ventana<7;
 
-  const tendenciaHTML=s=>{
-    const sem=tendencia[s.id]||[{total:0,agotado:false},{total:0,agotado:false},{total:0,agotado:false}];
-    const max=Math.max(1,...sem.map(x=>x.total));
-    const tieneAgotado=sem.some(x=>x.agotado);
-    const icono = sem[2].total>sem[0].total*1.15?"Subiendo":sem[2].total<sem[0].total*0.85?"Bajando":"Estable";
-    return `<div>
-      <div class="pedTend"><span>Últimas 3 semanas</span><b>${icono}</b></div>
-      <div class="pedBarras">
-        ${sem.map((x,i)=>{
-          const alto=Math.max(8,Math.round((x.total/max)*56));
-          const etiqueta=i===2?"Esta semana (parcial)":`Hace ${3-i} sem.`;
-          return `<div class="pedBarra">
-            <span class="pedNum${x.agotado?" warn":""}">${x.total} uds</span>
-            <div class="pedCol" style="height:${alto}px;background:${x.agotado?"var(--warn-soft)":colorCategoria(s.categoria)};${x.agotado?"border:1.5px dashed var(--warn)":""}"></div>
-            <span class="pedSem">${etiqueta}</span>
-          </div>`;
-        }).join("")}
-      </div>
-      ${tieneAgotado?`<div class="pedAviso">Una de esas semanas se agotó antes de terminar: el consumo real pudo ser mayor.</div>`:""}
+  // Al tocar un sabor: lo que salió desde el último pedido + lo que se espera hasta que llega, y la cuenta.
+  const detalleHTML=s=>{
+    const proy=proyeccionDias(s.id), totProy=proy.reduce((a,x)=>a+x.v,0);
+    const nd=Math.min(D.N+1,15), ts0=addDias(D.hoy,-(nd-1));
+    const salio=salidasPorDia(s.id,ts0,nd);
+    const sem=[0,1,2].map(i=>{ const t0=addDias(D.ult,(i-2)*7); return salidasPorDia(s.id,t0,7).reduce((a,b)=>a+b,0) });
+    const mx=Math.max(1,...sem), mn=Math.min(...sem);
+    const ys=sem.map(v=>Math.round((30-(v-mn)/Math.max(1,mx-mn)*20)*10)/10);
+    const prom=(sem[0]+sem[1])/2, dif=sem[2]-prom, um=Math.max(2,prom*0.15);
+    const tend=dif>um?"Subiendo":dif<-um?"Bajando":"Estable";
+    return `<div class="pedDetalle pd">
+      <div class="pdTit"><span>Tendencia · 3 semanas</span><b>${tend}</b></div>
+      <svg class="pdLinea" viewBox="0 0 220 40" preserveAspectRatio="none" aria-hidden="true"><polyline points="37,${ys[0]} 110,${ys[1]} 183,${ys[2]}" fill="none" stroke="var(--muted)" stroke-opacity=".55" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+      <div class="pdNums"><span>${sem[0]}</span><span>${sem[1]}</span><b>${sem[2]}</b></div>
+      <div class="pdTit" style="margin-top:12px"><span>Salió desde tu último pedido</span><b>${salio.reduce((a,b)=>a+b,0)}</b></div>
+      <div class="pdDias">${salio.map((v,i)=>{ const ts=addDias(ts0,i); return `<div class="pdDia"><small>${DOW_CORTO[new Date(ts).getDay()]} ${new Date(ts).getDate()}</small><b>${v}</b></div>` }).join("")}</div>
+      <div class="pdTit" style="margin-top:12px"><span>Se espera hasta que llega</span><b>${coma(totProy)}</b></div>
+      <div class="pdDias">${proy.map(x=>`<div class="pdDia proy"><small>${DOW_CORTO[x.w]} ${new Date(x.ts).getDate()}</small><b>${coma(x.v)}</b></div>`).join("")}</div>
+      <div class="pdCuenta"><span>Esperado ${coma(totProy)}</span>−<span>Hay hoy ${st[s.id]}</span>=<span><b>Pedir ${pedidoSinAjuste(s.id,st)}</b></span></div>
     </div>`;
   };
 
   const sabor=s=>{
     const ped=pedidoDe(s), abierto=!!S.pedidoDetalle[s.id];
-    const vendido=s7[s.id]||0;
+    const vendido=D.desdeUlt[s.id]||0;
     return `<div class="pedFila">
         <button type="button" class="pedNom" data-pdet="${s.id}" aria-expanded="${abierto}">
           ${plateHTML(s.id)}
-          <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} esta semana</span></span>
+          <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} desde el ${fechaCorta(D.ult)}</span></span>
         </button>
         <span class="pedHay">${st[s.id]}</span>
         <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>
       </div>
-      ${abierto?`<div class="pedDetalle">${tendenciaHTML(s)}</div>`:""}`;
+      ${abierto?detalleHTML(s):""}`;
   };
 
   const tarjetaRubro=g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}">
@@ -3979,15 +4072,18 @@ function stockViewPedido(st){
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     <span class="tx"><b>Volver a Stock</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} para pedir en ${grupos.length} ${grupos.length===1?"rubro":"rubros"}</span></span>
   </button>
-  <div class="kpis">
-    <div class="kpi"><span class="lbl">Próxima entrega en</span><div class="diasChips">${dias.map(d=>`<button type="button" class="chip" data-dias="${d}" aria-pressed="${S.diasEntrega===d}">${d} días</button>`).join("")}</div><span class="sub">+ 1 día de stock de seguridad${S.diasEntrega>=15?" · consumo promedio de las últimas 4 semanas":""}</span></div>
+  <div class="kpis" style="grid-template-columns:1fr">
+    <div class="kpi"><span class="lbl">¿Qué día hiciste el último pedido?</span><div class="dStrip">${tiraUlt}</div><span class="sub">Pasaron ${D.N} ${D.N===1?"día":"días"}. El consumo se mide desde ahí. Si pedís siempre el mismo día, ya viene marcado solo.</span></div>
+    <div class="kpi"><span class="lbl">¿Qué día te llega la mercadería?</span><div class="dStrip">${tiraLlega}</div>
+      <div class="llegaFila"><button type="button" id="llegaMenos" aria-label="Un día menos">−</button><b>Llega el ${DOW_LARGO[new Date(tsLlega).getDay()]} ${fechaCorta(tsLlega)} · ${S.diasEntrega} ${S.diasEntrega===1?"día":"días"}</b><button type="button" id="llegaMas" aria-label="Un día más">+</button></div>
+      <span class="sub">El pedido cubre desde hoy hasta ese día, incluido.${pocaData?" Todavía hay poco historial: el cálculo es aproximado.":""}</span></div>
   </div>
   <button type="button" class="ctaCard glass" id="verResumenBtn" style="margin:12px 0" aria-label="Ver resumen del pedido por rubro">
     <span class="tx"><b>Ver resumen para enviar</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} · copiá todo o uno por rubro</span></span>
   </button>
   <div class="rubroCarrusel" role="tablist" aria-label="Rubros">${grupos.map(tarjetaRubro).join("")}</div>
   <p class="sec" style="margin:4px 0 4px">${esc(GRUPO_PRODUCTO_LABEL[rubroActivo]||rubroActivo)} · qué pedir</p>
-  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió esta semana y lo que te queda. Podés cambiar cualquier número con − y +. Tocá un sabor para ver su tendencia.</p>
+  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió desde tu último pedido y lo que se espera hasta que llegue. Podés cambiar cualquier número con − y +. Tocá un sabor para ver de dónde sale.</p>
   <div class="pedTabla">
     <div class="pedHead"><span>Sabor</span><span>Hay hoy</span><span>Pedir</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
@@ -6106,6 +6202,9 @@ document.addEventListener("click", async e=>{
   if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
   if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
+  if(t.dataset.ultped){ S.ultimoPedido={iso:t.dataset.ultped, marcado:diaISO(Date.now())}; S.pedidoAdj={}; renderApp(); return }
+  if(t.dataset.llega){ S.diasEntrega=Number(t.dataset.llega); S.pedidoAdj={}; renderApp(); return }
+  if(t.id==="llegaMenos"||t.id==="llegaMas"){ S.diasEntrega=Math.min(60,Math.max(1,S.diasEntrega+(t.id==="llegaMas"?1:-1))); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.movAbrir){ const k=t.dataset.movAbrir; if(S.histAbierto[k]) delete S.histAbierto[k]; else S.histAbierto[k]=true; renderApp(); return }
   if(t.dataset.movDia){ const k=t.dataset.movDia; if(S.histDiaMas[k]) delete S.histDiaMas[k]; else S.histDiaMas[k]=true; renderApp(); return }
   if(t.dataset.categoriaHist){ S.categoriaHist=t.dataset.categoriaHist; renderApp(); return }
@@ -7454,8 +7553,8 @@ function ayudaTemas(){
     "Tocá <b>Cargar al carrito de ingreso</b> y después <b>Confirmar ingreso</b>."])+nota("Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo».")});
   if(!colab) T.push({id:"pedido", titulo:"Pedido sugerido", sub:"Cuánto pedir y cómo mandarlo", html:li([
     "Entrá a Stock › <b>Pedido sugerido</b>.",
-    "Elegí en cuántos días llega la próxima entrega (2, 3, 4, 7, 15, 21 o 30). Lo recuerda para este local.",
-    "Cada rubro muestra qué hay hoy y cuánto pedir según lo que salió. Tocá un sabor para ver las últimas 3 semanas. Con − y + ajustás la cantidad.",
+    "Marcá <b>qué día hiciste el último pedido</b> (si pedís siempre el mismo día, ya viene marcado) y <b>qué día te llega la mercadería</b>. Lo recuerda para este local.",
+    "Cada rubro muestra qué hay hoy y cuánto pedir: lo que salió desde tu último pedido, proyectado día por día hasta que llega. Tocá un sabor para ver de dónde sale. Con − y + ajustás la cantidad.",
     "Tocá <b>Ver resumen para enviar</b>: ahí copiás el pedido por rubro, mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
   return T;
 }
