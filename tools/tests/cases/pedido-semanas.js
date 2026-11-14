@@ -60,6 +60,8 @@ const { chromium } = require("playwright");
   ok(await page.locator(".pdDia.proy").count() === 5, "el detalle muestra los 5 días proyectados (hoy hasta la llegada)");
   ok(await page.locator(".pdCuenta").count() === 1 && /Pedir \d+/.test(await page.innerText(".pdCuenta")), "el detalle cierra con la cuenta: " + (await page.innerText(".pdCuenta")).replace(/\n/g, " "));
   ok(/tendencia · 3 semanas/i.test(await page.innerText(".pedDetalle")) && await page.locator(".pdLinea").count() === 1, "línea de tendencia de 3 semanas");
+  ok(await page.evaluate(() => tendDe([3, 4, 10]).cls === "sube" && tendDe([10, 8, 2]).cls === "baja" && tendDe([4, 3, 5]).cls === "igual"), "la tendencia distingue subiendo, bajando y estable (4 · 3 · 5 es estable)");
+  ok(await page.locator(".pedTendB").count() >= 1, "cada sabor con movimientos muestra su flecha de tendencia en la lista");
   await page.screenshot({ path: "pedido-semanas.png", fullPage: true });
   ok(err.length === 0, "sin errores de consola: " + err.join(" | "));
   console.log(fallas ? "FALLAS " + fallas : "FALLAS 0");
