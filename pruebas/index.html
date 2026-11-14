@@ -926,6 +926,7 @@ body:has(.mantenerOv){overflow:hidden}
 .pdBig{font-family:var(--display);font-weight:600;font-size:2.1rem;line-height:1}
 .pdEnviar{background:var(--ink);color:var(--bg);border:0;cursor:pointer;justify-content:space-between}
 .pdEnviar .pdLbl{color:#E7DAC6}.pdEnviar b{font-size:.95rem}
+.pdTot{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:56px;padding:6px 12px;margin-left:6px;border-radius:12px;background:var(--ink);color:var(--bg)}.pdTot small{font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800;opacity:.8}.pdTot b{font-family:var(--display);font-size:1.05rem}.pdTot.proy{background:var(--accent-soft);color:var(--accent);border:1.5px dashed var(--accent)}
 .pdMasBtn{border:0;background:none;color:var(--accent);font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;padding:0 0 0 6px;text-decoration:underline}
 .pdRubros{margin:0 0 12px;padding:2px 0}
 .pdRubros .rubroTab{min-width:0}
@@ -1337,7 +1338,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.149.1";
+const FRONTEND_VERSION = "1.149.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4086,10 +4087,10 @@ function stockViewPedido(st){
       <div class="pdTit"><span>Tendencia · 3 semanas</span><b class="pdT ${tn.cls}">${tn.flecha} ${tn.txt}</b></div>
       <div class="pdTrend"><svg class="pdLinea ${tn.cls}" viewBox="0 0 320 48" aria-hidden="true"><polyline points="53,${ys[0]} 160,${ys[1]} 267,${ys[2]}" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="53" cy="${ys[0]}" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="2.6"/><circle cx="160" cy="${ys[1]}" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="2.6"/><circle cx="267" cy="${ys[2]}" r="6.5" fill="currentColor"/></svg>
       <div class="pdNums"><span>${sem[0]}</span><span>${sem[1]}</span><b>${sem[2]}</b></div></div>
-      <div class="pdTit" style="margin-top:12px"><span>Salió desde tu último pedido</span><b>${salio.reduce((a,b)=>a+b,0)}</b></div>
-      <div class="pdDias">${salio.map((v,i)=>{ const ts=addDias(ts0,i); return `<div class="pdDia"><small>${DOW_CORTO[new Date(ts).getDay()]} ${new Date(ts).getDate()}</small><b>${v}</b></div>` }).join("")}</div>
-      <div class="pdTit" style="margin-top:12px"><span>Se espera hasta que llega</span><b>${coma(totProy)}</b></div>
-      <div class="pdDias">${proy.map(x=>`<div class="pdDia proy"><small>${DOW_CORTO[x.w]} ${new Date(x.ts).getDate()}</small><b>${coma(x.v)}</b></div>`).join("")}</div>
+      <div class="pdTit" style="margin-top:12px"><span>Salió desde tu último pedido</span></div>
+      <div class="pdDias">${salio.map((v,i)=>{ const ts=addDias(ts0,i); return `<div class="pdDia"><small>${DOW_CORTO[new Date(ts).getDay()]} ${new Date(ts).getDate()}</small><b>${v}</b></div>` }).join("")}<div class="pdTot"><small>Total</small><b>${salio.reduce((a,b)=>a+b,0)}</b></div></div>
+      <div class="pdTit" style="margin-top:12px"><span>Se espera hasta que llega</span></div>
+      <div class="pdDias">${proy.map(x=>`<div class="pdDia proy"><small>${DOW_CORTO[x.w]} ${new Date(x.ts).getDate()}</small><b>${coma(x.v)}</b></div>`).join("")}<div class="pdTot proy"><small>Total</small><b>${coma(totProy)}</b></div></div>
       <div class="pdCuenta"><span>Esperado ${coma(totProy)}</span>−<span>Hay hoy ${st[s.id]}</span>=<span><b>Pedir ${pedidoSinAjuste(s.id,st)}</b></span></div>
     </div>`;
   };
