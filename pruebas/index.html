@@ -914,7 +914,22 @@ body:has(.mantenerOv){overflow:hidden}
 .kpi .val.crit{color:var(--alert)}
 .kpi .sub{font-size:.78rem;color:var(--muted)}
 .diasChips{display:flex;gap:6px;flex-wrap:wrap}
-.dStrip{display:flex;gap:6px;flex-wrap:wrap}
+.dStrip{display:flex;gap:6px}
+.dStrip .dChip{flex:1 1 0;width:auto;min-width:0;border-radius:14px}
+.pdEyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--accent);margin:2px 0 0}
+.pdH1{font-family:var(--display);font-weight:600;font-size:2rem;letter-spacing:-.02em;margin:2px 0 12px}
+.pedTip .pedTipI{flex:none;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800}
+.pdFechas,.pdKpis{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:12px}
+.pdCard{box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px 20px;display:flex;flex-direction:column;gap:10px;text-align:left;font:inherit;color:var(--ink)}
+.pdCard .sub{font-size:.82rem;color:var(--muted);font-weight:600}
+.pdLbl{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+.pdBig{font-family:var(--display);font-weight:600;font-size:2.1rem;line-height:1}
+.pdEnviar{background:var(--ink);color:var(--bg);border:0;cursor:pointer;justify-content:space-between}
+.pdEnviar .pdLbl{color:#E7DAC6}.pdEnviar b{font-size:.95rem}
+.pdMasBtn{border:0;background:none;color:var(--accent);font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;padding:0 0 0 6px;text-decoration:underline}
+.pdRubros{margin:0 0 12px;padding:2px 0}
+.pdRubros .rubroTab{min-width:0}
+@media(min-width:900px){.pdFechas{grid-template-columns:1fr 1fr}.pdKpis{grid-template-columns:repeat(3,1fr)}}
 .dChip{height:auto;min-height:50px;width:48px;padding:4px 0;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
 .dChip small{font-size:.58rem;letter-spacing:.06em;opacity:.7;font-weight:700}
 .dChip b{font-family:var(--display);font-size:1.05rem}
@@ -1322,7 +1337,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.149.0";
+const FRONTEND_VERSION = "1.149.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4053,8 +4068,9 @@ function stockViewPedido(st){
   const totalTodo=grupos.reduce((a,g)=>a+totalDe(g),0);
   const coma=n=>(Math.round(n*10)/10).toString().replace(".",",");
   const diaBtn=(ts,atrib,on)=>`<button type="button" class="chip dChip" ${atrib} aria-pressed="${on}" aria-label="${DOW_LARGO[new Date(ts).getDay()]} ${fechaCorta(ts)}"><small>${DOW_CORTO[new Date(ts).getDay()]}</small><b>${new Date(ts).getDate()}</b></button>`;
-  const tiraUlt=Array.from({length:14},(_,i)=>addDias(D.hoy,-(14-i))).map(ts=>diaBtn(ts,`data-ultped="${diaISO(ts)}"`,ts===D.ult)).join("");
-  const tiraLlega=Array.from({length:14},(_,i)=>addDias(D.hoy,i+1)).map((ts,i)=>diaBtn(ts,`data-llega="${i+1}"`,S.diasEntrega===i+1)).join("");
+  const nTira=S.pdMas?14:7;
+  const tiraUlt=Array.from({length:nTira},(_,i)=>addDias(D.hoy,-(nTira-1-i))).map(ts=>diaBtn(ts,`data-ultped="${diaISO(ts)}"`,ts===D.ult)).join("");
+  const tiraLlega=Array.from({length:nTira},(_,i)=>addDias(D.hoy,i+1)).map((ts,i)=>diaBtn(ts,`data-llega="${i+1}"`,S.diasEntrega===i+1)).join("");
   const tsLlega=addDias(D.hoy,S.diasEntrega);
   const pocaData=D.ventana<7;
 
@@ -4109,23 +4125,24 @@ function stockViewPedido(st){
     ${aProducir.map(sabor).join("")}
   </div>
   <button type="button" class="btn ghost" id="copiarProducir" style="width:100%;margin-top:10px">Copiar lista para producción</button>` : "";
-  return `<button type="button" class="ctaCard glass" id="volverPedido" style="margin-bottom:12px" aria-label="Volver a Stock">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><path d="M15 6l-6 6 6 6" stroke="#7A3E1D" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="tx"><b>Volver a Stock</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} para pedir en ${grupos.length} ${grupos.length===1?"rubro":"rubros"}</span></span>
-  </button>
-  <div class="kpis" style="grid-template-columns:1fr">
-    <div class="kpi"><span class="lbl">¿Qué día hiciste el último pedido?</span><div class="dStrip">${tiraUlt}</div><span class="sub">Pasaron ${D.N} ${D.N===1?"día":"días"}. El consumo se mide desde ahí. Si pedís siempre el mismo día, ya viene marcado solo.</span></div>
-    <div class="kpi"><span class="lbl">¿Qué día te llega la mercadería?</span><div class="dStrip">${tiraLlega}</div>
-      <div class="llegaFila"><button type="button" id="llegaMenos" aria-label="Un día menos">−</button><b>Llega el ${DOW_LARGO[new Date(tsLlega).getDay()]} ${fechaCorta(tsLlega)} · ${S.diasEntrega} ${S.diasEntrega===1?"día":"días"}</b><button type="button" id="llegaMas" aria-label="Un día más">+</button></div>
-      <span class="sub">El pedido cubre desde hoy hasta ese día, incluido.${pocaData?" Todavía hay poco historial: el cálculo es aproximado.":""}</span></div>
+  const unidadesRubro=g=>totalDe(g);
+  return `<button type="button" class="btn volver" id="volverPedido" style="margin-bottom:10px" aria-label="Volver a Stock">‹ Volver a Stock</button>
+  <div class="pdEyebrow">Stock › Pedido sugerido</div>
+  <h2 class="pdH1">Pedido sugerido</h2>
+  <div class="pedTip"><span class="pedTipI">i</span><span>Calculado con lo que salió desde tu último pedido y lo que te queda. Podés cambiar cualquier número con − y +. <b>Tocá «Ver cómo se calcula»</b> en un sabor para ver la cuenta completa.</span></div>
+  <div class="pdFechas">
+    <div class="pdCard"><span class="pdLbl">¿Qué día hiciste el último pedido?</span><div class="dStrip">${tiraUlt}</div>
+      <span class="sub">Pasaron <b>${D.N} ${D.N===1?"día":"días"}</b> · se mide el consumo desde ahí.${D.N>nTira?" (Tocá «Ver más días» para marcarlo.)":""} <button type="button" class="pdMasBtn" data-pdmas="1">${S.pdMas?"Ver menos días":"Ver más días"}</button></span></div>
+    <div class="pdCard"><span class="pdLbl">¿Qué día te llega la mercadería?</span><div class="dStrip">${tiraLlega}</div>
+      <div class="llegaFila"><button type="button" id="llegaMenos" aria-label="Un día menos">−</button><span>Llega el <b>${DOW_LARGO[new Date(tsLlega).getDay()]} ${fechaCorta(tsLlega)}</b> · en ${S.diasEntrega} ${S.diasEntrega===1?"día":"días"}.</span><button type="button" id="llegaMas" aria-label="Un día más">+</button></div>
+      ${pocaData?`<span class="sub">Todavía hay poco historial: el cálculo es aproximado.</span>`:""}</div>
   </div>
-  <button type="button" class="ctaCard glass" id="verResumenBtn" style="margin:12px 0" aria-label="Ver resumen del pedido por rubro">
-    <span class="tx"><b>Ver resumen para enviar</b><span>${totalTodo} ${totalTodo===1?"unidad":"unidades"} · copiá todo o uno por rubro</span></span>
-  </button>
-  <div class="rubroCarrusel" role="tablist" aria-label="Rubros">${grupos.map(tarjetaRubro).join("")}</div>
-  <p class="sec" style="margin:4px 0 4px">${esc(GRUPO_PRODUCTO_LABEL[rubroActivo]||rubroActivo)} · qué pedir</p>
-  <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">Calculado con lo que salió desde tu último pedido y lo que se espera hasta que llegue. Podés cambiar cualquier número con − y +.</p>
-  <div class="pedTip"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="flex:none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 11v5M12 7.6v.01" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Calculado con lo que salió desde tu último pedido y lo que te queda. Podés cambiar cualquier número con − y +. <b>Tocá «Ver cómo se calcula»</b> en un sabor para ver la cuenta completa.</span></div>
+  <div class="pdKpis">
+    <div class="pdCard"><span class="pdLbl">Sabores para pedir</span><b class="pdBig">${grupos.reduce((a,g)=>a+saboresCon(g),0)}</b></div>
+    <div class="pdCard"><span class="pdLbl">Unidades en total</span><b class="pdBig">${totalTodo}</b></div>
+    <button type="button" class="pdCard pdEnviar" id="verResumenBtn" aria-label="Ver resumen del pedido por rubro"><span class="pdLbl">Enviar el pedido</span><b>Ver resumen para enviar →</b></button>
+  </div>
+  <div class="rubroCarrusel pdRubros" role="tablist" aria-label="Rubros">${grupos.map(g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><span>${saboresCon(g)} para pedir${totalDe(g)?` · ${totalDe(g)} u.`:""}</span></button>`).join("")}</div>
   <div class="pedTabla">
     <div class="pedHead"><span>Sabor</span><span class="pedTend" style="flex-direction:row">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Hay hoy</span><span>Pedir</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
@@ -6246,6 +6263,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.ultped){ S.ultimoPedido={iso:t.dataset.ultped, marcado:diaISO(Date.now())}; S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.llega){ S.diasEntrega=Number(t.dataset.llega); S.pedidoAdj={}; renderApp(); return }
+  if(t.closest&&t.closest("[data-pdmas]")){ S.pdMas=!S.pdMas; renderApp(); return }
   if(t.id==="llegaMenos"||t.id==="llegaMas"){ S.diasEntrega=Math.min(60,Math.max(1,S.diasEntrega+(t.id==="llegaMas"?1:-1))); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.movAbrir){ const k=t.dataset.movAbrir; if(S.histAbierto[k]) delete S.histAbierto[k]; else S.histAbierto[k]=true; renderApp(); return }
   if(t.dataset.movDia){ const k=t.dataset.movDia; if(S.histDiaMas[k]) delete S.histDiaMas[k]; else S.histDiaMas[k]=true; renderApp(); return }
