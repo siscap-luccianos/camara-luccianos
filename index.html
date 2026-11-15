@@ -4723,7 +4723,7 @@ function entradasMov(r){
 }
 function resumenMov(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
-  if(r.tipo==="conteo"||parcial){ const c=contadosDe(r); return `${parcial?"Conteo parcial":"Conteo físico"} · ${Object.keys(c.items).length} sabores contados` }
+  if(r.tipo==="conteo"||parcial){ const c=contadosDe(r); return Object.entries(c.items).sort((x,y)=>claveNombre(nombre(x[0])).localeCompare(claveNombre(nombre(y[0])))).map(([id,q])=>`${nombre(id)} ×${q}`).join(", ")||"Sin sabores con stock" }
   const en=entradasMov(r);
   if(r.tipo==="cambio" && !parcial){ const de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0); return `${de?nombre(de[0]):"?"} → ${ha?nombre(ha[0]):"?"}` }
   const nombres=en.slice().sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>parcial?`${nombre(id)} ${+q>0?"+":"−"}${Math.abs(+q)}`:`${nombre(id)} ×${q}`);
