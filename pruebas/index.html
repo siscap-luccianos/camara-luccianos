@@ -1342,7 +1342,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.151.0";
+const FRONTEND_VERSION = "1.151.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4735,23 +4735,28 @@ function entradasMov(r){
   const filtra=r.tipo!=="conteo" && r.tipo!=="cambio" && !["todas","desperdicio","produccion"].includes(cat);
   return Object.entries(r.items||{}).filter(([id,q])=>+q && (!filtra || grupoHistDe(id)===cat));
 }
+/** Kilos de un sabor en un movimiento: suma de las pesadas individuales o, si no las hay, los kilos del remito/conteo. */
+function kgSabor(r,id){ const P=pesosEntradas(r,id); return P.lista.length?P.kg:((r.kilos&&+r.kilos[id])||0) }
 function resumenMov(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
-  if(r.tipo==="conteo"||parcial){ const c=contadosDe(r); return Object.entries(c.items).sort((x,y)=>claveNombre(nombre(x[0])).localeCompare(claveNombre(nombre(y[0])))).map(([id,q])=>`${nombre(id)} ×${q}`).join(", ")||"Sin sabores con stock" }
+  if(r.tipo==="conteo"||parcial){ const c=contadosDe(r); return Object.entries(c.items).sort((x,y)=>claveNombre(nombre(x[0])).localeCompare(claveNombre(nombre(y[0])))).map(([id,q])=>{ const k=kgSabor(c.pesos&&Object.keys(c.pesos).length?{pesos:c.pesos,kilos:c.kilos}:{kilos:c.kilos},id); return `${nombre(id)} ×${q}${k>0?" · "+fmtKg(k)+" kg":""}` }).join(", ")||"Sin sabores con stock" }
   const en=entradasMov(r);
   if(r.tipo==="cambio" && !parcial){ const de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0); return `${de?nombre(de[0]):"?"} → ${ha?nombre(ha[0]):"?"}` }
-  const nombres=en.slice().sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>parcial?`${nombre(id)} ${+q>0?"+":"−"}${Math.abs(+q)}`:`${nombre(id)} ×${q}`);
+  const nombres=en.slice().sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>{ if(parcial) return `${nombre(id)} ${+q>0?"+":"−"}${Math.abs(+q)}`; const k=r.tipo==="cambio"?0:kgSabor(r,id); return `${nombre(id)} ×${q}${k>0?" · "+fmtKg(k)+" kg":""}` });
   return (r.remito?`Remito ${r.remito} · `:"")+(nombres.join(", ")||"Sin diferencias");
 }
 function totalMov(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
   if(r.tipo==="conteo"||parcial){ const c=contadosDe(r), n=Object.values(c.items).reduce((a,q)=>a+(+q||0),0), kg=Object.values(c.kilos).reduce((a,q)=>a+(+q||0),0);
     const soloV=Object.keys(c.items).length && Object.keys(c.items).every(id=>{const sb=S.saboresPorId[id]; return sb&&sb.tipo==="v"&&grupoProductoDe(sb)==="vasquetas"});
-    return n?`${n} ${soloV?"vasq.":"u."}`:"" }
+    const kgC=Object.keys(c.items).reduce((a,id)=>a+kgSabor(c.pesos&&Object.keys(c.pesos).length?{pesos:c.pesos,kilos:c.kilos}:{kilos:c.kilos},id),0);
+    return kgC>0?fmtKg(kgC)+" kg":(n?`${n} ${soloV?"vasq.":"u."}`:"") }
   if(r.tipo==="cambio") return "";
   const en=entradasMov(r), n=en.reduce((a,[,q])=>a+(+q||0),0);
   const soloVasq=en.length && en.every(([id])=>esVasquetaKilos(id)||(S.saboresPorId[id]&&S.saboresPorId[id].tipo==="v"&&grupoProductoDe(S.saboresPorId[id])==="vasquetas"));
-  return n?`${n} ${soloVasq?(n===1?"vasq.":"vasq."):"u."}`:"";
+  const kgT=en.reduce((a,[id])=>a+kgSabor(r,id),0);
+  if(kgT>0) return fmtKg(kgT)+" kg";
+  return n?`${n} ${soloVasq?"vasq.":"u."}`:"";
 }
 /** Pesos guardados de un sabor en un movimiento: números = vasquetas sueltas; "c:KG" = caja cerrada (2 vasquetas, un solo peso). */
 function pesosEntradas(r,id){
@@ -4799,9 +4804,10 @@ function cuerpoPorSabor(r){
         const porCat={}; lista.forEach(it=>{ const c=(S.saboresPorId[String(it[0])]||{}).categoria||""; (porCat[c]=porCat[c]||[]).push(it) });
         filas=Object.keys(porCat).sort((a,b)=>claveNombre(a).localeCompare(claveNombre(b))).map(c=>`${c?`<div class="hSub">${esc(c)}</div>`:""}<div class="hCols">${porCat[c].sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`).join("");
       } else filas=`<div class="hCols${lista.some(([id])=>pesosEntradas(r,id).lista.length)?" uno":""}">${lista.slice().sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`;
-      return `<div class="hGrupo"><span>${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${lista.length}</span><span>${n} ${g==="vasquetas"||g==="baldes"?(n===1?"vasqueta":"vasquetas"):"u."}${kgG>0?" · "+fmtKg(kgG)+" kg":""}</span></div>${filas}`;
+      return `<div class="hGrupo"><span>${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${lista.length}</span><span>${n} ${g==="vasquetas"||g==="baldes"?"vasq.":"u."}${kgG>0?" · "+fmtKg(kgG)+" kg":""}</span></div>${filas}`;
     }).join("");
-    if(en.length>1||kgTot>0) cuerpo+=`<div class="hTotal"><span>Total · ${nTot} ${nTot===1?"unidad":"unidades"}</span><span>${kgTot>0?fmtKg(kgTot)+" kg":""}</span></div>`;
+    const soloVasqTot=orden.length>0&&orden.every(g=>g==='vasquetas'||g==='baldes');
+    if(en.length>1||kgTot>0) cuerpo+=`<div class="hTotal"><span>Total · ${nTot} ${soloVasqTot?(nTot===1?"vasqueta":"vasquetas"):(nTot===1?"unidad":"unidades")}</span><span>${kgTot>0?fmtKg(kgTot)+" kg":""}</span></div>`;
   return cuerpo;
 }
 function detalleMovHTML(r){
