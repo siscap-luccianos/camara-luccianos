@@ -1340,7 +1340,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.149.4";
+const FRONTEND_VERSION = "1.150.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1557,13 +1557,14 @@ function stockMap(){ return stockMapHasta(Date.now()) }
 ============================================================ */
 function esVasquetaKilos(id){ const s=S.saboresPorId[String(id)]; return !!(S.kilosReales && s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas") }
 function kilosNum(v){ return parseFloat(String(v==null?"":v).replace(",","."))||0 }
-function kilosMap(){
+function kilosMap(hasta){
   const out={}; if(!S.kilosReales) return out;
+  hasta=hasta||Infinity;
   const base=(S.stock&&S.stock.base)||{}, bts=(S.stock&&S.stock.ts)||0;
   const rec=bts?regsActivos().find(r=>r.tipo==="conteo" && r.ts===bts):null, kb=(rec&&rec.kilos)||{};
   S.sabores.forEach(s=>{ if(!esVasquetaKilos(s.id)) return;
     out[s.id] = !bts ? 0 : (+kb[s.id]>0 ? +kb[s.id] : (+base[s.id]>0 ? null : 0)); });
-  for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts) continue;
+  for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts || r.ts>hasta) continue;
     if(r.tipo==="cambio"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]+=(+k||0) } continue }
     if(r.tipo!=="ingreso" && r.tipo!=="salida") continue;
     for(const [id,q] of Object.entries(r.items||{})){ if(!(id in out) || out[id]===null || !(+q>0)) continue;
@@ -4734,7 +4735,7 @@ function entradasMov(r){
 }
 function resumenMov(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
-  if(r.tipo==="conteo") return `Conteo físico de ${Object.keys(r.items||{}).length} sabores`;
+  if(r.tipo==="conteo"||parcial){ const c=contadosDe(r); return Object.entries(c.items).sort((x,y)=>claveNombre(nombre(x[0])).localeCompare(claveNombre(nombre(y[0])))).map(([id,q])=>`${nombre(id)} ×${q}`).join(", ")||"Sin sabores con stock" }
   const en=entradasMov(r);
   if(r.tipo==="cambio" && !parcial){ const de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0); return `${de?nombre(de[0]):"?"} → ${ha?nombre(ha[0]):"?"}` }
   const nombres=en.slice().sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>parcial?`${nombre(id)} ${+q>0?"+":"−"}${Math.abs(+q)}`:`${nombre(id)} ×${q}`);
@@ -4742,7 +4743,10 @@ function resumenMov(r){
 }
 function totalMov(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
-  if(r.tipo==="conteo"||parcial||r.tipo==="cambio") return "";
+  if(r.tipo==="conteo"||parcial){ const c=contadosDe(r), n=Object.values(c.items).reduce((a,q)=>a+(+q||0),0), kg=Object.values(c.kilos).reduce((a,q)=>a+(+q||0),0);
+    const soloV=Object.keys(c.items).length && Object.keys(c.items).every(id=>{const sb=S.saboresPorId[id]; return sb&&sb.tipo==="v"&&grupoProductoDe(sb)==="vasquetas"});
+    return n?`${n} ${soloV?"vasq.":"u."}`:"" }
+  if(r.tipo==="cambio") return "";
   const en=entradasMov(r), n=en.reduce((a,[,q])=>a+(+q||0),0);
   const soloVasq=en.length && en.every(([id])=>esVasquetaKilos(id)||(S.saboresPorId[id]&&S.saboresPorId[id].tipo==="v"&&grupoProductoDe(S.saboresPorId[id])==="vasquetas"));
   return n?`${n} ${soloVasq?(n===1?"vasq.":"vasq."):"u."}`:"";
@@ -4757,22 +4761,24 @@ function lineaMovHTML(r,id,q){
     const vto2=textoVencRegistro(r,id).replace(/^ · /,"");
     return `<div class="hLinP"><div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(vto2)}</span><span class="v">${fmtKg(kg)} kg</span></div><div class="hFichas">${pe.map(k=>`<span class="hFicha">${fmtKg(k)}</span>`).join("")}<span class="hProm">${pe.length>1?"promedio "+fmtKg(kg/pe.length)+" kg":""}${pe.length<+q?`${pe.length>1?" · ":""}${pe.length} de ${q} pesadas`:""}</span></div></div>`;
   }
-  else if(kgR && r.subtipo!=="produccion") det.push("kilos del remito");
+  else if(kgR && r.subtipo!=="produccion" && r.subtipo!=="conteo_vista") det.push("kilos del remito");
   const vto=textoVencRegistro(r,id).replace(/^ · /,""); if(vto) det.push(vto);
   return `<div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(det.join(" · "))}</span><span class="v">${kg>0?fmtKg(kg)+" kg":""}</span></div>`;
 }
-function detalleMovHTML(r){
-  const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+/** Lo que se contó en un conteo (completo o parcial), sabor por sabor, para mostrarlo en Movimientos igual que un ingreso:
+ *  completo → los números guardados; parcial → stock de ese momento + la diferencia guardada (items firmados). */
+function contadosDe(r){
+  if(r.tipo==="conteo") return {items:Object.fromEntries(Object.entries(r.items||{}).filter(([,q])=>+q>0)), kilos:r.kilos||{}, exacto:true};
+  const bts=(S.stock&&S.stock.ts)||0, dif=r.items||{}, kd=r.kilos||{};
+  const exacto=r.ts>bts, antes=exacto?stockMapHasta(r.ts-1):{}, kAntes=exacto&&S.kilosReales?kilosMap(r.ts-1):{};
+  const items={}, kilos={};
+  Object.entries(dif).forEach(([id,d])=>{ if(!+d) return; const v=exacto?(+antes[id]||0)+(+d):+d; if(v>0) items[id]=v;
+    if(kd[id]!==undefined){ const ka=exacto&&kAntes[id]!==undefined&&kAntes[id]!==null?kAntes[id]:0; const kv=Math.round(((exacto?ka:0)+(+kd[id]||0))*100)/100; if(kv>0) kilos[id]=kv } });
+  return {items,kilos,exacto};
+}
+/** Detalle por sabor (agrupado por rubro, con unidades, kilos y total). Lo usan los ingresos/salidas y también los conteos. */
+function cuerpoPorSabor(r){
   let cuerpo="";
-  if(r.tipo==="conteo"){
-    cuerpo=`<div class="hNota">Conteo físico de ${Object.keys(r.items||{}).length} sabores. Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`;
-  } else if(parcial){
-    cuerpo=`<div class="hGrupo">Sabores ajustados</div>`+Object.entries(r.items||{}).filter(([,q])=>+q).sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>`<div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">${+q>0?"+":"−"}${Math.abs(+q)}</span><span class="d"></span><span class="v"></span></div>`).join("")
-      +`<div class="hNota">${esc((r.motivo||"Conteo parcial").replace(/^Conteo parcial: ?/,"Conteo parcial de ").replace(/de (\w+)/,(m,g)=>"de "+(GRUPO_PRODUCTO_LABEL[g]||g)))}: dejó cada sabor en lo contado. Las diferencias son contra el stock de ese momento.</div>`;
-  } else if(r.tipo==="cambio"){
-    const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
-    cuerpo=`<div class="hLin"><span class="n">${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b></span><span class="q"></span><span class="d">${r.motivo&&!r.anulado?esc(r.motivo):""}</span><span class="v">${kg?fmtKg(kg)+" kg":""}</span></div>`;
-  } else {
     const en=entradasMov(r), porGrupo={};
     en.forEach(([id,q])=>{ const sb=S.saboresPorId[String(id)]||{tipo:"v"}; (porGrupo[grupoProductoDe(sb)]=porGrupo[grupoProductoDe(sb)]||[]).push([id,q]) });
     const orden=GRUPO_DETALLE_ORDEN.filter(g=>porGrupo[g]).concat(Object.keys(porGrupo).filter(g=>!GRUPO_DETALLE_ORDEN.includes(g)));
@@ -4790,6 +4796,22 @@ function detalleMovHTML(r){
       return `<div class="hGrupo"><span>${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${lista.length}</span><span>${n} ${g==="vasquetas"||g==="baldes"?(n===1?"vasqueta":"vasquetas"):"u."}${kgG>0?" · "+fmtKg(kgG)+" kg":""}</span></div>${filas}`;
     }).join("");
     if(en.length>1||kgTot>0) cuerpo+=`<div class="hTotal"><span>Total · ${nTot} ${nTot===1?"unidad":"unidades"}</span><span>${kgTot>0?fmtKg(kgTot)+" kg":""}</span></div>`;
+  return cuerpo;
+}
+function detalleMovHTML(r){
+  const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
+  let cuerpo="";
+  if(r.tipo==="conteo" || parcial){
+    const c=contadosDe(r), rr={...r,items:c.items,kilos:c.kilos,pesos:{},tipo:"conteo",subtipo:"conteo_vista"};
+    const rub=parcial?esc((r.motivo||"").replace(/^Conteo parcial: ?/,"").replace(/^(\w+)$/,(m,g)=>GRUPO_PRODUCTO_LABEL[g]||g)):"";
+    cuerpo=(Object.keys(c.items).length?cuerpoPorSabor(rr):`<div class="hNota">Sin sabores con stock.</div>`)
+      +(parcial?`<div class="hNota">Conteo parcial${rub?" de "+rub:""}: dejó cada sabor en lo contado; los demás sabores y rubros no se tocan.${c.exacto?"":" (Hay un conteo completo posterior: se muestran las diferencias de este conteo.)"}</div>`
+        :`<div class="hNota">Conteo físico completo: reemplaza el stock de todo el local. Anularlo NO lo revierte; para corregirlo, hacé un conteo nuevo.</div>`);
+  } else if(r.tipo==="cambio"){
+    const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
+    cuerpo=`<div class="hLin"><span class="n">${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b></span><span class="q"></span><span class="d">${r.motivo&&!r.anulado?esc(r.motivo):""}</span><span class="v">${kg?fmtKg(kg)+" kg":""}</span></div>`;
+  } else {
+    cuerpo=cuerpoPorSabor(r);
     if(r.subtipo==="desperdicio"&&r.motivo&&!r.anulado) cuerpo+=`<div class="hNota">Motivo: ${esc(r.motivo)}</div>`;
     if(r.subtipo==="transferencia"&&!r.anulado&&destinoDeTransf(r)) cuerpo+=`<div class="hNota">${r.tipo==="ingreso"?"Viene de":"Va a"}: <b>${esc(destinoDeTransf(r))}</b></div>`;
   }
