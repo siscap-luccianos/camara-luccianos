@@ -566,6 +566,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .hLinP{padding:6px 0 8px;border-top:1px solid var(--line);break-inside:avoid}
 .hLinP .hLin{border-top:0;padding:2px 0}
 .hFichas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+.hFicha.caja{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .hFicha{height:26px;padding:0 10px;border-radius:13px;background:var(--surface);border:1.5px solid var(--line);font-size:.78rem;font-weight:700;display:flex;align-items:center;white-space:nowrap}
 .hProm{font-size:.76rem;color:var(--muted);font-weight:600;margin-left:4px}
 .hLin{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line);break-inside:avoid;font-size:.86rem}
@@ -1328,7 +1329,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.150.0";
+const FRONTEND_VERSION = "1.151.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4673,7 +4674,7 @@ function filaMovimiento(r){
     const kg=(r.subtipo==="produccion"||S.kilosReales)&&r.kilos&&r.kilos[id]&&!(r.subtipo==="devolucion"&&r.pesos&&(r.pesos[id]||[]).length);
     const vto=textoVencRegistro(r,id);
     const grupo=etiquetaProductoDe(S.saboresPorId[id]||{});
-    const pe=r.pesos&&r.pesos[id], peTxt=pe&&pe.length?` (${pe.map(fmtKg).join(" · ")} kg${pe.length<+q?`, ${pe.length} de ${q} pesadas`:""})`:"";
+    const PE=pesosEntradas(r,id), peTxt=PE.lista.length?` (${PE.lista.map(x=>x.caja?"caja ×2 "+fmtKg(x.kg):fmtKg(x.kg)).join(" · ")} kg${PE.n<+q?`, ${PE.n} de ${q} pesadas`:""})`:"";
     return `<span class="tagHist">${grupo}</span> ${esc(nombre(id))} ×${q}${kg?` (${Number(kg).toLocaleString("es-AR",{maximumFractionDigits:1})} kg)`:""}${peTxt}${vto}`;
   }).join(" · ");
   const itCambio=()=>{ const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
@@ -4739,30 +4740,34 @@ function totalMov(r){
   const soloVasq=en.length && en.every(([id])=>esVasquetaKilos(id)||(S.saboresPorId[id]&&S.saboresPorId[id].tipo==="v"&&grupoProductoDe(S.saboresPorId[id])==="vasquetas"));
   return n?`${n} ${soloVasq?(n===1?"vasq.":"vasq."):"u."}`:"";
 }
+/** Pesos guardados de un sabor en un movimiento: números = vasquetas sueltas; "c:KG" = caja cerrada (2 vasquetas, un solo peso). */
+function pesosEntradas(r,id){
+  const lista=((r.pesos&&r.pesos[id])||[]).map(x=>{ const caja=typeof x==="string"&&x.indexOf("c:")===0; return {kg:+(caja?x.slice(2):x)||0, caja} });
+  return {lista, n:lista.reduce((a,x)=>a+(x.caja?2:1),0), kg:lista.reduce((a,x)=>a+x.kg,0)};
+}
 function lineaMovHTML(r,id,q){
-  const pe=(r.pesos&&r.pesos[id])||[];
+  const P=pesosEntradas(r,id), pe=P.lista;
   const kgR=(r.kilos&&+r.kilos[id])||0;
-  const kg=pe.length?pe.reduce((a,b)=>a+b,0):kgR;
+  const kg=pe.length?P.kg:kgR;
   const det=[];
   if(pe.length){
     // Con pesos: el sabor ocupa su propia fila (cantidad y total) y debajo va el peso de cada vasqueta en fichas, que bajan de renglón y no se cortan.
+    // Una caja cerrada (conteo escaneado) es una ficha con el peso de sus 2 vasquetas.
     const vto2=textoVencRegistro(r,id).replace(/^ · /,"");
-    return `<div class="hLinP"><div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(vto2)}</span><span class="v">${fmtKg(kg)} kg</span></div><div class="hFichas">${pe.map(k=>`<span class="hFicha">${fmtKg(k)}</span>`).join("")}<span class="hProm">${pe.length>1?"promedio "+fmtKg(kg/pe.length)+" kg":""}${pe.length<+q?`${pe.length>1?" · ":""}${pe.length} de ${q} pesadas`:""}</span></div></div>`;
+    return `<div class="hLinP"><div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(vto2)}</span><span class="v">${fmtKg(kg)} kg</span></div><div class="hFichas">${pe.map(x=>x.caja?`<span class="hFicha caja">caja ×2 · ${fmtKg(x.kg)}</span>`:`<span class="hFicha">${fmtKg(x.kg)}</span>`).join("")}<span class="hProm">${P.n>1?"promedio "+fmtKg(P.kg/P.n)+" kg":""}${P.n<+q?`${P.n>1?" · ":""}${P.n} de ${q} pesadas`:""}</span></div></div>`;
   }
   else if(kgR && r.subtipo!=="produccion" && r.subtipo!=="conteo_vista") det.push("kilos del remito");
   const vto=textoVencRegistro(r,id).replace(/^ · /,""); if(vto) det.push(vto);
   return `<div class="hLin"><span class="n">${esc(nombre(id))}</span><span class="q">×${q}</span><span class="d">${esc(det.join(" · "))}</span><span class="v">${kg>0?fmtKg(kg)+" kg":""}</span></div>`;
 }
-/** Lo que se contó en un conteo (completo o parcial), sabor por sabor, para mostrarlo en Movimientos igual que un ingreso:
- *  completo → los números guardados; parcial → stock de ese momento + la diferencia guardada (items firmados). */
 function contadosDe(r){
-  if(r.tipo==="conteo") return {items:Object.fromEntries(Object.entries(r.items||{}).filter(([,q])=>+q>0)), kilos:r.kilos||{}, exacto:true};
+  if(r.tipo==="conteo") return {items:Object.fromEntries(Object.entries(r.items||{}).filter(([,q])=>+q>0)), kilos:r.kilos||{}, pesos:r.pesos||{}, exacto:true};
   const bts=(S.stock&&S.stock.ts)||0, dif=r.items||{}, kd=r.kilos||{};
   const exacto=r.ts>bts, antes=exacto?stockMapHasta(r.ts-1):{}, kAntes=exacto&&S.kilosReales?kilosMap(r.ts-1):{};
   const items={}, kilos={};
   Object.entries(dif).forEach(([id,d])=>{ if(!+d) return; const v=exacto?(+antes[id]||0)+(+d):+d; if(v>0) items[id]=v;
     if(kd[id]!==undefined){ const ka=exacto&&kAntes[id]!==undefined&&kAntes[id]!==null?kAntes[id]:0; const kv=Math.round(((exacto?ka:0)+(+kd[id]||0))*100)/100; if(kv>0) kilos[id]=kv } });
-  return {items,kilos,exacto};
+  return {items,kilos,pesos:r.pesos||{},exacto};
 }
 /** Detalle por sabor (agrupado por rubro, con unidades, kilos y total). Lo usan los ingresos/salidas y también los conteos. */
 function cuerpoPorSabor(r){
@@ -4774,13 +4779,13 @@ function cuerpoPorSabor(r){
     let kgTot=0, nTot=0;
     cuerpo=orden.map(g=>{
       const lista=porGrupo[g], n=lista.reduce((a,[,q])=>a+(+q||0),0);
-      nTot+=n; lista.forEach(([id])=>{ const pe=(r.pesos&&r.pesos[id])||[]; kgTot+=pe.length?pe.reduce((a,b)=>a+b,0):((r.kilos&&+r.kilos[id])||0) });
-      const kgG=lista.reduce((a,[id])=>{ const pe=(r.pesos&&r.pesos[id])||[]; return a+(pe.length?pe.reduce((x,y)=>x+y,0):((r.kilos&&+r.kilos[id])||0)) },0);
+      nTot+=n; lista.forEach(([id])=>{ const P=pesosEntradas(r,id); kgTot+=P.lista.length?P.kg:((r.kilos&&+r.kilos[id])||0) });
+      const kgG=lista.reduce((a,[id])=>{ const P=pesosEntradas(r,id); return a+(P.lista.length?P.kg:((r.kilos&&+r.kilos[id])||0)) },0);
       let filas;
       if(["icepops","chocolateria","pasteleria","bolleria"].includes(g)){
         const porCat={}; lista.forEach(it=>{ const c=(S.saboresPorId[String(it[0])]||{}).categoria||""; (porCat[c]=porCat[c]||[]).push(it) });
         filas=Object.keys(porCat).sort((a,b)=>claveNombre(a).localeCompare(claveNombre(b))).map(c=>`${c?`<div class="hSub">${esc(c)}</div>`:""}<div class="hCols">${porCat[c].sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`).join("");
-      } else filas=`<div class="hCols${lista.some(([id])=>(r.pesos&&r.pesos[id]||[]).length)?" uno":""}">${lista.slice().sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`;
+      } else filas=`<div class="hCols${lista.some(([id])=>pesosEntradas(r,id).lista.length)?" uno":""}">${lista.slice().sort(porNombre).map(([id,q])=>lineaMovHTML(r,id,q)).join("")}</div>`;
       return `<div class="hGrupo"><span>${esc(GRUPO_PRODUCTO_LABEL[g]||g)} · ${lista.length}</span><span>${n} ${g==="vasquetas"||g==="baldes"?(n===1?"vasqueta":"vasquetas"):"u."}${kgG>0?" · "+fmtKg(kgG)+" kg":""}</span></div>${filas}`;
     }).join("");
     if(en.length>1||kgTot>0) cuerpo+=`<div class="hTotal"><span>Total · ${nTot} ${nTot===1?"unidad":"unidades"}</span><span>${kgTot>0?fmtKg(kgTot)+" kg":""}</span></div>`;
@@ -4790,7 +4795,7 @@ function detalleMovHTML(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
   let cuerpo="";
   if(r.tipo==="conteo" || parcial){
-    const c=contadosDe(r), rr={...r,items:c.items,kilos:c.kilos,pesos:{},tipo:"conteo",subtipo:"conteo_vista"};
+    const c=contadosDe(r), rr={...r,items:c.items,kilos:c.kilos,pesos:c.pesos,tipo:"conteo",subtipo:"conteo_vista"};
     const rub=parcial?esc((r.motivo||"").replace(/^Conteo parcial: ?/,"").replace(/^(\w+)$/,(m,g)=>GRUPO_PRODUCTO_LABEL[g]||g)):"";
     cuerpo=(Object.keys(c.items).length?cuerpoPorSabor(rr):`<div class="hNota">Sin sabores con stock.</div>`)
       +(parcial?`<div class="hNota">Conteo parcial${rub?" de "+rub:""}: dejó cada sabor en lo contado; los demás sabores y rubros no se tocan.${c.exacto?"":" (Hay un conteo completo posterior: se muestran las diferencias de este conteo.)"}</div>`
@@ -5938,12 +5943,13 @@ async function guardarContado(terminar){
         if(S.kilosReales && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(items[id]>0&&k>0) kilosC[id]=k; const d=Math.round(((kilosC[id]||0)-(km[id]||0))*100)/100; if(d!==0) kilosDelta[id]=d }
         const d=items[id]-Math.max(0,st[id]||0); if(d!==0) deltas[id]=d;
       });
-      const payload={clienteId:uuid(), local:S.local, rubro, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined};
+      const pesosC=pesosConteoDe(porRubro[rubro]);
+      const payload={clienteId:uuid(), local:S.local, rubro, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined, pesos:Object.keys(pesosC).length?pesosC:undefined};
       const r=await api("conteoParcial", payload);
       if(r && r.ok){ ok+=porRubro[rubro].length; porRubro[rubro].forEach(id=>{ S.conteoGuardado[id]=true; delete S.conteoAck[id] }) }
       else if(r && r.offline){
         colaAgregar("conteoParcial", payload);
-        agregarRegistroOptimista({clienteId:payload.clienteId, tipo:"cambio", subtipo:"conteo_parcial", local:S.local, items:deltas, kilos:kilosDelta, motivo:"Conteo parcial: "+rubro});
+        agregarRegistroOptimista({clienteId:payload.clienteId, tipo:"cambio", subtipo:"conteo_parcial", local:S.local, items:deltas, kilos:kilosDelta, pesos:payload.pesos||{}, motivo:"Conteo parcial: "+rubro});
         offline=true; ok+=porRubro[rubro].length; porRubro[rubro].forEach(id=>{ S.conteoGuardado[id]=true; delete S.conteoAck[id] });
       } else { toast((r&&r.error)||"No se pudo guardar lo contado."); break }
     }
@@ -5965,14 +5971,15 @@ async function guardarConteo(){
   const vencimientos={};
   if(!parcial) for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
   const kilosC={}; if(S.kilosReales) for(const id of Object.keys(items)){ if(items[id]>0 && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(k>0) kilosC[id]=k } }
+  const pesosC=pesosConteoDe(Object.keys(items).filter(id=>items[id]>0));
   let payload, accion="conteo", deltas={}, kilosDelta={};
   if(parcial){
     accion="conteoParcial";
     const st=stockMap(), km=kilosMap();
     Object.keys(items).forEach(id=>{ const d=items[id]-Math.max(0,st[id]||0); if(d!==0) deltas[id]=d });
     if(S.kilosReales) Object.keys(items).forEach(id=>{ if(esVasquetaKilos(id)){ const d=Math.round(((kilosC[id]||0)-(km[id]||0))*100)/100; if(d!==0) kilosDelta[id]=d } });
-    payload={clienteId, local:S.local, rubro:S.conteoAlcance, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined};
-  } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined};
+    payload={clienteId, local:S.local, rubro:S.conteoAlcance, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined, pesos:Object.keys(pesosC).length?pesosC:undefined};
+  } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined, pesos: Object.keys(pesosC).length ? pesosC : undefined};
   const r = await api(accion, payload);
   if(r && r.ok){
     toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
@@ -5983,7 +5990,7 @@ async function guardarConteo(){
     colaAgregar(accion, payload);
     if(parcial){
       // Conteo parcial: es un ajuste firmado (contado − stock), igual que un cambio de sabor.
-      agregarRegistroOptimista({clienteId, tipo:"cambio", subtipo:"conteo_parcial", local:S.local, items:deltas, kilos:kilosDelta, motivo:"Conteo parcial: "+S.conteoAlcance});
+      agregarRegistroOptimista({clienteId, tipo:"cambio", subtipo:"conteo_parcial", local:S.local, items:deltas, kilos:kilosDelta, pesos:pesosC, motivo:"Conteo parcial: "+S.conteoAlcance});
     } else {
     // Un conteo fija el stock directo (no es un delta como salida/ingreso) —
     // acá actualizamos S.stock con lo recién contado para que la pantalla
@@ -7229,6 +7236,14 @@ function esVasquetaEsc(s){ return !!s && s.tipo==="v" && grupoProductoDe(s)==="v
 function conteoEscActivo(){ return escanerConteoDisponible() && !!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas") }
 function conteoEscVisible(){ return conteoEscActivo() && (ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
 function ceItemsDe(id){ return ceEsc().items.filter(x=>String(x.id)===String(id)) }
+/** Pesos de lo escaneado en este conteo, por sabor: vasqueta suelta = su peso; caja cerrada = "c:KG" (2 vasquetas, un solo peso).
+ *  Solo de los sabores indicados que siguen contados con escáner (si se corrigió a mano, ceMano ya sacó sus lecturas). */
+function pesosConteoDe(ids){
+  const out={}; if(!S.conteoEsc) return out;
+  (ids||[]).forEach(id=>{ const its=ceItemsDe(id); if(!its.length) return;
+    out[id]=its.map(x=>x.t==="caja"?"c:"+(Math.round(x.kg*100)/100):Math.round(x.kg*100)/100) });
+  return out;
+}
 function ceAplicar(id){
   const E=ceEsc(), its=ceItemsDe(id);
   if(its.length){

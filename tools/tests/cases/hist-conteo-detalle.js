@@ -15,8 +15,8 @@ const { chromium } = require("playwright");
     const ahora = Date.now(), h = n => ahora - n * 3600e3;
     S.kilosReales = true; S.stock = { base: {}, ts: 0 };
     S.regs = [
-      { id: "c1", tipo: "cambio", subtipo: "conteo_parcial", items: { "4": 4, "5": 3 }, kilos: { "4": 19.53, "5": 11.4 }, ts: h(3), total: 7, empleado: "Lourdes", motivo: "Conteo parcial: vasquetas" },
-      { id: "c2", tipo: "conteo", items: { "4": 6, "5": 3, "7": 0 }, kilos: { "4": 24.1, "5": 11.4 }, ts: h(1), total: 9, empleado: "Lourdes" }
+      { id: "c1", tipo: "cambio", subtipo: "conteo_parcial", items: { "4": 4, "5": 3 }, kilos: { "4": 19.53, "5": 11.4 }, pesos: { "4": [4.88, "c:9.77", 4.88] }, ts: h(3), total: 7, empleado: "Lourdes", motivo: "Conteo parcial: vasquetas" },
+      { id: "c2", tipo: "conteo", items: { "4": 6, "5": 3, "7": 0 }, kilos: { "4": 24.1, "5": 11.4 }, pesos: { "4": ["c:8.05", "c:8", "c:8.05"] }, ts: h(1), total: 9, empleado: "Lourdes" }
     ];
     S.stock = { base: { "4": 6, "5": 3 }, ts: h(1) };
     S.tab = "historial"; S.rangoHist = "d7"; S.tipoHist = "todos"; S.histAbierto = { c1: true, c2: true }; renderApp();
@@ -32,6 +32,11 @@ const { chromium } = require("playwright");
   ok(/×4/.test(txt) && /19,53 kg/.test(txt), "el parcial muestra lo contado (no solo +4) y sus kilos");
   ok(!/\+4/.test(txt), "el parcial ya no muestra «+4» como diferencia suelta");
   ok(/no se tocan/.test(txt), "aclara que el parcial no toca los demás sabores");
+  const fichas = await page.$$eval(".hFicha", e => e.map(f => f.textContent.trim()));
+  ok(fichas.filter(f => /^caja ×2/.test(f)).length === 4, "las cajas escaneadas salen como ficha «caja ×2 · kg»: " + fichas.join(" | "));
+  ok(fichas.includes("4,88") && fichas.includes("caja ×2 · 9,77"), "cada vasqueta suelta sale con su peso individual");
+  ok(await page.$$eval(".hFicha.caja", e => e.length) === 4, "las cajas tienen estilo propio");
+  ok(!/Cheesecake al pistacchio[^\n]*pesadas/.test(txt), "un sabor contado a mano (sin pesos) muestra solo el total");
   await page.screenshot({ path: "hist-conteo-detalle.png", fullPage: true });
   ok(err.length === 0, "sin errores de consola: " + err.join(" | "));
   console.log(fallas ? "FALLAS " + fallas : "FALLAS 0");
