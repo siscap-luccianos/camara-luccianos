@@ -20,16 +20,19 @@ sb._leerUltimasFilas=()=>[]; sb._auditar=()=>{};
 const emp={id:"1",nombre:"Gabi",rol:"admin"}; sb.emp=emp;
 const run=c=>vm.runInContext(c,sb);
 let f=0; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c)f++};
-const reg=(id,loc,items,sub)=>run(`registrar("${id}","ingreso","${loc}",${JSON.stringify(items)},"R",emp,"","${sub||""}",undefined,{},{},{})`);
+const reg=(id,loc,items,sub,kilos)=>run(`registrar("${id}","ingreso","${loc}",${JSON.stringify(items)},"R",emp,"","${sub||""}",undefined,${JSON.stringify(kilos||{})},{},{})`);
 let r;
 for (const [id,items,txt] of [["a1",{"4":4},"vasquetas"],["a2",{"49":30},"icepops"],["a3",{"108":2},"baldes"],["a4",{"96":5},"gluten free"],["a5",{"117":10,"4":1},"helado mezclado con chocolatería"]]) {
   r=reg(id,"Marruecos",items); ok(!r.ok&&/Ingreso de producción/.test(r.error||""),"Marruecos rechaza un ingreso común de "+txt+": "+(r.error||JSON.stringify(r)));
 }
-r=reg("b1","Marruecos",{"4":4},"produccion"); ok(r.ok,"Marruecos acepta producción: "+JSON.stringify(r));
+r=reg("b0","Marruecos",{"4":4},"produccion"); ok(!r.ok&&/kilos fabricados/.test(r.error||""),"producción de vasquetas SIN kilos se rechaza: "+(r.error||JSON.stringify(r)));
+r=reg("b0b","Marruecos",{"108":2},"produccion"); ok(!r.ok&&/kilos fabricados/.test(r.error||""),"producción de baldes sin kilos se rechaza también");
+r=reg("b0c","Marruecos",{"4":4},"produccion",{"4":0}); ok(!r.ok,"kilos en 0 tampoco valen");
+r=reg("b1","Marruecos",{"4":4},"produccion",{"4":14.5}); ok(r.ok,"Marruecos acepta producción con kilos: "+JSON.stringify(r));
 r=reg("b2","Marruecos",{"49":30},"produccion"); ok(r.ok,"Marruecos acepta producción de icepops");
 r=reg("c1","Marruecos",{"117":10}); ok(r.ok,"Marruecos acepta un ingreso común que NO es helado (chocolatería): "+JSON.stringify(r));
 r=reg("d1","Unicenter",{"4":4}); ok(r.ok,"Unicenter (sin el flag) sigue aceptando ingreso común: "+JSON.stringify(r));
-r=reg("d2","Unicenter",{"4":4},"produccion"); ok(r.ok,"Unicenter acepta producción");
+r=reg("d2","Unicenter",{"4":4},"produccion",{"4":14}); ok(r.ok,"Unicenter acepta producción con kilos");
 r=reg("e1","Sin flag de producción",{"4":4}); ok(r.ok,"el flag no vale si el local no tiene produccion=SI");
 r=reg("f1","Obelisco CABA",{"4":4}); ok(r.ok,"un local común no cambia");
 
