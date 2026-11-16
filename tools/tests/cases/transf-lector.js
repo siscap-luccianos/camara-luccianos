@@ -19,7 +19,7 @@ const { chromium } = require("playwright");
   await page.evaluate(async () => { await api("registrar", { clienteId: uuid(), tipo: "ingreso", local: S.local, items: { "49": 10 }, remito: "T-1" }); await cargarDatos() }); await page.waitForTimeout(400); // stock de Icepops para poder transferir
   // ---------- SALIDA · Transferencia ----------
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
-  ok(await page.$("[data-sal-tipo='comun']") && await page.$("[data-sal-menu='transf']"), "Salida tiene el selector «Salida común | Transferencia»");
+  ok(await page.$("[data-sal-menu='comun']") && await page.$("[data-sal-menu='transf']"), "Salida ofrece «Retiro de cámara» y «Transferencia enviada» en el menú");
   ok(!(await page.$("#destinoSalida")), "en Salida común no hay campo de destino");
   await page.click("[data-sal-menu='transf']"); await page.waitForTimeout(300);
   ok(await page.$("#destinoSalida") !== null, "con Transferencia aparece «¿A qué local va?»");

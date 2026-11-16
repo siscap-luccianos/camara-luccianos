@@ -15,6 +15,6 @@ const { chromium } = require("playwright");
  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
  console.log("sin escáner:",await page.$$eval(".accTile",e=>e.map(x=>x.id||x.dataset.verVenc+"|"+x.className)));
  await page.screenshot({path:"tiles2.png"});
- await page.click("[data-ver-venc]"); await page.waitForTimeout(300); console.log("vencimientos abre:", await page.$("[data-volver-venc]")!==null);
+ await page.click("[data-sal-menu='venc']"); await page.waitForTimeout(300); console.log("vencimientos abre:", await page.$("[data-volver-venc]")!==null);
  console.log("errores:",err.length?err:"ninguno"); await b.close();
 })();
