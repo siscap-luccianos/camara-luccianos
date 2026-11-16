@@ -39,7 +39,7 @@ const { chromium } = require("playwright");
   txt=await page.innerText("#main");
   ok(!/Cheesecake/.test(txt), "Ingreso con remito: Cheesecake no aparece");
   // Producción: sigue
-  await page.click("[data-ing-menu='prod']"); await page.waitForTimeout(300);
+  await page.click("#volverIngreso"); await page.waitForTimeout(200); await page.click("[data-ing-menu='prod']"); await page.waitForTimeout(300);
   await page.click(".tabCat[data-familia='vasquetas']"); await page.waitForTimeout(300);
   ok(/Cheesecake/.test(await page.innerText("#main")), "Producción: Cheesecake sigue");
   // Salida: Cheesecake visible
