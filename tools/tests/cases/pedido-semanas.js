@@ -30,7 +30,7 @@ const { chromium } = require("playwright");
   const txt = await page.innerText("#main");
   ok(!(await page.$(".pdFechas")), "ya no hay tarjetas de «último pedido» ni de «te llega»");
   ok(!/hasta que llega|Se espera|cómo se calcula|Salieron \d+ desde/i.test(txt), "no quedan textos de proyección ni de «salió desde el último pedido»");
-  ok(/El pedido lo decidís vos/.test(txt), "el aviso dice que el pedido lo decide quien lo hace");
+  ok(!/lo decidís vos/.test(txt) && /Cargá lo que pidas/.test(txt), "el aviso explica cómo cargar el pedido, sin la frase «lo decidís vos»");
   ok(await page.$(".pedTend") !== null && await page.$(".pedCons") !== null, "se ven tendencia y consumo por día");
   const fila = await page.$(".pedFila:has([data-pdet='4'])");
   ok(fila && (await fila.$eval(".pedInp", e => e.value)) === "" && (await fila.$eval(".pedInp", e => e.placeholder)) === "–", "«Pedir» arranca vacío (guión), no en 0");
