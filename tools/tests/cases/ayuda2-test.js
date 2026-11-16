@@ -18,7 +18,7 @@ const { chromium } = require("playwright");
   ok(await page.$(".ayTema.abierto .ayCards")!==null,"arranca abierto «Qué usar según lo que pasó»");
   await page.click("[data-ay-tema='escaner']"); await page.waitForTimeout(150);
   ok(await page.$(".ayTema.abierto .ayPasos")!==null && (await page.$$(".ayTema.abierto")).length===1,"abrir el escáner cierra el anterior");
-  ok(/Escanear vasqueta/.test(await page.$eval(".ayTema.abierto",e=>e.textContent)),"el texto del escáner está");
+  ok(/Activar escáner/.test(await page.$eval(".ayTema.abierto",e=>e.textContent)),"el texto del escáner está");
   await page.screenshot({path:"ayuda3.png"});
   for(const id of ["venc","conteo","remito","pedido"]){ await page.click(`[data-ay-tema='${id}']`); await page.waitForTimeout(100); ok((await page.$eval(".ayTema.abierto",e=>e.textContent.length))>80,"tema "+id+" se abre con texto"); }
   await page.click("[data-ay-tema='pedido']"); await page.waitForTimeout(100);

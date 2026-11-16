@@ -1337,7 +1337,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.152.0";
+const FRONTEND_VERSION = "1.152.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3445,7 +3445,7 @@ function segSalidaHTML(){
 }
 function accionesSalidaHTML(){
   const t=[];
-  if(escanerDisponible()) t.push(accTileHTML("irEscaner","Escanear vasqueta","con el lector o la cámara","scan","m"));
+  if(escanerDisponible()) t.push(accTileHTML("irEscaner","Activar escáner","Vasquetas","scan","m"));
   if(salidaEsTransf()){
     const rv0=resumenVenc(), pv=rv0.rojo.l+rv0.amarillo.l;
     t.push(accTileHTML("","Ver vencimientos",rv0.rojo.l?`${rv0.rojo.l} ${rv0.rojo.l===1?"lote vence":"lotes vencen"} pronto`:pv?`${pv} por vencer`:"lotes por vencer","clock","","data-ver-venc"));
@@ -3841,7 +3841,7 @@ async function guardarCambioSabor(){
 /** Tarjetas de arriba de Ingreso (Producción, Devolución, Cambio de sabor): mismo formato que las de Salida. */
 function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
   const t=[];
-  if(!soloProd && S.ventaDia && S.tipoIngreso==="transferencia" && S.empleado.rol!=="colaborador" && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Escanear vasqueta","pic, pic, pic: cada rótulo suma 1","scan","m"));
+  if(!soloProd && S.ventaDia && S.tipoIngreso==="transferencia" && S.empleado.rol!=="colaborador" && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Activar escáner","Vasquetas","scan","m"));
   if(soloEsc) return t.length?accGridHTML(t):"";
   if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
   if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
@@ -4270,7 +4270,7 @@ function stockViewConteo(){
   const row=s=>`<div class="row" data-cestado="${conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0)}">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
     <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
-  const tEsc=conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Escanear vasqueta",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"suma con el rótulo y su peso","scan","m") })():"";
+  const tEsc=conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
   const tApl=accTileHTML("aplicarAbrir","Poner todo en 0","para empezar de cero y contar todo","swap","",`aria-expanded="${!!S.conteoAplicarAbierto}"`);
   return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>Conteo físico</h1><p>Cargá lo que hay hoy en la cámara. Reemplaza el stock de cada sabor que toques.</p></div>
   ${parcial?`<div class="cParcial"><b>Contando solo ${esc(etiquetaRubroConteo())}.</b> El resto del local no se toca al guardar.</div>`:""}
@@ -7673,7 +7673,7 @@ function ayudaTemas(){
     "Tocá <b>Agregar otra</b> para cargar la siguiente vasqueta del mismo sabor, y <b>Listo</b> al terminar.",
     "Revisá el total de abajo y tocá <b>Confirmar salida</b>."])+nota("Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran.")});
   if(escanerDisponible()) T.push({id:"escaner", titulo:"Cómo usar el escáner", sub:"Sacar vasquetas con su peso real", html:li([
-    "En Salida tocá <b>Escanear vasqueta</b>.",
+    "En Salida tocá <b>Activar escáner</b>.",
     "Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real.",
     "Si suena triple y sale <b>amarillo</b>, ese código ya se escaneó. Si fue un error, tocá la <b>✕</b> de esa fila para quitar solo esa vasqueta.",
     "Si un rótulo no se lee: cerrá, tocá el sabor y escribí cuánto pesa (con coma, ej. 3,40). Con «Agregar otra» cargás varias seguidas.",
