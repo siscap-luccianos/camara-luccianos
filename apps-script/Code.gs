@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.81.0";
+const BACKEND_VERSION = "1.82.0";
 
 function doPost(e) {
   let resultado;
@@ -1383,8 +1383,6 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const esTransfSalida = subtipo === "transferencia" && tipo === "salida";
   if (esSalidaChoco && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (esTransfIngreso) {
-    const filaLocalTr = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-    if (!filaLocalTr || _esVerdadero(filaLocalTr.venta_dia) !== true) return { ok: false, error: "Este local no tiene las transferencias activadas." };
     if (empleado.rol === "colaborador") return { ok: false, error: "Esta carga la hace un responsable." };
     if (!String(motivo || "").trim()) return { ok: false, error: "Falta el local de origen de la transferencia." };
   }
@@ -1396,7 +1394,8 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   if (fecha && subtipo !== "venta" && subtipo !== "giftcard") return { ok: false, error: "La fecha solo se usa en la venta del día y en la gift card." };
   if (esSalidaChoco) {
     const filaLocalVenta = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-    if (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true) return { ok: false, error: "Este local no tiene la salida de chocolatería activada." };
+    // La transferencia enviada no depende de la venta del día; las demás salidas de chocolatería sí.
+    if (!esTransfSalida && (!filaLocalVenta || _esVerdadero(filaLocalVenta.venta_dia) !== true)) return { ok: false, error: "Este local no tiene la salida de chocolatería activada." };
     if (empleado.rol === "colaborador") return { ok: false, error: "Esta salida la carga un responsable." };
     const noChoco = Object.keys(items).filter((id) => familiaVenc[String(id)] !== "chocolateria");
     if (noChoco.length && !esTransfSalida) return { ok: false, error: "Esta salida es solo de chocolatería." };
