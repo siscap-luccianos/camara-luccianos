@@ -938,7 +938,7 @@ body:has(.mantenerOv){overflow:hidden}
 .pdMasBtn{border:0;background:none;color:var(--accent);font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;padding:0 0 0 6px;text-decoration:underline}
 .pdRubros{margin:0 0 12px;padding:2px 0}
 .pdRubros .rubroTab{min-width:0}
-@media(min-width:900px){.pdFechas{grid-template-columns:1fr 1fr}.pdKpis{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.pdFechas{grid-template-columns:1fr 1fr}.pdKpis{grid-template-columns:repeat(4,1fr)}}
 .dChip{height:auto;min-height:50px;width:48px;padding:4px 0;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
 .dChip small{font-size:.58rem;letter-spacing:.06em;opacity:.7;font-weight:700}
 .dChip b{font-family:var(--display);font-size:1.05rem}
@@ -1345,7 +1345,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.156.0";
+const FRONTEND_VERSION = "1.156.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4194,9 +4194,10 @@ function stockViewPedido(st){
   <h2 class="pdH1">Pedido sugerido</h2>
   <div class="pedTip"><span class="pedTipI">i</span><span>Acá ves cómo viene el consumo y cuánto hay hoy. <b>El pedido lo decidís vos</b>: cargá lo que pidas con − y +. Tocá «Ver detalle» para ver lo vendido la última semana, de lunes a domingo.</span></div>
   <div class="pdKpis">
-    <div class="pdCard"><span class="pdLbl">Sabores para pedir</span><b class="pdBig">${grupos.reduce((a,g)=>a+saboresCon(g),0)}</b></div>
-    <div class="pdCard"><span class="pdLbl">Unidades en total</span><b class="pdBig">${totalTodo}</b></div>
-    <button type="button" class="pdCard pdEnviar" id="verResumenBtn" aria-label="Ver resumen del pedido por rubro"><span class="pdLbl">Enviar el pedido</span><b>Ver resumen para enviar →</b></button>
+    <div class="pdCard"><span class="pdLbl">Sabores en tu pedido</span><b class="pdBig">${grupos.reduce((a,g)=>a+saboresCon(g),0)}</b></div>
+    <div class="pdCard"><span class="pdLbl">Unidades pedidas</span><b class="pdBig">${totalTodo}</b></div>
+    <div class="pdCard"><span class="pdLbl">Cajas que llegan</span><b class="pdBig">${String(Math.round(cajasRubro.reduce((a,x)=>a+x.n,0)*10)/10).replace(".",",")}</b></div>
+    <button type="button" class="pdCard pdEnviar" id="verResumenBtn" aria-label="Ver resumen del pedido por rubro"><span class="pdLbl">Resumen del pedido</span><b>Copiar o mandar por WhatsApp →</b></button>
   </div>
   <div class="rubroCarrusel pdRubros" role="tablist" aria-label="Rubros">${grupos.map(g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><span>${saboresCon(g)} para pedir${totalDe(g)?` · ${totalDe(g)} u.`:""}</span></button>`).join("")}</div>
   <div class="pedTabla">
