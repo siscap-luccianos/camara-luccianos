@@ -11,7 +11,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   // Ingreso con kilos (remito simulado)
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.setInputFiles("#inputRemitoFoto",require("path").join(__dirname,"..","..","..","fotos/5.jpg"));
   await page.waitForSelector("[data-remito-kg]",{timeout:8000});
   await page.fill("[data-remito-kg='1']","22,5"); await page.click("#remitoCargar"); await page.waitForTimeout(300);
@@ -55,7 +55,7 @@ const { chromium } = require("playwright");
 
   // ---- DEVOLUCIÓN con pesos
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
-  await page.click("#irDevolucion"); await page.waitForTimeout(300);
+  await page.click("[data-ing-menu='dev']"); await page.waitForTimeout(300);
   const chips=await page.$$eval(".devChip",e=>e.map(x=>x.textContent.replace(/\s+/g," ").trim()));
   console.log("chips:",chips);
   ok(chips.length===3 && chips.some(t=>/3,60 kg/.test(t)) && chips.some(t=>/4,02 kg/.test(t)) && chips.some(t=>/3,80 kg/.test(t)),"cada vasqueta de hoy con su peso");
@@ -68,7 +68,7 @@ const { chromium } = require("playwright");
   ok(/7,12 kg/.test(await page.$eval("#barIn",e=>e.textContent)),"con el peso escrito a mano suma 7,12 kg");
   await page.click("#go"); await page.click("#ok"); await page.waitForTimeout(800);
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
-  await page.click("#irDevolucion"); await page.waitForTimeout(300);
+  await page.click("[data-ing-menu='dev']"); await page.waitForTimeout(300);
   const chips2=await page.$$eval(".devChip",e=>e.map(x=>x.textContent.replace(/\s+/g," ").trim()));
   ok(chips2.length===2 && !chips2.some(t=>/4,02/.test(t)),"lo ya devuelto no vuelve a aparecer: "+chips2.join(" | "));
   ok(await page.$("[data-devtip]")===null,"la vasqueta sin peso ya devuelta tampoco aparece");

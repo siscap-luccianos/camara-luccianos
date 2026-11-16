@@ -11,7 +11,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Marruecos"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
-  await page.click("#irProduccion"); await page.waitForTimeout(300);
+  await page.click("[data-ing-menu='prod']"); await page.waitForTimeout(300);
   // vasquetas: como hoy, con peso de Marruecos
   const txt=await page.innerText("#main");
   ok(/Peso promedio: 4,97 kg/.test(txt), "vasqueta muestra el peso de Marruecos (4,97) y no el general (3,09)");

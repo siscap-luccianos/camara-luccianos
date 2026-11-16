@@ -40,9 +40,9 @@ const { chromium } = require("playwright");
   ok(await page.$("#destinoSalida") === null, "después de registrar vuelve a Salida común");
 
   // ---------- INGRESO · Transferencia recibida con el lector ----------
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   ok(await page.$("#irEscanerIng") === null, "en Remito de fábrica NO hay lector");
-  await page.click("[data-ing-tipo='transferencia']"); await page.waitForTimeout(300);
+  await page.click("#volverIngreso"); await page.waitForTimeout(200); await page.click("[data-ing-menu='transf']"); await page.waitForTimeout(300);
   ok(await page.$("#irEscanerIng") !== null, "en Transferencia recibida aparece «Escanear vasqueta»");
   await page.fill("#remito", "Galerías Pacífico CABA");
   await page.click("#irEscanerIng"); await page.waitForSelector("#escCodigo");

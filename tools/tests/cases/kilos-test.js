@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
 
   // ---- INGRESO por remito con kilos
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.setInputFiles("#inputRemitoFoto",require("path").join(__dirname,"..","..","..","fotos/5.jpg")); 
   await page.waitForSelector("[data-remito-kg]",{timeout:8000});
   const kgs=await page.$$eval("[data-remito-kg]",e=>e.map(x=>x.value));
@@ -68,7 +68,7 @@ const { chromium } = require("playwright");
 
   // ---- Local sin kilos reales no cambia
   await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.click("[data-iinc='4']"); await page.waitForTimeout(200);
   ok(await page.$("[data-kilos]")===null, "otro local: sin campo de kilos en Ingreso");
 

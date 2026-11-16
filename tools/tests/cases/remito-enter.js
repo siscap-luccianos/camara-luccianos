@@ -9,7 +9,7 @@ let f=0; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA ")+m); if(!c) f++};
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.setInputFiles("#inputRemitoFoto",require("path").join(__dirname,"..","..","..","fotos/5.jpg"));
   await page.waitForSelector("[data-remito-qty]",{timeout:8000});
   const orden=await page.$$eval("input[data-remito-qty]:not([disabled]),input[data-remito-kg]",e=>e.map(x=>x.dataset.remitoQty!==undefined?"q"+x.dataset.remitoQty:"k"+x.dataset.remitoKg));

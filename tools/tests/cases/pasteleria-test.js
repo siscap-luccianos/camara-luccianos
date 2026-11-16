@@ -11,7 +11,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   // INGRESO sin remito
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   const tabs=await page.$$eval(".tabCat[data-familia]",e=>e.map(x=>x.dataset.familia));
   ok(tabs.includes("pasteleria")&&tabs.includes("bolleria"), "pestañas en Ingreso: "+tabs.join(","));
   await page.click(".tabCat[data-familia='pasteleria']"); await page.waitForTimeout(250);
