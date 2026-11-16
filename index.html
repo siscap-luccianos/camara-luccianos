@@ -1338,7 +1338,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.152.3";
+const FRONTEND_VERSION = "1.153.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3434,12 +3434,14 @@ function accTileHTML(id,titulo,sub,icono,clase,attrs){
 }
 function accGridHTML(t){ return `<div class="accGrid n${t.length}${t.length%2?" impar":""}">${t.join("")}</div>` }
 /** Salida «Transferencia»: mercadería que sale hacia otro local (cualquier rubro). Descuenta stock, lleva el local de destino y no cuenta como consumo. */
-function salidaEsTransf(){ return S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio && !!S.salidaTransf && !!S.ventaDia && S.empleado.rol!=="colaborador" }
+/** Las transferencias entre locales las hace un responsable en cualquier local (no dependen de la venta del día de chocolatería). */
+function puedeTransferir(){ return !!S.empleado && S.empleado.rol!=="colaborador" }
+function salidaEsTransf(){ return S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio && !!S.salidaTransf && puedeTransferir() }
 function transfCampoHTML(id,etiqueta,valor,ph,nota){
   return `<div class="transfCampo"><span class="tcIco"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg></span><label for="${id}"><small>${etiqueta}</small><input type="text" id="${id}" placeholder="${ph}" value="${esc(valor)}" autocomplete="off"><em>${nota}</em></label></div>`;
 }
 function segSalidaHTML(){
-  if(!S.ventaDia || S.empleado.rol==="colaborador") return "";
+  if(!puedeTransferir()) return "";
   const t=salidaEsTransf();
   return `<div class="segIng"><button type="button" data-sal-tipo="comun" aria-pressed="${!t}">Salida común</button><button type="button" data-sal-tipo="transferencia" aria-pressed="${t}">Transferencia</button></div>`
     + (t?transfCampoHTML("destinoSalida","TRANSFERENCIA · ¿A QUÉ LOCAL VA?",S.destinoTransf,"Ej: Obelisco CABA","Obligatorio. Queda registrado como transferencia enviada; no cuenta como consumo."):"");
@@ -3838,7 +3840,7 @@ async function guardarCambioSabor(){
 /** Tarjetas de arriba de Ingreso (Producción, Devolución, Cambio de sabor): mismo formato que las de Salida. */
 function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
   const t=[];
-  if(!soloProd && S.ventaDia && S.tipoIngreso==="transferencia" && S.empleado.rol!=="colaborador" && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Activar escáner","Vasquetas","scan","m"));
+  if(!soloProd && S.tipoIngreso==="transferencia" && puedeTransferir() && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Activar escáner","Vasquetas","scan","m"));
   if(soloEsc) return t.length?accGridHTML(t):"";
   if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
   if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
@@ -3851,7 +3853,7 @@ function menuIngresoHTML(){
   const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-ing-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
   if(rol!=="colaborador") t.push(tile("merc","📦","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito."));
   t.push(tile("dev","↩️","Devolución","Algo que sacaste y volvés a guardar."));
-  if(rol!=="colaborador" && S.ventaDia) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
+  if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
   if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor cambiado","Cambio de sabor: figura uno y era otro."));
   if(S.produccionLocal) t.push(tile("prod","🏭","Producción","Lo que fabricás en el local (kilos y vasquetas)."));
   if(resp) t.push(tile("compa","↩️","Devolver por un compañero","Se fue y dejó algo pendiente: lo devolvés a su nombre."));
@@ -3883,7 +3885,7 @@ function gridIngreso(st){
   <p class="sec" style="margin-top:0">${S.tipoIngreso==="transferencia"?"Transferencia recibida":"Mercadería que llegó"}</p>
   ${accionesIngresoHTML(false,false,true)}
   ${chipFiltros()}
-  ${puedeRemito&&S.ventaDia&&S.tipoIngreso==="transferencia"?`${transfCampoHTML("remito","TRANSFERENCIA · ¿DE QUÉ LOCAL VIENE?",S.remito,"Ej: Obelisco CABA","Obligatorio. Mercadería que te mandó o te prestó otro local. Suma al stock y no cuenta como compra a fábrica.")}`:puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}"></div>
+  ${puedeRemito&&S.tipoIngreso==="transferencia"?`${transfCampoHTML("remito","TRANSFERENCIA · ¿DE QUÉ LOCAL VIENE?",S.remito,"Ej: Obelisco CABA","Obligatorio. Mercadería que te mandó o te prestó otro local. Suma al stock y no cuenta como compra a fábrica.")}`:puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}"></div>
   <button type="button" class="ctaCard glass" id="btnLeerRemitoFoto" style="margin-top:10px;background:rgba(var(--accent-rgb),.12)">
     <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h3l1-2h8l1 2h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" stroke="#7A3E1D" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="#7A3E1D" stroke-width="2"/></svg></span>
     <span class="tx"><b>Leer remito con una foto</b><span>Carga automática desde la cámara</span></span>
@@ -5794,7 +5796,7 @@ function renderBar(){
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar y guardar</button>`;
     }
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia", enTransfOut=cartKey==="salida" && salidaEsTransf();
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.tipoIngreso==="transferencia" && puedeTransferir(), enTransfOut=cartKey==="salida" && salidaEsTransf();
     const cart=S.cart[cartKey], ent=Object.entries(cart).filter(([,q])=>q>0), tot=ent.reduce((a,[,q])=>a+q,0);
     if(tot){
       visible=true;
@@ -5925,7 +5927,7 @@ function agregarRegistroOptimista(payload){
 async function guardarMovimiento(){
   if(S.busy) return; S.busy=true; renderBar();
   try{
-    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.ventaDia && S.tipoIngreso==="transferencia", enTransfOut=cartKey==="salida" && salidaEsTransf();
+    const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.tipoIngreso==="transferencia" && puedeTransferir(), enTransfOut=cartKey==="salida" && salidaEsTransf();
     const tipo = (enDevolucion||enProduccion) ? "ingreso" : S.tab; // devolución y producción son un ingreso con subtipo, el backend no tiene un tercer/cuarto tipo de movimiento
     const cart=S.cart[cartKey];
     const items={}; for(const [id,q] of Object.entries(cart)) if(q>0) items[id]=q;
@@ -7674,7 +7676,7 @@ function ayudaTemas(){
     "Si suena triple y sale <b>amarillo</b>, ese código ya se escaneó. Si fue un error, tocá la <b>✕</b> de esa fila para quitar solo esa vasqueta.",
     "Si un rótulo no se lee: cerrá, tocá el sabor y escribí cuánto pesa (con coma, ej. 3,40). Con «Agregar otra» cargás varias seguidas.",
     "Revisá el total de abajo y tocá <b>Confirmar salida</b>."])+nota("Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran.")});
-  if(S.ventaDia && !colab) T.push({id:"transf", titulo:"Transferencias entre locales", sub:"Cuando enviás o recibís mercadería de otro local", html:`<div class="ayCards">
+  if(!colab) T.push({id:"transf", titulo:"Transferencias entre locales", sub:"Cuando enviás o recibís mercadería de otro local", html:`<div class="ayCards">
     <div class="ayCard"><span class="ayTag a">Enviás mercadería</span><b>Salida › Transferencia</b><p>En <b>Salida</b> tocá <b>Transferencia</b>, escribí <b>a qué local va</b> (es obligatorio) y cargá lo que sale, a mano${escanerDisponible()?" o con <b>Escanear vasqueta</b>":""}. Sirve para cualquier rubro.</p></div>
     <div class="ayCard"><span class="ayTag b">Recibís mercadería</span><b>Ingreso › Transferencia</b><p>En <b>Ingreso</b> tocá <b>Transferencia</b>, escribí <b>de qué local viene</b> y cargá lo que llegó${escanerDisponible()?": con <b>Escanear vasqueta</b> hacés pic, pic, pic (una caja cerrada suma 2 vasquetas)":""}.</p></div>
     <div class="ayCard"><span class="ayTag c">Cómo queda</span><b>Mueve el stock, no cuenta como consumo</b><p>Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia».</p></div></div>`});
