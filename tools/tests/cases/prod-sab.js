@@ -57,8 +57,8 @@ const { chromium } = require("playwright");
   const pedirTxt=await page.$$eval(".pedTabla",e=>e.map(x=>x.innerText));
   ok(pedirTxt.length===2 && /Cheesecake/.test(pedirTxt[1]) && !/Cheesecake/.test(pedirTxt[0]), "Cheesecake solo en A producir, no en A pedir");
   await page.screenshot({path:"prod-sab-2.png",fullPage:true});
-  await page.click("#volverPedido"); await page.waitForTimeout(200);
-  await page.click("#verPedidoBtn"); await page.click("#verResumenBtn"); await page.waitForTimeout(300);
+  await page.click(".pedTabla >> nth=1 >> [data-pinc]"); await page.waitForTimeout(200); // el pedido arranca vacío: se carga algo para producir
+  await page.click("#verResumenBtn"); await page.waitForTimeout(300);
   txt=await page.innerText("#main"); ok(/a producir/i.test(txt) && /no va a fábrica/.test(txt),"Resumen con tarjeta A producir");
   // reload
   await page.reload(); await page.waitForTimeout(1500);
