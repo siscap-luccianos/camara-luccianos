@@ -61,8 +61,18 @@ const { chromium } = require("playwright");
   const cel = await page.$eval(".pedFila:has([data-pedinp='" + a1 + "']) .pedCajas", e => e.textContent.trim());
   ok(cel === "4", "8 vasquetas = 4 cajas (de a 2): " + cel);
   ok(/Cajas/i.test(await page.innerText(".pedHead")), "hay una columna «Cajas»");
-  const pie = await page.$eval(".pedCajasTot", e => e.innerText.replace(/\s+/g, " ")).catch(() => "");
-  ok(/Cajas que llegan/i.test(pie) && /Vasquetas: 4/.test(pie), "al pie: cajas de vasquetas — " + pie);
+  const kpiV = await page.$$eval(".pdCard", e => e.map(x => x.innerText.replace(/\s+/g, " ")).find(t => /Cajas de vasquetas/i.test(t)) || "");
+  ok(/cajas de vasquetas 4/i.test(kpiV) && /pallet/i.test(kpiV) && /36 = 1/.test(kpiV), "tarjeta «Cajas de vasquetas» con los pallets (36 = 1): " + kpiV);
+  await page.evaluate(() => { S.pedidoAdj = { "4": 72 }; renderApp() }); await page.waitForTimeout(200);
+  const kpi72 = await page.$$eval(".pdCard", e => e.map(x => x.innerText.replace(/\s+/g, " ")).find(t => /Cajas de vasquetas/i.test(t)) || "");
+  ok(/cajas de vasquetas 36/i.test(kpi72) && /≈ 1 pallet/i.test(kpi72), "72 vasquetas = 36 cajas = 1 pallet: " + kpi72);
+  ok(!(await page.$(".pedCajasTot")), "sin otros rubros con cajas, no hay renglón de «Otras cajas»");
+  // Borrar todo el pedido
+  ok(await page.$("#borrarPedido") !== null, "hay botón «Borrar todo el pedido» cuando hay algo cargado");
+  page.once("dialog", d => d.dismiss()); await page.click("#borrarPedido"); await page.waitForTimeout(150);
+  ok((await page.$eval("[data-pedinp='4']", e => e.value)) === "72", "si se cancela la confirmación no se borra nada");
+  page.once("dialog", d => d.accept()); await page.click("#borrarPedido"); await page.waitForTimeout(250);
+  ok((await page.$eval("[data-pedinp='4']", e => e.value)) === "" && !(await page.$("#borrarPedido")), "al confirmar queda todo vacío y el botón desaparece");
   const cj = await page.evaluate(() => { S.saboresPorId["4"].cantidad_maestra = 30; const a = cajasDePedido("4", 60), b = cajasDePedido("4", 45); S.saboresPorId["4"].cantidad_maestra = 0; const f = S.saboresPorId["4"].familia; S.saboresPorId["4"].familia = "pasteleria"; const c = cajasDePedido("4", 5); S.saboresPorId["4"].familia = f; return [a, b, c] });
   ok(JSON.stringify(cj) === "[2,1.5,null]", "caja de 30: 60→2, 45→1,5; pastelería sin caja: nada " + JSON.stringify(cj));
   const mult = await page.evaluate(() => {
