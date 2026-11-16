@@ -806,6 +806,7 @@ body:has(.etiqOv){overflow:hidden}
 .pedCorr{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;max-width:150px;font-size:.68rem;font-weight:700;color:#8A5A00;background:#FFF1CC;border:1px solid #E7C873;border-radius:10px;padding:4px 6px}
 .pedCorr button{border:1px solid #C9A961;background:#fff;color:#2A201A;border-radius:8px;padding:2px 8px;font:inherit;font-weight:800;cursor:pointer}
 .pedCajasTot{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:12px 0 0;padding:12px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line,#E8DFD2);font-size:.88rem}.pedCajasTot>b:first-child{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.pdSubP{display:block;font-size:.74rem;font-weight:700;color:var(--muted);margin-top:2px}.pdBorrar{display:flex;justify-content:flex-end;margin:-4px 0 10px}.pdBorrar .btn{height:36px;padding:0 14px;font-size:.82rem}
 .ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
 .ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
@@ -1358,7 +1359,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.157.0";
+const FRONTEND_VERSION = "1.158.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1890,6 +1891,7 @@ function fijarPedidoManual(id,valor){
   return n;
 }
 /** Cajas que van a llegar con lo pedido: con caja maestra, pedido ÷ caja; vasquetas, de a 2 por caja. Sin caja (pastelería, bollería, baldes): null. */
+const PALLET_CAJAS=36; // cajas de vasquetas que entran en un pallet, en promedio
 function cajasDePedido(id,ped){
   const sb=S.saboresPorId[id]; if(!sb||!ped) return null;
   const m=sb.cantidad_maestra||(grupoProductoDe(sb)==="vasquetas"?2:0);
@@ -4201,7 +4203,10 @@ function stockViewPedido(st){
   const unidadesRubro=g=>totalDe(g);
   // Cajas que van a llegar con lo pedido, por rubro (referencia para saber cuántos pallets esperar).
   const cajasRubro=grupos.map(g=>({g, n:Math.round(delRubro(g).reduce((a,x)=>a+(cajasDePedido(x.id,pedidoDe(x))||0),0)*10)/10})).filter(x=>x.n>0);
-  const cajasTotHTML=cajasRubro.length?`<div class="pedCajasTot"><b>Cajas que llegan</b>${cajasRubro.map(x=>`<span>${esc(GRUPO_PRODUCTO_LABEL[x.g]||x.g)}: <b>${String(x.n).replace(".",",")}</b></span>`).join("")}</div>`:"";
+  const cajasVasq=(cajasRubro.find(x=>x.g==="vasquetas")||{n:0}).n, pallets=cajasVasq/PALLET_CAJAS;
+  const palletTxt=cajasVasq>0?`≈ ${(Math.round(pallets*10)/10).toString().replace(".",",")} ${Math.round(pallets*10)/10===1?"pallet":"pallets"}`:"";
+  const otrasCajas=cajasRubro.filter(x=>x.g!=="vasquetas");
+  const cajasTotHTML=otrasCajas.length?`<div class="pedCajasTot"><b>Otras cajas</b>${otrasCajas.map(x=>`<span>${esc(GRUPO_PRODUCTO_LABEL[x.g]||x.g)}: <b>${String(x.n).replace(".",",")}</b></span>`).join("")}</div>`:"";
   return `<button type="button" class="btn volver" id="volverPedido" style="margin-bottom:10px" aria-label="Volver a Stock">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Pedido sugerido</div>
   <h2 class="pdH1">Pedido sugerido</h2>
@@ -4209,9 +4214,10 @@ function stockViewPedido(st){
   <div class="pdKpis">
     <div class="pdCard"><span class="pdLbl">Sabores en tu pedido</span><b class="pdBig">${grupos.reduce((a,g)=>a+saboresCon(g),0)}</b></div>
     <div class="pdCard"><span class="pdLbl">Unidades pedidas</span><b class="pdBig">${totalTodo}</b></div>
-    <div class="pdCard"><span class="pdLbl">Cajas que llegan</span><b class="pdBig">${String(Math.round(cajasRubro.reduce((a,x)=>a+x.n,0)*10)/10).replace(".",",")}</b></div>
+    <div class="pdCard"><span class="pdLbl">Cajas de vasquetas</span><b class="pdBig">${String(cajasVasq).replace(".",",")}</b>${palletTxt?`<span class="pdSubP">${palletTxt} · ${PALLET_CAJAS} = 1</span>`:""}</div>
     <button type="button" class="pdCard pdEnviar" id="verResumenBtn" aria-label="Ver resumen del pedido por rubro"><span class="pdLbl">Resumen del pedido</span><b>Copiar o mandar por WhatsApp →</b></button>
   </div>
+  ${totalTodo>0?`<div class="pdBorrar"><button type="button" class="btn ghost" id="borrarPedido">Borrar todo el pedido</button></div>`:""}
   <div class="rubroCarrusel pdRubros" role="tablist" aria-label="Rubros">${grupos.map(g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><span>${saboresCon(g)} para pedir${totalDe(g)?` · ${totalDe(g)} u.`:""}</span></button>`).join("")}</div>
   <div class="pedTabla">
     <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Promedio por día<small class="pedSub">últimas 3 semanas</small></span><span>Stock</span><span>Pedir</span><span class="pedCajasH">Cajas</span></div>
@@ -6368,6 +6374,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.vencOmitir){ const clave=t.dataset.vencOmitir, id=clave.split(":")[1]; S.vencOmit[clave]=true; if(clave.startsWith("ing:")) delete S.vencimientos[id]; else delete S.vencConteo[id]; renderApp(); return }
   if(t.dataset.vencCargar){ delete S.vencOmit[t.dataset.vencCargar]; renderApp(); return }
   if(t.dataset.pinc){ const id=t.dataset.pinc, m=multiploPedido(id), v=S.pedidoAdj[id]||0; S.pedidoAdj[id]=Math.floor(v/m)*m+m; scheduleRender(); return }
+  if(t.id==="borrarPedido"){ if(confirm("¿Borrar todo el pedido que cargaste? Las cantidades vuelven a quedar vacías.")){ S.pedidoAdj={}; renderApp(); toast("Pedido borrado.") } return }
   if(t.dataset.pedfix){ const [id,v]=t.dataset.pedfix.split(":"); S.pedidoAdj[id]=+v; renderApp(); return }
   if(t.dataset.pdec){ const id=t.dataset.pdec, m=multiploPedido(id), v=S.pedidoAdj[id]||0; S.pedidoAdj[id]=Math.max(0,Math.ceil(v/m)*m-m); scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
