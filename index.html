@@ -787,6 +787,8 @@ body:has(.etiqOv){overflow:hidden}
 .rcResto{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;margin-top:10px;border-radius:20px;border:1px solid #E8DFD2;background:var(--surface);font-size:.9rem}
 .rcResto span{color:var(--muted);font-weight:700}.rcResto .v{color:#2F5A22}
 @media(min-width:900px){.cntGrid{grid-template-columns:1fr 1fr;gap:12px 16px}.cntTit h1{font-size:3rem}}
+.pedPedir{display:flex;flex-direction:column;align-items:center;gap:2px}.pedPedir .pedMult{font-size:.68rem;color:var(--muted);font-weight:600}
+.stepper .pedInp{width:64px;height:38px;text-align:center;font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;border:1px solid var(--line,#E0D5C6);border-radius:10px;background:var(--surface);color:var(--ink);padding:0;-moz-appearance:textfield}
 .ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
 .ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
@@ -1338,7 +1340,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.154.1";
+const FRONTEND_VERSION = "1.155.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1858,10 +1860,13 @@ function tendDe(sem){
   const prom=(sem[0]+sem[1])/2, dif=sem[2]-prom, um=Math.max(2,prom*0.15);
   return dif>um?{txt:"Subiendo",flecha:"↑",cls:"sube"}:dif<-um?{txt:"Bajando",flecha:"↓",cls:"baja"}:{txt:"Estable",flecha:"→",cls:"igual"};
 }
-function pedidoSinAjuste(id,st){
-  const proy=proyeccionDias(id).reduce((a,x)=>a+x.v,0);
-  const m=multiploPedido(id);
-  return Math.ceil(Math.max(0,Math.ceil(proy-st[id]))/m)*m;
+/** La app ya no calcula cuánto pedir: el pedido arranca en 0 y lo carga quien lo hace (− y +). */
+function pedidoSinAjuste(id,st){ return 0 }
+/** Pedido escrito a mano: se redondea HACIA ARRIBA al múltiplo (de a 2 en vasquetas, o la caja maestra) para no pedir de menos. */
+function fijarPedidoManual(id,valor){
+  const m=multiploPedido(id), n=Math.max(0,Math.floor(Number(valor)||0));
+  S.pedidoAdj[id]=n?Math.ceil(n/m)*m:0;
+  return S.pedidoAdj[id];
 }
 function pedidoSugerido(id, st){
   return Math.max(0, pedidoSinAjuste(id,st) + (S.pedidoAdj[id]||0));
@@ -4104,7 +4109,9 @@ function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
 }
 
 function stockViewPedido(st){
-  const D=datosProyeccion();
+  // Semanas calendario completas (lunes a domingo): la última es la que más cuenta. Sin proyecciones ni fechas de pedido: la app muestra el consumo y el pedido lo decide quien lo hace.
+  const lun0=lunesDe(Date.now());
+  const semDe=id=>[3,2,1].map(k=>salidasPorDia(id,addDias(lun0,-7*k),7).reduce((a,b)=>a+b,0));
   // En un local que produce, lo que fabrica no se pide a fábrica: va aparte, en «A producir».
   const aProducir=saboresDelLocal().filter(s=>esProducido(s.id));
   const sabores=saboresDelLocal().filter(s=>!esProducido(s.id));
@@ -4117,45 +4124,26 @@ function stockViewPedido(st){
   const saboresCon=g=>delRubro(g).filter(s=>pedidoDe(s)>0).length;
   const totalTodo=grupos.reduce((a,g)=>a+totalDe(g),0);
   const coma=n=>(Math.round(n*10)/10).toString().replace(".",",");
-  const diaBtn=(ts,atrib,on)=>`<button type="button" class="chip dChip" ${atrib} aria-pressed="${on}" aria-label="${DOW_LARGO[new Date(ts).getDay()]} ${fechaCorta(ts)}"><small>${DOW_CORTO[new Date(ts).getDay()]}</small><b>${new Date(ts).getDate()}</b></button>`;
-  const nTira=S.pdMas?14:7;
-  const tiraUlt=Array.from({length:nTira},(_,i)=>addDias(D.hoy,-(nTira-1-i))).map(ts=>diaBtn(ts,`data-ultped="${diaISO(ts)}"`,ts===D.ult)).join("");
-  const tiraLlega=Array.from({length:nTira},(_,i)=>addDias(D.hoy,i+1)).map((ts,i)=>diaBtn(ts,`data-llega="${i+1}"`,S.diasEntrega===i+1)).join("");
-  const tsLlega=addDias(D.hoy,S.diasEntrega);
-  const pocaData=D.ventana<7;
-
-  // Al tocar un sabor: lo que salió desde el último pedido + lo que se espera hasta que llega, y la cuenta.
+  // Al tocar un sabor: lo que salió en la última semana completa, de lunes a domingo, y el total.
   const detalleHTML=s=>{
-    const proy=proyeccionDias(s.id), totProy=proy.reduce((a,x)=>a+x.v,0);
-    const nd=Math.min(D.N+1,15), ts0=addDias(D.hoy,-(nd-1));
-    const salio=salidasPorDia(s.id,ts0,nd);
-    const sem=D.semana[s.id]||[0,0,0], tn=tendDe(sem);
-    const mx=Math.max(...sem), mn=Math.min(...sem), rg=Math.max(1,mx-mn);
-    const ys=sem.map(v=>mx===mn?24:Math.round((38-(v-mn)/rg*28)*10)/10);
+    const ts0=addDias(lun0,-7), salio=salidasPorDia(s.id,ts0,7);
     return `<div class="pedDetalle pd">
-      <div class="pdTit"><span>Tendencia · 3 semanas</span><b class="pdT ${tn.cls}">${tn.flecha} ${tn.txt}</b></div>
-      <div class="pdTrend"><svg class="pdLinea ${tn.cls}" viewBox="0 0 320 48" aria-hidden="true"><polyline points="53,${ys[0]} 160,${ys[1]} 267,${ys[2]}" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="53" cy="${ys[0]}" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="2.6"/><circle cx="160" cy="${ys[1]}" r="5" fill="var(--surface)" stroke="currentColor" stroke-width="2.6"/><circle cx="267" cy="${ys[2]}" r="6.5" fill="currentColor"/></svg>
-      <div class="pdNums"><span>${sem[0]}</span><span>${sem[1]}</span><b>${sem[2]}</b></div></div>
-      <div class="pdTit" style="margin-top:12px"><span>Salió desde tu último pedido</span></div>
+      <div class="pdTit"><span>Consumo de la última semana</span><span>${DOW_CORTO[new Date(ts0).getDay()]} ${new Date(ts0).getDate()} al ${DOW_CORTO[new Date(addDias(ts0,6)).getDay()]} ${new Date(addDias(ts0,6)).getDate()}</span></div>
       <div class="pdDias">${salio.map((v,i)=>{ const ts=addDias(ts0,i); return `<div class="pdDia"><small>${DOW_CORTO[new Date(ts).getDay()]} ${new Date(ts).getDate()}</small><b>${v}</b></div>` }).join("")}<div class="pdTot"><small>Total</small><b>${salio.reduce((a,b)=>a+b,0)}</b></div></div>
-      <div class="pdTit" style="margin-top:12px"><span>Se espera hasta que llega</span></div>
-      <div class="pdDias">${proy.map(x=>`<div class="pdDia proy"><small>${DOW_CORTO[x.w]} ${new Date(x.ts).getDate()}</small><b>${coma(x.v)}</b></div>`).join("")}<div class="pdTot proy"><small>Total</small><b>${coma(totProy)}</b></div></div>
-      <div class="pdCuenta"><span>Esperado ${coma(totProy)}</span>−<span>Hay hoy ${st[s.id]}</span>=<span><b>Pedir ${pedidoSinAjuste(s.id,st)}</b></span></div>
     </div>`;
   };
 
   const sabor=s=>{
     const ped=pedidoDe(s), abierto=!!S.pedidoDetalle[s.id];
-    const vendido=D.desdeUlt[s.id]||0;
     return `<div class="pedFila">
         <button type="button" class="pedNom" data-pdet="${s.id}" aria-expanded="${abierto}">
           ${plateHTML(s.id)}
-          <span class="nm">${esc(s.nombre)}<span class="meta">Salieron ${vendido} desde el ${fechaCorta(D.ult)}</span><span class="pedAcc"><span class="pedVer">${abierto?"Ocultar detalle":"Ver cómo se calcula"}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="transform:rotate(${abierto?180:0}deg)"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${(()=>{ const sm=D.semana[s.id]; if(!sm||!(sm[0]+sm[1]+sm[2])) return ""; const tn=tendDe(sm); return `<span class="pedTendB ${tn.cls}">${tn.flecha} ${tn.txt}</span>` })()}</span></span>
+          <span class="nm">${esc(s.nombre)}<span class="pedAcc"><span class="pedVer">${abierto?"Ocultar detalle":"Ver detalle"}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" style="transform:rotate(${abierto?180:0}deg)"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${(()=>{ const sm=semDe(s.id); if(!sm||!(sm[0]+sm[1]+sm[2])) return ""; const tn=tendDe(sm); return `<span class="pedTendB ${tn.cls}">${tn.flecha} ${tn.txt}</span>` })()}</span></span>
         </button>
-        ${(()=>{ const sm=D.semana[s.id]||[0,0,0], tn=tendDe(sm), mx=Math.max(...sm), mn=Math.min(...sm), rg=Math.max(1,mx-mn), y=sm.map(v=>mx===mn?24:Math.round(38-(v-mn)/rg*30)); const tot=proyeccionDias(s.id).reduce((a,x)=>a+x.v,0)/(S.diasEntrega+1);
+        ${(()=>{ const sm=semDe(s.id), tn=tendDe(sm), mx=Math.max(...sm), mn=Math.min(...sm), rg=Math.max(1,mx-mn), y=sm.map(v=>mx===mn?24:Math.round(38-(v-mn)/rg*30)); const tot=sm.reduce((a,b)=>a+b,0)/21;
           return `<span class="pedTend"><svg width="160" height="44" viewBox="0 0 160 44" class="pedLn ${tn.cls}" aria-hidden="true"><polyline points="27,${y[0]} 80,${y[1]} 133,${y[2]}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/><circle cx="27" cy="${y[0]}" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="80" cy="${y[1]}" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="133" cy="${y[2]}" r="5" fill="currentColor"/></svg><span class="tl"><span>${sm[0]}</span><span>${sm[1]}</span><b>${sm[2]}</b></span><span class="tt pedLn ${tn.cls}">${tn.txt}</span></span><span class="pedCons">${coma(tot)} <small>/día</small></span>` })()}
         <span class="pedHay">${st[s.id]}</span>
-        <div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><span class="n">${ped}</span><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>
+        <div class="pedPedir"><div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><input type="number" inputmode="numeric" min="0" step="${multiploPedido(s.id)}" class="n pedInp" data-pedinp="${s.id}" value="${ped}" aria-label="Cuánto pedir de ${esc(s.nombre)}"><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div><small class="pedMult">${multiploPedido(s.id)===2?"de a 2":"caja de "+multiploPedido(s.id)}</small></div>
       </div>
       ${abierto?detalleHTML(s):""}`;
   };
@@ -4179,14 +4167,7 @@ function stockViewPedido(st){
   return `<button type="button" class="btn volver" id="volverPedido" style="margin-bottom:10px" aria-label="Volver a Stock">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Pedido sugerido</div>
   <h2 class="pdH1">Pedido sugerido</h2>
-  <div class="pedTip"><span class="pedTipI">i</span><span>Calculado con lo que salió desde tu último pedido y lo que te queda. Podés cambiar cualquier número con − y +. <b>Tocá «Ver cómo se calcula»</b> en un sabor para ver la cuenta completa.</span></div>
-  <div class="pdFechas">
-    <div class="pdCard"><span class="pdLbl">¿Qué día hiciste el último pedido?</span><div class="dStrip">${tiraUlt}</div>
-      <span class="sub">Pasaron <b>${D.N} ${D.N===1?"día":"días"}</b> · se mide el consumo desde ahí.${D.N>nTira?" (Tocá «Ver más días» para marcarlo.)":""} <button type="button" class="pdMasBtn" data-pdmas="1">${S.pdMas?"Ver menos días":"Ver más días"}</button></span></div>
-    <div class="pdCard"><span class="pdLbl">¿Qué día te llega la mercadería?</span><div class="dStrip">${tiraLlega}</div>
-      <div class="llegaFila"><button type="button" id="llegaMenos" aria-label="Un día menos">−</button><span>Llega el <b>${DOW_LARGO[new Date(tsLlega).getDay()]} ${fechaCorta(tsLlega)}</b> · en ${S.diasEntrega} ${S.diasEntrega===1?"día":"días"}.</span><button type="button" id="llegaMas" aria-label="Un día más">+</button></div>
-      ${pocaData?`<span class="sub">Todavía hay poco historial: el cálculo es aproximado.</span>`:""}</div>
-  </div>
+  <div class="pedTip"><span class="pedTipI">i</span><span>Acá ves cómo viene el consumo y cuánto hay hoy. <b>El pedido lo decidís vos</b>: cargá lo que pidas con − y +. Tocá «Ver detalle» para ver lo vendido la última semana, de lunes a domingo.</span></div>
   <div class="pdKpis">
     <div class="pdCard"><span class="pdLbl">Sabores para pedir</span><b class="pdBig">${grupos.reduce((a,g)=>a+saboresCon(g),0)}</b></div>
     <div class="pdCard"><span class="pdLbl">Unidades en total</span><b class="pdBig">${totalTodo}</b></div>
@@ -5756,6 +5737,7 @@ async function cambiarMinimosRubro(clave, minimoFijo){
   else toast((r&&r.error)||"No se pudo cambiar los mínimos.");
 }
 document.addEventListener("change", e=>{
+  if(e.target.dataset && e.target.dataset.pedinp){ fijarPedidoManual(e.target.dataset.pedinp, e.target.value); if(!window._pedNav) scheduleRender(); return }
   // Alta de sabor nuevo: el mínimo propuesto cambia solo según el tipo elegido
   if(!e.target.matches || !e.target.matches("#altaSaborForm select[name=tipo]")) return;
   const m = e.target.form.querySelector("input[name=minimo]");
@@ -6597,6 +6579,16 @@ document.addEventListener("keydown", e=>{
       // así que se lo lleva al centro de la pantalla para no tener que scrollear a mano
       destino.scrollIntoView({block:"center", behavior:"smooth"});
     } else if(e.key!=="ArrowUp") e.target.blur();
+    return;
+  }
+  if((e.key==="Enter"||e.key==="ArrowDown"||e.key==="ArrowUp") && e.target.dataset && e.target.dataset.pedinp){
+    // «Pedir» como una celda de Excel: Enter y ↓ pasan al siguiente sabor, ↑ al anterior; lo escrito se ajusta al múltiplo.
+    e.preventDefault(); window._pedNav=true; setTimeout(()=>{ window._pedNav=false },120); // el change que dispara salir del campo no debe repintar encima del foco
+    const todos=[...document.querySelectorAll("input[data-pedinp]")], i=todos.indexOf(e.target), sig=todos[i+(e.key==="ArrowUp"?-1:1)];
+    fijarPedidoManual(e.target.dataset.pedinp, e.target.value);
+    const idSig=sig?sig.dataset.pedinp:null;
+    renderApp();
+    if(idSig){ const n=document.querySelector(`input[data-pedinp="${idSig}"]`); if(n){ n.focus(); n.select&&n.select(); n.scrollIntoView({block:"center",behavior:"smooth"}) } }
     return;
   }
   if(e.key==="Enter" && e.target.id==="local"){

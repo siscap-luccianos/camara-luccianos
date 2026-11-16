@@ -1,4 +1,4 @@
-// Pedido sugerido por días de la semana: último pedido y llegada como fechas, proyección día por día y detalle por sabor.
+// Pedido sugerido: solo referencias (tendencia 3 semanas, consumo por día, hay hoy); Pedir arranca en 0 y lo carga quien pide; el detalle muestra la última semana de lunes a domingo.
 const { chromium } = require("playwright");
 (async () => {
   const b = await chromium.launch();
@@ -27,43 +27,40 @@ const { chromium } = require("playwright");
   }, patron);
   await page.waitForTimeout(300);
 
-  const esperado = (k, st) => {
-    let t = 0; const hoy = new Date();
-    for (let i = 0; i <= k; i++) t += patron[new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + i).getDay()];
-    const m = 2; return Math.ceil(Math.max(0, Math.ceil(t - st)) / m) * m;
-  };
-  const leer = () => page.evaluate(() => ({ st: stockMap()["4"], ped: pedidoSugerido("4", stockMap()), sin: pedidoSinAjuste("4", stockMap()), N: datosProyeccion().N, vent: datosProyeccion().ventana }));
-
-  ok(await page.locator("[data-ultped]").count() === 7, "hay 7 días para marcar el último pedido");
-  ok(await page.locator("[data-llega]").count() === 7, "hay 7 días para marcar la llegada");
-  ok((await page.locator('[data-llega="4"]').getAttribute("aria-pressed")) === "true", "la llegada en 4 días está marcada");
-  ok(/Llega el .* · en 4 días/.test(await page.innerText(".llegaFila")), "dice cuándo llega: " + (await page.innerText(".llegaFila")).replace(/\n/g, " "));
-  let r = await leer();
-  ok(r.N === 7 && r.vent === 21, "sin nada marcado: último pedido hace 7 días y muestra de 3 semanas (N=" + r.N + ", ventana=" + r.vent + ")");
-  ok(r.sin === esperado(4, r.st), "el pedido sale de los mismos días de la semana: " + r.sin + " (esperado " + esperado(4, r.st) + ", stock " + r.st + ")");
-
-  await page.click('[data-llega="2"]'); await page.waitForTimeout(200);
-  r = await leer();
-  ok(r.sin === esperado(2, r.st), "llegando antes pide distinto: " + r.sin + " (esperado " + esperado(2, r.st) + ")");
-  await page.click("#llegaMas"); await page.waitForTimeout(150);
-  ok(await page.evaluate(() => S.diasEntrega) === 3, "el + suma un día");
-  await page.click('[data-llega="4"]'); await page.waitForTimeout(150);
-
-  await page.click("[data-pdmas]"); await page.waitForTimeout(150); ok(await page.locator("[data-ultped]").count() === 14, "«Ver más días» muestra 14"); await page.click("[data-ultped]:nth-child(4)"); await page.waitForTimeout(200);
-  r = await leer();
-  ok(r.N === 10, "marcar otro día de último pedido cambia los días medidos (N=" + r.N + ")");
-  ok(/Pasaron 10 días/.test(await page.innerText(".pdFechas")), "dice «Pasaron 10 días»");
-  ok(/ultimoPedido/.test(await page.evaluate(() => Object.keys(localStorage).join(","))), "se recuerda por local");
-
-  const fila = page.locator('[data-pdet="4"]'); await fila.click(); await page.waitForTimeout(200);
-  ok(/Salieron \d+ desde el \d+\/\d+/.test(await fila.innerText()), "cada sabor dice cuánto salió desde el último pedido: " + (await fila.innerText()).replace(/\n/g, " "));
-  ok(await page.locator(".pdDia.proy").count() === 5, "el detalle muestra los 5 días proyectados (hoy hasta la llegada)");
-  ok(await page.locator(".pdCuenta").count() === 1 && /Pedir \d+/.test(await page.innerText(".pdCuenta")), "el detalle cierra con la cuenta: " + (await page.innerText(".pdCuenta")).replace(/\n/g, " "));
-  ok(/tendencia · 3 semanas/i.test(await page.innerText(".pedDetalle")) && await page.locator(".pdLinea").count() === 1, "línea de tendencia de 3 semanas");
-  ok(await page.evaluate(() => tendDe([3, 4, 10]).cls === "sube" && tendDe([10, 8, 2]).cls === "baja" && tendDe([4, 3, 5]).cls === "igual"), "la tendencia distingue subiendo, bajando y estable (4 · 3 · 5 es estable)");
-  ok(await page.locator(".pedTendB").count() >= 1, "cada sabor con movimientos muestra su flecha de tendencia en la lista");
-  await page.screenshot({ path: "pedido-semanas.png", fullPage: true });
-  ok(err.length === 0, "sin errores de consola: " + err.join(" | "));
-  console.log(fallas ? "FALLAS " + fallas : "FALLAS 0");
-  await b.close(); process.exit(fallas ? 1 : 0);
+  const txt = await page.innerText("#main");
+  ok(!(await page.$(".pdFechas")), "ya no hay tarjetas de «último pedido» ni de «te llega»");
+  ok(!/hasta que llega|Se espera|cómo se calcula|Salieron \d+ desde/i.test(txt), "no quedan textos de proyección ni de «salió desde el último pedido»");
+  ok(/El pedido lo decidís vos/.test(txt), "el aviso dice que el pedido lo decide quien lo hace");
+  ok(await page.$(".pedTend") !== null && await page.$(".pedCons") !== null, "se ven tendencia y consumo por día");
+  const fila = await page.$(".pedFila:has([data-pdet='4'])");
+  ok(fila && (await fila.$eval(".pedInp", e => e.value)) === "0", "«Pedir» arranca en 0 aunque el consumo sea alto");
+  const tipo = await fila.$eval(".pedTend", e => e.textContent.replace(/\s+/g, " "));
+  ok(/Bajando|Subiendo|Estable/i.test(tipo), "muestra la tendencia: " + tipo.trim());
+  await page.click("[data-pinc='4']"); await page.waitForTimeout(150);
+  ok((await page.$eval("[data-pedinp='4']", e => e.value)) === "2", "con + se suma de a 2 (vasquetas)");
+  const ids = await page.$$eval("input[data-pedinp]", e => e.map(x => x.dataset.pedinp));
+  ok(ids.length >= 2, "hay varios sabores para pedir: " + ids.length);
+  const [a1, a2] = ids;
+  await page.fill("[data-pedinp='" + a1 + "']", "7"); await page.press("[data-pedinp='" + a1 + "']", "Enter"); await page.waitForTimeout(250);
+  ok((await page.$eval("[data-pedinp='" + a1 + "']", e => e.value)) === "8", "escribir 7 y Enter lo sube al múltiplo de 2: 8");
+  const foco = await page.evaluate(() => document.activeElement && document.activeElement.dataset && document.activeElement.dataset.pedinp);
+  ok(foco === a2, "Enter pasa al siguiente sabor (foco en " + foco + ")");
+  await page.keyboard.type("5"); await page.keyboard.press("ArrowUp"); await page.waitForTimeout(250);
+  ok((await page.$eval("[data-pedinp='" + a1 + "']", e => e.value)) === "8", "↑ vuelve al sabor anterior sin perder lo cargado");
+  ok((await page.$eval("[data-pedinp='" + a2 + "']", e => e.value)) === "6", "lo escrito en el siguiente (5) quedó en 6, múltiplo de 2");
+  const regla = await page.evaluate(() => { S.saboresPorId["4"].cantidad_maestra = 30; const r = [fijarPedidoManual("4", 7), fijarPedidoManual("4", 30), fijarPedidoManual("4", 31), fijarPedidoManual("4", 0)]; S.saboresPorId["4"].cantidad_maestra = 0; const v = [fijarPedidoManual("4", 7), fijarPedidoManual("4", 8)]; return r.concat(v) });
+  ok(JSON.stringify(regla) === "[30,30,60,0,8,8]", "caja maestra: 7→30, 30→30, 31→60, 0→0; sin caja, de a 2: 7→8, 8→8 " + JSON.stringify(regla));
+  await page.fill("[data-pedinp='4']", "0"); await page.press("[data-pedinp='4']", "Tab"); await page.waitForTimeout(250);
+  ok((await page.$eval("[data-pedinp='4']", e => e.value)) === "0", "0 deja el sabor sin pedir");
+  await page.click("[data-pdet='4']"); await page.waitForTimeout(250);
+  const det = await page.$eval(".pedDetalle", e => e.innerText.replace(/\s+/g, " "));
+  ok(/Consumo de la última semana/i.test(det), "el detalle se llama «Consumo de la última semana»");
+  ok((await page.$$(".pedDetalle .pdDia")).length === 7 && (await page.$$(".pedDetalle .pdTot")).length === 1, "7 días (lunes a domingo) y un total");
+  const dias = await page.$$eval(".pedDetalle .pdDia small", e => e.map(x => x.textContent.trim().split(" ")[0]));
+  ok(/^lun/i.test(dias[0]) && /^dom/i.test(dias[6]), "va de lunes a domingo: " + dias.join(","));
+  ok(!(await page.$(".pedDetalle .pdLinea")), "sin gráfico de tendencia repetido en el detalle");
+  const suma = await page.$$eval(".pedDetalle .pdDia b", e => e.reduce((a, x) => a + (+x.textContent || 0), 0)), tot = await page.$eval(".pedDetalle .pdTot b", e => +e.textContent);
+  ok(suma === tot, "el total coincide con la suma de los 7 días: " + suma);
+  console.log("errores:", err.length ? err : "ninguno"); await b.close();
+  console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); process.exit(fallas || err.length ? 1 : 0);
 })();
