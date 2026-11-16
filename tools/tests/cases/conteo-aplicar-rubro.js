@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
   await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
 
-  const valor = id => page.$eval(`[data-c="${id}"]`, e => e.value);
+  const valor = id => page.$eval(`[data-c="${id}"]`, e => e.value === "" ? "0" : e.value);
   const rubro = async f => { await page.click(`.tabCat[data-familia='${f}']`); await page.waitForTimeout(250) };
   const aplicar = async v => { if(!(await page.$("#aplicarTodosValor"))){ await page.click("#aplicarAbrir"); await page.waitForTimeout(150) } await page.fill("#aplicarTodosValor", String(v)); await page.click("#aplicarTodos"); await page.waitForTimeout(300) };
 

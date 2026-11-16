@@ -246,12 +246,14 @@ select{max-width:220px}
 .pedNom{display:flex;align-items:center;gap:10px;min-width:0;border:0;background:none;padding:0;cursor:pointer;font:inherit;color:var(--ink);text-align:left}
 .pedNom .nm{min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700}
 .pedNom .meta{font-size:.78rem;color:var(--muted);font-weight:400}
-.pedTend,.pedCons{display:none}
+.pedTend,.pedCons,.pedTendH,.pedCajas,.pedCajasH{display:none}
 .pedLn.sube{color:var(--accent)}.pedLn.baja{color:#3F7A58}.pedLn.igual{color:var(--muted)}
 @media(min-width:900px){
-.pedHead,.pedFila{grid-template-columns:minmax(0,2.1fr) minmax(0,1.9fr) minmax(0,1.1fr) 70px 150px}
+.pedHead,.pedFila{grid-template-columns:minmax(0,2.1fr) minmax(0,1.9fr) minmax(0,1.1fr) 70px 150px 70px}
+.pedCajas,.pedCajasH{display:block;text-align:center}.pedCajas{font-family:Fraunces,serif;font-weight:600;font-size:1.15rem}
 .pedHead span:nth-child(n+2){text-align:center}
 .pedTend{display:flex;flex-direction:column;align-items:center;gap:2px}
+.pedTendH{display:block;text-align:center}
 .pedCons{display:block;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.25rem}
 .pedCons small{font-family:Manrope,sans-serif;font-size:.72rem;color:var(--muted);font-weight:600}
 .pedTend .tl{display:grid;grid-template-columns:repeat(3,1fr);width:160px;text-align:center;font-weight:700;font-size:.85rem;color:var(--muted)}
@@ -789,6 +791,9 @@ body:has(.etiqOv){overflow:hidden}
 @media(min-width:900px){.cntGrid{grid-template-columns:1fr 1fr;gap:12px 16px}.cntTit h1{font-size:3rem}}
 .pedPedir{display:flex;flex-direction:column;align-items:center;gap:2px}.pedPedir .pedMult{font-size:.68rem;color:var(--muted);font-weight:600}
 .stepper .pedInp{width:64px;height:38px;text-align:center;font-family:'Fraunces',serif;font-weight:700;font-size:1.1rem;border:1px solid var(--line,#E0D5C6);border-radius:10px;background:var(--surface);color:var(--ink);padding:0;-moz-appearance:textfield}
+.pedCorr{display:flex;flex-wrap:wrap;gap:4px;align-items:center;justify-content:center;max-width:150px;font-size:.68rem;font-weight:700;color:#8A5A00;background:#FFF1CC;border:1px solid #E7C873;border-radius:10px;padding:4px 6px}
+.pedCorr button{border:1px solid #C9A961;background:#fff;color:#2A201A;border-radius:8px;padding:2px 8px;font:inherit;font-weight:800;cursor:pointer}
+.pedCajasTot{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:12px 0 0;padding:12px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line,#E8DFD2);font-size:.88rem}.pedCajasTot>b:first-child{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
 .ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
@@ -1340,7 +1345,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.155.1";
+const FRONTEND_VERSION = "1.156.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1775,7 +1780,9 @@ function alertas(st){ return saboresDelLocalBase().filter(s=>estadoSabor(s.id,st
 // la fábrica se lo manda por caja cerrada, no por unidad individual.
 function multiploPedido(id){
   const s=S.saboresPorId[id];
-  return (s && s.cantidad_maestra) ? s.cantidad_maestra : 2;
+  if(s && s.cantidad_maestra) return s.cantidad_maestra;
+  // Pastelería y bollería todavía no tienen caja maestra: se piden por unidad. El resto, de a 2 (vasquetas).
+  return (s && ["pasteleria","bolleria"].includes(grupoProductoDe(s))) ? 1 : 2;
 }
 /** Días de historial con los que se promedia el consumo. Pedidos cortos (hasta 7 días): la última semana. Pedidos de
  *  15, 21 o 30 días (locales de provincia): las últimas 4 semanas, que es un promedio más estable para tanto tiempo.
@@ -1862,11 +1869,25 @@ function tendDe(sem){
 }
 /** La app ya no calcula cuánto pedir: el pedido arranca en 0 y lo carga quien lo hace (− y +). */
 function pedidoSinAjuste(id,st){ return 0 }
-/** Pedido escrito a mano: se redondea HACIA ARRIBA al múltiplo (de a 2 en vasquetas, o la caja maestra) para no pedir de menos. */
+/** Pedido escrito a mano: se guarda lo que se escribió. Si no es múltiplo (de a 2 en vasquetas, o la caja maestra), la fila avisa y
+ *  ofrece los dos múltiplos más cercanos para corregirlo en el momento (sin cambiar nada solo). */
 function fijarPedidoManual(id,valor){
-  const m=multiploPedido(id), n=Math.max(0,Math.floor(Number(valor)||0));
-  S.pedidoAdj[id]=n?Math.ceil(n/m)*m:0;
-  return S.pedidoAdj[id];
+  const n=Math.max(0,Math.floor(Number(valor)||0));
+  S.pedidoAdj[id]=n;
+  return n;
+}
+/** Cajas que van a llegar con lo pedido: con caja maestra, pedido ÷ caja; vasquetas, de a 2 por caja. Sin caja (pastelería, bollería, baldes): null. */
+function cajasDePedido(id,ped){
+  const sb=S.saboresPorId[id]; if(!sb||!ped) return null;
+  const m=sb.cantidad_maestra||(grupoProductoDe(sb)==="vasquetas"?2:0);
+  if(!m) return null;
+  return Math.round(ped/m*10)/10;
+}
+function pedidoAviso(id,ped){
+  const m=multiploPedido(id);
+  if(!ped || ped%m===0) return `<small class="pedMult">${m===1?"por unidad":m===2?"de a 2":"caja de "+m}</small>`;
+  const abajo=Math.floor(ped/m)*m, arriba=abajo+m;
+  return `<div class="pedCorr"><span>${m===2?"Viene de a 2":"La caja es de "+m}. Corregir:</span>${abajo>0?`<button type="button" data-pedfix="${id}:${abajo}">${abajo}</button>`:""}<button type="button" data-pedfix="${id}:${arriba}">${arriba}</button></div>`;
 }
 function pedidoSugerido(id, st){
   return Math.max(0, pedidoSinAjuste(id,st) + (S.pedidoAdj[id]||0));
@@ -3605,7 +3626,7 @@ function gridVentaDia(st){
   const row=s=>{
     const hay=st[s.id]||0, v=cart[s.id]||0, pk=packVentaDe(s.id), suelto=v-pk;
     return `<div class="row">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">${hay>0?`Hay ${hay} en la app`:"Sin stock en la app"}${pk?` · <b>Total ${v}</b>`:""}</div></div>
-    <div class="right"><input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="0"${hay-pk>0?"":" disabled"}></div>${accionesPackHTML(s,hay,v)}</div>`};
+    <div class="right"><input type="number" min="0" max="${hay-pk}" inputmode="numeric" data-vd="${s.id}" value="${suelto||""}" placeholder="–"${hay-pk>0?"":" disabled"}></div>${accionesPackHTML(s,hay,v)}</div>`};
   const texto={venta:"Cargá lo que vendió la caja de cada producto.", giftcard:"Productos que salen por una gift card.", sincargo:"Productos que salen sin cobrar (regalo, evento, muestra).", baja:"Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida."}[tipo];
   const lblFecha = tipo==="giftcard" ? "la gift card" : "la venta";
   const extra = (tipo==="venta"||tipo==="giftcard")
@@ -3886,7 +3907,7 @@ function gridIngreso(st){
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
-      ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q}" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q||""}" placeholder="–" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
         ${kilosInlineHTML(s.id)}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
@@ -4143,7 +4164,8 @@ function stockViewPedido(st){
         ${(()=>{ const sm=semDe(s.id), tn=tendDe(sm), mx=Math.max(...sm), mn=Math.min(...sm), rg=Math.max(1,mx-mn), y=sm.map(v=>mx===mn?24:Math.round(38-(v-mn)/rg*30)); const tot=sm.reduce((a,b)=>a+b,0)/21;
           return `<span class="pedTend"><svg width="160" height="44" viewBox="0 0 160 44" class="pedLn ${tn.cls}" aria-hidden="true"><polyline points="27,${y[0]} 80,${y[1]} 133,${y[2]}" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/><circle cx="27" cy="${y[0]}" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="80" cy="${y[1]}" r="4" fill="var(--surface)" stroke="currentColor" stroke-width="2"/><circle cx="133" cy="${y[2]}" r="5" fill="currentColor"/></svg><span class="tl"><span>${sm[0]}</span><span>${sm[1]}</span><b>${sm[2]}</b></span><span class="tt pedLn ${tn.cls}">${tn.txt}</span></span><span class="pedCons">${coma(tot)} <small>/día</small></span>` })()}
         <span class="pedHay">${st[s.id]}</span>
-        <div class="pedPedir"><div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><input type="number" inputmode="numeric" min="0" step="${multiploPedido(s.id)}" class="n pedInp" data-pedinp="${s.id}" value="${ped}" aria-label="Cuánto pedir de ${esc(s.nombre)}"><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div><small class="pedMult">${multiploPedido(s.id)===2?"de a 2":"caja de "+multiploPedido(s.id)}</small></div>
+        <div class="pedPedir"><div class="stepper"><button type="button" data-pdec="${s.id}" aria-label="Restar ${multiploPedido(s.id)} del pedido">−</button><input type="number" inputmode="numeric" min="0" step="${multiploPedido(s.id)}" class="n pedInp" data-pedinp="${s.id}" value="${ped||""}" placeholder="–" aria-label="Cuánto pedir de ${esc(s.nombre)}"><button type="button" data-pinc="${s.id}" aria-label="Sumar ${multiploPedido(s.id)} al pedido">+</button></div>${pedidoAviso(s.id,ped)}</div>
+        <span class="pedCajas">${(()=>{ const c=cajasDePedido(s.id,ped); return c===null?"–":String(c).replace(".",",") })()}</span>
       </div>
       ${abierto?detalleHTML(s):""}`;
   };
@@ -4159,11 +4181,14 @@ function stockViewPedido(st){
   const bloqueProducir = aProducir.length ? `<p class="sec" style="margin:18px 0 4px">A producir</p>
   <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${totalProducir} ${totalProducir===1?"unidad":"unidades"} · lo que ${esc(S.local)} fabrica. Es un aviso interno, no va a fábrica.</p>
   <div class="pedTabla">
-    <div class="pedHead"><span>Sabor</span><span class="pedTend" style="flex-direction:row">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Hay hoy</span><span>Producir</span></div>
+    <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Stock</span><span>Producir</span><span class="pedCajasH"></span></div>
     ${aProducir.map(sabor).join("")}
   </div>
   <button type="button" class="btn ghost" id="copiarProducir" style="width:100%;margin-top:10px">Copiar lista para producción</button>` : "";
   const unidadesRubro=g=>totalDe(g);
+  // Cajas que van a llegar con lo pedido, por rubro (referencia para saber cuántos pallets esperar).
+  const cajasRubro=grupos.map(g=>({g, n:Math.round(delRubro(g).reduce((a,x)=>a+(cajasDePedido(x.id,pedidoDe(x))||0),0)*10)/10})).filter(x=>x.n>0);
+  const cajasTotHTML=cajasRubro.length?`<div class="pedCajasTot"><b>Cajas que llegan</b>${cajasRubro.map(x=>`<span>${esc(GRUPO_PRODUCTO_LABEL[x.g]||x.g)}: <b>${String(x.n).replace(".",",")}</b></span>`).join("")}</div>`:"";
   return `<button type="button" class="btn volver" id="volverPedido" style="margin-bottom:10px" aria-label="Volver a Stock">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Pedido sugerido</div>
   <h2 class="pdH1">Pedido sugerido</h2>
@@ -4175,9 +4200,9 @@ function stockViewPedido(st){
   </div>
   <div class="rubroCarrusel pdRubros" role="tablist" aria-label="Rubros">${grupos.map(g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><span>${saboresCon(g)} para pedir${totalDe(g)?` · ${totalDe(g)} u.`:""}</span></button>`).join("")}</div>
   <div class="pedTabla">
-    <div class="pedHead"><span>Sabor</span><span class="pedTend" style="flex-direction:row">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Hay hoy</span><span>Pedir</span></div>
+    <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Stock</span><span>Pedir</span><span class="pedCajasH">Cajas</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
-  </div>${bloqueProducir}`;
+  </div>${cajasTotHTML}${bloqueProducir}`;
 }
 
 /** Pedido sugerido agrupado por rubro (Vasquetas, Baldes, Icepops, Chocolatería,
@@ -4258,7 +4283,7 @@ function stockViewConteo(){
   const cont=S.conteo, st0=stockMap(), parcial=conteoParcialActivo();
   const list=listaFiltrada(st0);
   const row=s=>`<div class="row" data-cestado="${conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0)}">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]}"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}" placeholder="–"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
   const tEsc=conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
   const tApl=accTileHTML("aplicarAbrir","Poner todo en 0","para empezar de cero y contar todo","swap","",`aria-expanded="${!!S.conteoAplicarAbierto}"`);
@@ -4377,7 +4402,7 @@ function invContarHTML(){
     const camTxt=c?(kg?`${(+c.u)} vasq.${s.tipo==="v"?` · ${c.ap?"≈ ":""}${invFmtNum(s,c.k)} kg`:""}`:`${c.u} u.`):"sin stock";
     return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
-      <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):"0"}" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
+      <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
   };
   const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
   return `<div class="invHead"><b>Stock definitivo del local</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
@@ -6327,8 +6352,9 @@ document.addEventListener("click", async e=>{
   if(t.dataset.ddec){ const c=S.cart.devolucion; c[t.dataset.ddec]=Math.max(0,(c[t.dataset.ddec]||0)-1); if(!c[t.dataset.ddec]) delete c[t.dataset.ddec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.vencOmitir){ const clave=t.dataset.vencOmitir, id=clave.split(":")[1]; S.vencOmit[clave]=true; if(clave.startsWith("ing:")) delete S.vencimientos[id]; else delete S.vencConteo[id]; renderApp(); return }
   if(t.dataset.vencCargar){ delete S.vencOmit[t.dataset.vencCargar]; renderApp(); return }
-  if(t.dataset.pinc){ const m=multiploPedido(t.dataset.pinc); S.pedidoAdj[t.dataset.pinc]=(S.pedidoAdj[t.dataset.pinc]||0)+m; scheduleRender(); return }
-  if(t.dataset.pdec){ const m=multiploPedido(t.dataset.pdec); S.pedidoAdj[t.dataset.pdec]=(S.pedidoAdj[t.dataset.pdec]||0)-m; scheduleRender(); return }
+  if(t.dataset.pinc){ const id=t.dataset.pinc, m=multiploPedido(id), v=S.pedidoAdj[id]||0; S.pedidoAdj[id]=Math.floor(v/m)*m+m; scheduleRender(); return }
+  if(t.dataset.pedfix){ const [id,v]=t.dataset.pedfix.split(":"); S.pedidoAdj[id]=+v; renderApp(); return }
+  if(t.dataset.pdec){ const id=t.dataset.pdec, m=multiploPedido(id), v=S.pedidoAdj[id]||0; S.pedidoAdj[id]=Math.max(0,Math.ceil(v/m)*m-m); scheduleRender(); return }
   if(t.dataset.dias){ S.diasEntrega=Number(t.dataset.dias); S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.ultped){ S.ultimoPedido={iso:t.dataset.ultped, marcado:diaISO(Date.now())}; S.pedidoAdj={}; renderApp(); return }
   if(t.dataset.llega){ S.diasEntrega=Number(t.dataset.llega); S.pedidoAdj={}; renderApp(); return }
