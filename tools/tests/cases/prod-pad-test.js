@@ -17,7 +17,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   await page.evaluate(()=>{ S.produccionLocal=false; S.sinEscaner=true; renderApp() }); await page.waitForTimeout(300);
   ok(await page.$("#irEscaner")===null, "local con sin_escaner=SI: sin «Escanear vasqueta»");
   const tiles=await page.$$eval(".accTile",e=>e.map(x=>x.textContent.trim().replace(/\s+/g," ")));
-  ok(tiles.length>=2 && tiles.some(t=>/Desperdicio/.test(t)), "quedan las demás acciones: "+tiles.join(" | "));
+  ok(!tiles.some(t=>/escáner/i.test(t)), "sin escáner, la pantalla no ofrece el botón: "+tiles.join(" | "));
   // tocar una vasqueta abre el pad ¿Cuánto pesa?
   const card=await page.$("[data-add='4'], [data-wadd='4'], .card .pick");
   await card.click(); await page.waitForTimeout(300);
