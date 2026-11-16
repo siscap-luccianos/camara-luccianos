@@ -27,7 +27,7 @@ const { chromium } = require("playwright");
   await page.click("#irVentaDia2"); await page.waitForTimeout(300);
   ok(/Venta del día/.test(await page.$eval("main",e=>e.textContent)),"el botón del cartel lleva a Salida de chocolatería");
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(800);
-  await page.evaluate(()=>{ S.empleado.rol="colaborador"; S.modoVenta=false; S.tab="salida"; S.filtroFamilia="chocolateria"; renderApp() });
+  await page.evaluate(()=>{ S.empleado.rol="colaborador"; S.modoVenta=false; S.salidaElegida=true; S.tab="salida"; S.filtroFamilia="chocolateria"; renderApp() });
   await page.waitForTimeout(200);
   ok(!(await page.$("#irVentaDia2"))&&/La carga un responsable/.test(await page.$eval("main",e=>e.textContent)),"colaborador: sin botón, con aviso «La carga un responsable»");
   console.log("errores:",JSON.stringify(err)); await b.close();
