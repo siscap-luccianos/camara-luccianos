@@ -797,6 +797,13 @@ body:has(.etiqOv){overflow:hidden}
 .rcResto{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 16px;margin-top:10px;border-radius:20px;border:1px solid #E8DFD2;background:var(--surface);font-size:.9rem}
 .rcResto span{color:var(--muted);font-weight:700}.rcResto .v{color:#2F5A22}
 @media(min-width:900px){.cntGrid{grid-template-columns:1fr 1fr;gap:12px 16px}.cntTit h1{font-size:3rem}}
+.ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
+.ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
+.ingTile:active{transform:scale(.985)}.ingTile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ingTile .ingIc{font-size:1.9rem;line-height:1}.ingTile b{font-size:1.05rem}.ingTile span:last-child{font-size:.85rem;color:var(--muted);line-height:1.35}
+.devCompa{margin:0 0 12px}.devMotivoBox{margin:14px 0}.devMotivoBox label{display:block;font-weight:700;margin-bottom:6px}.devMotivoBox input{width:100%;box-sizing:border-box;height:44px;border-radius:12px;border:1px solid var(--line,#E0D5C6);padding:0 14px;font:inherit;background:var(--surface);color:var(--ink)}
+.cgPor{display:inline-block;margin-left:6px;font-size:.7rem;font-weight:700;color:#6B521C;background:#FBF3DF;border:1px solid #E7D49C;border-radius:8px;padding:1px 7px}
 .segIng{display:inline-flex;padding:4px;border-radius:999px;background:rgba(var(--accent-rgb),.12);gap:4px;margin:0 0 12px}
 .segIng button{height:36px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
 .segIng button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
@@ -1342,7 +1349,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.151.1";
+const FRONTEND_VERSION = "1.152.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1416,6 +1423,8 @@ const S = {
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoCambio: false, cambio: {desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""}, // «Cambio de sabor» (solo responsables), desde adentro de Ingreso
+  ingresoElegido: false, // Ingreso: ya se eligió «Mercadería que llegó» (si no, se ve el menú «¿Qué vas a hacer?»)
+  devCompa: false, devPor: null, devMotivo: "", // Devolución de un responsable por un compañero que ya se fue (id del compañero, motivo)
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
   modoDesperdicio: false, // viendo Desperdicio desde adentro de Salida
   modoVenta: false, // viendo "Venta del día" (chocolatería) desde adentro de Salida
@@ -1646,10 +1655,14 @@ function inicioDeHoy(){
 /** Desde cuándo cuenta lo que se puede devolver: hoy, pero nunca antes del último conteo físico
  *  (un conteo reemplaza el stock: lo que salió antes ya no tiene nada que volver a la cámara). */
 function desdeDevolucion(){ return Math.max(inicioDeHoy(), (S.stock&&+S.stock.ts)||0) }
-function pendienteDevolucionHoy(){
+/** De quién es la devolución que se está cargando: la propia, o la de un compañero (solo responsables). */
+function resetIngresoMenu(){ S.ingresoElegido=false; S.devPor=null; S.devCompa=false; S.devMotivo=""; if(S.cart&&S.cart.devolucion){ S.cart.devolucion={}; } S.devSel={}; S.devTip={} }
+function empDev(){ return S.devPor||S.empleado.id }
+function pendienteDevolucionHoy(eid){
+  eid=eid||S.empleado.id;
   const desde=desdeDevolucion(), sacado={}, devuelto={};
   for(const r of regsActivos()){
-    if(r.ts<=desde || String(r.empleadoId)!==String(S.empleado.id)) continue;
+    if(r.ts<=desde || String(r.empleadoId)!==String(eid)) continue;
     if(r.tipo==="salida" && !r.subtipo) for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
     else if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,q] of Object.entries(r.items||{})) devuelto[id]=(devuelto[id]||0)+(+q||0);
   }
@@ -1657,11 +1670,23 @@ function pendienteDevolucionHoy(){
   Object.keys(sacado).forEach(id=>{ const p=sacado[id]-(devuelto[id]||0); if(p>0) pendiente[id]=p; });
   return pendiente;
 }
+/** Compañeros del local con algo pendiente de devolver (para que un responsable devuelva por ellos). */
+function companerosPendientes(){
+  const vistos={}, out=[];
+  for(const r of regsActivos()){
+    if(r.tipo!=="salida" || r.subtipo || !r.empleadoId || String(r.empleadoId)===String(S.empleado.id) || vistos[r.empleadoId]) continue;
+    vistos[r.empleadoId]=1;
+    const n=Object.values(pendienteDevolucionHoy(r.empleadoId)).reduce((a,q)=>a+q,0);
+    if(n>0) out.push({id:String(r.empleadoId), nombre:r.empleado||"Sin nombre", n});
+  }
+  return out.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+}
+function puedeDevolverPorOtro(){ return ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
 /** Kilos reales: por vasqueta que esta persona sacó hoy y todavía no devolvió, el peso con que salió.
  *  {id:{pesos:[kg…], sinPeso:n}} — «sinPeso» son las que salieron sin peso registrado (antes de pesar) y se escriben a mano. */
 function pesosPendientesDev(){
-  const desde=desdeDevolucion(), pend=pendienteDevolucionHoy(), tomadas={}, out={};
-  const regs=regsActivos().filter(r=>r.ts>desde && String(r.empleadoId)===String(S.empleado.id)).sort((a,b)=>a.ts-b.ts);
+  const eid=empDev(), desde=desdeDevolucion(), pend=pendienteDevolucionHoy(eid), tomadas={}, out={};
+  const regs=regsActivos().filter(r=>r.ts>desde && String(r.empleadoId)===String(eid)).sort((a,b)=>a.ts-b.ts);
   for(const r of regs){
     if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})) (tomadas[id]=tomadas[id]||[]).push(...a);
   }
@@ -3826,17 +3851,31 @@ async function guardarCambioSabor(){
   } finally { S.busy=false; renderApp() }
 }
 /** Tarjetas de arriba de Ingreso (Producción, Devolución, Cambio de sabor): mismo formato que las de Salida. */
-function accionesIngresoHTML(hayPendiente,soloProd){
+function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
   const t=[];
   if(!soloProd && S.ventaDia && S.tipoIngreso==="transferencia" && S.empleado.rol!=="colaborador" && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Escanear vasqueta","pic, pic, pic: cada rótulo suma 1","scan","m"));
+  if(soloEsc) return t.length?accGridHTML(t):"";
   if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
   if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
   if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor cambiado?","swap"));
   return t.length?accGridHTML(t):"";
 }
+/** Menú «¿Qué vas a hacer?»: primero se elige la acción, recién después aparece la lista de sabores. */
+function menuIngresoHTML(){
+  const rol=S.empleado.rol, resp=puedeDevolverPorOtro(), t=[];
+  const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-ing-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
+  if(rol!=="colaborador") t.push(tile("merc","📦","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito."));
+  t.push(tile("dev","↩️","Devolución","Algo que sacaste y volvés a guardar."));
+  if(rol!=="colaborador" && S.ventaDia) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
+  if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor cambiado","Cambio de sabor: figura uno y era otro."));
+  if(S.produccionLocal) t.push(tile("prod","🏭","Producción","Lo que fabricás en el local (kilos y vasquetas)."));
+  if(resp) t.push(tile("compa","↩️","Devolver por un compañero","Se fue y dejó algo pendiente: lo devolvés a su nombre."));
+  return `<p class="sec">Ingreso</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
+}
 function gridIngreso(st){
   if(S.lectorRemito) return lectorRemitoView();
   if(S.modoCambio) return gridCambioSabor(st);
+  if(!S.ingresoElegido) return menuIngresoHTML();
   const cart=S.cart.ingreso;
   const list=listaFiltrada(st);
   const row=s=>{
@@ -3855,8 +3894,9 @@ function gridIngreso(st){
   const puedeRemito = S.empleado.rol!=="colaborador";
   const hayPendiente = Object.keys(pendienteDevolucionHoy()).length>0;
   return `<p class="sec">Recibe: <b>${esc(S.empleado.nombre)}</b></p>
-  ${accionesIngresoHTML(hayPendiente,false)}
-  ${S.ventaDia&&puedeRemito?`<div class="segIng"><button type="button" data-ing-tipo="remito" aria-pressed="${S.tipoIngreso!=="transferencia"}">Remito de fábrica</button><button type="button" data-ing-tipo="transferencia" aria-pressed="${S.tipoIngreso==="transferencia"}">Transferencia recibida</button></div>`:""}
+  <button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">‹ Cambiar acción</button>
+  <p class="sec" style="margin-top:0">${S.tipoIngreso==="transferencia"?"Transferencia recibida":"Mercadería que llegó"}</p>
+  ${accionesIngresoHTML(false,false,true)}
   ${chipFiltros()}
   ${puedeRemito&&S.ventaDia&&S.tipoIngreso==="transferencia"?`<div class="remitoRow"><label for="remito" style="font-weight:700">Local de origen</label><input type="text" id="remito" placeholder="Ej: Obelisco CABA" value="${esc(S.remito)}"></div>
   <p style="margin:8px 0 10px;color:var(--muted);font-size:.78rem;line-height:1.4">Mercadería que te mandó o te prestó otro local. Suma al stock y no cuenta como compra a fábrica.</p>`:puedeRemito?`<div class="remitoRow"><label for="remito" style="font-weight:700">N° de remito o motivo</label><input type="text" id="remito" placeholder="Ej: 00079-00031081, o &quot;Traspaso de mercadería&quot;" value="${esc(S.remito)}"></div>
@@ -3870,7 +3910,7 @@ function gridIngreso(st){
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 function gridDevolucion(st){
-  const pendiente=pendienteDevolucionHoy();
+  const pendiente=pendienteDevolucionHoy(empDev());
   const cart=S.cart.devolucion;
   const ids=S.sabores.filter(s=>pendiente[s.id]>0);
   const pp=S.kilosReales?pesosPendientesDev():{};
@@ -3894,9 +3934,16 @@ function gridDevolucion(st){
       ${kilosAvisoHTML(s.id,q)}
     </div>`};
   return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
-  <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">Devolución</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste.${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
-  ${ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">No tenés nada pendiente de devolver hoy.</div>`}`;
+  <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">${S.devCompa?"Devolver por un compañero":"Devolución"}</p>
+  ${S.devCompa?devCompaSelectorHTML():""}
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${S.devCompa?"Se devuelve a nombre de tu compañero y queda marcado como cargado por vos. Solo lo que él sacó y todavía no devolvió.":"Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste."}${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
+  ${S.devCompa&&!S.devPor?"":ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">${S.devCompa?"Esa persona no tiene nada pendiente de devolver.":"No tenés nada pendiente de devolver hoy."}</div>`}
+  ${S.devCompa&&S.devPor&&ids.length?`<div class="devMotivoBox"><label for="devMotivo">Motivo (obligatorio)</label><div class="cmbChips">${["Se fue y me avisó","Cambio de turno"].map(m=>`<button type="button" class="chip" data-dev-motivo="${esc(m)}" aria-pressed="${S.devMotivo===m}">${esc(m)}</button>`).join("")}</div><input type="text" id="devMotivo" value="${esc(S.devMotivo)}" placeholder="Ej: Manuel se fue, avisó que devolvía 1"></div>`:""}`;
+}
+function devCompaSelectorHTML(){
+  const l=companerosPendientes();
+  if(!l.length) return `<div class="empty">Nadie más tiene algo pendiente de devolver en este local.</div>`;
+  return `<div class="devCompa"><p class="sec" style="margin:0 0 6px">¿Quién la sacó?</p><div class="cmbChips">${l.map(c=>`<button type="button" class="chip" data-dev-por="${esc(c.id)}" aria-pressed="${String(S.devPor)===c.id}">${esc(c.nombre)} · ${c.n}</button>`).join("")}</div></div>`;
 }
 /** Carga de producción propia (hoy solo Unicenter, Locales.produccion=SI)
  *  — por sabor, dos datos sueltos sin fórmula entre ellos: los kilos que
@@ -4697,7 +4744,7 @@ function filaMovimiento(r){
   const claseTipo=parcialH?"conteo":r.tipo==="cambio"?"cambio":r.subtipo==="devolucion"?"devolucion":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"produccion":CLASES_CHOCO.includes(r.subtipo)?"venta":r.tipo;
   const labelTipo=parcialH?"conteo parcial":r.tipo==="cambio"?"cambio de sabor":r.subtipo==="devolucion"?"devolución":r.subtipo==="desperdicio"?"desperdicio":r.subtipo==="produccion"?"producción":CLASES_CHOCO.includes(r.subtipo)?etiquetaSubtipoChoco(r):r.tipo;
   return `<div class="h${r.anulado?" anulado":""}"><div class="top"><span class="pill ${claseTipo}">${labelTipo}</span>
-    <span class="who">${esc(r.empleado||"Sin nombre")}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||(r.tipo==="cambio"&&!parcialH)||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
+    <span class="who">${esc(r.empleado||"Sin nombre")}${r.cargado_por?` <small class="cgPor">cargada por ${esc(r.cargado_por)}</small>`:""}</span><span>${total||""} u.${r.remito?" · Remito "+esc(r.remito):""}${(r.subtipo==="desperdicio"||(r.tipo==="cambio"&&!parcialH)||CLASES_CHOCO.includes(r.subtipo))&&r.motivo&&!r.anulado?" · "+esc(r.motivo):""}</span>
     <time>${textoJornada(r.ts)}</time></div>
     ${r.tipo==="conteo"?`<div class="items">Conteo físico de ${Object.keys(r.items||{}).length} sabores</div><div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo.</div>`:`<div class="items">${parcialH?itParcial():r.tipo==="cambio"?itCambio():it}</div>${parcialH?`<div class="meta" style="color:var(--muted);font-size:.72rem;margin-top:2px">${esc((r.motivo||"Conteo parcial").replace(/^Conteo parcial: ?/,"Conteo parcial de ").replace(/de (\w+)/,(m,g)=>"de "+(GRUPO_PRODUCTO_LABEL[g]||g)))}: dejó cada sabor en lo contado. Las diferencias son contra el stock de ese momento.</div>`:""}`}
     ${esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:""}
@@ -4824,6 +4871,7 @@ function detalleMovHTML(r){
     cuerpo=`<div class="hLin"><span class="n">${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b></span><span class="q"></span><span class="d">${r.motivo&&!r.anulado?esc(r.motivo):""}</span><span class="v">${kg?fmtKg(kg)+" kg":""}</span></div>`;
   } else {
     cuerpo=cuerpoPorSabor(r);
+    if(r.cargado_por&&!r.anulado) cuerpo+=`<div class="hNota">A nombre de <b>${esc(r.empleado||"")}</b> · cargada por <b>${esc(r.cargado_por)}</b>${r.motivo?" · Motivo: "+esc(r.motivo):""}</div>`;
     if(r.subtipo==="desperdicio"&&r.motivo&&!r.anulado) cuerpo+=`<div class="hNota">Motivo: ${esc(r.motivo)}</div>`;
     if(r.subtipo==="transferencia"&&!r.anulado&&destinoDeTransf(r)) cuerpo+=`<div class="hNota">${r.tipo==="ingreso"?"Viene de":"Va a"}: <b>${esc(destinoDeTransf(r))}</b></div>`;
   }
@@ -4834,7 +4882,7 @@ function detalleMovHTML(r){
 function filaMovCompactaHTML(r){
   const e=etiquetaMov(r), abierto=!!S.histAbierto[r.id];
   const hora=new Date(r.ts).toLocaleString("es-AR",{weekday:"short",hour:"2-digit",minute:"2-digit"});
-  return `<div class="hMovWrap${r.anulado?" anulado":""}"><button type="button" class="hMov" data-mov-abrir="${esc(String(r.id))}" aria-expanded="${abierto}"><span class="pill ${e.clase}">${esc(e.label)}</span><span class="who">${esc(r.empleado||"Sin nombre")}</span><span class="det">${esc(resumenMov(r))}</span><time>${esc(hora)}</time><b class="tot">${esc(totalMov(r))}</b><span class="chev${abierto?" up":""}" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>${abierto?detalleMovHTML(r):""}</div>`;
+  return `<div class="hMovWrap${r.anulado?" anulado":""}"><button type="button" class="hMov" data-mov-abrir="${esc(String(r.id))}" aria-expanded="${abierto}"><span class="pill ${e.clase}">${esc(e.label)}</span><span class="who">${esc(r.empleado||"Sin nombre")}${r.cargado_por?` <small class="cgPor">cargada por ${esc(r.cargado_por)}</small>`:""}</span><span class="det">${esc(resumenMov(r))}</span><time>${esc(hora)}</time><b class="tot">${esc(totalMov(r))}</b><span class="chev${abierto?" up":""}" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>${abierto?detalleMovHTML(r):""}</div>`;
 }
 /** Agrupa por jornada (descendente): título, cantidad, 3 filas y «Ver N más de este día». */
 function listaMovimientosDiaHTML(regs){
@@ -5767,7 +5815,7 @@ function renderBar(){
     if(tot){
       visible=true;
       const verbo=enDesperdicio?"desperdicio":enProduccion?"producción":enVenta?LABEL_SUBTIPO_CHOCO[subtipoChoco()]:enTransfIn?"transferencia recibida":enTransfOut?"transferencia":S.tab==="salida"?"salida":(enDevolucion?"devolución":"ingreso");
-      const faltaMotivo=(enDesperdicio && !S.motivoDesperdicio.trim()) || (enVenta && chocoFaltaMotivo()) || (enTransfIn && !S.remito.trim()) || (enTransfOut && !S.destinoTransf.trim());
+      const faltaMotivo=(enDesperdicio && !S.motivoDesperdicio.trim()) || (enDevolucion && S.devCompa && (!S.devPor || !S.devMotivo.trim())) || (enVenta && chocoFaltaMotivo()) || (enTransfIn && !S.remito.trim()) || (enTransfOut && !S.destinoTransf.trim());
       // Venta de un día anterior al último conteo: ese conteo ya la incluye, descontaría dos veces.
       const fechaAntesConteo=enVenta && chocoConFecha() && !!S.fechaVenta && tsVentaDe(S.fechaVenta)<=((S.stock&&S.stock.ts)||0);
       const faltaVenc=cartKey==="ingreso" ? ent.filter(([id,q])=>loteProblema("ing:"+id, id, q, S.vencimientos[id])) : [];
@@ -5788,6 +5836,7 @@ function renderBar(){
           ${avisoKilos}
           ${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior.</div>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
+          ${cartKey==="ingreso"&&!enTransfIn&&!S.remito.trim()?`<div class="warn" style="background:#FBF3DF;color:#6B521C;border-radius:10px;padding:8px 10px">¿Estás devolviendo algo que habías sacado? Este ingreso no tiene remito ni motivo. Si es una devolución cargala en «Devolución»: se descuenta de lo que sacaste. <button type="button" class="chip" id="irDevolucionAviso" style="margin-top:6px">Ir a Devolución</button></div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>${cartKey==="salida"?"Seguir cargando":"Volver"}</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
@@ -5857,7 +5906,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.invGestion=null; S.invGestionLocal=""; S.gvDef=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; resetIngresoMenu(); S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.invGestion=null; S.invGestionLocal=""; S.gvDef=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.inv=null; S.conteo=null; resetConteoEsc(); S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -5909,22 +5958,24 @@ async function guardarMovimiento(){
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? S.remito.trim() : undefined,
       fotoRemito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? (S.fotoRemitoUrl||undefined) : undefined,
+      paraEmpleadoId: enDevolucion&&S.devCompa&&S.devPor ? S.devPor : undefined,
       subtipo: enDevolucion ? "devolucion" : enDesperdicio ? "desperdicio" : enProduccion ? "produccion" : enVenta ? subtipoChoco() : (enTransfIn||enTransfOut) ? "transferencia" : undefined,
-      motivo: enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : enTransfIn ? "Transferencia de "+S.remito.trim() : enTransfOut ? "Transferencia a "+S.destinoTransf.trim() : undefined,
+      motivo: enDevolucion&&S.devCompa ? S.devMotivo.trim() : enDesperdicio ? S.motivoDesperdicio.trim() : enVenta ? motivoChoco() : enTransfIn ? "Transferencia de "+S.remito.trim() : enTransfOut ? "Transferencia a "+S.destinoTransf.trim() : undefined,
       fecha: enVenta && chocoConFecha() && S.fechaVenta ? S.fechaVenta : undefined,
       kilos: Object.keys(kilos).length ? kilos : undefined,
       vencimientos: Object.keys(venc).length ? venc : undefined,
       pesos: Object.keys(pesosEnv).length ? pesosEnv : undefined};
     const r = await api("registrar", payload);
+    if(r && r.offline && payload.paraEmpleadoId){ toast("Devolver por un compañero necesita señal. Probá de nuevo cuando vuelva."); return }
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enTransfIn?"Transferencia recibida registrada: ":enTransfOut?"Transferencia enviada registrada: ":enVenta?(LABEL_SUBTIPO_CHOCO[subtipoChoco()].charAt(0).toUpperCase()+LABEL_SUBTIPO_CHOCO[subtipoChoco()].slice(1)+" registrada: "):enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; resetIngresoMenu(); S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; resetIngresoMenu(); S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -6267,7 +6318,7 @@ document.addEventListener("click", async e=>{
 
   if(invClick(t)) return;
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
+  if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
@@ -6383,6 +6434,17 @@ document.addEventListener("click", async e=>{
   if(t.dataset.cat){ S.filtroCategoria = t.dataset.cat; renderApp(); return }
   if(t.id==="soloAlerta"){ S.soloAlerta=!S.soloAlerta; renderApp(); return }
   if(t.id==="limpiar"){ S.cart[cartKeyActual()]={}; S.pesos[cartKeyActual()]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); renderApp(); return }
+  if(t.dataset.ingMenu){ const k=t.dataset.ingMenu; S.confirm=false;
+    if(k==="merc"){ S.ingresoElegido=true; S.tipoIngreso="remito"; S.remito="" }
+    else if(k==="transf"){ S.ingresoElegido=true; S.tipoIngreso="transferencia"; S.remito="" }
+    else if(k==="dev"){ S.devCompa=false; S.devPor=null; S.modoDevolucion=true }
+    else if(k==="compa"){ S.devCompa=true; S.devPor=null; S.devMotivo=""; S.modoDevolucion=true }
+    else if(k==="cambio"){ resetCambio(); S.modoCambio=true }
+    else if(k==="prod"){ S.modoProduccion=true }
+    renderApp(); return }
+  if(t.dataset.devPor){ S.devPor=t.dataset.devPor; S.cart.devolucion={}; S.pesos.devolucion={}; S.devSel={}; S.devTip={}; S.kilosProduccion={}; renderApp(); return }
+  if(t.dataset.devMotivo){ S.devMotivo=t.dataset.devMotivo; renderApp(); return }
+  if(t.id==="irDevolucionAviso"){ S.devCompa=false; S.devPor=null; S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irCambioSabor"){ resetCambio(); S.modoCambio=true; S.confirm=false; renderApp(); return }
   if(t.id==="cmbCancelar"){ S.modoCambio=false; resetCambio(); renderApp(); return }
@@ -6391,7 +6453,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.cmbMotivo!==undefined){ S.cambio.motivo=t.dataset.cmbMotivo; renderApp(); if(t.dataset.cmbMotivo==="otro"){ const i=$("#cmbOtro"); if(i) i.focus() } return }
   if(t.dataset.cmbSug!==undefined){ S.cambio.kilos=String(t.dataset.cmbSug).replace(".",","); renderApp(); return }
   if(t.id==="irProduccion"){ S.modoProduccion=true; S.confirm=false; renderApp(); return }
-  if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoCambio=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
+  if(t.id==="volverIngreso"){ S.modoDevolucion=false; S.modoCambio=false; S.modoProduccion=false; S.confirm=false; resetIngresoMenu(); renderApp(); return }
   if(t.dataset.uni){ abrirUnidades(t.dataset.uni); return }
   if(t.dataset.prodinc){ const c=S.cart.produccion; c[t.dataset.prodinc]=(c[t.dataset.prodinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
@@ -6592,6 +6654,7 @@ document.addEventListener("input", e=>{
     return;
   }
   if(e.target.id==="q"){ S.q=e.target.value; const pos=e.target.selectionStart; renderApp(); const q=$("#q"); if(q){ q.focus(); q.setSelectionRange(pos,pos) } }
+  if(e.target.id==="devMotivo"){ S.devMotivo=e.target.value; renderBar(); return }
   if(e.target.id==="remito"){ S.remito=e.target.value; if(S.tipoIngreso==="transferencia") renderBar() }
   if(e.target.id==="motivoChoco"){ S.motivoChoco=e.target.value; S.confirm=false; renderBar() }
   if(e.target.id==="destinoTransf" || e.target.id==="destinoSalida"){ S.destinoTransf=e.target.value; S.confirm=false; renderBar() }
