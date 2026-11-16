@@ -1338,7 +1338,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.154.0";
+const FRONTEND_VERSION = "1.154.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4091,7 +4091,7 @@ function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
       <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
       <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span>
     </button>`;
-  const fisico=puedeGestionar?`<div class="stkFisico"><p class="stkLbl">STOCK FÍSICO · EN ORDEN</p>
+  const fisico=puedeGestionar?`<div class="stkFisico">
     <div class="stkPasos">
       ${paso(1,"conteoBtn","Conteo físico","Corrige el stock de la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo físico")}
       <span class="stkSep">${chev}</span>
