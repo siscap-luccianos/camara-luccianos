@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.82.0";
+const BACKEND_VERSION = "1.83.0";
 
 function doPost(e) {
   let resultado;
@@ -1431,6 +1431,11 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const geladot = Object.keys(items).filter((id) => porIdG[String(id)] && String(porIdG[String(id)].categoria || "").trim() === "Geladot");
     if (geladot.length) {
       return { ok: false, error: "Geladot no se produce en el local: " + geladot.map((id) => porIdG[String(id)].nombre).join(", ") + "." };
+    }
+    // Los kilos fabricados son obligatorios en todo lo que no son Icepops (que se cuentan por unidad): sin kilos no se puede medir lo producido.
+    const sinKilos = Object.keys(items).filter((id) => porIdG[String(id)] && _grupoProducto(porIdG[String(id)]) !== "icepops" && !(Number((kilos || {})[id]) > 0));
+    if (sinKilos.length) {
+      return { ok: false, error: "Falta cargar los kilos fabricados de: " + sinKilos.map((id) => porIdG[String(id)].nombre).join(", ") + "." };
     }
     // Y, si el local eligió qué sabores fabrica (Locales.produccion_sabores), solo esos.
     const saboresOk = _idsLista(filaLocalProd.produccion_sabores);
