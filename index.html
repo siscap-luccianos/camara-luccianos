@@ -1338,7 +1338,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.153.0";
+const FRONTEND_VERSION = "1.154.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1412,6 +1412,7 @@ const S = {
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoCambio: false, cambio: {desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""}, // «Cambio de sabor» (solo responsables), desde adentro de Ingreso
+  salidaElegida: false, // Salida: ya se eligió «Sacar de la cámara» o «Transferencia» (si no, se ve el menú «¿Qué vas a hacer?»)
   ingresoElegido: false, // Ingreso: ya se eligió «Mercadería que llegó» (si no, se ve el menú «¿Qué vas a hacer?»)
   devCompa: false, devPor: null, devMotivo: "", // Devolución de un responsable por un compañero que ya se fue (id del compañero, motivo)
   modoDevolucion: false, // responsable viendo Devolución desde adentro de Ingreso (colaborador tiene su propia pestaña, no usa esto)
@@ -1645,6 +1646,7 @@ function inicioDeHoy(){
  *  (un conteo reemplaza el stock: lo que salió antes ya no tiene nada que volver a la cámara). */
 function desdeDevolucion(){ return Math.max(inicioDeHoy(), (S.stock&&+S.stock.ts)||0) }
 /** De quién es la devolución que se está cargando: la propia, o la de un compañero (solo responsables). */
+function resetSalidaMenu(){ S.salidaElegida=false; S.salidaTransf=false; S.destinoTransf="" }
 function resetIngresoMenu(){ S.ingresoElegido=false; S.devPor=null; S.devCompa=false; S.devMotivo=""; if(S.cart&&S.cart.devolucion){ S.cart.devolucion={}; } S.devSel={}; S.devTip={} }
 function empDev(){ return S.devPor||S.empleado.id }
 function pendienteDevolucionHoy(eid){
@@ -3363,11 +3365,23 @@ function revisarAccion(t){
   if(t.dataset.revQuitar){ const id=t.dataset.revQuitar; delete c[id]; delete pes[id]; S.escItems=S.escItems.filter(e=>String(e.id)!==String(id)); fin(); return true }
   return false;
 }
+/** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
+function menuSalidaHTML(){
+  const rv=resumenVenc(), pv=rv.rojo.l+rv.amarillo.l;
+  const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-sal-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
+  const t=[tile("comun","📤","Sacar de la cámara","Lo que se retira para vender o usar. Se elige por sabor."),
+           tile("desp","🗑️","Desperdicio","Roto, caído o vencido. Pide el motivo.")];
+  if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia enviada","Mandás o prestás mercadería a otro local."));
+  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(tile("choco","🍫","Salida de chocolatería","Venta del día, gift card, sin cargo o baja."));
+  t.push(tile("venc","⏰","Ver vencimientos",rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:pv?`${pv} por vencer`:"Solo consulta: lotes por vencer."));
+  return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
+}
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
   if(S.modoVenta) return gridVentaDia(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
   if(S.confirm && Object.values(S.cart.salida).some(q=>q>0)) return revisarSalidaHTML(st);
+  if(!S.salidaElegida && !Object.values(S.cart.salida).some(q=>q>0)) return menuSalidaHTML();
   const cart=S.cart.salida, emp=S.empleado.nombre;
   const list=listaFiltrada(st);
   // Local con «Salida de chocolatería»: la pestaña Chocolatería se ve para consultar stock y vencimientos, pero no se saca acá (08/11/2026).
@@ -3441,20 +3455,17 @@ function transfCampoHTML(id,etiqueta,valor,ph,nota){
   return `<div class="transfCampo"><span class="tcIco"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h14M14 4l4 4-4 4M20 16H6M10 12l-4 4 4 4"/></svg></span><label for="${id}"><small>${etiqueta}</small><input type="text" id="${id}" placeholder="${ph}" value="${esc(valor)}" autocomplete="off"><em>${nota}</em></label></div>`;
 }
 function segSalidaHTML(){
-  if(!puedeTransferir()) return "";
   const t=salidaEsTransf();
-  return `<div class="segIng"><button type="button" data-sal-tipo="comun" aria-pressed="${!t}">Salida común</button><button type="button" data-sal-tipo="transferencia" aria-pressed="${t}">Transferencia</button></div>`
+  return `<button class="btn volver" type="button" id="volverSalidaMenu" style="margin-bottom:12px">‹ Cambiar acción</button>
+  <p class="sec" style="margin-top:0">${t?"Transferencia enviada":"Sacar de la cámara"}</p>`
     + (t?transfCampoHTML("destinoSalida","TRANSFERENCIA · ¿A QUÉ LOCAL VA?",S.destinoTransf,"Ej: Obelisco CABA","Obligatorio. Queda registrado como transferencia enviada; no cuenta como consumo."):"");
 }
 function accionesSalidaHTML(){
+  // Desperdicio, transferencia, salida de chocolatería y vencimientos se eligen en el menú «¿Qué vas a hacer?»: acá solo queda el escáner.
   const t=[];
   if(escanerDisponible()) t.push(accTileHTML("irEscaner","Activar escáner","Vasquetas","scan","m"));
-  if(salidaEsTransf()) return t.length?accGridHTML(t):""; // en una transferencia no hay vencimientos: solo el escáner
-  t.push(accTileHTML("irDesperdicio","Desperdicio","roto, caído, vencido","trash"));
-  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(accTileHTML("irVentaDia","Salida de chocolatería","venta, gift card, baja…","choco"));
-  const rv=resumenVenc(), porVencer=rv.rojo.l+rv.amarillo.l;
-  t.push(accTileHTML("","Ver vencimientos",rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:porVencer?`${porVencer} por vencer`:"lotes por vencer","clock","","data-ver-venc"));
-  return accGridHTML(t)+(S.ventaDia?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"");
+  const nota=(S.ventaDia&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"";
+  return (t.length?accGridHTML(t):"")+nota;
 }
 function gridDesperdicio(st){
   const cart=S.cart.desperdicio;
@@ -5892,7 +5903,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; resetIngresoMenu(); S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.invGestion=null; S.invGestionLocal=""; S.gvDef=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; resetIngresoMenu(); resetSalidaMenu(); S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.invGestion=null; S.invGestionLocal=""; S.gvDef=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.inv=null; S.conteo=null; resetConteoEsc(); S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -5955,13 +5966,13 @@ async function guardarMovimiento(){
     if(r && r.offline && payload.paraEmpleadoId){ toast("Devolver por un compañero necesita señal. Probá de nuevo cuando vuelva."); return }
     if(r && r.ok){
       toast((enDesperdicio?"Desperdicio registrado: ":enTransfIn?"Transferencia recibida registrada: ":enTransfOut?"Transferencia enviada registrada: ":enVenta?(LABEL_SUBTIPO_CHOCO[subtipoChoco()].charAt(0).toUpperCase()+LABEL_SUBTIPO_CHOCO[subtipoChoco()].slice(1)+" registrada: "):enProduccion?"Producción registrada: ":S.tab==="salida"?"Salida registrada: ":enDevolucion?"Devolución registrada: ":"Ingreso registrado: ")+total+" u.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; resetIngresoMenu(); S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; resetIngresoMenu(); if(cartKey!=="salida"||!Object.values(S.cart.salida).some(q=>q>0)) resetSalidaMenu(); S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
       await cargarDatos();
     } else if(r && r.offline){
       colaAgregar("registrar", payload);
       agregarRegistroOptimista(payload);
       toast("Sin conexión: se guardó y se va a enviar solo.");
-      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; resetIngresoMenu(); S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
+      S.cart[cartKey]={}; S.pesos[cartKey]={}; S.escaneadas=[]; S.escItemsIng=[]; resetSelPesos(); S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.remito=""; S.fotoRemitoUrl=""; S.confirm=false; S.modoDevolucion=false; resetIngresoMenu(); if(cartKey!=="salida"||!Object.values(S.cart.salida).some(q=>q>0)) resetSalidaMenu(); S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio="";
     } else {
       toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }
@@ -6304,7 +6315,7 @@ document.addEventListener("click", async e=>{
 
   if(invClick(t)) return;
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
+  if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
@@ -6445,6 +6456,14 @@ document.addEventListener("click", async e=>{
   if(t.dataset.proddec){ const c=S.cart.produccion; c[t.dataset.proddec]=Math.max(0,(c[t.dataset.proddec]||0)-1); if(!c[t.dataset.proddec]) delete c[t.dataset.proddec]; S.confirm=false; scheduleRender(); return }
   if(t.id==="irEscaner"){ abrirEscaner(); return }
   if(t.id==="irEscanerIng"){ abrirEscaner("ingreso"); return }
+  if(t.dataset.salMenu){ const k=t.dataset.salMenu; S.confirm=false;
+    if(k==="comun"){ S.salidaElegida=true; S.salidaTransf=false; S.destinoTransf="" }
+    else if(k==="transf"){ S.salidaElegida=true; S.salidaTransf=true; S.destinoTransf="" }
+    else if(k==="desp"){ S.modoDesperdicio=true }
+    else if(k==="choco"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false }
+    else if(k==="venc"){ S.verVencimientos=true; S.filtroVenc="todos" }
+    renderApp(); return }
+  if(t.id==="volverSalidaMenu"){ resetSalidaMenu(); S.confirm=false; renderApp(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="irVentaDia" || t.id==="irVentaDia2"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
   if(t.dataset.salTipo){ const quiere=t.dataset.salTipo==="transferencia"; if(quiere!==!!S.salidaTransf){ S.salidaTransf=quiere; S.destinoTransf=""; S.confirm=false; renderApp() } return }
@@ -6463,7 +6482,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.tipoChoco){ S.tipoChoco=t.dataset.tipoChoco; S.confirm=false; renderApp(); return }
   if(t.dataset.bajaMotivo){ S.bajaMotivo=t.dataset.bajaMotivo; S.confirm=false; renderApp(); return }
   if(t.id==="volverVenta"){ S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.confirm=false; renderApp(); return }
-  if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.confirm=false; renderApp(); return }
+  if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); resetSalidaMenu(); S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
   if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
   if(t.id==="remitoVolverRevision"){ S.lectorRemito.paso="revision"; S.lectorRemito.error=""; renderApp(); return }

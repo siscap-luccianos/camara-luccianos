@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
   ok(await page.evaluate(()=>localStorage.getItem("empleadosCache_gestion"))===null, "la lista de admin no queda guardada en el equipo");
   await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') } await page.waitForSelector("header"); await page.waitForTimeout(500);
   await page.fill("#local","Marruecos"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   ok(await page.$("#main .card, #main .row")!==null, "la app carga y muestra sabores con la CSP puesta");
   await page.reload(); await page.waitForTimeout(1500);
   ok(await page.$("header")!==null, "recargar con sesión abierta anda");

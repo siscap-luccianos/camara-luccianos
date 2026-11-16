@@ -43,7 +43,7 @@ const { chromium } = require("playwright");
   ok(!/promedio/.test(kpi+filas.join(" ")), "sin textos de peso promedio");
 
   // ---- SALIDA: cada vasqueta se pesa
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("[data-add='4']"); await page.waitForSelector("#kilosOv"); await page.waitForTimeout(200);
   const sub=await page.$eval("#kilosOv .mantSub",e=>e.textContent); ok(!/promedio/.test(sub),"el pad no muestra peso promedio: "+sub);
   for(const k of ["3",",","6","0"]) await page.click(`[data-kg-tecla='${k}']`);

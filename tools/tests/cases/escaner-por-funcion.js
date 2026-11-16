@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   const irA = async n => { await page.fill("#local", n); await page.press("#local", "Enter"); await page.waitForTimeout(1200); };
   const conteoBtn = async () => { await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); const e = await page.$("[data-ce-empezar]"); if (e) { await e.click(); await page.waitForTimeout(400); } return await page.$("#escConteoBtn") !== null; };
-  const salidaTiene = async () => { await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); return await page.$("#irEscaner") !== null; };
+  const salidaTiene = async () => { await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); return await page.$("#irEscaner") !== null; }; await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   const flags = () => page.evaluate(() => ({ p: S.escanerPeso, s: S.escanerSalida, c: S.escanerConteo, k: S.kilosReales }));
 
   // 1) Solo escaner_conteo

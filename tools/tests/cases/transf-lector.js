@@ -19,11 +19,11 @@ const { chromium } = require("playwright");
   await page.evaluate(async () => { await api("registrar", { clienteId: uuid(), tipo: "ingreso", local: S.local, items: { "49": 10 }, remito: "T-1" }); await cargarDatos() }); await page.waitForTimeout(400); // stock de Icepops para poder transferir
   // ---------- SALIDA · Transferencia ----------
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
-  ok(await page.$("[data-sal-tipo='comun']") && await page.$("[data-sal-tipo='transferencia']"), "Salida tiene el selector «Salida común | Transferencia»");
+  ok(await page.$("[data-sal-tipo='comun']") && await page.$("[data-sal-menu='transf']"), "Salida tiene el selector «Salida común | Transferencia»");
   ok(!(await page.$("#destinoSalida")), "en Salida común no hay campo de destino");
-  await page.click("[data-sal-tipo='transferencia']"); await page.waitForTimeout(300);
+  await page.click("[data-sal-menu='transf']"); await page.waitForTimeout(300);
   ok(await page.$("#destinoSalida") !== null, "con Transferencia aparece «¿A qué local va?»");
-  ok(!(await page.$("#irDesperdicio")) && !(await page.$("#irVentaDia")), "en transferencia no se ofrecen Desperdicio ni Salida de chocolatería");
+  ok(!(await page.$("[data-sal-menu='desp']")) && !(await page.$("[data-sal-menu='choco']")), "en transferencia no se ofrecen Desperdicio ni Salida de chocolatería");
   await page.evaluate(a => { abrirEscaner(); procesarEscaneo(a); }, banana); await page.waitForTimeout(150);
   await page.evaluate(() => cerrarEscaner()); await page.waitForTimeout(250);
   await page.evaluate(() => { S.cart.salida["49"] = 3; scheduleRender() }); await page.waitForTimeout(200); // un Icepop: cualquier rubro

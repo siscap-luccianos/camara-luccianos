@@ -9,7 +9,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(1000);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click(".tabCat[data-familia='chocolateria']"); await page.waitForTimeout(300);
   const lineas=await page.$$eval(".card.consulta .loteL",e=>e.map(x=>x.textContent.trim()));
   console.log(JSON.stringify(lineas));

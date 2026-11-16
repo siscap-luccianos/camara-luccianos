@@ -10,7 +10,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("[data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("[data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   ok(await page.$("#irEscaner")!==null, "local común con kilos reales: tiene «Escanear vasqueta»");
   await page.evaluate(()=>{ S.produccionLocal=true; renderApp() }); await page.waitForTimeout(200);
   ok(await page.$("#irEscaner")!==null, "Local prueba (produccion=SI pero sin «sin_escaner»): conserva el escáner");

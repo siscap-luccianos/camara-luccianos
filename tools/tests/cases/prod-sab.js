@@ -43,12 +43,12 @@ const { chromium } = require("playwright");
   await page.click(".tabCat[data-familia='vasquetas']"); await page.waitForTimeout(300);
   ok(/Cheesecake/.test(await page.innerText("#main")), "Producción: Cheesecake sigue");
   // Salida: Cheesecake visible
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click(".tabCat[data-familia='vasquetas']").catch(()=>{}); await page.waitForTimeout(300);
   ok(/Cheesecake/.test(await page.innerText("#main")), "Salida: Cheesecake visible por producirse");
   // Pedido
   await page.evaluate(async()=>{await fetch("/exec",{method:"POST",body:JSON.stringify({accion:"registrar",tipo:"salida",local:"Marruecos",items:{"5":8}})})});
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(200);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(200); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
   await page.evaluate(()=>cargarDatos&&cargarDatos()); await page.waitForTimeout(600);
   await page.click("#verPedidoBtn"); await page.waitForTimeout(300);

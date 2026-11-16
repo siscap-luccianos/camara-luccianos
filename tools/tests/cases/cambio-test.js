@@ -71,7 +71,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   ok(dec.c&&dec.c.plu==="6"&&dec.c.kg===3.828, "decodifica 2000006038289 → PLU 6, 3,828 kg");
   ok(dec.d&&dec.d.codigo==="0004"&&dec.d.kg===3.89, "el rótulo de fábrica de 20 dígitos sigue andando");
   ok(dec.e===null, "un EAN-13 común (empieza con 7) no se toma como etiqueta de producción");
-  await page.click("[data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("[data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#irEscaner"); await page.waitForSelector("#escCodigo");
   await page.fill("#escCodigo","2000011035501"); await page.press("#escCodigo","Enter"); await page.waitForTimeout(300);
   let msg=await page.$eval("#escMsg",e=>e.textContent); ok(/Banana Split/.test(msg)&&/3,55/.test(msg), "escanea la etiqueta de producción: "+msg);

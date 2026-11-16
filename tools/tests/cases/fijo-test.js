@@ -9,7 +9,7 @@ const { chromium } = require("playwright");
     await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
     await page.waitForSelector("header"); await page.waitForTimeout(400);
     await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-    await page.click("[data-t='salida']"); await page.waitForTimeout(300);
+    await page.click("[data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
     await page.evaluate(()=>{ document.body.style.minHeight="3000px"; window.scrollTo(0,300) });
     const antes=await page.evaluate(()=>window.scrollY);
     await page.click("#ayudaBtn"); await page.waitForSelector("#ayudaOv");

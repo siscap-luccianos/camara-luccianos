@@ -20,7 +20,7 @@ const { chromium } = require("playwright");
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
   for(let i=0;i<10;i++) await page.click("[data-iinc='20']").catch(()=>{});
   await page.fill("#remito","Prueba"); await page.click(".bar .btn:not(.ghost)"); await page.waitForTimeout(400); await page.click("text=Confirmar ingreso"); await page.waitForTimeout(800);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   for(let i=0;i<4;i++) await page.click("[data-add='20']").catch(()=>{});
   await page.click(".bar .btn:not(.ghost)"); await page.waitForTimeout(400); const c2=await page.$("text=/Confirmar salida/"); if(c2){await c2.click(); await page.waitForTimeout(800)}
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(600);

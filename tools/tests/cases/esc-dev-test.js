@@ -18,7 +18,7 @@ const { chromium } = require("playwright");
   await page.fill("[data-kilos='5']","6,2"); await page.click("#go"); await page.click("#ok"); await page.waitForTimeout(700);
 
   // ---- ESCÁNER
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#irEscaner"); await page.waitForSelector("#escCodigo");
   const scan=async c=>{ await page.fill("#escCodigo",c); await page.press("#escCodigo","Enter"); await page.waitForTimeout(2700) };
   await scan("00040036014102621001");

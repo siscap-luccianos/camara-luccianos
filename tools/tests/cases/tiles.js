@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
  await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
  const t=await page.$$eval(".accTile",e=>e.map(x=>x.textContent.replace(/\s+/g," ").trim()));
  console.log(t); await page.screenshot({path:"tiles1.png"});
- await page.click("#irDesperdicio"); await page.waitForTimeout(300); console.log("desperdicio:", (await page.$eval("body",e=>e.textContent)).includes("Modo Desperdicio"));
+ await page.click("[data-sal-menu='desp']"); await page.waitForTimeout(300); console.log("desperdicio:", (await page.$eval("body",e=>e.textContent)).includes("Modo Desperdicio"));
  await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);
  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
  console.log("sin escáner:",await page.$$eval(".accTile",e=>e.map(x=>x.id||x.dataset.verVenc+"|"+x.className)));
