@@ -3369,7 +3369,7 @@ function revisarAccion(t){
 function menuSalidaHTML(){
   const rv=resumenVenc(), pv=rv.rojo.l+rv.amarillo.l;
   const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-sal-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
-  const t=[tile("comun","📤","Sacar de la cámara","Lo que se retira para vender o usar. Se elige por sabor."),
+  const t=[tile("comun","📤","Retiro de cámara","Elegís qué sabores retirás."),
            tile("desp","🗑️","Desperdicio","Roto, caído o vencido. Pide el motivo.")];
   if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia enviada","Mandás o prestás mercadería a otro local."));
   if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(tile("choco","🍫","Salida de chocolatería","Venta del día, gift card, sin cargo o baja."));
@@ -3457,7 +3457,7 @@ function transfCampoHTML(id,etiqueta,valor,ph,nota){
 function segSalidaHTML(){
   const t=salidaEsTransf();
   return `<button class="btn volver" type="button" id="volverSalidaMenu" style="margin-bottom:12px">‹ Cambiar acción</button>
-  <p class="sec" style="margin-top:0">${t?"Transferencia enviada":"Sacar de la cámara"}</p>`
+  <p class="sec" style="margin-top:0">${t?"Transferencia enviada":"Retiro de cámara"}</p>`
     + (t?transfCampoHTML("destinoSalida","TRANSFERENCIA · ¿A QUÉ LOCAL VA?",S.destinoTransf,"Ej: Obelisco CABA","Obligatorio. Queda registrado como transferencia enviada; no cuenta como consumo."):"");
 }
 function accionesSalidaHTML(){
