@@ -255,6 +255,7 @@ select{max-width:220px}
 .pedTend{display:flex;flex-direction:column;align-items:center;gap:2px}
 .pedTendH{display:block;text-align:center}
 .pedCons{display:block;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.25rem}
+.pedHead .pedSub{display:block;font-size:.62rem;font-weight:600;letter-spacing:.02em;text-transform:none;opacity:.8}
 .pedCons small{font-family:Manrope,sans-serif;font-size:.72rem;color:var(--muted);font-weight:600}
 .pedTend .tl{display:grid;grid-template-columns:repeat(3,1fr);width:160px;text-align:center;font-weight:700;font-size:.85rem;color:var(--muted)}
 .pedTend .tl b{color:var(--ink);font-weight:800}
@@ -1345,7 +1346,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.156.1";
+const FRONTEND_VERSION = "1.156.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4181,7 +4182,7 @@ function stockViewPedido(st){
   const bloqueProducir = aProducir.length ? `<p class="sec" style="margin:18px 0 4px">A producir</p>
   <p style="margin:0 0 8px;color:var(--muted);font-size:.8rem;line-height:1.4">${totalProducir} ${totalProducir===1?"unidad":"unidades"} · lo que ${esc(S.local)} fabrica. Es un aviso interno, no va a fábrica.</p>
   <div class="pedTabla">
-    <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Stock</span><span>Producir</span><span class="pedCajasH"></span></div>
+    <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Promedio por día<small class="pedSub">últimas 3 semanas</small></span><span>Stock</span><span>Producir</span><span class="pedCajasH"></span></div>
     ${aProducir.map(sabor).join("")}
   </div>
   <button type="button" class="btn ghost" id="copiarProducir" style="width:100%;margin-top:10px">Copiar lista para producción</button>` : "";
@@ -4201,7 +4202,7 @@ function stockViewPedido(st){
   </div>
   <div class="rubroCarrusel pdRubros" role="tablist" aria-label="Rubros">${grupos.map(g=>`<button type="button" class="rubroTab${g===rubroActivo?" on":""}" data-rubro="${g}" aria-pressed="${g===rubroActivo}"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><span>${saboresCon(g)} para pedir${totalDe(g)?` · ${totalDe(g)} u.`:""}</span></button>`).join("")}</div>
   <div class="pedTabla">
-    <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Consumo por día</span><span>Stock</span><span>Pedir</span><span class="pedCajasH">Cajas</span></div>
+    <div class="pedHead"><span>Sabor</span><span class="pedTendH">Tendencia · 3 semanas</span><span class="pedCons" style="font-size:inherit;font-family:inherit;font-weight:inherit">Promedio por día<small class="pedSub">últimas 3 semanas</small></span><span>Stock</span><span>Pedir</span><span class="pedCajasH">Cajas</span></div>
     ${lista.length?lista.map(sabor).join(""):`<div class="empty">Este rubro no tiene sabores en este local.</div>`}
   </div>${cajasTotHTML}${bloqueProducir}`;
 }
