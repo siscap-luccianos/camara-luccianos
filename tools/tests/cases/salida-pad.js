@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Marruecos"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   // vasquetas: un toque suma 1 (sin pad)
   await page.click("[data-add='5']"); await page.waitForTimeout(200);
   ok(await page.$("#cantOv")===null, "vasqueta: no abre pad");
@@ -55,7 +55,7 @@ const { chromium } = require("playwright");
   await page.click("#bar button >> nth=-1"); await page.waitForTimeout(500);
   if(await page.$("#ok")){ await page.click("#ok"); await page.waitForTimeout(900) }
   // desperdicio
-  await page.click("#irDesperdicio"); await page.waitForTimeout(300);
+  await page.click("[data-sal-menu='desp']"); await page.waitForTimeout(300);
   await page.click(".tabCat[data-familia='icepops']"); await page.waitForTimeout(200);
   await page.click("[data-wadd='162']"); await page.waitForSelector("#cantOv");
   await page.click("[data-cant-tecla='3']"); await page.click("[data-cant-listo]"); await page.waitForTimeout(300);

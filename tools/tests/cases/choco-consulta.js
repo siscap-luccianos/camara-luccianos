@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(1000);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   const tabs=await page.$$eval(".tabCat",e=>e.map(x=>x.dataset.familia)); ok(tabs.includes("chocolateria"),"la pestaña Chocolatería aparece en Salida: "+tabs.join(","));
   await page.click(".tabCat[data-familia='chocolateria']"); await page.waitForTimeout(300);
   ok(!!(await page.$(".consultaAviso")),"cartel «Solo informativo»");
@@ -27,7 +27,7 @@ const { chromium } = require("playwright");
   await page.click("#irVentaDia2"); await page.waitForTimeout(300);
   ok(/Venta del día/.test(await page.$eval("main",e=>e.textContent)),"el botón del cartel lleva a Salida de chocolatería");
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(800);
-  await page.evaluate(()=>{ S.empleado.rol="colaborador"; S.modoVenta=false; S.tab="salida"; S.filtroFamilia="chocolateria"; renderApp() });
+  await page.evaluate(()=>{ S.empleado.rol="colaborador"; S.modoVenta=false; S.salidaElegida=true; S.tab="salida"; S.filtroFamilia="chocolateria"; renderApp() });
   await page.waitForTimeout(200);
   ok(!(await page.$("#irVentaDia2"))&&/La carga un responsable/.test(await page.$eval("main",e=>e.textContent)),"colaborador: sin botón, con aviso «La carga un responsable»");
   console.log("errores:",JSON.stringify(err)); await b.close();

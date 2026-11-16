@@ -11,12 +11,12 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   // Ingreso con kilos (remito simulado)
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.setInputFiles("#inputRemitoFoto",require("path").join(__dirname,"..","..","..","fotos/5.jpg"));
   await page.waitForSelector("[data-remito-kg]",{timeout:8000});
   await page.fill("[data-remito-kg='1']","22,5"); await page.click("#remitoCargar"); await page.waitForTimeout(300);
   await page.fill("[data-kilos='5']","6,2"); await page.click("#go"); await page.click("#ok"); await page.waitForTimeout(700);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#irEscaner"); await page.waitForSelector("#escCodigo");
   const scan=async c=>{ await page.fill("#escCodigo",c); await page.press("#escCodigo","Enter"); await page.waitForTimeout(2700) };
   await scan("00040036014102621001");
@@ -46,7 +46,7 @@ const { chromium } = require("playwright");
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(400);
   ok(/salida/i.test(await page.innerText("#app")),"queda en Historial");
   // quitar lo último vuelve a la grilla
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#irEscaner"); await page.waitForSelector("#escCodigo"); await scan("00200040202112621002");
   await page.click("[data-esc-cerrar]"); await page.click("#go"); await page.waitForTimeout(300);
   await page.click("[data-rev-x]"); await page.waitForTimeout(300);

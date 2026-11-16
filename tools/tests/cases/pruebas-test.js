@@ -23,6 +23,7 @@ const { chromium } = require("playwright");
   await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(1200);
+  await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(300);
   ok(!!(await page.$("[data-add]")) , "carga la grilla de Salida en pruebas");
   const imgOk=await page.$$eval(".plate img",els=>els.filter(i=>i.complete&&i.naturalWidth>0).length);
   ok(imgOk>0,"las fotos (../fotos) cargan: "+imgOk);

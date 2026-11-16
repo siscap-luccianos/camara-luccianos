@@ -24,7 +24,7 @@ const { chromium } = require("playwright");
   await page.screenshot({path:"prod-sab-1.png"});
   // Producción solo muestra los 2
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
-  await page.click("#irProduccion"); await page.waitForTimeout(400);
+  await page.click("[data-ing-menu='prod']"); await page.waitForTimeout(400);
   let txt=await page.innerText("#main");
   ok(/Cheesecake/.test(txt) && !/Banana Split/.test(txt), "Producción: vasquetas solo Cheesecake (sin Banana Split)");
   await page.click(".tabCat[data-familia='icepops']"); await page.waitForTimeout(300);
@@ -35,20 +35,20 @@ const { chromium } = require("playwright");
   await page.click("[data-toggle-sabor-local='5']"); await page.waitForTimeout(300);
   ok((await page.innerText("#main")).includes("lo producimos"), "marca «lo producimos» en el sabor apagado");
   // Ingreso normal: sin Cheesecake
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   txt=await page.innerText("#main");
   ok(!/Cheesecake/.test(txt), "Ingreso con remito: Cheesecake no aparece");
   // Producción: sigue
-  await page.click("#irProduccion"); await page.waitForTimeout(300);
+  await page.click("#volverIngreso"); await page.waitForTimeout(200); await page.click("[data-ing-menu='prod']"); await page.waitForTimeout(300);
   await page.click(".tabCat[data-familia='vasquetas']"); await page.waitForTimeout(300);
   ok(/Cheesecake/.test(await page.innerText("#main")), "Producción: Cheesecake sigue");
   // Salida: Cheesecake visible
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click(".tabCat[data-familia='vasquetas']").catch(()=>{}); await page.waitForTimeout(300);
   ok(/Cheesecake/.test(await page.innerText("#main")), "Salida: Cheesecake visible por producirse");
   // Pedido
   await page.evaluate(async()=>{await fetch("/exec",{method:"POST",body:JSON.stringify({accion:"registrar",tipo:"salida",local:"Marruecos",items:{"5":8}})})});
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(200);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(200); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
   await page.evaluate(()=>cargarDatos&&cargarDatos()); await page.waitForTimeout(600);
   await page.click("#verPedidoBtn"); await page.waitForTimeout(300);
@@ -62,7 +62,7 @@ const { chromium } = require("playwright");
   txt=await page.innerText("#main"); ok(/a producir/i.test(txt) && /no va a fábrica/.test(txt),"Resumen con tarjeta A producir");
   // reload
   await page.reload(); await page.waitForTimeout(1500);
-  await page.click("#tabs [data-t='ingreso']").catch(()=>{}); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']").catch(()=>{}); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']").catch(()=>{}); await page.waitForTimeout(200);
   ok(!/Cheesecake/.test(await page.innerText("#main")), "tras recargar sigue sin Cheesecake en Ingreso");
   // servidor rechaza no producidos
   const r=await page.evaluate(async()=>{const x=await fetch("/exec",{method:"POST",body:JSON.stringify({accion:"registrar",tipo:"ingreso",subtipo:"produccion",local:"Marruecos",items:{"4":3}})});return x.json()});

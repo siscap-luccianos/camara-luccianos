@@ -13,8 +13,8 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
 
   // ---------- CAMBIO DE SABOR ----------
   await page.click("[data-t='ingreso']"); await page.waitForTimeout(300);
-  ok(await page.$("#irCambioSabor")!==null, "responsable ve «¿Llegó un sabor cambiado?» en Ingreso");
-  await page.click("#irCambioSabor"); await page.waitForTimeout(300);
+  ok(await page.$("[data-ing-menu='cambio']")!==null, "responsable ve «¿Llegó un sabor cambiado?» en Ingreso");
+  await page.click("[data-ing-menu='cambio']"); await page.waitForTimeout(300);
   ok((await page.$eval("#cmbOk",e=>e.disabled)), "Registrar apagado al entrar");
   const desdeOpts=await page.$$eval("#cmbDesde option",o=>o.map(x=>x.textContent));
   ok(desdeOpts.some(t=>/Banana Split/.test(t)) && !desdeOpts.some(t=>/Granella|icepop/i.test(t)), "«Figura como» solo con stock y sin chocolatería: "+desdeOpts.join(" | "));
@@ -40,7 +40,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   ok(/Banana Split20 → 18/.test(prev.replace(/\s/g,"")||"") || /20\s*→\s*18/.test(prev), "«Cómo queda» muestra 20 → 18: "+prev);
   ok(/2\s*→\s*4/.test(prev), "«Cómo queda» muestra 2 → 4 (Cheesecake tenía 3 y se vendió 1)");
   await page.click("#cmbOk"); await page.waitForTimeout(900);
-  ok(await page.$("#irCambioSabor")!==null && await page.$("#cmbOk")===null, "vuelve a Ingreso después de registrar");
+  ok(await page.$("[data-ing-menu='cambio']")!==null && await page.$("#cmbOk")===null, "vuelve a Ingreso después de registrar");
   const st=await page.evaluate(()=>{ const m=stockMap(), k=kilosMap(); return {b:m["4"],c:m["5"],kb:k["4"],kc:k["5"]} });
   ok(st.b===18 && st.c===4, "stock: Banana 18, Cheesecake 4 (dio "+st.b+" / "+st.c+")");
   ok(Math.abs(st.kb-72.36)<0.01 && st.kc===null, "kilos: Banana 72,36; Cheesecake queda «sin kilos» porque ya tenía una salida sin pesar (dio "+st.kb+" / "+st.kc+")");
@@ -52,7 +52,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   // el consumo no cambia: ningún registro de salida nuevo
   const sal=await page.evaluate(()=>regsActivos().filter(r=>r.tipo==="salida").length); ok(sal===1,"no se creó ninguna salida (consumo intacto)");
   // pedir más de lo que hay
-  await page.click("[data-t='ingreso']"); await page.click("#irCambioSabor"); await page.selectOption("#cmbDesde","20"); await page.selectOption("#cmbHacia","4"); await page.waitForTimeout(200);
+  await page.click("[data-t='ingreso']"); await page.click("[data-ing-menu='cambio']"); await page.selectOption("#cmbDesde","20"); await page.selectOption("#cmbHacia","4"); await page.waitForTimeout(200);
   for(let i=0;i<12;i++) await page.click("[data-cmb-inc]");
   ok((await page.$eval(".stepper .n",e=>e.textContent))==="6","el tope es el stock (6)");
   await page.click("#cmbCancelar"); await page.waitForTimeout(150);
@@ -71,7 +71,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   ok(dec.c&&dec.c.plu==="6"&&dec.c.kg===3.828, "decodifica 2000006038289 → PLU 6, 3,828 kg");
   ok(dec.d&&dec.d.codigo==="0004"&&dec.d.kg===3.89, "el rótulo de fábrica de 20 dígitos sigue andando");
   ok(dec.e===null, "un EAN-13 común (empieza con 7) no se toma como etiqueta de producción");
-  await page.click("[data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("[data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("#irEscaner"); await page.waitForSelector("#escCodigo");
   await page.fill("#escCodigo","2000011035501"); await page.press("#escCodigo","Enter"); await page.waitForTimeout(300);
   let msg=await page.$eval("#escMsg",e=>e.textContent); ok(/Banana Split/.test(msg)&&/3,55/.test(msg), "escanea la etiqueta de producción: "+msg);

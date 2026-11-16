@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
 
   // ---- INGRESO por remito con kilos
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.setInputFiles("#inputRemitoFoto",require("path").join(__dirname,"..","..","..","fotos/5.jpg")); 
   await page.waitForSelector("[data-remito-kg]",{timeout:8000});
   const kgs=await page.$$eval("[data-remito-kg]",e=>e.map(x=>x.value));
@@ -43,7 +43,7 @@ const { chromium } = require("playwright");
   ok(!/promedio/.test(kpi+filas.join(" ")), "sin textos de peso promedio");
 
   // ---- SALIDA: cada vasqueta se pesa
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   await page.click("[data-add='4']"); await page.waitForSelector("#kilosOv"); await page.waitForTimeout(200);
   const sub=await page.$eval("#kilosOv .mantSub",e=>e.textContent); ok(!/promedio/.test(sub),"el pad no muestra peso promedio: "+sub);
   for(const k of ["3",",","6","0"]) await page.click(`[data-kg-tecla='${k}']`);
@@ -68,7 +68,7 @@ const { chromium } = require("playwright");
 
   // ---- Local sin kilos reales no cambia
   await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   await page.click("[data-iinc='4']"); await page.waitForTimeout(200);
   ok(await page.$("[data-kilos]")===null, "otro local: sin campo de kilos en Ingreso");
 

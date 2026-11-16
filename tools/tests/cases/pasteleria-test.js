@@ -11,7 +11,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   // INGRESO sin remito
-  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(300); await page.click("[data-ing-menu='merc']"); await page.waitForTimeout(200);
   const tabs=await page.$$eval(".tabCat[data-familia]",e=>e.map(x=>x.dataset.familia));
   ok(tabs.includes("pasteleria")&&tabs.includes("bolleria"), "pestañas en Ingreso: "+tabs.join(","));
   await page.click(".tabCat[data-familia='pasteleria']"); await page.waitForTimeout(250);
@@ -30,7 +30,7 @@ const { chromium } = require("playwright");
   console.log("botón confirmar:", btn?await btn.innerText():"no");
   await btn.click(); await page.waitForTimeout(500); await page.fill("#remito","Elaboración propia").catch(()=>{}); await page.click("text=Confirmar ingreso"); await page.waitForTimeout(900); await page.screenshot({path:"past-after-confirm.png"}); console.log((await page.innerText("body")).slice(0,300).replace(/\n/g," | "));
   // SALIDA con pad
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   const t2=await page.$$eval(".tabCat[data-familia]",e=>e.map(x=>x.dataset.familia));
   ok(t2.includes("pasteleria")&&t2.includes("bolleria"), "pestañas en Salida: "+t2.join(","));
   await page.click(".tabCat[data-familia='pasteleria']"); await page.waitForTimeout(250);

@@ -10,9 +10,9 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Marruecos"); await page.press("#local","Enter"); await page.waitForTimeout(900);
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   for (const t of ["salida","ingreso","stock","hist"]) { await page.click(`#tabs [data-t='${t}']`).catch(()=>{}); await page.waitForTimeout(300) }
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400);
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200);
   console.log("antes de recargar, errores:", err);
   await page.reload(); await page.waitForTimeout(2500);
   console.log("tras recargar: header?", !!(await page.$("header")), "| #app texto:", (await page.innerText("body")).replace(/\s+/g," ").slice(0,120));

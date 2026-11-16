@@ -69,8 +69,8 @@ const { chromium } = require("playwright");
   // ---- Unicenter (recibe y fabrica): queda como hoy
   await page.fill("#local","Unicenter"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(400);
-  ok(await page.$("#irProduccion")!==null && await page.$("#remito")!==null, "Unicenter conserva el botón Producción y el remito");
-  await page.click("#irProduccion"); await page.waitForTimeout(300);
+  ok(await page.$("[data-ing-menu='prod']")!==null && await page.$("[data-ing-menu='merc']")!==null, "Unicenter conserva Producción y Mercadería que llegó en el menú");
+  await page.click("[data-ing-menu='prod']"); await page.waitForTimeout(300);
   ok(await page.$("#volverIngreso")!==null && !/ingreso de producción/i.test(await page.innerText("#main")), "Unicenter: Producción sigue siendo una pantalla aparte con «Volver a Ingreso»");
 
   // recarga con Marruecos: sigue siendo Ingreso de producción (viene del cache)
