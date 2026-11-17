@@ -33,8 +33,8 @@ ok(bloq()===true,"el conteo final de diciembre es el inicial de enero: sigue ret
 NOW=ts("2027-02-03T10:00:00-03:00"); ok(bloq()===false,"en febrero ese final ya no cubre: hay que hacer un conteo inicial nuevo");
 inv=[{local:"Galerías",tipo:"inicial",ts:ts("2026-12-01T08:00:00-03:00")}]; NOW=ts("2027-01-10T10:00:00-03:00");
 ok(bloq()===false,"un inicial de diciembre sin final no cubre enero");
-// antes del 1/12 nada cambia
-NOW=ts("2026-11-20T10:00:00-03:00"); inv=[{local:"Galerías",tipo:"inicial",ts:ts("2026-11-10T08:00:00-03:00")}]; ok(bloq()===false,"antes del 1/12 todo sigue como siempre");
+// la regla vale desde ahora (ya no hay período de práctica)
+NOW=ts("2026-11-20T10:00:00-03:00"); inv=[{local:"Galerías",tipo:"inicial",ts:ts("2026-11-10T08:00:00-03:00")}]; ok(bloq()===true,"un inicial de noviembre ya cubre noviembre: el conteo suelto queda bloqueado");
 // las acciones lo respetan
 NOW=ts("2026-12-05T12:00:00-03:00"); inv=[{local:"Galerías",tipo:"inicial",ts:ts("2026-12-01T08:00:00-03:00")}]; E("encargado");
 let r=run(`conteo("c1","Galerías",{"4":3},emp)`); ok(!r.ok&&/conteo suelto ya no se usa/.test(r.error),"conteo() lo rechaza para el responsable: "+(r.error||""));

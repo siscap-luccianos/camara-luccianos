@@ -102,6 +102,7 @@ function resp(b){
     const prod=(id,n,cam,loc,e)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam-e)*100)/100:null});
     return {ok:true,local:b.local,conteos,conteo:c,base:esCmp?conteos[0]:null,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null,
       dif:esCmp?{kg:-18.9,u:0,pctKg:-9.4,pctU:null}:null,
+      mov:esCmp?{ing:{n:2,kg:210,u:0,lista:[{ts:T-4*864e5,remito:"00079-3492",kg:110,u:0,empleado:"Laura",sub:""},{ts:T-2*864e5,remito:"00079-3511",kg:100,u:0,empleado:"Pedro",sub:""}]},sal:{n:9,kg:183.2,u:0,semanas:[{ts:T-6*864e5,n:4,kg:61.4,u:0},{ts:T-1*864e5,n:5,kg:121.8,u:0}]},anulados:[{ts:T-3*864e5,tipo:"ingreso",kg:12,u:0,empleado:"Pedro",anulado_por:"Pedro",motivo:"error de carga"}]}:null,
       grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7),prod("20","Frutilla",9.8,1,9.5)]},
         {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null}]}]}; }
   if(a==="inventarios") return {ok:true,verValor:true,verDiferencias:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};

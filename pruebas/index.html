@@ -395,6 +395,18 @@ select{max-width:220px}
 .card.consulta>.pick:active{transform:none}
 .consultaAviso{display:flex;flex-direction:column;gap:10px;background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.25);border-radius:14px;padding:12px 14px;margin:6px 0 10px;font-size:.84rem;color:var(--ink)}
 .consultaAviso b{display:block;font-size:.9rem;margin-bottom:2px}
+.ctlCuenta{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 14px;margin:10px 0}
+.ctlCl{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem;font-variant-numeric:tabular-nums}
+.ctlCuenta>.ctlCl:first-child{border-top:0}
+.ctlCl.tot{border-top:2px solid var(--ink)}.ctlCl.tot span{font-weight:800}
+.ctlCl.pos b{color:#1E8A4C}.ctlCl.neg b{color:#C62828}.ctlCl.dif b{color:#C62828}
+.ctlCuentaAnu{border-top:1px solid var(--line);padding:9px 0;font-size:.82rem;display:grid;gap:3px}
+.chocoBarra{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.chocoBtn{flex:1 1 220px;min-height:48px;border-radius:14px;font-weight:700;font-size:.92rem;font-family:inherit;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;color:var(--ink);border:1.5px solid var(--line);background:var(--surface)}
+.chocoBtn.consumo{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45)}
+.chocoBtn.venc{background:rgba(11,93,143,.09);border-color:rgba(11,93,143,.4);color:#0B5D8F}
+:root[data-tema="dorado"] .chocoBtn.venc{color:#8CC8EE;background:rgba(11,93,143,.22)}
+.chocoBtn:active{transform:scale(.98)}
 .consultaGo{align-self:flex-start;min-height:42px;padding:0 16px;font-size:.84rem}
 .consultaNota{color:var(--muted);font-weight:700;font-size:.8rem}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
@@ -680,9 +692,8 @@ body:has(.etiqOv){overflow:hidden}
 .accTile .accTx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .accTile b{font-size:.95rem;line-height:1.2}
 .accTile small{font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.25}
-.accTile.m{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.accTile.m small{color:inherit;opacity:.85}
-.accTile.m .accIco{background:rgba(255,255,255,.2);color:inherit}
+.accTile.m{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45)}
+.accTile.m .accIco{background:rgba(var(--accent-rgb),.22)}
 .accTile.dest{background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.45)}
 .accTile:active{transform:scale(.98)}
 @media(min-width:900px){
@@ -1419,7 +1430,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.169.2";
+const FRONTEND_VERSION = "1.171.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3323,6 +3334,25 @@ async function cargarControlDetalle(local,id){
 }
 function ctlRefrescar(){ const C=controlEstado(); cargarControl(); if(C.det) cargarControlDetalle(C.det,C.detId) }
 const CTL_TIPO={inicial:"Inicial",parcial:"Parcial",final:"Cierre"};
+function ctlCuentaHTML(D,c,base){
+  const m=D.mov; if(!m||!base||!D.dif) return "";
+  const C=controlEstado();
+  const esperado=Math.round(D.grupos.filter(g=>g.kg).reduce((a,g)=>a+(g.esperado||0),0)*100)/100;
+  const f=ctlFecha, u=(n)=>n?` · ${n>0?"+":"−"}${Math.abs(Math.round(n)).toLocaleString("es-AR")} u.`:"";
+  const lin=(t,v,cls)=>`<div class="ctlCl${cls?" "+cls:""}"><span>${t}</span><b>${v}</b></div>`;
+  const ver=(k,txt)=>`<button type="button" class="invLnk noPrint" data-ctl-mov="${k}">${C.verMov&&C.verMov[k]?"ocultar":"ver"}</button>`;
+  const listaIng=C.verMov&&C.verMov.ing?`<div class="ctlProds">${m.ing.lista.map(x=>`<div class="ctlCl"><span>${f(x.ts)} · ${esc(x.remito||(x.sub==="devolucion"?"devolución":"—"))} · ${esc(x.empleado)}</span><b>${ctlKg(x.kg)} kg${u(x.u)}</b></div>`).join("")||`<div class="note">Sin ingresos.</div>`}</div>`:"";
+  const listaSal=C.verMov&&C.verMov.sal?`<div class="ctlProds">${m.sal.semanas.map(x=>`<div class="ctlCl"><span>Semana del ${f(x.ts)} · ${x.n} mov.</span><b>${ctlKg(x.kg)} kg${u(x.u)}</b></div>`).join("")||`<div class="note">Sin salidas.</div>`}</div>`:"";
+  const anu=m.anulados.length?`<div class="ctlCuentaAnu"><b>Anulados en el período · ${m.anulados.length}</b>${m.anulados.map(x=>`<div class="mut">${f(x.ts)} · ${x.tipo==="ingreso"?"Ingreso":"Salida"} ${ctlKg(x.kg)} kg${u(x.u)} · ${esc(x.anulado_por||x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</div>`).join("")}</div>`:"";
+  return `<div class="ctlCuenta">
+    ${lin("Inicial (cámara) · "+f(base.ts),ctlKg(base.camKg)+" kg")}
+    ${lin(`+ Ingresos · ${m.ing.n} ${ver("ing")}`,"+"+ctlKg(m.ing.kg)+" kg"+u(m.ing.u),"pos")}${listaIng}
+    ${lin(`− Salidas · ${m.sal.n} ${ver("sal")}`,"−"+ctlKg(m.sal.kg)+" kg"+u(-m.sal.u),"neg")}${listaSal}
+    ${lin("Debería haber",ctlKg(esperado)+" kg","tot")}
+    ${lin("Contó",ctlKg(c.camKg)+" kg")}
+    ${lin("Diferencia",(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg"+(D.dif.pctKg===null||D.dif.pctKg===undefined?"":" · "+(D.dif.pctKg<0?"−":D.dif.pctKg>0?"+":"")+String(Math.abs(D.dif.pctKg)).replace(".",",")+" %"),"dif")}
+    ${anu}</div>`;
+}
 function ctlDetalleHTML(){
   const C=controlEstado(), D=C.detData;
   const volver=`<div class="noPrint"><button type="button" class="btn volver" data-ctl-volver style="margin-bottom:12px">‹ Volver a Control</button></div>`;
@@ -3361,6 +3391,7 @@ function ctlDetalleHTML(){
     ${visRespHTML(c)}
     <div class="noPrint ctlSel"><small>ELEGÍ UN CONTEO YA CARGADO (no pide nada nuevo)</small><div class="invPills">${chips}</div></div>
     ${franja}
+    ${esCmp?ctlCuentaHTML(D,c,base):""}
     <div class="noPrint invPills" style="margin:6px 0 10px"><button type="button" class="chip" data-ctl-vista="rubro" aria-pressed="${C.vista!=="producto"}">Por rubro</button><button type="button" class="chip" data-ctl-vista="producto" aria-pressed="${C.vista==="producto"}">Por producto</button></div>
     ${cuerpo}
     <div class="ctlPedir noPrint">${pedir}</div>
@@ -3452,6 +3483,7 @@ function controlClick(t){
   if(t.dataset.ctlVer!==undefined){ C.det=t.dataset.ctlVer; C.detData=null; C.detId=""; C.detError=null; C.vista="rubro"; C.verG={}; renderApp(); window.scrollTo(0,0); cargarControlDetalle(C.det,""); return true }
   if(t.dataset.ctlVolver!==undefined){ C.det=null; C.detData=null; renderApp(); cargarControl(); return true }
   if(t.dataset.ctlSel){ C.detId=t.dataset.ctlSel; C.detData=null; renderApp(); cargarControlDetalle(C.det,C.detId); return true }
+  if(t.dataset.ctlMov){ C.verMov=C.verMov||{}; C.verMov[t.dataset.ctlMov]=!C.verMov[t.dataset.ctlMov]; renderApp(); return true }
   if(t.dataset.ctlVista){ C.vista=t.dataset.ctlVista; renderApp(); return true }
   if(t.dataset.ctlVerg){ C.verG=C.verG||{}; C.verG[t.dataset.ctlVerg]=!C.verG[t.dataset.ctlVerg]; renderApp(); return true }
   if(t.dataset.ctlPedir){ const l=t.dataset.ctlPedir; (async()=>{ const r=await api("pedirConteoParcial",{local:l}); toast(r&&r.ok?"Pedido enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
@@ -3672,14 +3704,17 @@ function revisarAccion(t){
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
 function menuSalidaHTML(){
-  const rv=resumenVenc(), pv=rv.rojo.l+rv.amarillo.l;
   const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-sal-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
   const t=[tile("comun","📤","Retiro de cámara","Elegís qué sabores retirás."),
            tile("desp","🗑️","Desperdicio","Roto, caído o vencido. Pide el motivo.")];
   if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia enviada","Mandás o prestás mercadería a otro local."));
-  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(tile("choco","🍫","Salida de chocolatería","Venta del día, gift card, sin cargo o baja."));
-  t.push(tile("venc","⏰","Ver vencimientos",rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:pv?`${pv} por vencer`:"Solo consulta: lotes por vencer."));
   return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
+}
+/** Arriba de la pestaña Chocolatería de Salida: registrar consumo (venta del día, gift card, sin cargo, baja) y vencimientos (ver, poner o corregir fecha). */
+function chocoBarraHTML(){
+  const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
+  const consumo=(S.ventaDia&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
+  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
 }
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
@@ -3705,7 +3740,8 @@ function gridSalida(st){
   ${segSalidaHTML()}
   ${accionesSalidaHTML()}
   ${chipFiltros()}
-  <div class="consultaAviso"><div><b>Solo informativo</b>La chocolatería se descuenta con «Salida de chocolatería». Acá ves cuánto hay y qué vence primero.</div>${S.empleado.rol!=="colaborador"?`<button type="button" class="btn consultaGo" id="irVentaDia2">Ir a Salida de chocolatería</button>`:`<div class="consultaNota">La carga un responsable.</div>`}</div>
+  ${S.empleado.rol==="colaborador"?`<div class="consultaAviso"><div><b>Solo consulta</b>La carga un responsable.</div></div>`:""}
+  ${chocoBarraHTML()}
   ${hayLotesConFecha()?leyendaVencHTML():""}
   ${list.length?`<div class="grid" style="margin-top:12px">${list.map(cardConsulta).join("")}</div>`:`<div class="empty">Ningún producto coincide con la búsqueda.</div>`}`;
   }
@@ -3724,6 +3760,7 @@ function gridSalida(st){
   ${accionesSalidaHTML()}
   ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("salida"):""}
   ${chipFiltros()}
+  ${S.filtroFamilia==="chocolateria"?chocoBarraHTML():""}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">${GRUPOS_PAD.includes(S.filtroFamilia)?"Tocá un producto y escribí cuántas unidades":"Tocá un sabor para sumar una unidad"}</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -3767,9 +3804,10 @@ function segSalidaHTML(){
 }
 function accionesSalidaHTML(){
   // Desperdicio, transferencia, salida de chocolatería y vencimientos se eligen en el menú «¿Qué vas a hacer?»: acá solo queda el escáner.
+  if(S.filtroFamilia==="chocolateria") return ""; // en Chocolatería no hay escáner: arriba van «Registrar consumo» y «Vencimientos»
   const t=[];
   if(escanerDisponible()) t.push(accTileHTML("irEscaner","Activar escáner","Vasquetas","scan","m"));
-  const nota=(S.ventaDia&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"";
+  const nota=(S.ventaDia&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: se registra con «Registrar consumo».</p>`:"";
   return (t.length?accGridHTML(t):"")+nota;
 }
 function gridDesperdicio(st){
@@ -3918,7 +3956,7 @@ function gridVentaDia(st){
   ${sub==="transferencia"?`<div class="remitoRow"><label for="destinoTransf" style="font-weight:700">Local de destino</label><input type="text" id="destinoTransf" placeholder="Ej: Obelisco CABA" value="${esc(S.destinoTransf)}"></div>`:""}`
     : "";
   return `<button class="btn volver" type="button" id="volverVenta" style="margin-bottom:12px">Volver a Salida</button>
-  <p class="sec" style="margin-top:6px">Salida de chocolatería</p>
+  <p class="sec" style="margin-top:6px">Registrar consumo</p>
   <div class="tabsCat" role="tablist" style="margin-bottom:10px">
     ${TIPOS_CHOCO.map(([k,l])=>`<button type="button" class="tabCat" role="tab" data-tipo-choco="${k}" aria-selected="${tipo===k}">${l}</button>`).join("")}
   </div>
@@ -4348,11 +4386,11 @@ function conteoInicialHubHTML(){
   return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Conteo inicial</div>
   <h2 class="pdH1">Conteo inicial</h2>
-  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Este mes arranca con el conteo de cierre del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+".":"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")."}</b> ${S.cobertura.tipo==="final"?"Ese conteo ES el conteo inicial: no hace falta hacer otro.":"No se hace otro."} Durante el mes la cámara se controla con el conteo parcial o de cierre que pide supervisión.</div>`:`<p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>`}
+  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"}):"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:`<p class="invHint" style="margin:0 0 12px">Cámara + Local 🔒</p>`}
   <div class="stkFisico"><div class="stkPasos">
-    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o de cierre.</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
+    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hecho 🔒</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
     <span class="stkSep">+</span>
-    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Conteo local</b><span>El conteo inicial de este mes ya está.</span></span></div>`:paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
+    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Conteo local</b><span>Ya hecho 🔒</span></span></div>`:paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
     <span class="stkSep">=</span>
     ${paso(3,"invGuardadosBtn","Conteo inicial","Ver los conteos iniciales guardados.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
   </div></div>`;
@@ -6511,9 +6549,12 @@ async function conBoton(btn, fn){
   finally{ btn.disabled=false; btn.textContent=original; }
 }
 async function anularMovimiento(id, btn){
-  const motivo = prompt("Motivo (opcional):"); if(motivo===null) return;
+  let motivo = prompt("Motivo (opcional):"); if(motivo===null) return;
   await conBoton(btn, async ()=>{
-    const r = await api("anular", {registroId:id, motivo});
+    let r = await api("anular", {registroId:id, motivo});
+    // Un movimiento anterior al último conteo: supervisión lo anula con motivo y PIN.
+    if(r && !r.ok && r.pideMotivo){ motivo = prompt((r.error||"Escribí el motivo.")); if(motivo===null) return; r = await api("anular", {registroId:id, motivo}) }
+    if(r && !r.ok && r.pidePin){ const pin = prompt((r.error||"Confirmá con tu PIN.")); if(pin===null) return; r = await api("anular", {registroId:id, motivo, pin:String(pin).trim()}) }
     if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
   });
 }
@@ -6674,7 +6715,7 @@ document.addEventListener("click", async e=>{
   }
   const secreto=e.target.closest("[data-secreto-otro]");
   if(secreto){ if(tocarSecretoOtroLocal()){ const loc=(S.auth&&S.auth.local)||S.deviceLocal; if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } else { S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } renderApp() } return }
-  if(e.target.closest("[data-consulta]")){ toast("Solo consulta. Las ventas se cargan en «Salida de chocolatería»."); return }
+  if(e.target.closest("[data-consulta]")){ toast("Solo consulta. Las ventas se cargan en «Registrar consumo»."); return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
@@ -8179,8 +8220,8 @@ function ayudaTemas(){
     <div class="ayCard"><span class="ayTag a">Enviás mercadería</span><b>Salida › Transferencia</b><p>En <b>Salida</b> tocá <b>Transferencia</b>, escribí <b>a qué local va</b> (es obligatorio) y cargá lo que sale, a mano${escanerDisponible()?" o con <b>Escanear vasqueta</b>":""}. Sirve para cualquier rubro.</p></div>
     <div class="ayCard"><span class="ayTag b">Recibís mercadería</span><b>Ingreso › Transferencia</b><p>En <b>Ingreso</b> tocá <b>Transferencia</b>, escribí <b>de qué local viene</b> y cargá lo que llegó${escanerDisponible()?": con <b>Escanear vasqueta</b> hacés pic, pic, pic (una caja cerrada suma 2 vasquetas)":""}.</p></div>
     <div class="ayCard"><span class="ayTag c">Cómo queda</span><b>Mueve el stock, no cuenta como consumo</b><p>Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia».</p></div></div>`});
-  if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Salida de chocolatería", sub:"Venta del día, gift card, sin cargo y baja", html:li([
-    "En este local la chocolatería <b>no se saca por la Salida común</b>: se carga en <b>Salida de chocolatería</b>.",
+  if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Registrar consumo", sub:"Venta del día, gift card, sin cargo y baja", html:li([
+    "En este local la chocolatería <b>no se saca por la Salida común</b>: se carga en <b>Registrar consumo</b>.",
     "Elegí el tipo: <b>Venta del día</b> (lo que dice la caja al cerrar), <b>Gift card</b>, <b>Sin cargo</b> (regalo, evento o muestra: pide motivo) o <b>Baja</b> (por vencimiento, o transferencia a otro local: pide el destino).",
     "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
     "Alfajores: botones <b>+1, x5, x6, x10</b> y los <b>mix</b> (surtidos). Conitos: <b>+1</b> y <b>x6</b>. Minis: solo <b>+1</b>. Abajo de cada producto ves de dónde vino cada cantidad; tocá una caja para quitarla.",

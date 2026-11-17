@@ -15,6 +15,7 @@ function montar(){
     ]};
   sb.nextId=100;
   vm.runInContext(`
+   _hojaInventarios=function(){return {}};
    _leerCrudo=function(n){return (T[n]||[]).map(r=>Object.assign({},r))};
    _leerUltimasFilas=function(n,k){return T[n].slice(-k).map(r=>Object.assign({},r))};
    _auditar=function(){}; _invalidarCacheDatos=function(){};
