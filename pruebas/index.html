@@ -842,12 +842,12 @@ body:has(.etiqOv){overflow:hidden}
 .shChip{font-size:.72rem;font-weight:800;padding:5px 11px;border-radius:999px;background:#F8DDD5;color:#8F2A17;white-space:nowrap}
 .shTit{font-family:Fraunces,serif;font-weight:600;font-size:1.75rem;line-height:1.1;max-width:22ch}
 .shDatos{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
-.shD{display:grid;gap:2px;padding:9px 12px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(47,125,79,.16)}
+.shD{display:grid;gap:3px;flex:1 1 140px;min-width:0;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(47,125,79,.16)}
 .shD i{font:800 .6rem Manrope,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6B6A5C;font-style:normal}
 .shD b{font:600 1.5rem Fraunces,serif;font-variant-numeric:tabular-nums}
-.shTend b{display:flex;align-items:center;gap:8px;font:800 .85rem Manrope,sans-serif}
+.shTend b{display:flex;align-items:center;gap:8px;white-space:nowrap;font:800 .85rem Manrope,sans-serif}.shTend svg{flex:none}.shD i{white-space:nowrap}
 .shTend.up b{color:#2F7D4F}.shTend.down b{color:#B3362B}.shTend.m b{color:#6B6A5C}
-.shGo{margin-left:auto;align-self:center;font-weight:800;font-size:.84rem;color:#2F7D4F}
+.shGo{flex:1 1 100%;text-align:right;margin-top:2px;font-weight:800;font-size:.84rem;color:#2F7D4F}
 :root[data-tema="dorado"] .stkHero{background:linear-gradient(160deg,#1F2A1D,#1B1F17);border-color:rgba(88,180,124,.35);color:#E6F0DA;box-shadow:0 14px 32px rgba(10,20,10,.4)}
 :root[data-tema="dorado"] .shD{background:rgba(255,255,255,.06);border-color:rgba(88,180,124,.22)}
 :root[data-tema="dorado"] .shD i{color:rgba(230,240,218,.6)}
@@ -1490,7 +1490,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.2";
+const FRONTEND_VERSION = "1.178.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
