@@ -89,11 +89,21 @@ function resp(b){
   if(a==="cancelarPedidoConteo"){ (db.pedidos||[]).forEach(q=>{ if(q.local===b.local&&q.estado==="pendiente") q.estado="cancelado" }); return {ok:true}; }
   if(a==="pedidoConteo") return {ok:true,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null};
   if(a==="desbloquearInventario"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; console.log("DESBLOQUEAR",JSON.stringify({inv:b.inventarioId,mot:b.motivo})); db.desb=(db.desb||0)+1; return {ok:true,desbloqueado_hasta:Date.now()+864e5}; }
-  if(a==="controlStock"){ const pend=(db.pedidos||[]).filter(q=>q.estado==="pendiente");
+  if(a==="controlStock"){ const pend=(db.pedidos||[]).filter(q=>q.estado==="pendiente"); const T=Date.now();
+    const res=(id,tipo,dias,cam)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",camKg:cam,camU:1240,locKg:26.5,locU:96});
     return {ok:true,locales:[
-      {local:"Local prueba",estado:pend.find(q=>q.local==="Local prueba")?"pedido":"controlado",pedido:pend.find(q=>q.local==="Local prueba")||null,inicial:{id:"7",ts:Date.now()-6e8,empleado:"Laura",fijo:!db.desb,desbloqueado_hasta:db.desb?Date.now()+864e5:0},parcial:{id:"8",ts:Date.now()-1e8,empleado:"Laura",fijo:true},debia:310.2,conto:307,diferencia:-3.2,debiaU:20,contoU:20,difU:0,detalle:[{id:"4",nombre:"Banana Split",kg:true,debia:20.5,conto:17.3,dif:-3.2}]},
-      {local:"Recoleta CABA",estado:pend.find(q=>q.local==="Recoleta CABA")?"pedido":"sin_pedir",pedido:pend.find(q=>q.local==="Recoleta CABA")||null,inicial:{id:"9",ts:Date.now()-6e8,empleado:"Ana",fijo:true},parcial:null,debia:0,conto:0,diferencia:0,detalle:[]}]}; }
-  if(a==="inventarios") return {ok:true,verValor:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};
+      {local:"Local prueba",estado:pend.find(q=>q.local==="Local prueba")?"pedido":"controlado",pedido:pend.find(q=>q.local==="Local prueba")||null,base:res("7","inicial",20,201.3),conteos:[res("8","parcial",5,188.9),res("9","final",1,170)],difKg:-18.9,difU:0,pctKg:-9.4,pctU:null},
+      {local:"Recoleta CABA",estado:pend.find(q=>q.local==="Recoleta CABA")?"pedido":"sin_pedir",pedido:pend.find(q=>q.local==="Recoleta CABA")||null,base:res("11","inicial",20,288.5),conteos:[],difKg:0,difU:0,pctKg:null,pctU:null}]}; }
+  if(a==="controlDetalle"){ const T=Date.now(); const sel=String(b.inventarioId||"9");
+    const mk=(id,tipo,dias,cam,fijo)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",fijo:fijo!==false&&!db.desb,desbloqueado_hasta:db.desb?T+864e5:0,camKg:cam,camU:1240,locKg:26.5,locU:96});
+    const conteos=[mk("7","inicial",20,201.3),mk("8","parcial",5,188.9),mk("9","final",1,170)];
+    const c=conteos.find(x=>x.id===sel)||conteos[2]; const esCmp=c.tipo!=="inicial";
+    const prod=(id,n,cam,loc,e)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam-e)*100)/100:null});
+    return {ok:true,local:b.local,conteos,conteo:c,base:esCmp?conteos[0]:null,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null,
+      dif:esCmp?{kg:-18.9,u:0,pctKg:-9.4,pctU:null}:null,
+      grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7),prod("20","Frutilla",9.8,1,9.5)]},
+        {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null}]}]}; }
+  if(a==="inventarios") return {ok:true,verValor:true,verDiferencias:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};
   if(a==="registrar"){
     if(l.kilosReales && b.subtipo!=="transferencia"){
       const ids=Object.keys(b.items).filter(i=>vasq(i)&&b.items[i]>0);

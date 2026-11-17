@@ -2912,7 +2912,7 @@ function controlDetalle(local, inventarioId, empleado) {
   if (cmp) Object.keys(cmp).forEach((id) => { if (cmp[id].kg) dk += cmp[id].dif; else du += cmp[id].dif; });
   return {
     ok: true, local: local,
-    conteos: mios.map(resumenDe).map((x) => ({ id: x.id, tipo: x.tipo, ts: x.ts, fijo: x.fijo, desbloqueado_hasta: x.desbloqueado_hasta })),
+    conteos: mios.map(resumenDe),
     conteo: sel, base: bsel, grupos: lista,
     dif: cmp ? { kg: Math.round(dk * 100) / 100, u: du, pctKg: _pct(Math.round(dk * 100) / 100, bsel.camKg), pctU: _pct(du, bsel.camU) } : null,
     pedido: _pedidoPublico(_pedidoPendiente(local)),
