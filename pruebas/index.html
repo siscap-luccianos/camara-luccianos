@@ -1419,7 +1419,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.167.0";
+const FRONTEND_VERSION = "1.168.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3358,6 +3358,7 @@ function ctlDetalleHTML(){
     <div class="ctlTitulo"><h1>Total del local</h1><span class="invBadgeDef">${tipoTxt==="Cierre"?"Conteo de cierre":"Conteo "+tipoTxt.toLowerCase()}</span>${fijo&&!desb?`<span class="ctlLockTag">🔒 BLOQUEADO</span>`:desb?`<span class="ctlLockTag abierto">🔓 hasta ${esc(ctlFechaHora(c.desbloqueado_hasta))}</span>`:""}<button type="button" class="rlvBtn noPrint" data-ctl-print="${esc(C.det)}" style="margin-left:auto">📄 PDF</button></div>
     <div class="ctlSub">${esc(ctlFechaHora(c.ts))} · hecho por ${esc(c.empleado||"")}${base&&esCmp?` · se compara contra el ${(CTL_TIPO[base.tipo]||"inicial").toLowerCase()} del ${esc(ctlFecha(base.ts))} (cámara, más ingresos y menos salidas)`:""}</div>
     ${fijo?`<div class="ctlCandado noPrint"><span>🔒</span><div><b>Todo conteo guardado queda con candado.</b> No se corrige ni se borra. Solo supervisión lo desbloquea, con su PIN y un motivo, por 24 horas; el original se conserva.</div>${desb?"":`<button type="button" class="btn" data-ctl-desb="${esc(c.id)}" data-ctl-local="${esc(C.det)}">Desbloquear (PIN)</button>`}</div>`:""}
+    ${visRespHTML(c)}
     <div class="noPrint ctlSel"><small>ELEGÍ UN CONTEO YA CARGADO (no pide nada nuevo)</small><div class="invPills">${chips}</div></div>
     ${franja}
     <div class="noPrint invPills" style="margin:6px 0 10px"><button type="button" class="chip" data-ctl-vista="rubro" aria-pressed="${C.vista!=="producto"}">Por rubro</button><button type="button" class="chip" data-ctl-vista="producto" aria-pressed="${C.vista==="producto"}">Por producto</button></div>
@@ -3386,6 +3387,38 @@ function controlView(){
     <div class="ctlBarra"><button type="button" class="rlvBtn" data-ctl-refresh>↻ Actualizar</button><span class="ctlLey">Semáforo: verde hasta 1 % · amarillo hasta 3 % · rojo más de 3 %</span></div></div>
     <div class="ctlTabla"><div class="ctlHead"><div>Local</div><div>Inicial</div><div>Parcial</div><div>Cierre</div><div>Diferencia</div><div class="noPrint"></div></div>${filas||`<div class="note">Todavía ningún local hizo su conteo inicial.</div>`}</div>
   </div>`;
+}
+function visRespHTML(c){
+  if(!c || c.tipo==="inicial") return "";
+  const manual=(c.visible_resp_ts||0)>0, auto=c.tipo==="final" && !manual && Date.now()>=(c.libera_ts||0);
+  const hora=ts=>new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const txt=manual?"Mostrado al responsable el "+hora(c.visible_resp_ts)+".":auto?"Visible para el responsable desde las 12:00 ("+hora(c.libera_ts)+").":c.tipo==="final"?"Oculto. Se muestra solo a las 12:00 ("+hora(c.libera_ts)+") o cuando lo muestres vos.":"Oculto. El responsable solo ve «hecho ✓». Lo ve únicamente si lo mostrás.";
+  const btn=auto?"":`<button type="button" class="btn${manual?" ghost":""}" data-ctl-lib="${esc(c.id)}" data-ctl-libmostrar="${manual?0:1}" data-ctl-local="${esc(controlEstado().det)}">${manual?"Volver a ocultar":"Mostrar al responsable (PIN)"}</button>`;
+  return `<div class="ctlCandado noPrint"><span>${manual||auto?"👁":"🙈"}</span><div><b>Visibilidad para el responsable.</b> ${txt} Ve solo cámara + local = total, sin diferencia ni %.</div>${btn}</div>`;
+}
+function ctlLiberar(inventarioId, local, mostrar){
+  if(document.getElementById("ctlOv")) return;
+  const ov=document.createElement("div"); ov.id="ctlOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
+    <p class="mantTit" id="ctlTit" style="margin:0">${mostrar?"Mostrar el conteo al responsable":"Volver a ocultar el conteo"}</p>
+    <p class="mantSub" style="margin:0">${esc(local)} · queda registrado con tu nombre.${mostrar?" El responsable ve solo cámara + local = total.":""}</p>
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <div class="warn" id="ctlErr" style="display:none"></div>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>${mostrar?"Mostrar":"Ocultar"}</button></div></div>`;
+  document.body.appendChild(ov);
+  const err=(m)=>{ const e=ov.querySelector("#ctlErr"); e.textContent=m; e.style.display="block" };
+  ov.addEventListener("click", async e=>{
+    if(e.target===ov || e.target.closest("[data-ctl-no]")){ ov.remove(); return }
+    if(e.target.closest("[data-ctl-si]")){
+      const pin=ov.querySelector("#ctlPin").value.trim();
+      if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const r=await api("liberarInventario",{local, inventarioId, pin, mostrar});
+      if(r && r.ok){ ov.remove(); toast(mostrar?"Conteo mostrado al responsable":"Conteo oculto otra vez"); ctlRefrescar() }
+      else err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar.");
+    }
+  });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove(); if(e.key==="Enter"){ const b=ov.querySelector("[data-ctl-si]"); if(b) b.click() } });
+  setTimeout(()=>{ const m=ov.querySelector("#ctlPin"); if(m) m.focus() },30);
 }
 function ctlDesbloquear(inventarioId, local){
   if(document.getElementById("ctlOv")) return;
@@ -3424,6 +3457,7 @@ function controlClick(t){
   if(t.dataset.ctlPedir){ const l=t.dataset.ctlPedir; (async()=>{ const r=await api("pedirConteoParcial",{local:l}); toast(r&&r.ok?"Pedido enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
   if(t.dataset.ctlPedirfinal){ const l=t.dataset.ctlPedirfinal; if(!confirm("¿Pedir el conteo de CIERRE de "+l+"? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.")) return true; (async()=>{ const r=await api("pedirConteoFinal",{local:l}); toast(r&&r.ok?"Pedido de cierre enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
   if(t.dataset.ctlCancel){ const l=t.dataset.ctlCancel; if(!confirm("¿Cancelar el pedido de conteo de "+l+"?")) return true; (async()=>{ const r=await api("cancelarPedidoConteo",{local:l}); toast(r&&r.ok?"Pedido cancelado":(r&&r.error)||"No se pudo cancelar."); ctlRefrescar() })(); return true }
+  if(t.dataset.ctlLib){ ctlLiberar(t.dataset.ctlLib, t.dataset.ctlLocal, t.dataset.ctlLibmostrar==="1"); return true }
   if(t.dataset.ctlDesb){ ctlDesbloquear(t.dataset.ctlDesb, t.dataset.ctlLocal); return true }
   if(t.dataset.ctlPrint){ window.print(); return true }
   return false;
@@ -4863,14 +4897,16 @@ function invGuardadosHTML(){
     const otros=GRUPO_PRODUCTO_ORDEN.filter(g=>g!=="vasquetas" && r.t[g]).map(g=>`${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())} ${invTxtG(g,r.t[g].tot)}`).join(" · ");
     return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">${x.tipo==="parcial"?"Conteo parcial":x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
   }).join("");
-  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+(items||`<div class="note">Todavía no hay conteos guardados en este local.</div>`)+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
+  const hora12=ts=>new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const ocultos=(I.ocultos||[]).map(o=>`<div class="invHist" style="cursor:default;opacity:.85"><b>${esc(invFecha(o.ts))}<span class="invBadgeDef">${o.tipo==="final"?"Conteo de cierre":"Conteo parcial"}</span></b><span class="big">${o.tipo==="final"?"En revisión":"Hecho ✓"}</span><small>${o.tipo==="final"?"Supervisión lo está revisando. Lo ves desde las 12:00 ("+esc(hora12(o.libera_ts))+") o cuando lo libere.":"Lo ve supervisión. No se muestra acá."}</small></div>`).join("");
+  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+ocultos+(items||(ocultos?"":`<div class="note">Todavía no hay conteos guardados en este local.</div>`))+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
 }
 async function invCargarLista(){
   const I=S.inv; if(!I) return;
   I.lista=null; I.errorLista=null;
   const r=await api("inventarios",{local:S.local});
   if(!S.inv) return;
-  if(r && r.ok){ S.inv.lista=r.inventarios||[]; S.inv.verDif=r.verDiferencias!==false; }
+  if(r && r.ok){ S.inv.lista=r.inventarios||[]; S.inv.ocultos=r.ocultos||[]; S.inv.verDif=r.verDiferencias!==false; }
   else S.inv.errorLista=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver los inventarios.":(r&&r.error)||"No se pudo conectar. Probá de nuevo.";
   if(S.inv.paso==="guardados") renderApp();
 }
@@ -4885,6 +4921,11 @@ async function invGuardarServidor(){
   if(!S.inv) return;
   if(r && r.ok){
     try{ ls.del(invClaveBorrador()) }catch(e){}
+    if(r.inventario && r.inventario.oculto){
+      if(I.pedidoId) S.pedidoConteo=null;
+      toast(r.inventario.tipo==="final"?(r.avisoStock?"Conteo de cierre enviado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo de cierre enviado ✓. Supervisión lo revisa: lo ves desde las 12:00. El stock de la cámara quedó igual a lo contado."):"Conteo parcial enviado ✓. Lo revisa supervisión.");
+      S.inv=null; renderApp(); window.scrollTo(0,0); return;
+    }
     S.inv.guardando=false; S.inv.ver=r.inventario; S.inv.paso="ver"; S.inv.lista=null; S.inv.res="rubro"; S.inv.det=null; S.inv.busca="";
     if(I.pedidoId) S.pedidoConteo=null;
     toast(I.pedidoId?(I.pedidoTipo==="final"?(r.avisoStock?"Conteo de cierre guardado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado"):"Conteo parcial guardado"):"Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
