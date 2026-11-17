@@ -542,3 +542,5 @@ Pedido de Gabi: algunos locales no tienen ciertos productos (ej. Baldes) y hací
 - Fix 17/11/2026 (front 1.178.7, reportado por Gabi con captura en celular/tablet): en Stock › Pedido sugerido la lista de sabores se veía amontonada («010ESTABLE» pisado) porque una regla vieja de .pedTend volvía visible la columna de tendencia en pantallas chicas; se sacó esa regla y en <900 px cada sabor pasa a una fila apilada (nombre + «Hay N» + stepper). Solo en /pruebas/.
 
 - **Producción actualizada 17/11/2026 (con OK de Gabi):** la raíz de `main` pasó de front 1.178.6 a 1.178.7 (Pedido sugerido legible en celular y tablet).
+
+- **Pedido sugerido 17/11/2026 (front 1.178.8, pedido de Gabi):** la línea de tendencia de 3 semanas (puntos, números de cada semana y Sube/Baja/Estable) ahora también se ve en celular (debajo del nombre) y en tablet (en la misma fila, con encabezado «Tendencia · 3 semanas»), no solo en PC. Solo en /pruebas/.
