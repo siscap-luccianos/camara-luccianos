@@ -19,7 +19,7 @@ const { chromium } = require("playwright");
   console.log("   stock antes:", JSON.stringify(antes));
 
   // 1) selector: todo el local o solo un rubro
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv");
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.evaluate(() => abrirElegirConteo()); await page.waitForSelector("#contOv");
   const opciones = (await page.innerText("#contOv")).replace(/\s+/g, " ");
   ok(/¿Qué vas a contar\?/.test(opciones) && /Todo el local/.test(opciones) && /Solo un rubro/.test(opciones), "pregunta «¿Qué vas a contar?» con las dos opciones");
   await page.click('[data-ce="rubro"]'); await page.waitForTimeout(150);
@@ -62,7 +62,7 @@ const { chromium } = require("playwright");
 
   // 6) «Todo el local» sigue siendo un conteo completo y normal
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForTimeout(400);
   ok(await page.$$eval(".tabCat", e => e.length) >= 3, "«Todo el local» muestra todos los rubros");
   ok(!/Contando solo/.test(await page.innerText("main")), "sin el aviso de conteo parcial");
   await page.click("#cancelConteo"); await page.waitForTimeout(200);
