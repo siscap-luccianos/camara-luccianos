@@ -535,3 +535,4 @@ Pedido de Gabi: algunos locales no tienen ciertos productos (ej. Baldes) y hací
 - Fix 17/11/2026 (front 1.178.3): en la portada de Pedido sugerido (Stock) los datos Consumo semanal y Retiros 3 semanas se amontonaban en tablet/celular; ahora se acomodan en filas y «Ver pedido» va debajo. Solo en /pruebas/.
 - **Producción actualizada 17/11/2026 (con OK de Gabi):** la raíz de `main` pasó de front 1.178.2 a 1.178.3 (portada de Pedido sugerido sin amontonarse en tablet/celular).
 - Textos 17/11/2026 (front 1.178.4, pedido de Gabi): se sacó «a ciegas» de la ayuda y los avisos de conteo; ahora dice «sin ver el número del sistema». Solo en /pruebas/.
+- Historial 17/11/2026 (front 1.178.5, pedido de Gabi): los movimientos anulados siguen en Historial (nunca se borran), ahora con el detalle tachado suave y un filtro «Anulados · N» en Movimientos. Incluye 1.178.4 (texto «sin ver el número del sistema»). Solo en /pruebas/.
