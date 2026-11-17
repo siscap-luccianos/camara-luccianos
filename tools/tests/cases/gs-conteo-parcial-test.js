@@ -65,7 +65,7 @@ ok(rc&&rc.estado==="sin_pedir","Recoleta tiene inicial y nada pedido");
 // 4) candado
 const idInv=inv[1].id; E("encargado");
 NOW=Date.parse("2026-12-05T13:00:00-03:00");
-r=run(`corregirInventario("Galerías","${idInv}","4",3,"me confundí",emp)`); ok(!r.ok&&/bloqueado/.test(r.error),"conteo fijo: el responsable no puede corregir");
+r=run(`corregirInventario("Galerías","${idInv}","4",3,"me confundí",emp)`); ok(!r.ok&&/candado|bloqueado/.test(r.error),"conteo con candado: el responsable no puede corregir");
 E("encargado"); r=run(`desbloquearInventario("Galerías","${idInv}","1234","recuento",emp)`); ok(!r.ok,"el responsable no puede desbloquear");
 E("supervisor"); r=run(`desbloquearInventario("Galerías","${idInv}","0000","recuento",emp)`); ok(!r.ok&&r.pidePin,"PIN incorrecto: no desbloquea");
 r=run(`desbloquearInventario("Galerías","${idInv}","1234","x",emp)`); ok(!r.ok,"pide un motivo");

@@ -30,6 +30,7 @@ E("encargado");
 r=run(`guardarInventario("c1","Galerías",{"4":2.5,"107":1.25,"49":10,"117":0},{"4":{k:17.5,ap:1}},emp)`);
 ok(r.ok, "guarda: "+JSON.stringify(r).slice(0,120));
 const inv=r.inventario;
+const desb=()=>filas.forEach(f=>{ f.desbloqueado_hasta=Date.now()+36e5 }); // supervisión desbloquea: vale para una corrección, después se vuelve a cerrar
 ok(inv.items["4"]===2.5&&inv.items["107"]===1.25&&inv.items["49"]===10&&!("117" in inv.items), "items: kilos con decimales, unidades enteras, ceros no se guardan: "+JSON.stringify(inv.items));
 ok(inv.camara["4"].u===5&&inv.camara["4"].k===17.5&&inv.camara["4"].ap===1, "cámara de la vasqueta: unidades del servidor + kilos aproximados del cliente");
 ok(inv.camara["49"].u===48&&inv.camara["117"].u===30, "cámara de icepops y chocolatería en unidades (stock del servidor)");
@@ -56,29 +57,31 @@ ok(r.ok&&r.inventario.valor_total===null&&r.inventario.precios===null&&filas[fil
 E("admin");
 r=run(`guardarInventario("c6","Chile",{"49":3},{},emp)`);
 ok(r.ok&&r.inventario.valor_total===null, "locales de otro país no valorizan");
-// corrección
+// corrección: el conteo tiene candado hasta que supervisión lo desbloquea; con una corrección guardada se cierra otra vez
 E("encargado");
-r=run(`corregirInventario("Galerías","1","4",1.5,"Me confundí al tipear",emp)`);
+r=run(`corregirInventario("Galerías","1","4",1.5,"Me confundí al tipear",emp)`); ok(!r.ok&&/candado/.test(r.error),"con candado no se corrige");
+desb(); r=run(`corregirInventario("Galerías","1","4",1.5,"Me confundí al tipear",emp)`);
 ok(r.ok, "corrige: "+JSON.stringify(r).slice(0,100));
 ok(r.inventario.items["4"]===1.5, "queda el valor nuevo");
 const c=r.inventario.cambios[0];
 ok(r.inventario.cambios.length===1&&c.antes===2.5&&c.despues===1.5&&c.q==="Karina"&&c.s==="4"&&/confundí/.test(c.mot)&&c.ts>0, "registra antes, después, quién, cuándo y motivo: "+JSON.stringify(c));
 ok(r.inventario.valor_total===325100-8000, "recalcula el valor con los precios guardados: "+r.inventario.valor_total);
 ok(audit.some(a=>a[0]==="corregir_inventario"), "audita la corrección");
-r=run(`corregirInventario("Galerías","1","4",1.5,"otra vez",emp)`);
+ok(!(filas[0].desbloqueado_hasta>0) && r.inventario.fijo===true, "después de guardar la corrección el candado vuelve a cerrarse");
+desb(); r=run(`corregirInventario("Galerías","1","4",1.5,"otra vez",emp)`);
 ok(r.ok&&r.sinCambios, "si el valor no cambia no registra nada");
-r=run(`corregirInventario("Galerías","1","49",12,"",emp)`);
+desb(); r=run(`corregirInventario("Galerías","1","49",12,"",emp)`);
 ok(!r.ok&&/motivo/i.test(r.error), "sin motivo no corrige");
-r=run(`corregirInventario("Galerías","1","49",2.5,"x pasó",emp)`);
+desb(); r=run(`corregirInventario("Galerías","1","49",2.5,"x pasó",emp)`);
 ok(!r.ok, "unidad con decimales rechazada");
-r=run(`corregirInventario("Galerías","1","117",4,"Faltaba cargarlo",emp)`);
+desb(); r=run(`corregirInventario("Galerías","1","117",4,"Faltaba cargarlo",emp)`);
 ok(r.ok&&r.inventario.items["117"]===4&&r.inventario.cambios.length===2, "puede cargar un producto que estaba en 0");
-r=run(`corregirInventario("Galerías","1","49",0,"No había nada",emp)`);
+desb(); r=run(`corregirInventario("Galerías","1","49",0,"No había nada",emp)`);
 ok(r.ok&&!("49" in r.inventario.items), "dejarlo en 0 lo saca de items");
-r=run(`corregirInventario("Sin valor","1","49",5,"mal local",emp)`);
+desb(); r=run(`corregirInventario("Sin valor","1","49",5,"mal local",emp)`);
 ok(!r.ok&&/No se encontró ese inventario/.test(r.error), "no corrige un inventario de otro local");
 E("colaborador");
-r=run(`corregirInventario("Galerías","1","49",5,"mal",emp)`);
+desb(); r=run(`corregirInventario("Galerías","1","49",5,"mal",emp)`);
 ok(!r.ok&&/permiso/.test(r.error), "colaborador no corrige");
 // listado
 E("turno");

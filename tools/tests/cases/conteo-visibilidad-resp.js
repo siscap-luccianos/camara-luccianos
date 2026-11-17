@@ -21,7 +21,7 @@ const { chromium } = require("playwright");
   });
   const t = h.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
   ok(/Conteo inicial/.test(t), "se ve el conteo inicial");
-  ok(/Conteo parcial/.test(t) && /Hecho ✓/.test(t) && /Lo ve supervisión/.test(t), "el parcial aparece como «Hecho ✓», sin kilos");
+  ok(/Conteo parcial/.test(t) && /Hecho ✓/.test(t) && /Hecho por/.test(t), "el parcial aparece como «Hecho ✓», sin kilos");
   ok(/Conteo de cierre/.test(t) && /En revisión/.test(t) && /desde las 12:00/.test(t), "el cierre aparece «En revisión» y dice que se ve desde las 12:00");
   ok(!/data-inv-abrir="2"/.test(h) && !/data-inv-abrir="3"/.test(h), "lo oculto no se puede abrir");
   // guardar un cierre: la respuesta oculta no rompe y vuelve a Stock

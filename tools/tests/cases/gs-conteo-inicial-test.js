@@ -42,10 +42,12 @@ ok(filas[filas.length-1].fuera_jornada==="SI"&&Number(filas[filas.length-1].cama
 ok(r.inventario.fijo===true,"guardado el 1/12 o después: queda fijo");
 const idFijo=r.inventario.id;
 r=run(`corregirInventario("Galerías","${idFijo}","4",3,"me confundí",emp)`);
-ok(!r.ok&&/fijo/i.test(r.error),"un conteo inicial fijo no se puede corregir: "+(r.error||""));
+ok(!r.ok&&/candado/i.test(r.error),"un conteo inicial con candado no se puede corregir: "+(r.error||""));
 NOW=Date.parse("2026-11-20T12:00:00-03:00"); sb.STOCK_TS=0;
 r=run(`guardarInventario("p1","Galerías",{"4":2},{},emp)`);
-ok(r.ok&&r.inventario.fijo===false&&r.inventario.fuera_jornada===false,"antes del 1/12 es de práctica: no es fijo");
-r=run(`corregirInventario("Galerías","${r.inventario.id}","4",3,"me confundí",emp)`);
-ok(r.ok,"y se puede corregir: "+(r.error||""));
+ok(r.ok&&r.inventario.fijo===true&&r.inventario.fuera_jornada===false,"antes del 1/12 también queda con candado");
+const idPr=r.inventario.id;
+filas.filter(x=>x.id===String(idPr))[0].desbloqueado_hasta=NOW+36e5; // supervisión lo desbloquea
+r=run(`corregirInventario("Galerías","${idPr}","4",3,"me confundí",emp)`);
+ok(r.ok&&r.inventario.fijo===true,"desbloqueado se corrige una vez y el candado vuelve a cerrarse: "+(r.error||""));
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);
