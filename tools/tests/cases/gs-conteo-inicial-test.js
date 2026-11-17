@@ -43,7 +43,7 @@ ok(r.inventario.fijo===true,"guardado el 1/12 o después: queda fijo");
 const idFijo=r.inventario.id;
 r=run(`corregirInventario("Galerías","${idFijo}","4",3,"me confundí",emp)`);
 ok(!r.ok&&/candado/i.test(r.error),"un conteo inicial con candado no se puede corregir: "+(r.error||""));
-NOW=Date.parse("2026-11-20T12:00:00-03:00"); sb.STOCK_TS=0;
+NOW=Date.parse("2026-11-20T12:00:00-03:00"); sb.STOCK_TS=0; E("admin");
 r=run(`guardarInventario("p1","Galerías",{"4":2},{},emp)`);
 ok(r.ok&&r.inventario.fijo===true&&r.inventario.fuera_jornada===false,"antes del 1/12 también queda con candado");
 const idPr=r.inventario.id;

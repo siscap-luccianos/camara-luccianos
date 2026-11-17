@@ -14,6 +14,7 @@ const sabores=[
  {id:"117",nombre:"Alfajor",tipo:"c",familia:"chocolateria"}];
 let filas=[], audit=[], precios={"4":8000,"107":10000,"49":1700,"117":1800};
 sb._hojaInventarios=()=>({});
+sb._coberturaMes=()=>null; // la regla «un inicial por mes» se prueba en gs-conteo-retiro-test.js
 sb._leerCrudo=h=>h==="Locales"?locales:h==="Sabores"?sabores:h==="Inventarios"?filas:[];
 sb._puedeVerLocal=()=>true;
 sb._escribirCrudo=(h,o)=>{const f=Object.assign({},o,{id:String(filas.length+1)});filas.push(f);return {id:f.id}};

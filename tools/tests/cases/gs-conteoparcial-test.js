@@ -3,7 +3,7 @@ const vm=require("vm"),fs=require("fs");
 const sb={console,Date,Math,JSON,String,Number,Array,Object,isFinite,
  CacheService:{getScriptCache:()=>({get:()=>null,put(){},remove(){}})},
  PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
- SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{}};
+ SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{formatDate:(d,tz,f)=>new Date(d.getTime()-3*3600e3).toISOString().slice(0,f==="dd/MM"?10:10)}};
 vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8"),sb);
 const locales=[{nombre:"Local prueba",kilos_reales:"SI",operaciones:"NO"},{nombre:"Obelisco CABA",operaciones:"NO"},{nombre:"Sin choco",operaciones:"NO",lleva_chocolateria:"NO"}];
 const sabores=[
@@ -13,6 +13,7 @@ const sabores=[
  {id:"49",nombre:"Frutilla icepop",tipo:"i",familia:"icepops"},
  {id:"117",nombre:"Alfajor",tipo:"c",familia:"chocolateria"}];
 let escritos=[], audit=[], regs=[];
+sb._hojaInventarios=()=>({});
 sb._leerCrudo=h=>h==="Locales"?locales:h==="Sabores"?sabores:[];
 sb._puedeVerLocal=()=>true;
 sb._escribirCrudo=(h,o)=>{escritos.push(o);return {id:String(escritos.length)}}; sb._invalidarCacheDatos=()=>{};

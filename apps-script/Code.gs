@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.92.0";
+const BACKEND_VERSION = "1.93.0";
 
 function doPost(e) {
   let resultado;
@@ -131,7 +131,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
-    case "anular": return anular(body.registroId, body.motivo, empleado);
+    case "anular": return anular(body.registroId, body.motivo, empleado, body.pin);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
     case "altaEmpleado": return altaEmpleado(body.nombre, body.rol, body.local, empleado);
     case "bajaEmpleado": return bajaEmpleado(body.empleadoId, empleado);
@@ -2213,16 +2213,15 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
  *  final guardado el mes anterior (que es el inicial de este). */
 function _mesSiguiente(m) { const a = String(m).split("-"); let y = Number(a[0]), mm = Number(a[1]) + 1; if (mm > 12) { mm = 1; y++; } return y + "-" + (mm < 10 ? "0" : "") + mm; }
 /** ¿Qué conteo cubre el mes actual como «conteo inicial»? Uno inicial guardado este mes, o un FINAL guardado el mes anterior (el final es el
- *  inicial del mes siguiente). Devuelve {tipo, ts} o null. Solo vale desde el 1/12/2026. */
+ *  inicial del mes siguiente). Devuelve {tipo, ts} o null. */
 function _coberturaMes(local) {
   const ahora = Date.now();
-  if (ahora < CONTEO_INICIAL_FIJO_DESDE) return null;
   _hojaInventarios();
   const mes = _jornadaClave(ahora).slice(0, 7);
   let mejor = null;
   _leerCrudo("Inventarios").forEach((r) => {
     if (String(r.local || "").trim() !== String(local).trim()) return;
-    if (String(r.tipo) === "parcial" || (Number(r.ts) || 0) < CONTEO_INICIAL_FIJO_DESDE) return;
+    if (String(r.tipo) === "parcial") return;
     const m = _jornadaClave(Number(r.ts)).slice(0, 7);
     if (m === mes || (String(r.tipo) === "final" && _mesSiguiente(m) === mes)) {
       if (!mejor || Number(r.ts) > mejor.ts) mejor = { tipo: String(r.tipo) === "final" ? "final" : "inicial", ts: Number(r.ts) };
@@ -2234,7 +2233,7 @@ function _conteoSueltoBloqueado(local, empleado) {
   if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return false;
   return !!_coberturaMes(local);
 }
-const MSJ_CONTEO_SUELTO = "Desde el 1/12 el conteo suelto ya no se usa: el stock de la cámara lo controla supervisión con el conteo parcial o final.";
+const MSJ_CONTEO_SUELTO = "El conteo suelto ya no se usa: el stock de la cámara lo controla supervisión con el conteo parcial o de cierre.";
 
 function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, esFinal) {
   if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
@@ -2857,6 +2856,45 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
   return base;
 }
 
+/** Lo que mueve el Esperado entre el inicial y un conteo: ingresos y salidas del período (en kg de cámara y unidades de otros rubros), por semana las salidas, y los anulados. */
+function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
+  const t0 = Number(inicial.ts) || 0;
+  const ing = { n: 0, kg: 0, u: 0, lista: [] }, sal = { n: 0, kg: 0, u: 0, semanas: {} }, anulados = [];
+  (regs || _leerCrudo("Registros")).forEach((r) => {
+    if (String(r.local).trim() !== String(local).trim()) return;
+    const ts = Number(r.ts) || 0;
+    if (ts <= t0 || ts > tsHasta) return;
+    if (r.tipo !== "ingreso" && r.tipo !== "salida") return;
+    const items = _jsonObj(r.items, {}), kilos = _jsonObj(r.kilos, {}), pesos = _jsonObj(r.pesos, {});
+    let kg = 0, u = 0;
+    Object.keys(items).forEach((id) => {
+      const sab = catalogo[id];
+      if (!sab) return;
+      const n = Number(items[id]) || 0;
+      if (!_invEsKg(sab)) { u += n; return; }
+      if (r.tipo === "salida") { const pp = pesos[id]; kg += Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0); }
+      else if (kilos[id] !== undefined && kilos[id] !== "") kg += Math.abs(Number(kilos[id]) || 0);
+      else kg += Math.abs(n) * (Number(sab.peso) || 0);
+    });
+    kg = Math.round(kg * 100) / 100;
+    if (r.anulado_ts) { anulados.push({ ts: ts, tipo: r.tipo, kg: kg, u: u, empleado: r.empleado || "", anulado_por: r.anulado_por || "", motivo: r.motivo || "" }); return; }
+    if (r.tipo === "ingreso") {
+      ing.n++; ing.kg += kg; ing.u += u;
+      ing.lista.push({ ts: ts, remito: String(r.remito || ""), kg: kg, u: u, empleado: r.empleado || "", sub: String(r.subtipo || "") });
+    } else {
+      sal.n++; sal.kg += kg; sal.u += u;
+      const sem = Math.floor((Math.floor((ts - 7 * 3600 * 1000) / 86400000) + 3) / 7);
+      const w = sal.semanas[sem] || (sal.semanas[sem] = { ts: ts, n: 0, kg: 0, u: 0 });
+      w.n++; w.kg += kg; w.u += u; if (ts < w.ts) w.ts = ts;
+    }
+  });
+  ing.kg = Math.round(ing.kg * 100) / 100; sal.kg = Math.round(sal.kg * 100) / 100;
+  ing.lista.sort((a, b) => a.ts - b.ts); ing.lista = ing.lista.slice(-40);
+  const semanas = Object.keys(sal.semanas).map((k) => { const w = sal.semanas[k]; return { ts: w.ts, n: w.n, kg: Math.round(w.kg * 100) / 100, u: w.u }; }).sort((a, b) => a.ts - b.ts);
+  anulados.sort((a, b) => a.ts - b.ts);
+  return { ing: ing, sal: { n: sal.n, kg: sal.kg, u: sal.u, semanas: semanas }, anulados: anulados.slice(-20) };
+}
+
 /** Compara un conteo (parcial o cierre) contra lo esperado desde su base (el inicial). La diferencia es de la CÁMARA y el porcentaje es sobre el inicial. */
 function _compararConteo(base, conteo, local, catalogo, regs) {
   const debe = _deberiaHaber(base, Number(conteo.ts) || 0, local, catalogo, regs);
@@ -2973,6 +3011,7 @@ function controlDetalle(local, inventarioId, empleado) {
     conteos: mios.map(resumenDe),
     conteo: sel, base: bsel, grupos: lista,
     dif: cmp ? { kg: Math.round(dk * 100) / 100, u: du, pctKg: _pct(Math.round(dk * 100) / 100, bsel.camKg), pctU: _pct(du, bsel.camU) } : null,
+    mov: cmp ? _movimientosPeriodo(base, Number(elegido.ts) || 0, local, catalogo, null) : null,
     pedido: _pedidoPublico(_pedidoPendiente(local)),
   };
 }
@@ -2981,7 +3020,7 @@ function controlDetalle(local, inventarioId, empleado) {
    ANULAR / ELIMINAR
 ============================================================ */
 
-function anular(registroId, motivo, empleado) {
+function anular(registroId, motivo, empleado, pin) {
   if (!registroId) return { ok: false, error: "Falta el movimiento a anular." };
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -3009,6 +3048,23 @@ function anular(registroId, motivo, empleado) {
     else if (empleado.rol === "colaborador" && empleadoIdDueño === String(empleado.id) && edad <= VENTANA_ANULAR_COLABORADOR_MS) permitido = true;
 
     if (!permitido) return { ok: false, error: "No tenés permiso para anular ese movimiento (o ya pasó el tiempo permitido)." };
+
+    // Un movimiento anterior al último conteo guardado (inicial, parcial o cierre) ya forma parte de lo que se controló: solo supervisión
+    // lo anula, con su PIN y un motivo. Si no, se podría tapar o inventar una diferencia.
+    let tsUltimoConteo = 0;
+    if (String(filas[idx][col.tipo]) !== "conteo") {
+      _hojaInventarios();
+      _leerCrudo("Inventarios").forEach((r) => { if (String(r.local || "").trim() === String(local).trim() && Number(r.ts) > tsUltimoConteo) tsUltimoConteo = Number(r.ts); });
+    }
+    if (tsUltimoConteo && ts < tsUltimoConteo) {
+      const fecha = Utilities.formatDate(new Date(tsUltimoConteo), "America/Argentina/Buenos_Aires", "dd/MM");
+      if (empleado.rol !== "admin" && empleado.rol !== "supervisor") return { ok: false, error: "Es anterior al conteo del " + fecha + ". Lo anula supervisión." };
+      if (String(motivo || "").trim().length < 3) return { ok: false, pideMotivo: true, error: "Es anterior al conteo del " + fecha + ": escribí el motivo." };
+      if (!pin) return { ok: false, pidePin: true, error: "Es anterior al conteo del " + fecha + ": confirmá con tu PIN." };
+      const ePin = _exigirPinAdmin(empleado, pin, local);
+      if (ePin) return ePin;
+      _auditar("anular_antes_de_conteo", empleado.id, empleado.nombre, local + ": anuló el movimiento " + registroId + " anterior al conteo del " + fecha + " (" + String(motivo).trim() + ")");
+    }
 
     // Si esto es una Salida (no Desperdicio, que nunca tiene devolución
     // asociada) y la misma persona ya cargó una Devolución vigente

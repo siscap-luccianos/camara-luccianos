@@ -3,8 +3,9 @@ const vm=require("vm"),fs=require("fs");
 const sb={console,Date,Math,JSON,String,Number,Array,Object,isFinite,
  CacheService:{getScriptCache:()=>({get:()=>null,put(){},remove(){}})},
  PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
- SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{}};
+ SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{formatDate:(d)=>new Date(d.getTime()-3*3600e3).toISOString().slice(0,10)}};
 vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8"),sb);
+sb._hojaInventarios=()=>({});
 const locales=[{nombre:"Torreon Mar del Plata",kilos_reales:"SI",operaciones:"NO"}];
 const sabores=[{id:"4",nombre:"Banana Split",tipo:"v",familia:"vasquetas"},{id:"5",nombre:"Cheesecake",tipo:"v",familia:"vasquetas"}];
 let escritos=[];

@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(1000);
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
-  console.log("Salida sin franja:", (await page.$$(".vrChip")).length===0, "| botón:", await page.$eval("[data-sal-menu='venc']",e=>e.textContent.trim()));
+  console.log("Salida sin franja:", (await page.$$(".vrChip")).length===0, "| botón:", (await page.$("[data-sal-menu='venc']"))?"hay tarjeta":"sin tarjeta (va en la pestaña Chocolatería)");
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
   console.log("Stock sin franja:", (await page.$$(".vrChip")).length===0, "| botón Ver vencimientos:", !!(await page.$("[data-ver-venc]")));
   console.log("errores:",JSON.stringify(err)); await b.close();
