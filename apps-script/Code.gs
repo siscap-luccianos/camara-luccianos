@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.93.0";
+const BACKEND_VERSION = "1.94.0";
 
 function doPost(e) {
   let resultado;
@@ -125,6 +125,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "cancelarPedidoConteo": return cancelarPedidoConteo(body.local, empleado);
     case "pedidoConteo": return pedidoConteo(body.local, empleado);
     case "liberarInventario": return liberarInventario(body.local, body.inventarioId, body.pin, body.mostrar !== false, empleado);
+    case "desbloquearConteoCamara": return desbloquearConteoCamara(body.local, body.pin, body.motivo, empleado);
     case "desbloquearInventario": return desbloquearInventario(body.local, body.inventarioId, body.pin, body.motivo, empleado);
     case "controlStock": return controlStock(empleado);
     case "controlDetalle": return controlDetalle(body.local, body.inventarioId, empleado);
@@ -2229,9 +2230,30 @@ function _coberturaMes(local) {
   });
   return mejor;
 }
+/** Último Conteo cámara (conteo físico) del local dentro del mes en curso, o null. Cuenta como parte del conteo inicial del mes. */
+function _camaraContadaMes(local) {
+  const mes = _jornadaClave(Date.now()).slice(0, 7);
+  let mejor = null;
+  _leerCrudo("Registros").forEach((r) => {
+    if (String(r.tipo) !== "conteo" || r.anulado_ts || String(r.local || "").trim() !== String(local).trim()) return;
+    const ts = Number(r.ts) || 0;
+    if (_jornadaClave(ts).slice(0, 7) !== mes) return;
+    if (!mejor || ts > mejor.ts) mejor = { ts: ts, empleado: r.empleado || "" };
+  });
+  return mejor;
+}
+/** Hasta cuándo supervisión dejó recontar la cámara de este local (una vez; el candado vuelve a cerrarse al guardar). */
+function _camaraDesbloqueadaHasta(local) {
+  try { return Number(PropertiesService.getScriptProperties().getProperty("camaraDesb:" + String(local).trim())) || 0; } catch (e) { return 0; }
+}
+function _camaraRecerrar(local) {
+  try { PropertiesService.getScriptProperties().deleteProperty("camaraDesb:" + String(local).trim()); } catch (e) { /* sin propiedad: nada que cerrar */ }
+}
+/** El Conteo cámara y el conteo suelto quedan cerrados para los responsables: ya hay un conteo inicial que cubre el mes, o la cámara ya se contó este mes (salvo que supervisión la desbloquee). */
 function _conteoSueltoBloqueado(local, empleado) {
   if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return false;
-  return !!_coberturaMes(local);
+  if (_coberturaMes(local)) return true;
+  return !!_camaraContadaMes(local) && _camaraDesbloqueadaHasta(local) <= Date.now();
 }
 const MSJ_CONTEO_SUELTO = "El conteo suelto ya no se usa: el stock de la cámara lo controla supervisión con el conteo parcial o de cierre.";
 
@@ -2299,6 +2321,7 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, e
       });
     }
     _invalidarCacheDatos(local);
+    _camaraRecerrar(local);
     return { ok: true, ts: ts };
   } finally {
     lock.releaseLock();
@@ -2667,7 +2690,7 @@ function inventarios(local, empleado) {
   const lista = todos.filter((r) => _visibleParaResponsable(r, verTodo)).map((r) => _inventarioPublico(r, verValor));
   // Lo que todavía no se le muestra al responsable: solo que existe (tipo, fecha y si se libera sola), sin kilos.
   const ocultos = todos.filter((r) => !_visibleParaResponsable(r, verTodo)).map((r) => ({ id: r.id, empleado: r.empleado || "", tipo: String(r.tipo) === "final" ? "final" : "parcial", ts: Number(r.ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }));
-  return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
+  return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: !_soloSupervision(empleado) && !!_coberturaMes(local), camaraBloqueada: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
 }
 
 
@@ -2770,6 +2793,19 @@ function liberarInventario(local, inventarioId, pin, mostrar, empleado) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Supervisión deja recontar la cámara de un local UNA vez (vale 24 h): PIN personal y motivo. Al guardarse el conteo, el candado se cierra solo. */
+function desbloquearConteoCamara(local, pin, motivo, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede desbloquear el Conteo cámara." };
+  motivo = String(motivo || "").trim().slice(0, 200);
+  if (motivo.length < 3) return { ok: false, error: "Escribí el motivo del desbloqueo." };
+  const ePin = _exigirPinAdmin(empleado, pin, local);
+  if (ePin) return ePin;
+  const hasta = Date.now() + 24 * 3600 * 1000;
+  try { PropertiesService.getScriptProperties().setProperty("camaraDesb:" + String(local).trim(), String(hasta)); } catch (e) { return { ok: false, error: "No se pudo guardar el desbloqueo." }; }
+  _auditar("desbloquear_conteo_camara", empleado.id, empleado.nombre, local + ": desbloqueó el Conteo cámara por 24 h (" + motivo + ")");
+  return { ok: true, desbloqueado_hasta: hasta };
 }
 
 /** Desbloquea UN conteo guardado por 24 horas: solo admin/supervisor, con su PIN personal y un motivo. */
@@ -3011,6 +3047,7 @@ function controlDetalle(local, inventarioId, empleado) {
     conteos: mios.map(resumenDe),
     conteo: sel, base: bsel, grupos: lista,
     dif: cmp ? { kg: Math.round(dk * 100) / 100, u: du, pctKg: _pct(Math.round(dk * 100) / 100, bsel.camKg), pctU: _pct(du, bsel.camU) } : null,
+    camaraCont: (function () { const c = _camaraContadaMes(local); return c ? { ts: c.ts, empleado: c.empleado, desbloqueado_hasta: _camaraDesbloqueadaHasta(local) } : null; })(),
     mov: cmp ? _movimientosPeriodo(base, Number(elegido.ts) || 0, local, catalogo, null) : null,
     pedido: _pedidoPublico(_pedidoPendiente(local)),
   };
