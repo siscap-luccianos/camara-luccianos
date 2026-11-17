@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.87.0";
+const BACKEND_VERSION = "1.88.0";
 
 function doPost(e) {
   let resultado;
@@ -2205,11 +2205,32 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
   }
 }
 
-function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos) {
+/** Desde el 1/12/2026 el Conteo físico SUELTO se retira para los responsables: el stock de la cámara solo se vuelve a contar con
+ *  el conteo inicial del mes (mientras no esté guardado), o con el conteo parcial / final que pide supervisión. Admin y supervisor
+ *  pueden seguir corrigiendo. Bloqueado si ya hay un conteo inicial (o final) que cubre el mes actual: uno guardado este mes, o un
+ *  final guardado el mes anterior (que es el inicial de este). */
+function _mesSiguiente(m) { const a = String(m).split("-"); let y = Number(a[0]), mm = Number(a[1]) + 1; if (mm > 12) { mm = 1; y++; } return y + "-" + (mm < 10 ? "0" : "") + mm; }
+function _conteoSueltoBloqueado(local, empleado) {
+  const ahora = Date.now();
+  if (ahora < CONTEO_INICIAL_FIJO_DESDE) return false;
+  if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return false;
+  _hojaInventarios();
+  const mes = _jornadaClave(ahora).slice(0, 7);
+  return _leerCrudo("Inventarios").some((r) => {
+    if (String(r.local || "").trim() !== String(local).trim()) return false;
+    if (String(r.tipo) === "parcial" || (Number(r.ts) || 0) < CONTEO_INICIAL_FIJO_DESDE) return false;
+    const m = _jornadaClave(Number(r.ts)).slice(0, 7);
+    return m === mes || (String(r.tipo) === "final" && _mesSiguiente(m) === mes);
+  });
+}
+const MSJ_CONTEO_SUELTO = "Desde el 1/12 el conteo suelto ya no se usa: el stock de la cámara lo controla supervisión con el conteo parcial o final.";
+
+function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, esFinal) {
   if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
   if (!items) return { ok: false, error: "Falta el conteo." };
+  if (!esFinal && _conteoSueltoBloqueado(local, empleado)) return { ok: false, error: MSJ_CONTEO_SUELTO };
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -2287,6 +2308,7 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
   rubro = String(rubro || "");
   if (RUBROS_LOCAL.indexOf(rubro) === -1) return { ok: false, error: "Elegí el rubro que vas a contar." };
   if (!items || typeof items !== "object") return { ok: false, error: "Falta el conteo." };
+  if (_conteoSueltoBloqueado(local, empleado)) return { ok: false, error: MSJ_CONTEO_SUELTO };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   if (filaLocal && _rubrosApagados(filaLocal).indexOf(rubro) !== -1) return { ok: false, error: "Este local no lleva ese rubro." };
   const pais = _paisDeLocal(filaLocal);
@@ -2435,7 +2457,7 @@ function _invPermiso(empleado, local) {
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   const r = _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada);
   if (r && r.ok && r._final) {
-    const c = conteo("final-" + r.inventario.id, local, r._final.items, empleado, null, r._final.kilos, null);
+    const c = conteo("final-" + r.inventario.id, local, r._final.items, empleado, null, r._final.kilos, null, true);
     if (c && c.ok) r.stockAplicado = true; else r.avisoStock = (c && c.error) || "No se pudo dejar el stock de la cámara igual al conteo final.";
     Reflect.deleteProperty(r, "_final");
   } else if (r && r._final) {
@@ -2596,7 +2618,7 @@ function inventarios(local, empleado) {
     .sort((a, b) => Number(b.ts) - Number(a.ts))
     .slice(0, 12)
     .map((r) => _inventarioPublico(r, verValor));
-  return { ok: true, inventarios: lista, verValor: verValor };
+  return { ok: true, inventarios: lista, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado) };
 }
 
 
