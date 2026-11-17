@@ -38,6 +38,16 @@ const { chromium } = require("playwright");
   ok(await page.evaluate(() => S.inv.items["20"]) === 3.64, "en el local se cuenta aparte: Frutilla 3,64 kg");
   await page.click("#invFaseCam"); await page.waitForTimeout(300);
   ok(await page.evaluate(() => S.inv.items["20"]) === 3.64 && (await page.evaluate(() => ceEsc().items.length)) === 1, "volver a la cámara conserva lo escaneado ahí (1 lectura)");
+  // 25 vasquetas de un mismo sabor: una fila compacta, no 25 casillas
+  await page.evaluate(() => { [S.inv.items, S.inv.pesos, S.inv.tocado].forEach(o => Object.keys(o).forEach(k => delete o[k])); ceEsc().items = []; ceEsc().previo = {}; renderApp(); });
+  await page.click("#escConteoBtn"); await page.waitForSelector("#escanerOv");
+  for (let i = 0; i < 25; i++) await scan("0020" + String(300 + i).padStart(5, "0") + "290926" + "22" + "031");
+  await page.click("[data-esc-cerrar]"); await page.waitForTimeout(400);
+  ok(await page.evaluate(() => S.inv.pesos["20"].length) === 25, "25 lecturas = 25 pesos");
+  ok((await page.$$('[data-inv-row="20"] input.invW')).length === 0 && /25 vasquetas/.test(await page.innerText('[data-inv-row="20"]')), "la fila queda compacta: «25 vasquetas», sin 25 casillas");
+  ok(await page.evaluate(() => invCamaraLive()["20"].u) === 25, "cuenta 25 vasquetas en la cámara");
+  await page.click('[data-inv-verpesos="20"]'); await page.waitForTimeout(200);
+  ok((await page.$$('[data-inv-row="20"] input.invW')).length === 25, "«Ver pesos» muestra las 25 casillas");
   console.log("errores:", err.length ? err : "ninguno"); await b.close();
   console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); process.exit(fallas || err.length ? 1 : 0);
 })();
