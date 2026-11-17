@@ -24,7 +24,7 @@ const { chromium } = require("playwright");
   };
   const confirmarTodos = async () => { for (let i = 0; i < 20 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(120) } };
   await entrar();
-  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
 
   // 1) estado inicial: sabores con stock sin tocar = «Sin contar»; barra de avance
   const badge = id => page.$eval(`[data-cbadge="${id}"]`, e => e.hidden ? "" : e.textContent.trim());
@@ -78,13 +78,13 @@ const { chromium } = require("playwright");
   await confirmarTodos();
   ok(!(await page.$eval("#ok", e => e.disabled)), "con todo confirmado se puede guardar");
   await page.click("#ok"); await page.waitForTimeout(1200);
-  ok(/Conteo guardado/.test(await page.innerText("#toast").catch(() => "")) || (await page.$("#conteoBtn")) !== null, "se guarda y vuelve a Stock");
+  ok(/Conteo guardado/.test(await page.innerText("#toast").catch(() => "")) || (await page.$("#conteoInicialBtn")) !== null || (await page.$("#conteoBtn")) !== null, "se guarda y vuelve a Stock");
   const quedo = await page.evaluate(() => Object.keys(localStorage).some(k => k.indexOf("conteoBorrador:") >= 0));
   ok(!quedo, "el borrador se borra al guardar");
   ok(await page.$(".cBorrador") === null, "ya no aparece el aviso de conteo sin terminar");
 
   // 7) descartar
-  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(300);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(300);
   await cargar(20, 7);
   await page.waitForTimeout(800);
   await page.click("#cancelConteo"); await page.waitForTimeout(300);

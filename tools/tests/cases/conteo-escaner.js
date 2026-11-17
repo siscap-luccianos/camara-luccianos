@@ -30,7 +30,7 @@ const { chromium } = require("playwright");
   ok(await S_(() => parseCodigoRotulo("98" + "0".repeat(26))) === null, "28 dígitos que no empiezan con 99 se rechazan");
 
   const antes20 = await S_(() => stockMap()["20"] || 0);
-  await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
   ok(await page.$("#escConteoBtn") !== null, "la tarjeta «Contar escaneando» aparece en Vasquetas (local piloto)");
   await page.click("#escConteoBtn"); await page.waitForSelector("#escanerOv");
   ok(/Contar escaneando/.test(await page.innerText("#escanerOv")), "se abre el diálogo de conteo");

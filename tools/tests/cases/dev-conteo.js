@@ -14,7 +14,7 @@ const { chromium } = require("playwright");
   await page.click("[data-ing-menu='dev']"); await page.waitForTimeout(300);
   ok(await page.$(".rows .row")!==null && !/No tenés nada pendiente/.test(await page.innerText("#main")),"antes del conteo: hay algo para devolver (salida de hoy)");
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
-  await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
   for(const h of await page.$$("[data-c]")) await h.fill("0");
   await page.click("#go"); await page.click("#ok"); await page.waitForTimeout(900);
   await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(400);
