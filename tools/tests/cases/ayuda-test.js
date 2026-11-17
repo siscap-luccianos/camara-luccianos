@@ -16,6 +16,8 @@ const { chromium } = require("playwright");
     ok(await page.$("#ayudaBtn")!==null,"el ? sigue en "+t);
   }
   await page.click("#ayudaBtn"); await page.waitForSelector("#ayudaOv");
+  ok(await page.$(".ayTema.abierto")===null,"arranca todo cerrado");
+  await page.click("[data-ay-tema='quepaso']"); await page.waitForTimeout(100);
   const txt=await page.$eval("#ayudaOv",e=>e.textContent);
   ok(/Anulá el movimiento/.test(txt)&&/Desperdicio/.test(txt)&&/Devolución/.test(txt),"la hoja tiene las 3 tarjetas");
   ok(/24 horas/.test(txt),"para admin dice 24 horas");

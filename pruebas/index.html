@@ -1436,7 +1436,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.177.0";
+const FRONTEND_VERSION = "1.177.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3459,7 +3459,7 @@ function controlView(){
   }).join("");
   return `<div class="rlv ctl">
     <div class="noPrint"><div class="cntKick">OPERACIONES · SUPERVISIÓN</div><h1>Control de stock por local</h1>
-    <p class="sub">Se controla la <b>cámara</b>: <b>Inicial + ingresos − salidas</b> es lo esperado, y la <b>diferencia</b> es lo contado contra eso, siempre sobre el inicial (con su porcentaje). El conteo de <b>cierre</b> es el inicial del mes que viene. Tocá un local para abrir su detalle, elegir entre los conteos ya cargados y pedir uno nuevo.</p>
+
     <div class="ctlBarra"><button type="button" class="rlvBtn" data-ctl-refresh>↻ Actualizar</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button><span class="ctlLey">Semáforo: verde hasta 1 % · amarillo hasta 3 % · rojo más de 3 %</span></div></div>
     <div class="ctlTabla"><div class="ctlHead"><div>Local</div><div>Inicial</div><div>Parcial</div><div>Cierre</div><div>Diferencia</div><div class="noPrint"></div></div>${filas||`<div class="note">Todavía ningún local hizo su conteo inicial.</div>`}</div>
   </div>`;
@@ -8353,7 +8353,7 @@ function renderAyuda(){
 function abrirAyuda(tema){
   if(document.getElementById("ayudaOv")) return;
   ls.set("ayudaVista","1"); const bt=document.getElementById("ayudaBtn"); if(bt) bt.classList.add("vista"); // ya lo abrió: deja de pulsar, solo queda el brillo lento
-  S.ayudaTema=tema||(S.conteo?"conteo":"quepaso"); // contando: abre directo «Conteo físico»; desde Control de supervisión: «Control de stock»
+  S.ayudaTema=tema||(S.conteo?"conteo":null); // contando: abre directo «Conteo físico»; desde Control de supervisión: «Control de stock»
   const ov=document.createElement("div"); ov.id="ayudaOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="ayTit">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><p class="mantTit" id="ayTit" style="margin:0">¿Cómo se usa?</p><button type="button" class="btn ghost" data-ay-cerrar aria-label="Cerrar" style="min-height:34px;padding:0 12px">✕</button></div>
