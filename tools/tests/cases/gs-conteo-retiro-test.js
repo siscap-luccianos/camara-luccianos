@@ -39,4 +39,11 @@ NOW=ts("2026-11-20T10:00:00-03:00"); inv=[{local:"Galerías",tipo:"inicial",ts:t
 NOW=ts("2026-12-05T12:00:00-03:00"); inv=[{local:"Galerías",tipo:"inicial",ts:ts("2026-12-01T08:00:00-03:00")}]; E("encargado");
 let r=run(`conteo("c1","Galerías",{"4":3},emp)`); ok(!r.ok&&/conteo suelto ya no se usa/.test(r.error),"conteo() lo rechaza para el responsable: "+(r.error||""));
 r=run(`conteoParcial("c2","Galerías","vasquetas",{"4":3},emp)`); ok(!r.ok&&/conteo suelto ya no se usa/.test(r.error),"conteoParcial() (por rubro) también");
+// no se duplica el conteo inicial del mes
+inv=[{local:"Galerías",tipo:"final",ts:ts("2026-11-30T22:00:00-03:00")}]; NOW=ts("2026-12-05T12:00:00-03:00");
+inv=[{local:"Galerías",tipo:"final",ts:ts("2026-12-31T22:00:00-03:00")}]; NOW=ts("2027-01-10T10:00:00-03:00"); E("encargado");
+r=run(`guardarInventario("d1","Galerías",{"4":1},{},emp)`); ok(!r.ok&&/no hace falta hacer un conteo inicial/.test(r.error),"con un final del mes anterior, el responsable no puede guardar otro conteo inicial: "+(r.error||""));
+inv=[{local:"Galerías",tipo:"inicial",ts:ts("2027-01-02T08:00:00-03:00")}];
+r=run(`guardarInventario("d2","Galerías",{"4":1},{},emp)`); ok(!r.ok&&/ya tiene su conteo inicial/.test(r.error),"con un inicial de este mes, tampoco: "+(r.error||""));
+r=run(`_coberturaMes("Galerías")`); ok(r&&r.tipo==="inicial","_coberturaMes dice qué conteo cubre el mes");
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);

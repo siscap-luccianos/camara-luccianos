@@ -1387,7 +1387,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.165.0";
+const FRONTEND_VERSION = "1.165.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4213,8 +4213,9 @@ async function cargarConteoBloqueado(){
   if(!S.local) return;
   const local=S.local, r=await api("inventarios",{local});
   if(local!==S.local) return;
-  const b=!!(r&&r.ok&&r.conteoBloqueado);
-  if(S.conteoBloqueado!==b){ S.conteoBloqueado=b; if(S.hubInicial && !S.inv && !S.conteo) renderApp() }
+  const b=!!(r&&r.ok&&r.conteoBloqueado), cob=(r&&r.ok&&r.cobertura)||null, cambio=(S.conteoBloqueado!==b)||((S.cobertura&&S.cobertura.ts)!==(cob&&cob.ts));
+  S.conteoBloqueado=b; S.cobertura=cob;
+  if(cambio && S.hubInicial && !S.inv && !S.conteo) renderApp()
 }
 function conteoInicialHubHTML(){
   const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
@@ -4225,11 +4226,11 @@ function conteoInicialHubHTML(){
   return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Conteo inicial</div>
   <h2 class="pdH1">Conteo inicial</h2>
-  <p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>
+  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Este mes arranca con el conteo final del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+".":"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")."}</b> ${S.cobertura.tipo==="final"?"Ese conteo ES el conteo inicial: no hace falta hacer otro.":"No se hace otro."} Durante el mes la cámara se controla con el conteo parcial o final que pide supervisión.</div>`:`<p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>`}
   <div class="stkFisico"><div class="stkPasos">
     ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o final.</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
     <span class="stkSep">+</span>
-    ${paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
+    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Conteo local</b><span>El conteo inicial de este mes ya está.</span></span></div>`:paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
     <span class="stkSep">=</span>
     ${paso(3,"invGuardadosBtn","Conteo inicial","Ver los conteos iniciales guardados.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
   </div></div>`;
