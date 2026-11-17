@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.86.0";
+const BACKEND_VERSION = "1.87.0";
 
 function doPost(e) {
   let resultado;
@@ -2430,7 +2430,32 @@ function _invPermiso(empleado, local) {
 }
 
 /** Guarda un inventario. items: {idSabor: lo contado en el local}; camaraKg: {idSabor: {k: kilos, ap: 1 si son aproximados}} (lo calcula el cliente con lo que ve). */
+/** Guarda un inventario. Si es el CONTEO FINAL (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
+ *  es el inicial del mes que viene y el mes arranca con ese arrastre. Se aplica DESPUÉS de soltar el candado (conteo() toma el suyo). */
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
+  const r = _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada);
+  if (r && r.ok && r._final) {
+    const c = conteo("final-" + r.inventario.id, local, r._final.items, empleado, null, r._final.kilos, null);
+    if (c && c.ok) r.stockAplicado = true; else r.avisoStock = (c && c.error) || "No se pudo dejar el stock de la cámara igual al conteo final.";
+    Reflect.deleteProperty(r, "_final");
+  } else if (r && r._final) {
+    Reflect.deleteProperty(r, "_final");
+  }
+  return r;
+}
+
+/** Stock de la cámara que deja un conteo final: lo contado en la cámara; lo que no se contó queda en 0 (se contó desde cero). */
+function _armarStockFinal(catalogo, camara) {
+  const items = {}, kilos = {};
+  Object.keys(catalogo).forEach((id) => {
+    const c = camara[id];
+    items[id] = c ? Math.max(0, Math.round(Number(c.u) || 0)) : 0;
+    if (c && Number(c.k) > 0) kilos[id] = Number(c.k);
+  });
+  return { items: items, kilos: kilos };
+}
+
+function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   const err = _invPermiso(empleado, local);
   if (err) return { ok: false, error: err };
   if (!items || typeof items !== "object") return { ok: false, error: "Falta el inventario." };
@@ -2512,7 +2537,7 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId
     });
     if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
     _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "final (cierre del mes)" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
-    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+    return { ok: true, _final: (pedidoFila && String(pedidoFila.tipo) === "final") ? _armarStockFinal(catalogo, camara) : null, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
   } finally {
     lock.releaseLock();
   }

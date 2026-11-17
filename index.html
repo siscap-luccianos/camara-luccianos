@@ -1386,7 +1386,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.164.0";
+const FRONTEND_VERSION = "1.164.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3296,7 +3296,7 @@ function controlView(){
   const print=abierto?`<div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Control de stock",sub:abierto.local,lineaHTML:"Generado por "+esc(S.empleado.nombre)})}${ctlDetalleHTML(abierto)}${informePieHTML("Control de stock · "+abierto.local)}</div>`:"";
   return `<div class="rlv ctl" ${abierto?`data-ctl-n="${esc(abierto.local)}"`:""}>
     <div class="noPrint"><div class="cntKick">OPERACIONES · SUPERVISIÓN</div><h1>Control de stock por local</h1>
-    <p class="sub"><b>Debería haber</b> = conteo inicial + ingresos − salidas (vasquetas en kilos). Se compara con el conteo parcial o final que hace el responsable del local (cámara + local). El <b>conteo final</b> es el cierre del mes y pasa a ser el conteo inicial del mes que viene. El responsable solo cuenta: las diferencias las ve supervisión.</p>
+    <p class="sub"><b>Debería haber</b> = conteo inicial + ingresos − salidas (vasquetas en kilos). Se compara con el conteo parcial o final que hace el responsable del local (cámara + local). El <b>conteo final</b> es el cierre del mes: deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene (el mes arranca con ese arrastre). El responsable solo cuenta: las diferencias las ve supervisión.</p>
     <div class="ctlBarra"><button type="button" class="rlvBtn" data-ctl-refresh>↻ Actualizar</button></div></div>
     <div class="ctlTabla"><div class="ctlHead"><div>Local</div><div>Estado</div><div>Debería haber (kg)</div><div>Contado (kg)</div><div>Diferencia</div><div class="noPrint"></div></div>${filas||`<div class="note">Todavía ningún local hizo su conteo inicial.</div>`}</div>
     ${print}
@@ -3333,7 +3333,7 @@ function controlClick(t){
   if(t.dataset.ctlRefresh!==undefined){ C.datos=null; C.error=null; renderApp(); cargarControl(); return true }
   if(t.dataset.ctlVer!==undefined){ C.abierto = C.abierto===t.dataset.ctlVer ? "" : t.dataset.ctlVer; renderApp(); return true }
   if(t.dataset.ctlPedir){ const l=t.dataset.ctlPedir; (async()=>{ const r=await api("pedirConteoParcial",{local:l}); toast(r&&r.ok?"Pedido enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); cargarControl() })(); return true }
-  if(t.dataset.ctlPedirfinal){ const l=t.dataset.ctlPedirfinal; if(!confirm("¿Pedir el conteo FINAL de "+l+"? Es el cierre del mes: queda bloqueado y pasa a ser el conteo inicial del mes que viene.")) return true; (async()=>{ const r=await api("pedirConteoFinal",{local:l}); toast(r&&r.ok?"Pedido final enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); cargarControl() })(); return true }
+  if(t.dataset.ctlPedirfinal){ const l=t.dataset.ctlPedirfinal; if(!confirm("¿Pedir el conteo FINAL de "+l+"? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.")) return true; (async()=>{ const r=await api("pedirConteoFinal",{local:l}); toast(r&&r.ok?"Pedido final enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); cargarControl() })(); return true }
   if(t.dataset.ctlCancel){ const l=t.dataset.ctlCancel; if(!confirm("¿Cancelar el pedido de conteo de "+l+"?")) return true; (async()=>{ const r=await api("cancelarPedidoConteo",{local:l}); toast(r&&r.ok?"Pedido cancelado":(r&&r.error)||"No se pudo cancelar."); cargarControl() })(); return true }
   if(t.dataset.ctlDesb){ ctlDesbloquear(t.dataset.ctlDesb, t.dataset.ctlLocal); return true }
   if(t.dataset.ctlPrint){ window.print(); return true }
@@ -3351,7 +3351,7 @@ async function cargarPedidoConteo(){
 function pedidoConteoBannerHTML(){
   if(!S.pedidoConteo || !S.empleado || ["encargado","turno","produccion"].indexOf(S.empleado.rol)===-1) return "";
   const fin=S.pedidoConteo.tipo==="final";
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo final (cierre del mes)":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión pidió el conteo de cierre de este local (cámara + local). Queda como el conteo inicial del mes que viene.":"Supervisión pidió un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo final (cierre del mes)":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene.":"Supervisión pidió un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
 }
 
 function relevarClick(t){
@@ -4648,7 +4648,7 @@ function invContarHTML(){
   const nomP=I.pedidoTipo==="final"?"Conteo final":"Conteo parcial";
   const titulo=parc?(enCam?nomP+" · Cámara":nomP+" · Local"):"Conteo local";
   const acla=parc
-    ? (enCam?"Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ":"Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ")+(I.pedidoTipo==="final"?"Es el cierre del mes: queda bloqueado y pasa a ser el conteo inicial del mes que viene. No cambia el stock de la cámara.":"Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara.")
+    ? (enCam?"Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ":"Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ")+(I.pedidoTipo==="final"?"Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene.":"Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara.")
     : "Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial.";
   const tEsc=parc&&conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
   return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>${titulo}</h1><p class="cntAcla">${acla}${kgR?" En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":" Va por unidad, como en el resto de la app."}</p></div>
@@ -4789,7 +4789,7 @@ async function invGuardarServidor(){
     try{ ls.del(invClaveBorrador()) }catch(e){}
     S.inv.guardando=false; S.inv.ver=r.inventario; S.inv.paso="ver"; S.inv.lista=null; S.inv.res="rubro"; S.inv.det=null; S.inv.busca="";
     if(I.pedidoId) S.pedidoConteo=null;
-    toast(I.pedidoId?(I.pedidoTipo==="final"?"Conteo final guardado: queda como el inicial del mes que viene":"Conteo parcial guardado"):"Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
+    toast(I.pedidoId?(I.pedidoTipo==="final"?(r.avisoStock?"Conteo final guardado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo final guardado: el stock de la cámara quedó igual a lo contado"):"Conteo parcial guardado"):"Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
   } else {
     S.inv.guardando=false;
     toast((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para guardar inventarios.":(r&&r.offline)?"Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal.":(r&&r.error)||"No se pudo guardar el inventario.");
@@ -4804,7 +4804,7 @@ function invConfirmarGuardar(){
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="invConfTit">
     <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"final":"parcial"):"inicial"}?</p>
     <p class="mantSub" style="margin:0">Vas a guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"final":"parcial"):"inicial"} del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
-    <p class="mantSub" style="margin:0">Después solo se puede corregir dejando un motivo, y queda registrado.</p>
+    <p class="mantSub" style="margin:0">${S.inv.pedidoTipo==="final"?"Es el conteo FINAL: el stock de la cámara pasa a ser lo que contaste y es el conteo inicial del mes que viene. Queda bloqueado; solo supervisión lo puede desbloquear.":"Después solo se puede corregir dejando un motivo, y queda registrado."}</p>
     <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"final":"parcial"):"inicial"}</button></div></div>`;
   ov.addEventListener("click", e=>{
     if(e.target===ov || e.target.closest("[data-inv-conf-no]")){ ov.remove(); return }
