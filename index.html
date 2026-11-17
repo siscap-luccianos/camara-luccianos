@@ -1407,7 +1407,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.168.0";
+const FRONTEND_VERSION = "1.169.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3345,7 +3345,7 @@ function ctlDetalleHTML(){
     <div class="noPrint"><div class="cntKick">CONTROL › ${esc(String(C.det).toUpperCase())}</div></div>
     <div class="ctlTitulo"><h1>Total del local</h1><span class="invBadgeDef">${tipoTxt==="Cierre"?"Conteo de cierre":"Conteo "+tipoTxt.toLowerCase()}</span>${fijo&&!desb?`<span class="ctlLockTag">🔒 BLOQUEADO</span>`:desb?`<span class="ctlLockTag abierto">🔓 hasta ${esc(ctlFechaHora(c.desbloqueado_hasta))}</span>`:""}<button type="button" class="rlvBtn noPrint" data-ctl-print="${esc(C.det)}" style="margin-left:auto">📄 PDF</button></div>
     <div class="ctlSub">${esc(ctlFechaHora(c.ts))} · hecho por ${esc(c.empleado||"")}${base&&esCmp?` · se compara contra el ${(CTL_TIPO[base.tipo]||"inicial").toLowerCase()} del ${esc(ctlFecha(base.ts))} (cámara, más ingresos y menos salidas)`:""}</div>
-    ${fijo?`<div class="ctlCandado noPrint"><span>🔒</span><div><b>Todo conteo guardado queda con candado.</b> No se corrige ni se borra. Solo supervisión lo desbloquea, con su PIN y un motivo, por 24 horas; el original se conserva.</div>${desb?"":`<button type="button" class="btn" data-ctl-desb="${esc(c.id)}" data-ctl-local="${esc(C.det)}">Desbloquear (PIN)</button>`}</div>`:""}
+    ${fijo?`<div class="ctlCandado noPrint"><span>🔒</span><div><b>Todo conteo guardado queda con candado.</b> No se corrige ni se borra. Solo supervisión lo desbloquea, con su PIN y un motivo, para una corrección (vale 24 horas); el original se conserva.</div>${desb?"":`<button type="button" class="btn" data-ctl-desb="${esc(c.id)}" data-ctl-local="${esc(C.det)}">Desbloquear (PIN)</button>`}</div>`:""}
     ${visRespHTML(c)}
     <div class="noPrint ctlSel"><small>ELEGÍ UN CONTEO YA CARGADO (no pide nada nuevo)</small><div class="invPills">${chips}</div></div>
     ${franja}
@@ -3408,16 +3408,16 @@ function ctlLiberar(inventarioId, local, mostrar){
   ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove(); if(e.key==="Enter"){ const b=ov.querySelector("[data-ctl-si]"); if(b) b.click() } });
   setTimeout(()=>{ const m=ov.querySelector("#ctlPin"); if(m) m.focus() },30);
 }
-function ctlDesbloquear(inventarioId, local){
+function ctlDesbloquear(inventarioId, local, despues){
   if(document.getElementById("ctlOv")) return;
   const ov=document.createElement("div"); ov.id="ctlOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
     <p class="mantTit" id="ctlTit" style="margin:0">Desbloquear conteo</p>
-    <p class="mantSub" style="margin:0">${esc(local)} · vale 24 horas. Queda registrado con tu nombre y el motivo; el conteo original se conserva.</p>
+    <p class="mantSub" style="margin:0">${esc(local)} · habilita una corrección y después se vuelve a cerrar. Queda registrado con tu nombre y el motivo; el conteo original se conserva.</p>
     <input id="ctlMotivo" type="text" maxlength="200" placeholder="Motivo (obligatorio)" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
     <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
     <div class="warn" id="ctlErr" style="display:none"></div>
-    <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>Desbloquear 24 h</button></div></div>`;
+    <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>Desbloquear</button></div></div>`;
   document.body.appendChild(ov);
   const err=(m)=>{ const e=ov.querySelector("#ctlErr"); e.textContent=m; e.style.display="block" };
   ov.addEventListener("click", async e=>{
@@ -3427,7 +3427,7 @@ function ctlDesbloquear(inventarioId, local){
       if(motivo.length<3){ err("Escribí el motivo."); return }
       if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
       const r=await api("desbloquearInventario",{local, inventarioId, pin, motivo});
-      if(r && r.ok){ ov.remove(); toast("Conteo desbloqueado por 24 horas"); ctlRefrescar() }
+      if(r && r.ok){ ov.remove(); toast("Desbloqueado: se puede hacer una corrección"); if(despues) despues(); else ctlRefrescar() }
       else err((r&&r.error)||"No se pudo desbloquear.");
     }
   });
@@ -3514,7 +3514,7 @@ function renderNav(){
 /** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
 function avisoConteoInicialHTML(){
   if(Date.now()>=Date.parse("2026-12-01T00:00:00-03:00")) return ""; // fijo hasta el fin del 30/11 (00:00 del 1/12), sin botón para cerrarlo
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica: podés cargarlo y corregirlo. <b>Desde el 1/12 queda fijo</b>: lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div></div>`;
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica. <b>Una vez guardado queda con candado</b>: solo supervisión lo desbloquea, con su PIN. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div></div>`;
 }
 function renderMain(){
   if(S.local && S.tab==="gestion" && !S.stockValorizado && S.sabores.length) S.tab="salida"; // Gestión solo con stock_valorizado=SI
@@ -4814,7 +4814,8 @@ function invEqHTML(c,l,t,extra){
 function invProdCardHTML(f,d){
   const camTxt=(f.kg?(f.cam.ap?"≈ ":""):"")+invCant(f.s,f.camQ);
   const extra=f.kg && f.s.tipo==="v" ? `<span class="u">${+f.cam.u} ${+f.cam.u===1?"vasqueta":"vasquetas"}</span>` : "";
-  const btn=d.guardado ? (d.x&&d.x.fijo?"":`<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>`) : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
+  const sup=S.empleado&&(S.empleado.rol==="admin"||S.empleado.rol==="supervisor");
+  const btn=d.guardado ? (d.x&&d.x.fijo?(sup?`<button type="button" class="invLnk noPrint" data-inv-desb="${d.x.id}" title="Desbloquear para corregir (PIN de supervisión)">🔒 Desbloquear</button>`:`<span class="invLnk noPrint" title="Solo supervisión lo desbloquea" style="opacity:.7;cursor:default">🔒</span>`):`<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>`) : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
   return `<div class="invEq"><div class="invEqh"><b>${esc(f.s.nombre)}</b>${btn}</div>${invEqHTML(camTxt,invCant(f.s,f.loc),(f.kg&&f.cam.ap?"≈ ":"")+invCant(f.s,f.tot),extra)}</div>`;
 }
 function invListaProdHTML(filas,d){
@@ -4869,7 +4870,7 @@ function invResultadoHTML(){
   <div class="invPills"><button type="button" class="chip" data-inv-res="rubro" aria-pressed="${I.res==="rubro"}">Por rubro</button><button type="button" class="chip" data-inv-res="prod" aria-pressed="${I.res==="prod"}">Por producto</button></div>
   <div style="margin-top:12px">${I.res==="rubro" ? (grupos.map(rubroCard).join("")||`<div class="note">Todavía no hay nada cargado.</div>`) : `<input type="search" id="invBusca" class="invBusca" placeholder="Buscar producto…" value="${esc(I.busca||"")}" aria-label="Buscar producto"><div id="invLista">${invListaProdHTML(filas,d)}</div>`}</div>
   ${aproxAlgo?`<p class="invHint" style="margin-top:6px">«≈»: los kilos de la cámara se calculan con el peso promedio de cada sabor. Con kilos reales pasan a ser exactos.</p>`:""}
-  ${d.guardado?(d.x&&d.x.fijo?`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0"><b>🔒 Conteo inicial fijo.</b> No se corrige. Si hay un error, supervisión habilita un recuento.</div>`:`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0">Conteo inicial de práctica: hasta el 30/11 se puede corregir. Si hay un error, tocá «Corregir» en el producto: queda registrado el cambio. Desde el 1/12 queda fijo.</div>`)+invHorasHTML(d.x):""}
+  ${d.guardado?(d.x&&d.x.fijo?`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0"><b>🔒 Conteo con candado.</b> No se corrige. Solo supervisión lo desbloquea, con su PIN y un motivo, y después de guardar una corrección vuelve a cerrarse.</div>`:`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0"><b>🔓 Desbloqueado por supervisión.</b> Tocá «Corregir» en el producto: queda registrado el cambio y, al guardar, el conteo vuelve a cerrarse.</div>`)+invHorasHTML(d.x):""}
   ${d.guardado?invCambiosHTML(d):""}
   <div class="tools" style="justify-content:center;gap:8px;margin:14px 0 0;flex-wrap:wrap">${d.guardado?`<button type="button" class="btn ghost" data-inv-guardados>Ver guardados</button><button type="button" class="btn ghost" id="invSalir">Terminar</button>`:""}<button type="button" class="btn ghost" id="invPdf">🖨 Exportar PDF</button></div>
   </div>`;
@@ -4883,10 +4884,10 @@ function invGuardadosHTML(){
   const items=lista.map((x,i)=>{
     const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=(prev&&I.verDif!==false)?r.kg-prev.kg:null;
     const otros=GRUPO_PRODUCTO_ORDEN.filter(g=>g!=="vasquetas" && r.t[g]).map(g=>`${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())} ${invTxtG(g,r.t[g].tot)}`).join(" · ");
-    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">${x.tipo==="parcial"?"Conteo parcial":x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
+    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">${x.tipo==="parcial"?"Conteo parcial":x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span></b><small>Cargado por ${esc(x.empleado||"—")}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
   }).join("");
   const hora12=ts=>new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
-  const ocultos=(I.ocultos||[]).map(o=>`<div class="invHist" style="cursor:default;opacity:.85"><b>${esc(invFecha(o.ts))}<span class="invBadgeDef">${o.tipo==="final"?"Conteo de cierre":"Conteo parcial"}</span></b><span class="big">${o.tipo==="final"?"En revisión":"Hecho ✓"}</span><small>${o.tipo==="final"?"Supervisión lo está revisando. Lo ves desde las 12:00 ("+esc(hora12(o.libera_ts))+") o cuando lo libere.":"Lo ve supervisión. No se muestra acá."}</small></div>`).join("");
+  const ocultos=(I.ocultos||[]).map(o=>`<div class="invHist" style="cursor:default;opacity:.85"><b>${esc(invFecha(o.ts))}<span class="invBadgeDef">${o.tipo==="final"?"Conteo de cierre":"Conteo parcial"}</span></b><span class="big">${o.tipo==="final"?"En revisión":"Hecho ✓"}</span><small>Hecho por ${esc(o.empleado||"—")}${o.tipo==="final"?" · lo ves desde las 12:00 ("+esc(hora12(o.libera_ts))+") o cuando supervisión lo libere":""}</small></div>`).join("");
   return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+ocultos+(items||(ocultos?"":`<div class="note">Todavía no hay conteos guardados en este local.</div>`))+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
 }
 async function invCargarLista(){
@@ -5014,6 +5015,7 @@ function invClick(t){
   if(t.dataset.invRes){ I.res=t.dataset.invRes; renderApp(); return true }
   if(t.dataset.invDet){ I.det=I.det===t.dataset.invDet?null:t.dataset.invDet; renderApp(); return true }
   if(t.dataset.invEdit){ I.paso="contar"; I.rubro=t.dataset.invEdit; renderApp(); window.scrollTo(0,0); return true }
+  if(t.dataset.invDesb){ const id=t.dataset.invDesb; ctlDesbloquear(id, S.local, async()=>{ const r=await api("inventarios",{local:S.local}); if(r&&r.ok&&S.inv){ S.inv.lista=r.inventarios||[]; const n=S.inv.lista.find(x=>String(x.id)===String(id)); if(n) S.inv.ver=n; renderApp() } }); return true }
   if(t.dataset.invCor){ invAbrirCor(t.dataset.invCor); return true }
   if(t.dataset.invAbrir){ const x=(I.lista||[]).find(z=>String(z.id)===t.dataset.invAbrir); if(x){ I.ver=x; I.paso="ver"; I.res="rubro"; I.det=null; I.busca=""; renderApp(); window.scrollTo(0,0) } return true }
   if(t.dataset.invBorrar!==undefined){ if(!confirm("¿Borrar lo que cargaste y empezar de cero?")) return true; I.items={}; I.tocado={}; I.pesos={}; I.restaurado=false; try{ ls.del(invClaveBorrador()) }catch(e){} renderApp(); return true }

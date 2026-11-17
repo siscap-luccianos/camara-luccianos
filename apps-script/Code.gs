@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.91.0";
+const BACKEND_VERSION = "1.92.0";
 
 function doPost(e) {
   let resultado;
@@ -2478,7 +2478,7 @@ function _inventarioPublico(r, verValor) {
     visible_resp_ts: Number(r.visible_resp_ts) || 0,
     libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0,
     con_original: !!r.items_original,
-    fijo: ((Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE || String(r.tipo) === "final") && !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
+    fijo: !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
     precios: verValor ? _jsonObj(r.precios, null) : null,
     valor_total: verValor && r.valor_total !== "" && r.valor_total !== undefined ? Number(r.valor_total) || 0 : null,
   };
@@ -2633,7 +2633,7 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese inventario." };
     if (!_soloSupervision(empleado) && !_visibleParaResponsable(fila, _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true)) return { ok: false, error: "No se encontró ese inventario." };
     const desbloqueado = (Number(fila.desbloqueado_hasta) || 0) > Date.now();
-    if (((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE || String(fila.tipo) === "final") && !desbloqueado) return { ok: false, error: "El conteo está bloqueado: no se puede corregir. Para un nuevo conteo, supervisión lo desbloquea con su PIN (vale 24 horas)." };
+    if (!desbloqueado) return { ok: false, error: "El conteo tiene candado: no se puede corregir. Supervisión lo desbloquea con su PIN y un motivo; después de guardar una corrección vuelve a cerrarse." };
     const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
     const antes = Number(items[String(saborId)]) || 0;
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
@@ -2642,11 +2642,11 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     const precios = _jsonObj(fila.precios, null);
     const valorTotal = precios && Object.keys(precios).length ? _invValor(items, camara, precios, catalogo) : (fila.valor_total === undefined ? "" : fila.valor_total);
     // La primera corrección de un conteo desbloqueado guarda la versión original: queda al lado, no se pisa.
-    const cambiosFila = { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal };
+    const cambiosFila = { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal, desbloqueado_hasta: 0 }; // una corrección y el candado vuelve a cerrarse
     if (!fila.items_original) cambiosFila.items_original = String(fila.items || "{}");
     _actualizarCrudo("Inventarios", fila.id, cambiosFila);
     _auditar("corregir_inventario", empleado.id, empleado.nombre, local + ": inventario " + fila.id + ", " + sab.nombre + " " + antes + " → " + nuevo + " (" + motivo + ")");
-    const publica = _inventarioPublico(Object.assign({}, fila, { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal, items_original: fila.items_original || String(fila.items || "{}") }), _invVerValor(filaLocal, empleado));
+    const publica = _inventarioPublico(Object.assign({}, fila, { desbloqueado_hasta: 0, items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal, items_original: fila.items_original || String(fila.items || "{}") }), _invVerValor(filaLocal, empleado));
     return { ok: true, inventario: publica };
   } finally {
     lock.releaseLock();
@@ -2667,7 +2667,7 @@ function inventarios(local, empleado) {
     .slice(0, 12);
   const lista = todos.filter((r) => _visibleParaResponsable(r, verTodo)).map((r) => _inventarioPublico(r, verValor));
   // Lo que todavía no se le muestra al responsable: solo que existe (tipo, fecha y si se libera sola), sin kilos.
-  const ocultos = todos.filter((r) => !_visibleParaResponsable(r, verTodo)).map((r) => ({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : "parcial", ts: Number(r.ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }));
+  const ocultos = todos.filter((r) => !_visibleParaResponsable(r, verTodo)).map((r) => ({ id: r.id, empleado: r.empleado || "", tipo: String(r.tipo) === "final" ? "final" : "parcial", ts: Number(r.ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }));
   return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
 }
 
