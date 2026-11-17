@@ -78,7 +78,7 @@ r=run(`corregirInventario("Galerías","${idInv}","4",4,"otra",emp)`); ok(!r.ok,"
 E("supervisor"); r=run(`pedirConteoParcial("Recoleta",emp)`); const idPed2=r.pedido.id; E("encargado");
 sb._stockActualLocal=()=>({"4":99,"49":99});
 r=run(`guardarInventario("p9","Recoleta",{"4":1},{},emp,"${idPed2}",{"4":{u:2,k:7.5},"49":{u:5}})`);
-ok(r.ok&&r.inventario.camara["4"].k===7.5&&r.inventario.camara["4"].u===2&&r.inventario.camara["49"].u===5,"la cámara guardada es la contada, no el stock del sistema (99): "+JSON.stringify(r.inventario&&r.inventario.camara));
+{ const cg=JSON.parse(inv[inv.length-1].camara); ok(r.ok&&r.inventario.oculto===true&&cg["4"].k===7.5&&cg["4"].u===2&&cg["49"].u===5,"la cámara guardada es la contada, no el stock del sistema (99); al responsable solo se le confirma que se envió: "+JSON.stringify(cg)); }
 sb._stockActualLocal=()=>({"4":6,"49":17});
 // 5) conteo final (cierre del mes): se pide aparte, queda bloqueado y es la base del mes siguiente
 inv.length=0; ped.length=0; regs.length=0; NOW=Date.parse("2026-12-01T08:00:00-03:00"); sb._stockActualLocal=()=>({"4":5,"49":10});
@@ -93,10 +93,10 @@ E("encargado"); r=run(`pedidoConteo("Galerías",emp)`); ok(r.ok&&r.pedido.tipo==
 regs.push({local:"Galerías",tipo:"salida",ts:Date.parse("2026-12-10T10:00:00-03:00"),items:'{"4":1}',pesos:'{"4":[3.5]}'});
 NOW=Date.parse("2026-12-31T22:00:00-03:00"); sb._stockActualLocal=()=>({"4":4,"49":10});
 r=run(`guardarInventario("f-f","Galerías",{"49":4},{},emp,"${idFin}",{"4":{u:2,k:6},"49":{u:10}})`);
-ok(r.ok&&r.inventario.tipo==="final"&&r.inventario.fijo===true,"el conteo de cierre se guarda como «final» y queda bloqueado");
+ok(r.ok&&r.inventario.tipo==="final"&&r.inventario.oculto===true&&inv[inv.length-1].tipo==="final"&&run(`_inventarioPublico(${JSON.stringify(inv[inv.length-1])},false)`).fijo===true,"el conteo de cierre se guarda como «final», queda bloqueado y el responsable no recibe sus datos");
 ok(r.stockAplicado===true&&CONTEOS.length===1&&CONTEOS[0].items["4"]===2&&CONTEOS[0].items["49"]===10&&CONTEOS[0].kilos["4"]===6,"el conteo final deja el stock de la cámara igual a lo contado (2 vasq / 6 kg y 10 icepops): "+JSON.stringify(CONTEOS[0]));
 ok(r._final===undefined,"el dato interno no se devuelve al cliente");
-r=run(`corregirInventario("Galerías","${r.inventario.id}","49",5,"motivo largo",emp)`); ok(!r.ok&&/bloqueado/.test(r.error),"no se corrige: "+JSON.stringify(r).slice(0,160));
+r=run(`corregirInventario("Galerías","${r.inventario.id}","49",5,"motivo largo",emp)`); ok(!r.ok&&/bloqueado|No se encontró/.test(r.error),"no se corrige (el cierre además está oculto para el responsable): "+JSON.stringify(r).slice(0,160));
 ok(CONTEOS.length===1,"un conteo parcial NO toca el stock (solo el final lo hace)");
 E("supervisor"); r=run(`controlStock(emp)`);
 let gg=r.locales.filter(x=>x.local==="Galerías")[0];

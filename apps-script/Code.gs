@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.90.0";
+const BACKEND_VERSION = "1.91.0";
 
 function doPost(e) {
   let resultado;
@@ -124,6 +124,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "pedirConteoFinal": return pedirConteo(body.local, "final", empleado);
     case "cancelarPedidoConteo": return cancelarPedidoConteo(body.local, empleado);
     case "pedidoConteo": return pedidoConteo(body.local, empleado);
+    case "liberarInventario": return liberarInventario(body.local, body.inventarioId, body.pin, body.mostrar !== false, empleado);
     case "desbloquearInventario": return desbloquearInventario(body.local, body.inventarioId, body.pin, body.motivo, empleado);
     case "controlStock": return controlStock(empleado);
     case "controlDetalle": return controlDetalle(body.local, body.inventarioId, empleado);
@@ -2383,7 +2384,7 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
    Vasquetas y tipo k (Crumble/Granella) se cuentan en kilos (hasta 2 decimales); el resto, en unidades enteras.
 ============================================================ */
 
-const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios", "camara_ts", "fuera_jornada", "tipo", "pedido_id", "items_original", "desbloqueado_hasta", "desbloqueo"];
+const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios", "camara_ts", "fuera_jornada", "tipo", "pedido_id", "items_original", "desbloqueado_hasta", "desbloqueo", "visible_resp_ts", "visible_resp_por"];
 
 /** Desde el 01/12/2026 00:00 (Argentina) el Conteo inicial (ex «Stock definitivo») queda FIJO: no se corrige. Lo guardado antes era de práctica y se puede seguir corrigiendo. */
 const CONTEO_INICIAL_FIJO_DESDE = Date.parse("2026-12-01T00:00:00-03:00");
@@ -2397,8 +2398,35 @@ function _hojaInventarios() {
     sh = ss.insertSheet("Inventarios");
     sh.getRange(1, 1, 1, COLUMNAS_INVENTARIOS.length).setValues([COLUMNAS_INVENTARIOS]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
     sh.setFrozenRows(1);
+  } else {
+    // Hoja que ya existe: suma sola las columnas nuevas que falten (así no hay que agregarlas a mano).
+    const lastCol = Math.max(1, sh.getLastColumn());
+    const headers = sh.getRange(1, 1, 1, lastCol).getValues()[0].map((h) => String(h));
+    const faltan = COLUMNAS_INVENTARIOS.filter((c) => headers.indexOf(c) === -1);
+    if (faltan.length) {
+      sh.getRange(1, lastCol + 1, 1, faltan.length).setValues([faltan]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
+      if (HOJAS_CACHE["Inventarios"]) _invalidarHojaCache("Inventarios");
+    }
   }
   return sh;
+}
+
+/** Primer mediodía (12:00, Argentina) posterior a un momento: a esa hora el conteo de cierre se muestra solo al responsable. */
+function _liberaCierreTs(ts) {
+  ts = Number(ts) || 0;
+  const dia = Math.floor((ts - 3 * 3600 * 1000) / 86400000);
+  let noon = dia * 86400000 + 15 * 3600 * 1000;
+  if (noon <= ts) noon += 86400000;
+  return noon;
+}
+
+/** ¿Lo ve el responsable de local? Inicial siempre; cierre desde las 12:00 o cuando supervisión lo libera; parcial solo si supervisión lo libera. Supervisión y los locales con ver_diferencias=SI ven todo. */
+function _visibleParaResponsable(r, verTodo) {
+  if (verTodo) return true;
+  const tipo = String(r.tipo);
+  if (tipo !== "parcial" && tipo !== "final") return true;
+  if ((Number(r.visible_resp_ts) || 0) > 0) return true;
+  return tipo === "final" && Date.now() >= _liberaCierreTs(r.ts);
 }
 
 function _jsonObj(texto, porDefecto) {
@@ -2447,6 +2475,8 @@ function _inventarioPublico(r, verValor) {
     camara_ts: Number(r.camara_ts) || 0, fuera_jornada: _esVerdadero(r.fuera_jornada) === true,
     tipo: String(r.tipo) === "parcial" ? "parcial" : String(r.tipo) === "final" ? "final" : "inicial",
     desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0,
+    visible_resp_ts: Number(r.visible_resp_ts) || 0,
+    libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0,
     con_original: !!r.items_original,
     fijo: ((Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE || String(r.tipo) === "final") && !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
     precios: verValor ? _jsonObj(r.precios, null) : null,
@@ -2573,7 +2603,9 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
     });
     if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
     _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "de cierre del mes" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
-    return { ok: true, _final: (pedidoFila && String(pedidoFila.tipo) === "final") ? _armarStockFinal(catalogo, camara) : null, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+    const _pub = {ok: true, _final: (pedidoFila && String(pedidoFila.tipo) === "final") ? _armarStockFinal(catalogo, camara) : null, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+    if (!_soloSupervision(empleado) && (_pub.inventario.tipo === "parcial" || _pub.inventario.tipo === "final") && !_esVerdadero(filaLocal && filaLocal.ver_diferencias)) _pub.inventario = { id: _pub.inventario.id, ts: _pub.inventario.ts, local: _pub.inventario.local, tipo: _pub.inventario.tipo, oculto: true };
+    return _pub;
   } finally {
     lock.releaseLock();
   }
@@ -2599,6 +2631,7 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
   try {
     const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
     if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese inventario." };
+    if (!_soloSupervision(empleado) && !_visibleParaResponsable(fila, _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true)) return { ok: false, error: "No se encontró ese inventario." };
     const desbloqueado = (Number(fila.desbloqueado_hasta) || 0) > Date.now();
     if (((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE || String(fila.tipo) === "final") && !desbloqueado) return { ok: false, error: "El conteo está bloqueado: no se puede corregir. Para un nuevo conteo, supervisión lo desbloquea con su PIN (vale 24 horas)." };
     const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
@@ -2627,12 +2660,15 @@ function inventarios(local, empleado) {
   _hojaInventarios();
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const verValor = _invVerValor(filaLocal, empleado);
-  const lista = _leerCrudo("Inventarios")
+  const verTodo = _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true;
+  const todos = _leerCrudo("Inventarios")
     .filter((r) => String(r.local || "").trim() === String(local).trim())
     .sort((a, b) => Number(b.ts) - Number(a.ts))
-    .slice(0, 12)
-    .map((r) => _inventarioPublico(r, verValor));
-  return { ok: true, inventarios: lista, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
+    .slice(0, 12);
+  const lista = todos.filter((r) => _visibleParaResponsable(r, verTodo)).map((r) => _inventarioPublico(r, verValor));
+  // Lo que todavía no se le muestra al responsable: solo que existe (tipo, fecha y si se libera sola), sin kilos.
+  const ocultos = todos.filter((r) => !_visibleParaResponsable(r, verTodo)).map((r) => ({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : "parcial", ts: Number(r.ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }));
+  return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
 }
 
 
@@ -2713,6 +2749,28 @@ function pedidoConteo(local, empleado) {
   const err = _invPermiso(empleado, local);
   if (err) return { ok: false, error: err };
   return { ok: true, pedido: _pedidoPublico(_pedidoPendiente(local)) };
+}
+
+/** Supervisión muestra (o vuelve a ocultar) un conteo parcial o de cierre al responsable del local. Pide el PIN personal y queda en Auditoría. */
+function liberarInventario(local, inventarioId, pin, mostrar, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede mostrar un conteo al responsable." };
+  const ePin = _exigirPinAdmin(empleado, pin, local);
+  if (ePin) return ePin;
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    _hojaInventarios();
+    const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
+    if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese conteo." };
+    if (String(fila.tipo) !== "parcial" && String(fila.tipo) !== "final") return { ok: false, error: "El conteo inicial ya lo ve el responsable." };
+    const ts = mostrar ? Date.now() : 0;
+    const r = _actualizarCrudo("Inventarios", fila.id, { visible_resp_ts: ts, visible_resp_por: mostrar ? empleado.nombre : "" });
+    if (r && r.ok === false) return r;
+    _auditar(mostrar ? "mostrar_conteo_responsable" : "ocultar_conteo_responsable", empleado.id, empleado.nombre, local + ": " + (mostrar ? "mostró" : "volvió a ocultar") + " el conteo " + fila.id + " (" + (String(fila.tipo) === "final" ? "cierre" : "parcial") + ") al responsable");
+    return { ok: true, visible_resp_ts: ts };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /** Desbloquea UN conteo guardado por 24 horas: solo admin/supervisor, con su PIN personal y un motivo. */
@@ -2875,7 +2933,7 @@ function controlDetalle(local, inventarioId, empleado) {
   if (!elegido) return { ok: false, error: "No se encontró ese conteo." };
   const esCmp = String(elegido.tipo) === "parcial" || String(elegido.tipo) === "final";
   const base = esCmp ? (mios.filter((r) => String(r.tipo) !== "parcial" && Number(r.ts) < Number(elegido.ts)).pop() || null) : null;
-  const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "", fijo: _inventarioPublico(r, false).fijo, desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0 }, _resumenConteo(r, catalogo));
+  const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "", fijo: _inventarioPublico(r, false).fijo, desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0, visible_resp_ts: Number(r.visible_resp_ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }, _resumenConteo(r, catalogo));
   const cmp = base ? _compararConteo(base, elegido, local, catalogo, _leerCrudo("Registros")) : null;
   const items = _jsonObj(elegido.items, {}), camara = _jsonObj(elegido.camara, {});
   const baseCam = base ? _camaraPorProducto(base, catalogo) : {};

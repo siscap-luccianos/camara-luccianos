@@ -53,6 +53,19 @@ const { chromium } = require("playwright");
   await page.fill("#ctlPin", "1234"); await page.click("[data-ctl-si]"); await page.waitForTimeout(700);
   ok(!(await page.$("#ctlOv")) && /🔓 hasta/.test(await page.innerText("#main")), "con PIN y motivo queda desbloqueado y se ve hasta cuándo");
   ok(!!(await page.$("[data-ctl-print]")), "hay PDF por local");
+  // visibilidad para el responsable: el cierre ("9") está oculto; supervisión lo muestra con su PIN
+  await page.click("[data-ctl-sel='9']"); await page.waitForTimeout(400);
+  let vis=(await page.innerText("#main")).replace(/\s+/g," ");
+  ok(/Visibilidad para el responsable/.test(vis)&&/Oculto\. Se muestra solo a las 12:00/.test(vis), "el detalle del cierre dice que está oculto y cuándo se muestra solo");
+  await page.click("[data-ctl-lib='9']"); await page.waitForSelector("#ctlOv");
+  await page.fill("#ctlPin","0000"); await page.click("[data-ctl-si]"); await page.waitForTimeout(400);
+  ok(/incorrecto/i.test(await page.innerText("#ctlErr")), "mostrar al responsable pide el PIN: uno incorrecto no lo muestra");
+  await page.fill("#ctlPin","1234"); await page.click("[data-ctl-si]"); await page.waitForTimeout(700);
+  vis=(await page.innerText("#main")).replace(/\s+/g," ");
+  ok(!(await page.$("#ctlOv")) && /Mostrado al responsable el/.test(vis) && !!(await page.$("[data-ctl-lib='9'][data-ctl-libmostrar='0']")), "con PIN queda mostrado y aparece «Volver a ocultar»");
+  await page.click("[data-ctl-sel='7']"); await page.waitForTimeout(400);
+  ok(!/Visibilidad para el responsable/.test(await page.innerText("#main")), "el conteo inicial no tiene esa tarjeta (el responsable ya lo ve)");
+  await page.click("[data-ctl-sel='8']"); await page.waitForTimeout(400);
   // el responsable ve el total pero no las diferencias («vs. anterior»), salvo que el local lo active
   const hg = await page.evaluate(() => { const lista = [{ id: "1", ts: Date.now(), items: {}, camara: { "4": { u: 1, k: 10 } }, empleado: "x", cambios: [], tipo: "inicial" }, { id: "0", ts: Date.now() - 1e6, items: {}, camara: { "4": { u: 1, k: 5 } }, empleado: "x", cambios: [], tipo: "inicial" }]; S.inv = { paso: "guardados", lista, verDif: false }; const sin = invGuardadosHTML(); S.inv.verDif = true; const con = invGuardadosHTML(); S.inv = null; return { sin: /vs\. anterior/.test(sin), con: /vs\. anterior/.test(con) } });
   ok(hg.sin === false && hg.con === true, "«Conteos guardados»: sin ver_diferencias no aparece «vs. anterior»; con la diferencia activada sí");
