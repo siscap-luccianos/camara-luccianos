@@ -85,6 +85,14 @@ function resp(b){
     inv.cambios.push({ts:Date.now(),q:"Gabi Busquets",s:String(b.saborId),antes,despues:nuevo,mot:b.motivo});
     console.log("CORREGIR",JSON.stringify({s:b.saborId,antes,nuevo,mot:b.motivo})); return {ok:true,inventario:inv};
   }
+  if(a==="pedirConteoParcial"){ db.pedidos=db.pedidos||[]; const ya=db.pedidos.find(q=>q.local===b.local&&q.estado==="pendiente"); if(ya) return {ok:true,repetido:true,pedido:ya}; const q={id:String(db.pedidos.length+1),local:b.local,ts:Date.now(),por:"Gabi Busquets",estado:"pendiente"}; db.pedidos.push(q); return {ok:true,pedido:q}; }
+  if(a==="cancelarPedidoConteo"){ (db.pedidos||[]).forEach(q=>{ if(q.local===b.local&&q.estado==="pendiente") q.estado="cancelado" }); return {ok:true}; }
+  if(a==="pedidoConteo") return {ok:true,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null};
+  if(a==="desbloquearInventario"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; console.log("DESBLOQUEAR",JSON.stringify({inv:b.inventarioId,mot:b.motivo})); db.desb=(db.desb||0)+1; return {ok:true,desbloqueado_hasta:Date.now()+864e5}; }
+  if(a==="controlStock"){ const pend=(db.pedidos||[]).filter(q=>q.estado==="pendiente");
+    return {ok:true,locales:[
+      {local:"Local prueba",estado:pend.find(q=>q.local==="Local prueba")?"pedido":"controlado",pedido:pend.find(q=>q.local==="Local prueba")||null,inicial:{id:"7",ts:Date.now()-6e8,empleado:"Laura",fijo:!db.desb,desbloqueado_hasta:db.desb?Date.now()+864e5:0},parcial:{id:"8",ts:Date.now()-1e8,empleado:"Laura",fijo:true},debia:310.2,conto:307,diferencia:-3.2,debiaU:20,contoU:20,difU:0,detalle:[{id:"4",nombre:"Banana Split",kg:true,debia:20.5,conto:17.3,dif:-3.2}]},
+      {local:"Recoleta CABA",estado:pend.find(q=>q.local==="Recoleta CABA")?"pedido":"sin_pedir",pedido:pend.find(q=>q.local==="Recoleta CABA")||null,inicial:{id:"9",ts:Date.now()-6e8,empleado:"Ana",fijo:true},parcial:null,debia:0,conto:0,diferencia:0,detalle:[]}]}; }
   if(a==="inventarios") return {ok:true,verValor:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};
   if(a==="registrar"){
     if(l.kilosReales && b.subtipo!=="transferencia"){
