@@ -1493,7 +1493,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.5";
+const FRONTEND_VERSION = "1.178.6";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3668,7 +3668,7 @@ function renderNav(){
 /** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
 function avisoConteoInicialHTML(){
   if(Date.now()>=Date.parse("2026-12-01T00:00:00-03:00")) return ""; // fijo hasta el fin del 30/11 (00:00 del 1/12), sin botón para cerrarlo
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica. <b>Una vez guardado queda con candado</b>: solo supervisión lo desbloquea, con su PIN. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div></div>`;
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div></div>`;
 }
 function renderMain(){
   if(S.local && S.tab==="gestion" && !S.stockValorizado && S.sabores.length) S.tab="salida"; // Gestión solo con stock_valorizado=SI
@@ -8371,12 +8371,12 @@ function ayudaTemas(){
     "Se hace <b>una sola vez por mes</b>. Si el mes arranca con el conteo de cierre del anterior, no hace falta.",
     "En <b>Stock</b> tocá <b>Conteo inicial</b>. Primero el <b>Conteo cámara</b> y después el <b>Conteo local</b> (lo que hay afuera de la cámara).",
     "Contá de cero. Las vasquetas del local van en <b>kilos</b>; el resto, por unidad.",
-    "Tocá <b>Ver resultado</b> y después <b>Guardar conteo inicial</b>."])+nota("Una vez guardado queda con candado 🔒: solo supervisión lo desbloquea, con su PIN, para una corrección. No cambia el stock de la cámara ni cuenta como salida.")});
+    "Tocá <b>Ver resultado</b> y después <b>Guardar conteo inicial</b>."])});
   if(!colab) T.push({id:"parcial", titulo:"Conteo parcial y de cierre", sub:"Cuando supervisión lo pide", html:li([
     "Supervisión pide el conteo y te aparece un aviso en Stock: <b>Hacer el conteo</b>.",
     "Contá la <b>cámara</b> y después el <b>local</b>, desde cero, <b>sin ver el número del sistema</b>.",
     "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
-    "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])+nota("Una vez guardado no se corrige: avisale a supervisión.")});
+    "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
@@ -8411,7 +8411,7 @@ function ayudaTemas(){
     escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
     "Tocá <b>Revisar y guardar</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
     "Lo que no tocaste queda «Sin contar» y conserva el stock. Con <b>Dejar en 0</b> lo ponés en cero a propósito.",
-    "<b>Guardar lo contado</b> guarda solo esos sabores; con <b>Guardar y seguir contando</b> seguís con otro rubro. Tu avance se guarda solo en este equipo."])+nota("Al guardar, la cámara queda con candado 🔒 hasta fin de mes: solo supervisión la desbloquea.")});
+    "<b>Guardar lo contado</b> guarda solo esos sabores; con <b>Guardar y seguir contando</b> seguís con otro rubro. Tu avance se guarda solo en este equipo."])});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
     "Revisá lo que leyó: los renglones en <b>amarillo</b> con «?» son los que no pudo identificar; elegí el sabor a mano o ignorá el renglón. Las cantidades se pueden corregir.",

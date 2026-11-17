@@ -14,7 +14,7 @@ const { chromium } = require("playwright");
   await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1500);
   const bannerVisible = async () => (await page.$(".avisoNovedad")) !== null;
   ok(await bannerVisible(), "el aviso de novedad se ve al abrir la app");
-  ok(/Stock definitivo pasa a ser el «Conteo inicial»/.test(await page.innerText("#main")) && /Una vez guardado queda con candado/.test(await page.innerText("#main")), "el aviso explica el cambio y la fecha");
+  ok(/Stock definitivo pasa a ser el «Conteo inicial»/.test(await page.innerText("#main")) && /Hasta el 30\/11 es de práctica/.test(await page.innerText("#main")), "el aviso explica el cambio y la fecha");
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
   ok(await bannerVisible(), "se ve también en Stock");
   ok(!(await page.$("#avisoConteoOk")), "no tiene botón «Entendido»: queda fijo");
