@@ -25,21 +25,32 @@ const { chromium } = require("playwright");
   const rubros = await page.$$eval("[data-inv-rub]", e => e.map(x => x.textContent.trim()));
   ok(rubros.includes("Vasquetas") && rubros.includes("Icepops") && rubros.includes("Chocolatería"), "rubros: " + rubros.join(", "));
 
-  // 2) vasquetas en kilos con pasos de 0,5 y escritura con coma
-  await page.click('[data-inv-inc="4"]'); await page.click('[data-inv-inc="4"]'); await page.click('[data-inv-inc="4"]');
-  ok((await page.inputValue('[data-inv-in="4"]')) === "1,5", "Banana Split: 3 toques de + = 1,5 kg (pasos de 0,5)");
-  await page.click('[data-inv-dec="4"]');
-  ok((await page.inputValue('[data-inv-in="4"]')) === "1", "el − resta 0,5");
-  await page.fill('[data-inv-in="20"]', "2,25"); await page.dispatchEvent('[data-inv-in="20"]', "input");
-  ok((await page.inputValue('[data-inv-in="20"]')) === "2,25", "se puede escribir con coma y 2 decimales");
-  await page.fill('[data-inv-in="5"]', "ab"); await page.dispatchEvent('[data-inv-in="5"]', "input");
-  ok((await page.inputValue('[data-inv-in="5"]')) === "", "las letras no entran");
+  // 2) vasquetas: una casilla por vasqueta que se pesa y el total se suma solo
+  const casillas = await page.$$eval('[data-inv-w^="4:"]', e => e.length);
+  ok(casillas === 3, "Banana Split: 3 casillas para pesar vasquetas: " + casillas);
+  ok(!(await page.$('[data-inv-inc="4"]')) && !(await page.$('[data-inv-dec="4"]')), "las vasquetas ya no usan − y +");
+  await page.fill('[data-inv-w="4:0"]', "1,5"); await page.fill('[data-inv-w="4:1"]', "2,25");
+  ok((await page.innerText('[data-inv-tot="4"]')).replace(/\s+/g, " ").includes("3,75"), "el total suma solo: 1,5 + 2,25 = 3,75 kg — " + (await page.innerText('[data-inv-tot="4"]')));
+  await page.fill('[data-inv-w="4:2"]', "0,5");
+  ok((await page.innerText('[data-inv-tot="4"]')).includes("4,25"), "con la tercera: 4,25 kg");
+  await page.click('[data-inv-wmas="4"]'); await page.waitForTimeout(150);
+  ok((await page.$$eval('[data-inv-w^="4:"]', e => e.length)) === 4, "«+» agrega otra casilla");
+  ok((await page.$eval('[data-inv-w="4:0"]', e => e.value)) === "1,5", "lo ya cargado se mantiene al agregar casilla");
+  await page.fill('[data-inv-w="4:1"]', ""); await page.waitForTimeout(100);
+  ok((await page.innerText('[data-inv-tot="4"]')).includes("2"), "borrar una casilla resta del total");
+  await page.fill('[data-inv-w="4:0"]', "1"); await page.fill('[data-inv-w="4:2"]', ""); await page.fill('[data-inv-w="4:3"]', "");
+  ok((await page.innerText('[data-inv-tot="4"]')).includes("1"), "queda en 1 kg para seguir con el resto de la prueba");
+  const w20 = await page.$('[data-inv-w="20:0"]');
+  if (w20) { await page.fill('[data-inv-w="20:0"]', "2,25"); }
+  ok((await page.inputValue('[data-inv-w="20:0"]')) === "2,25", "se puede escribir con coma y 2 decimales");
+  await page.fill('[data-inv-w="5:0"]', "ab");
+  ok((await page.inputValue('[data-inv-w="5:0"]')) === "", "las letras no entran");
   ok(!(await page.$eval('[data-inv-row="4"]', e => e.classList.contains("sin"))), "lo tocado deja de verse apagado");
   ok(await page.$eval('[data-inv-row="5"]', e => e.classList.contains("sin")), "lo no tocado queda apagado");
   // deshacer una equivocación
-  await page.fill('[data-inv-in="5"]', "9"); await page.dispatchEvent('[data-inv-in="5"]', "input");
+  await page.fill('[data-inv-w="5:0"]', "9");
   await page.click('[data-inv-reset="5"]');
-  ok((await page.inputValue('[data-inv-in="5"]')) === "0" && await page.$eval('[data-inv-row="5"]', e => e.classList.contains("sin")), "↺ deshace lo cargado de un producto");
+  ok((await page.inputValue('[data-inv-w="5:0"]')) === "" && await page.$eval('[data-inv-row="5"]', e => e.classList.contains("sin")), "↺ deshace lo cargado de un producto");
   // icepops por unidad entera
   await page.click('[data-inv-rub="icepops"]'); await page.waitForTimeout(150);
   await page.fill('[data-inv-in="49"]', "10,7"); await page.dispatchEvent('[data-inv-in="49"]', "input");
@@ -58,7 +69,7 @@ const { chromium } = require("playwright");
   ok(/Retomaste/.test(await page.innerText("main")), "retoma lo que había cargado");
   ok(await page.$eval('[data-inv-rub="chocolateria"]', e => e.getAttribute("aria-pressed")) === "true", "vuelve al rubro donde estaba");
   await page.click('[data-inv-rub="vasquetas"]'); await page.waitForTimeout(150);
-  ok((await page.inputValue('[data-inv-in="4"]')) === "1" && (await page.inputValue('[data-inv-in="20"]')) === "2,25", "los kilos cargados siguen ahí");
+  ok((await page.inputValue('[data-inv-w="4:0"]')) === "1" && (await page.inputValue('[data-inv-w="20:0"]')) === "2,25", "los pesos cargados siguen ahí");
 
   // 4) resultado: cámara + local = total, con valor
   await page.click("#invResBtn"); await page.waitForTimeout(400);

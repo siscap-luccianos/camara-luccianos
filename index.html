@@ -1205,6 +1205,8 @@ body:has(.mantenerOv){overflow:hidden}
 .invStep .p{background:var(--accent);color:var(--accent-ink)}
 .invStep input{width:58px;height:38px;text-align:center;font-weight:800;font-size:1rem;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 4px;box-sizing:border-box}
 .invStep .r{width:26px;height:26px;font-size:.9rem;background:none;color:var(--muted)}
+.invWs{flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:420px}.invWs input.invW{width:62px}
+.invWs .invTotW{display:flex;flex-direction:column;align-items:center;min-width:74px;padding:4px 10px;border-radius:12px;background:rgba(var(--header-bg-rgb),.07)}.invWs .invTotW small{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}.invWs .invTotW b{font-size:.98rem}
 .invRow.sin .invStep input{color:var(--muted);border-style:dashed}
 .invEq{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
 .invEqh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
@@ -1351,7 +1353,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.159.0";
+const FRONTEND_VERSION = "1.159.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4402,7 +4404,7 @@ function invFecha(ts){ return new Date(ts).toLocaleString("es-AR",{timeZone:"Ame
 function invGuardarBorrador(){
   if(!S.inv || !S.local) return;
   if(!Object.keys(S.inv.tocado).length){ try{ ls.del(invClaveBorrador()) }catch(e){} return }
-  try{ ls.set(invClaveBorrador(), JSON.stringify({ts:Date.now(), inicio:S.inv.inicio, rubro:S.inv.rubro, items:S.inv.items, tocado:S.inv.tocado})) }catch(e){}
+  try{ ls.set(invClaveBorrador(), JSON.stringify({ts:Date.now(), inicio:S.inv.inicio, rubro:S.inv.rubro, items:S.inv.items, tocado:S.inv.tocado, pesos:S.inv.pesos||{}})) }catch(e){}
 }
 function invHayBorrador(){
   if(!S.local) return false;
@@ -4416,7 +4418,9 @@ function invIniciar(){
   const items={}, tocado={};
   if(b) Object.keys(b.items||{}).forEach(id=>{ if(S.saboresPorId[id]) items[id]=+b.items[id]||0 });
   if(b) Object.keys(b.tocado||{}).forEach(id=>{ if(S.saboresPorId[id]) tocado[id]=1 });
-  S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
+  const pesos={};
+  if(b) Object.keys(b.pesos||{}).forEach(id=>{ if(S.saboresPorId[id] && Array.isArray(b.pesos[id])) pesos[id]=b.pesos[id].map(x=>x===""||x===null?"":+x||0) });
+  S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, pesos, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
   window.scrollTo(0,0); renderApp();
 }
 function invSalir(){ S.inv=null; renderApp(); window.scrollTo(0,0) }
@@ -4435,6 +4439,14 @@ function invContarHTML(){
   const row=s=>{
     const kg=invEsKg(s), v=I.items[s.id]||0, t=!!I.tocado[s.id], c=cam[s.id];
     const camTxt=c?(kg?`${(+c.u)} vasq.${s.tipo==="v"?` · ${c.ap?"≈ ":""}${invFmtNum(s,c.k)} kg`:""}`:`${c.u} u.`):"sin stock";
+    if(s.tipo==="v"){
+      // Vasquetas: una casilla por vasqueta que se pesa (3 y «+» para más); el total se suma solo. Nada de ir sumando a mano.
+      const w=(I.pesos&&I.pesos[s.id])||[], n=Math.max(3,w.length);
+      const cajas=Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-inv-w="${s.id}:${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
+      return `<div class="row invRow invWrow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
+      <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
+      <div class="invStep invWs">${cajas}<button type="button" class="p" data-inv-wmas="${s.id}" aria-label="Agregar otra casilla" title="Otra vasqueta">+</button><div class="invTotW"><small>Total</small><b data-inv-tot="${s.id}">${t?invFmtNum(s,v)+" kg":"–"}</b></div>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
+    }
     return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
       <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
@@ -4442,7 +4454,7 @@ function invContarHTML(){
   const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
   return `<div class="invHead"><b>Conteo inicial</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
   <div class="defin"><b>Esto queda guardado como el conteo inicial.</b></div>
-  <p class="invHint">Contá solo lo que hay <b>en el local, fuera de la cámara</b>. ${kgR?"Las vasquetas van en <b>kilos</b>: una a la mitad suma media.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
+  <p class="invHint">Contá solo lo que hay <b>en el local, fuera de la cámara</b>. ${kgR?"En las vasquetas <b>pesá cada una</b> y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
   <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
   <div class="rows" style="margin-top:12px">${lista.map(row).join("")||`<div class="note">No hay productos de este rubro en el local.</div>`}</div>
@@ -4665,15 +4677,17 @@ function invClick(t){
   if(t.dataset.invEdit){ I.paso="contar"; I.rubro=t.dataset.invEdit; renderApp(); window.scrollTo(0,0); return true }
   if(t.dataset.invCor){ invAbrirCor(t.dataset.invCor); return true }
   if(t.dataset.invAbrir){ const x=(I.lista||[]).find(z=>String(z.id)===t.dataset.invAbrir); if(x){ I.ver=x; I.paso="ver"; I.res="rubro"; I.det=null; I.busca=""; renderApp(); window.scrollTo(0,0) } return true }
-  if(t.dataset.invBorrar!==undefined){ if(!confirm("¿Borrar lo que cargaste y empezar de cero?")) return true; I.items={}; I.tocado={}; I.restaurado=false; try{ ls.del(invClaveBorrador()) }catch(e){} renderApp(); return true }
+  if(t.dataset.invBorrar!==undefined){ if(!confirm("¿Borrar lo que cargaste y empezar de cero?")) return true; I.items={}; I.tocado={}; I.pesos={}; I.restaurado=false; try{ ls.del(invClaveBorrador()) }catch(e){} renderApp(); return true }
   if(t.dataset.invInc || t.dataset.invDec){
     const id=t.dataset.invInc||t.dataset.invDec, s=S.saboresPorId[id], input=document.querySelector(`[data-inv-in="${id}"]`);
     const cur=invNum(s,input?input.value:I.items[id]), paso=invEsKg(s)?0.5:1, sig=Math.max(0,Math.round((cur+(t.dataset.invInc?paso:-paso))*100)/100);
     if(input) input.value=String(sig).replace(".",",");
     invPonerValor(id,sig,input); return true }
+  if(t.dataset.invWmas){ const id=t.dataset.invWmas; const w=(I.pesos[id]=I.pesos[id]||[]); while(w.length<3) w.push(""); w.push(""); invGuardarBorrador(); renderApp(); setTimeout(()=>{ const c=document.querySelectorAll(`[data-inv-w^="${id}:"]`); const u=c[c.length-1]; if(u) u.focus() },30); return true }
   if(t.dataset.invReset){
     const id=t.dataset.invReset, input=document.querySelector(`[data-inv-in="${id}"]`);
-    delete I.items[id]; delete I.tocado[id];
+    delete I.items[id]; delete I.tocado[id]; if(I.pesos) delete I.pesos[id];
+    document.querySelectorAll(`[data-inv-w^="${id}:"]`).forEach(x=>{ x.value="" }); const tot=document.querySelector(`[data-inv-tot="${id}"]`); if(tot) tot.textContent="–";
     if(input) input.value="0";
     const row=document.querySelector(`[data-inv-row="${id}"]`); if(row){ row.classList.add("sin"); const r=row.querySelector("[data-inv-reset]"); if(r) r.remove() }
     invGuardarBorrador(); renderBar(); return true }
@@ -4687,14 +4701,24 @@ document.addEventListener("input", e=>{
     if(el.value==="" && !S.inv.tocado[el.dataset.invIn]) return;   // solo letras: no cuenta como haber contado
     invPonerValor(el.dataset.invIn, invNum(s,el.value), el);
   }
+  if(el.dataset.invW!==undefined){
+    const [id,ix]=el.dataset.invW.split(":"), s=S.saboresPorId[id]; if(!s) return;
+    el.value=el.value.replace(/[^\d.,]/g,"");
+    const I=S.inv; const w=(I.pesos[id]=I.pesos[id]||[]); while(w.length<=(+ix)) w.push("");
+    w[+ix]=el.value===""?"":invNum(s,el.value);
+    const suma=Math.round(w.reduce((a,x)=>a+(+x||0),0)*100)/100;
+    if(el.value==="" && !suma && !I.tocado[id]) return;
+    const tot=document.querySelector(`[data-inv-tot="${id}"]`); if(tot) tot.textContent=invFmtNum(s,suma)+" kg";
+    invPonerValor(id,suma,null);
+  }
   if(el.id==="invBusca"){ S.inv.busca=el.value; const d=invDatos(); const l=document.getElementById("invLista"); if(l) l.innerHTML=invListaProdHTML(invFilas(d),d); }
 });
-document.addEventListener("focusin", e=>{ if(e.target && e.target.dataset && e.target.dataset.invIn!==undefined) e.target.select() });
+document.addEventListener("focusin", e=>{ if(e.target && e.target.dataset && (e.target.dataset.invIn!==undefined||e.target.dataset.invW!==undefined)) e.target.select() });
 document.addEventListener("keydown", e=>{
-  const el=e.target; if(!el || !el.dataset || el.dataset.invIn===undefined) return;
+  const el=e.target; if(!el || !el.dataset || (el.dataset.invIn===undefined && el.dataset.invW===undefined)) return;
   if(e.key!=="Enter" && e.key!=="ArrowDown" && e.key!=="ArrowUp") return;
   e.preventDefault();
-  const campos=[...document.querySelectorAll("[data-inv-in]")], i=campos.indexOf(el), n=campos[i+(e.key==="ArrowUp"?-1:1)];
+  const campos=[...document.querySelectorAll("[data-inv-in],[data-inv-w]")], i=campos.indexOf(el), n=campos[i+(e.key==="ArrowUp"?-1:1)];
   if(n){ n.focus(); n.select(); n.scrollIntoView({block:"center"}) } else el.blur();
 });
 
