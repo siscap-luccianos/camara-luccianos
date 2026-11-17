@@ -56,7 +56,7 @@ const { chromium } = require("playwright");
   const anim = await page.$eval("#ayudaBtn", e => getComputedStyle(e).animationName);
   ok(/ayudaHalo/.test(anim), "el «?» tiene la animación de brillo: " + anim);
   await page.click("#ayudaBtn"); await page.waitForTimeout(300);
-  ok(/Conteo físico/.test(await page.innerText(".ayTema[aria-expanded='true'], .ayTema.on, #ayudaOv")), "la ayuda abre en el tema Conteo físico");
+  ok(/Conteo cámara/.test(await page.innerText(".ayTema[aria-expanded='true'], .ayTema.on, #ayudaOv")), "la ayuda abre en el tema Conteo físico");
   const abierto = await page.evaluate(() => S.ayudaTema);
   ok(abierto === "conteo", "tema abierto = conteo: " + abierto);
   await page.keyboard.press("Escape"); await page.waitForTimeout(200);
