@@ -1435,7 +1435,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.175.0";
+const FRONTEND_VERSION = "1.176.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4435,17 +4435,17 @@ function conteoInicialHubHTML(){
   const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
       <span class="stkPasoTop">${n?`<span class="stkNum">${n}</span>`:""}<span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
-      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span></button>`;
+      <span class="stkPasoTx"><b>${titulo}</b>${sub?`<span>${sub}</span>`:""}</span></button>`;
   return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Conteo inicial</div>
   <h2 class="pdH1">Conteo inicial</h2>
-  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"}):"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:`<p class="invHint" style="margin:0 0 12px">Cámara + Local 🔒</p>`}
+  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"}):"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:""}
   <div class="stkFisico"><div class="stkPasos">
-    ${(S.camaraBloqueada||S.conteoBloqueado)?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hecho 🔒</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
+    ${(S.camaraBloqueada||S.conteoBloqueado)?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Cámara</b><span>🔒</span></span></div>`:paso(1,"conteoBtn","Cámara","",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
     <span class="stkSep">+</span>
-    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Conteo local</b><span>Ya hecho 🔒</span></span></div>`:paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
+    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Local</b><span>🔒</span></span></div>`:paso(2,"invBtn","Local",invHayBorrador()?"Tenés uno sin terminar.":"",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
     <span class="stkSep">=</span>
-    ${paso(3,"invGuardadosBtn","Conteo inicial","Ver los conteos iniciales guardados.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
+    ${paso(3,"invGuardadosBtn","Conteo inicial","",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
   </div></div>`;
 }
 function stockView(st){
@@ -4514,10 +4514,10 @@ function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
     </button>`:"";
   const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
       <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
-      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span>
+      <span class="stkPasoTx"><b>${titulo}</b>${sub?`<span>${sub}</span>`:""}</span>
     </button>`;
   const fisico=puedeGestionar?`<div class="stkFisico"><div class="stkPasos">
-      ${paso(0,"conteoInicialBtn","Conteo inicial","Cámara + local. Hacerlo o ver el del mes.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Conteo inicial: cámara más local")}
+      ${paso(0,"conteoInicialBtn","Conteo inicial","",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Conteo inicial: cámara más local")}
     </div></div>`:"";
   if(!pedido&&!fisico) return "";
   return `<div class="stkAcc${pedido&&fisico?"":" solo"}">${pedido}${pedido&&fisico?`<span class="stkDiv"></span>`:""}${fisico}</div>`;

@@ -12,7 +12,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1500);
   const h = await page.evaluate(() => { S.camaraBloqueada = true; S.conteoBloqueado = false; S.cobertura = null; return conteoInicialHubHTML() });
-  ok((h.match(/stkOff/g) || []).length === 1 && /Conteo cámara<\/b><span>Ya hecho/.test(h), "la cámara ya contada queda apagada («Ya hecho 🔒»)");
+  ok((h.match(/stkOff/g) || []).length === 1 && /Cámara<\/b><span>🔒/.test(h), "la cámara ya contada queda apagada (🔒)");
   ok(/id="invBtn"/.test(h), "el Conteo local sigue disponible");
   const h2 = await page.evaluate(() => { S.camaraBloqueada = false; S.conteoBloqueado = false; return conteoInicialHubHTML() });
   ok(!/stkOff/.test(h2) && /id="conteoBtn"/.test(h2), "sin candado, los dos conteos están disponibles");
