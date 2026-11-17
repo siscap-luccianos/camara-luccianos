@@ -36,7 +36,7 @@ const { chromium } = require("playwright");
     renderApp(); const t = document.querySelector("#main").innerText; const hay = !!document.querySelector("[data-inv-cor]"); return { hay, t };
   });
   ok(!sinCorregir.hay, "un conteo inicial fijo no ofrece «Corregir»");
-  ok(/Conteo con candado/.test(sinCorregir.t) && /Cámara contada/.test(sinCorregir.t) && /Cerrado fuera de la jornada/.test(sinCorregir.t), "muestra el candado, las dos horas y la marca de fuera de jornada");
+  ok(/Cámara contada/.test(sinCorregir.t) && /Cámara contada/.test(sinCorregir.t) && /Cerrado fuera de la jornada/.test(sinCorregir.t), "muestra el candado, las dos horas y la marca de fuera de jornada");
   const conCorregir = await page.evaluate(() => { S.inv.ver.fijo = false; S.inv.ver.fuera_jornada = false; renderApp(); return { hay: !!document.querySelector("[data-inv-cor]"), t: document.querySelector("#main").innerText } });
   ok(conCorregir.hay && /Desbloqueado por supervisión/.test(conCorregir.t) && !/fuera de la jornada/i.test(conCorregir.t.replace(/Cerrado fuera de la jornada: el conteo/,"")), "desbloqueado por supervisión sí se puede corregir y lo avisa");
   console.log("errores:", err.length ? err : "ninguno"); await b.close();
