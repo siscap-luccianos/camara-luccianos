@@ -1362,11 +1362,11 @@ tr.gvdRub td{font-weight:700;border-top:1px solid var(--line)}tr.gvdProd td{back
 .ctlDif.neg{background:#FDE8E6;color:#B42318}.ctlDif.pos{background:#FFF1CC;color:#8A5A00}.ctlDif.ok{background:#E3EFE0;color:#2F5A2A}
 .ctlDetalle{padding:6px 4px 16px;display:flex;flex-direction:column;gap:10px}
 .ctlInv{font-size:.85rem}.ctlLock{color:#2F5A2A;font-weight:800}.ctlUnlock{color:#8A5A00;font-weight:800}
-.ctlRes{display:flex;gap:26px;flex-wrap:wrap}.ctlRes small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}.ctlRes b{font-family:Fraunces,serif;font-size:1.3rem}
+.ctlRes{display:none;gap:26px;flex-wrap:wrap}.ctlRes small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}.ctlRes b{font-family:Fraunces,serif;font-size:1.3rem}
 .ctlTbl td,.ctlTbl th{text-align:center}
 .ctlPrint{display:none}
 @media (max-width:700px){.ctlHead{display:none}.ctlRow{grid-template-columns:1fr 1fr;text-align:left}}
-@media print{.ctl .noPrint{display:none!important}.ctlPrint{display:block}.ctlTabla{display:none}}
+@media print{.ctlRes{display:flex}.ctl .noPrint{display:none!important}.ctlPrint{display:block}.ctlTabla{display:none}}
 </style>
 </head>
 <body>
@@ -1387,7 +1387,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.165.1";
+const FRONTEND_VERSION = "1.165.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
