@@ -73,4 +73,10 @@ E("encargado"); r=run(`corregirInventario("Galerías","${idInv}","4",3,"recuento
 ok(r.ok&&JSON.parse(inv[1].items_original)["4"]===2&&JSON.parse(inv[1].items)["4"]===3,"desbloqueado: se corrige y queda la versión original al lado");
 NOW=Date.parse("2026-12-06T14:00:00-03:00");
 r=run(`corregirInventario("Galerías","${idInv}","4",4,"otra",emp)`); ok(!r.ok,"pasadas las 24 h vuelve a quedar bloqueado");
+// cámara contada a ciegas
+E("supervisor"); r=run(`pedirConteoParcial("Recoleta",emp)`); const idPed2=r.pedido.id; E("encargado");
+sb._stockActualLocal=()=>({"4":99,"49":99});
+r=run(`guardarInventario("p9","Recoleta",{"4":1},{},emp,"${idPed2}",{"4":{u:2,k:7.5},"49":{u:5}})`);
+ok(r.ok&&r.inventario.camara["4"].k===7.5&&r.inventario.camara["4"].u===2&&r.inventario.camara["49"].u===5,"la cámara guardada es la contada, no el stock del sistema (99): "+JSON.stringify(r.inventario&&r.inventario.camara));
+sb._stockActualLocal=()=>({"4":6,"49":17});
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);

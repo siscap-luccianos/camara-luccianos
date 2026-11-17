@@ -1374,7 +1374,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.160.1";
+const FRONTEND_VERSION = "1.160.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4481,6 +4481,19 @@ function invCant(s,v){ return invFmtNum(s,v)+(invEsKg(s)?" kg":" u.") }
 function invTxtG(g,v,ap){ return (ap?"≈ ":"")+(g==="vasquetas" ? (Number(v)||0).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})+" kg" : Math.round(Number(v)||0).toLocaleString("es-AR")+" u.") }
 /** Lo que hay en la cámara según LogiStock: unidades y, en vasquetas, kilos (reales si el local los usa; si no, vasquetas × peso promedio, marcado como aproximado). */
 function invCamaraLive(){
+  const I0=S.inv;
+  if(I0 && I0.pedidoId && I0.cam){ // parcial: lo que se contó en la cámara
+    const o={};
+    Object.keys(I0.cam.items).forEach(id=>{
+      const s=S.saboresPorId[id]; if(!s) return;
+      const q=+I0.cam.items[id]||0; if(!(q>0)) return;
+      if(!invEsKg(s)){ o[id]={u:q}; return }
+      if(s.tipo==="k"){ o[id]={u:Math.round(q),k:q}; return }
+      const w=(I0.cam.pesos[id]||[]).filter(x=>x!==""&&x!==null&&+x>0).length;
+      o[id]={u:w||1,k:q};
+    });
+    return o;
+  }
   const st=stockMap(), km=kilosMap(), out={};
   invSabores().forEach(s=>{
     const u=Math.max(0,st[s.id]||0);
@@ -4527,7 +4540,7 @@ function invTotales(filas){
 }
 function invFecha(ts){ return new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) }
 function invGuardarBorrador(){
-  if(!S.inv || !S.local) return;
+  if(!S.inv || !S.local || S.inv.pedidoId) return;
   if(!Object.keys(S.inv.tocado).length){ try{ ls.del(invClaveBorrador()) }catch(e){} return }
   try{ ls.set(invClaveBorrador(), JSON.stringify({ts:Date.now(), inicio:S.inv.inicio, rubro:S.inv.rubro, items:S.inv.items, tocado:S.inv.tocado, pesos:S.inv.pesos||{}})) }catch(e){}
 }
@@ -4548,6 +4561,19 @@ function invIniciar(){
   S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, pesos, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
   window.scrollTo(0,0); renderApp();
 }
+/** Conteo parcial (pedido por supervisión): arranca de cero y a ciegas (no muestra lo que dice el sistema). Dos pasos: cámara y local. No toca el stock de trabajo. */
+function invIniciarParcial(pedidoId){
+  invIniciar();
+  const I=S.inv; if(!I) return;
+  I.pedidoId=pedidoId; I.restaurado=false;
+  I.cam={items:{},pesos:{},tocado:{}}; I.loc={items:{},pesos:{},tocado:{}};
+  I.fase="camara"; I.items=I.cam.items; I.pesos=I.cam.pesos; I.tocado=I.cam.tocado;
+  renderApp(); window.scrollTo(0,0);
+}
+function invFase(f){
+  const I=S.inv; if(!I||!I.pedidoId||I.fase===f) return;
+  const d=f==="camara"?I.cam:I.loc; I.fase=f; I.items=d.items; I.pesos=d.pesos; I.tocado=d.tocado;
+}
 function invSalir(){ S.inv=null; renderApp(); window.scrollTo(0,0) }
 
 function inventarioView(){
@@ -4564,22 +4590,24 @@ function invContarHTML(){
   const row=s=>{
     const kg=invEsKg(s), v=I.items[s.id]||0, t=!!I.tocado[s.id], c=cam[s.id];
     const camTxt=c?(kg?`${(+c.u)} vasq.${s.tipo==="v"?` · ${c.ap?"≈ ":""}${invFmtNum(s,c.k)} kg`:""}`:`${c.u} u.`):"sin stock";
+    const metaCam=I.pedidoId?"":`<div class="meta">Cámara: ${esc(camTxt)}</div>`;
     if(s.tipo==="v"){
       // Vasquetas: una casilla por vasqueta que se pesa (3 y «+» para más); el total se suma solo. Nada de ir sumando a mano.
       const w=(I.pesos&&I.pesos[s.id])||[], n=Math.max(3,w.length);
       const cajas=Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-inv-w="${s.id}:${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
       return `<div class="row invRow invWrow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
+      <div class="nm">${esc(s.nombre)}${metaCam}</div>
       <div class="invStep invWs">${cajas}<button type="button" class="p" data-inv-wmas="${s.id}" aria-label="Agregar otra casilla" title="Otra vasqueta">+</button><div class="invTotW"><small>Total</small><b data-inv-tot="${s.id}">${t?invFmtNum(s,v)+" kg":"–"}</b></div>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
     }
     return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
+      <div class="nm">${esc(s.nombre)}${metaCam}</div>
       <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
   };
   const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
-  return `<div class="invHead"><b>Conteo local</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
-  <div class="defin"><b>Esto queda guardado como el conteo inicial.</b></div>
-  <p class="invHint">Contá solo lo que hay <b>en el local, fuera de la cámara</b>. ${kgR?"En las vasquetas <b>pesá cada una</b> y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
+  const parc=!!I.pedidoId, enCam=parc&&I.fase==="camara";
+  return `<div class="invHead"><b>${parc?(enCam?"Conteo parcial · Cámara":"Conteo parcial · Local"):"Conteo local"}</b>${parc?"":`<button type="button" class="chip" data-inv-guardados>Guardados</button>`}</div>
+  <div class="defin"><b>${parc?"Supervisión pidió este conteo. Se guarda aparte y no cambia el stock de la cámara.":"Esto queda guardado como el conteo inicial."}</b></div>
+  <p class="invHint">${parc?(enCam?"Paso 1 de 2: contá lo que hay <b>dentro de la cámara</b>, empezando de cero. ":"Paso 2 de 2: contá lo que hay <b>en el local, fuera de la cámara</b>. "):"Contá solo lo que hay <b>en el local, fuera de la cámara</b>. "} ${kgR?"En las vasquetas <b>pesá cada una</b> y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
   <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
   <div class="rows" style="margin-top:12px">${lista.map(row).join("")||`<div class="note">No hay productos de este rubro en el local.</div>`}</div>
@@ -4594,6 +4622,11 @@ function invBar(inn){
   const I=S.inv;
   if(I.paso==="contar"){
     const t=invResumenCargado(), partes=invGrupos().filter(g=>t[g]).map(g=>`<b>${invTxtG(g,t[g])}</b> ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}`);
+    if(I.pedidoId){
+      const enCam=I.fase==="camara";
+      inn.innerHTML=`<div class="sum">Conteo parcial · ${enCam?"cámara":"local"}: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div>${enCam?`<button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invFaseLocal">Seguir con el local</button>`:`<button class="btn ghost" id="invFaseCam">Volver a la cámara</button><button class="btn" id="invResBtn">Ver resultado</button>`}`;
+      return true;
+    }
     inn.innerHTML=`<div class="sum">Inventario local: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div><button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invResBtn">Ver resultado</button>`;
     return true;
   }
@@ -4698,7 +4731,7 @@ async function invGuardarServidor(){
   Object.keys(camara).forEach(id=>{ if(camara[id].k!==undefined) camaraKg[id]={k:camara[id].k, ap:camara[id].ap?1:0} });
   const items={}; Object.keys(I.items).forEach(id=>{ if(+I.items[id]>0) items[id]=+I.items[id] });
   const clienteId="inv-"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-  const r=await api("guardarInventario",{clienteId, local:S.local, items, camaraKg, pedidoId:I.pedidoId||undefined});
+  const r=await api("guardarInventario",{clienteId, local:S.local, items, camaraKg, pedidoId:I.pedidoId||undefined, camaraContada:I.pedidoId?camara:undefined});
   if(!S.inv) return;
   if(r && r.ok){
     try{ ls.del(invClaveBorrador()) }catch(e){}
@@ -4792,7 +4825,9 @@ function invClick(t){
   if(t.id==="invSalir"){ invSalir(); return true }
   if(t.id==="invNuevo"){ invIniciar(); return true }
   if(t.id==="invReintentar"){ invCargarLista(); renderApp(); return true }
-  if(t.id==="invResBtn"){ I.paso="resultado"; I.res="rubro"; I.det=null; renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invFaseLocal"){ invFase("local"); renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invFaseCam"){ invFase("camara"); renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invResBtn"){ invFase("local"); I.paso="resultado"; I.res="rubro"; I.det=null; renderApp(); window.scrollTo(0,0); return true }
   if(t.id==="invVolver"){ I.paso="contar"; renderApp(); window.scrollTo(0,0); return true }
   if(t.id==="invGuardar"){ invConfirmarGuardar(); return true }
   if(t.id==="invPdf"){ window.print(); return true }
@@ -6517,7 +6552,7 @@ document.addEventListener("click", async e=>{
   if(invClick(t)) return;
   if(relevarClick(t)) return;
   if(controlClick(t)) return;
-  if(t.id==="pedidoConteoHacer"){ S.tab="stock"; S.hubInicial=true; S.inv=null; invIniciar(); if(S.inv && S.pedidoConteo) S.inv.pedidoId=S.pedidoConteo.id; renderApp(); return }
+  if(t.id==="pedidoConteoHacer"){ S.tab="stock"; S.hubInicial=true; S.inv=null; invIniciarParcial(S.pedidoConteo&&S.pedidoConteo.id); return }
   if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; S.hubInicial=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);

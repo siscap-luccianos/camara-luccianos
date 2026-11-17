@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.85.0";
+const BACKEND_VERSION = "1.85.1";
 
 function doPost(e) {
   let resultado;
@@ -117,7 +117,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos, body.pesos);
     case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta, body.pesos);
-    case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado, body.pedidoId);
+    case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado, body.pedidoId, body.camaraContada);
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
     case "pedirConteoParcial": return pedirConteoParcial(body.local, empleado);
@@ -2429,7 +2429,7 @@ function _invPermiso(empleado, local) {
 }
 
 /** Guarda un inventario. items: {idSabor: lo contado en el local}; camaraKg: {idSabor: {k: kilos, ap: 1 si son aproximados}} (lo calcula el cliente con lo que ve). */
-function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId) {
+function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   const err = _invPermiso(empleado, local);
   if (err) return { ok: false, error: err };
   if (!items || typeof items !== "object") return { ok: false, error: "Falta el inventario." };
@@ -2468,6 +2468,18 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId
     Object.keys(stock).forEach((id) => { if ((Number(stock[id]) || 0) > 0) aMirar[id] = 1; });
     Object.keys(contados).forEach((id) => { aMirar[id] = 1; });
     let aprox = false;
+    // Conteo parcial: la cámara es la que CONTÓ el responsable (a ciegas), no el stock del sistema. No se toca el stock de trabajo.
+    if (pedidoFila && camaraContada && typeof camaraContada === "object") {
+      Object.keys(camaraContada).forEach((id) => {
+        const sab = catalogo[id]; if (!sab) return;
+        const d = camaraContada[id] || {};
+        const u = Math.max(0, Math.round(Number(d.u) || 0));
+        const c = { u: u };
+        if (_invEsKg(sab)) { const k = Number(d.k); c.k = isFinite(k) && k >= 0 && k <= 100000 ? Math.round(k * 100) / 100 : 0; }
+        if (u > 0 || (c.k || 0) > 0) camara[id] = c;
+      });
+      Object.keys(aMirar).forEach((k) => { delete aMirar[k]; });
+    }
     Object.keys(aMirar).forEach((id) => {
       const sab = catalogo[id];
       if (!sab) return;
