@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.88.0";
+const BACKEND_VERSION = "1.89.0";
 
 function doPost(e) {
   let resultado;
@@ -2210,18 +2210,27 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
  *  pueden seguir corrigiendo. Bloqueado si ya hay un conteo inicial (o final) que cubre el mes actual: uno guardado este mes, o un
  *  final guardado el mes anterior (que es el inicial de este). */
 function _mesSiguiente(m) { const a = String(m).split("-"); let y = Number(a[0]), mm = Number(a[1]) + 1; if (mm > 12) { mm = 1; y++; } return y + "-" + (mm < 10 ? "0" : "") + mm; }
-function _conteoSueltoBloqueado(local, empleado) {
+/** ¿Qué conteo cubre el mes actual como «conteo inicial»? Uno inicial guardado este mes, o un FINAL guardado el mes anterior (el final es el
+ *  inicial del mes siguiente). Devuelve {tipo, ts} o null. Solo vale desde el 1/12/2026. */
+function _coberturaMes(local) {
   const ahora = Date.now();
-  if (ahora < CONTEO_INICIAL_FIJO_DESDE) return false;
-  if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return false;
+  if (ahora < CONTEO_INICIAL_FIJO_DESDE) return null;
   _hojaInventarios();
   const mes = _jornadaClave(ahora).slice(0, 7);
-  return _leerCrudo("Inventarios").some((r) => {
-    if (String(r.local || "").trim() !== String(local).trim()) return false;
-    if (String(r.tipo) === "parcial" || (Number(r.ts) || 0) < CONTEO_INICIAL_FIJO_DESDE) return false;
+  let mejor = null;
+  _leerCrudo("Inventarios").forEach((r) => {
+    if (String(r.local || "").trim() !== String(local).trim()) return;
+    if (String(r.tipo) === "parcial" || (Number(r.ts) || 0) < CONTEO_INICIAL_FIJO_DESDE) return;
     const m = _jornadaClave(Number(r.ts)).slice(0, 7);
-    return m === mes || (String(r.tipo) === "final" && _mesSiguiente(m) === mes);
+    if (m === mes || (String(r.tipo) === "final" && _mesSiguiente(m) === mes)) {
+      if (!mejor || Number(r.ts) > mejor.ts) mejor = { tipo: String(r.tipo) === "final" ? "final" : "inicial", ts: Number(r.ts) };
+    }
   });
+  return mejor;
+}
+function _conteoSueltoBloqueado(local, empleado) {
+  if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return false;
+  return !!_coberturaMes(local);
 }
 const MSJ_CONTEO_SUELTO = "Desde el 1/12 el conteo suelto ya no se usa: el stock de la cámara lo controla supervisión con el conteo parcial o final.";
 
@@ -2455,6 +2464,10 @@ function _invPermiso(empleado, local) {
 /** Guarda un inventario. Si es el CONTEO FINAL (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
  *  es el inicial del mes que viene y el mes arranca con ese arrastre. Se aplica DESPUÉS de soltar el candado (conteo() toma el suyo). */
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
+  if (!pedidoId && empleado && empleado.rol !== "admin" && empleado.rol !== "supervisor") {
+    const cob = _coberturaMes(local);
+    if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo final del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
+  }
   const r = _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada);
   if (r && r.ok && r._final) {
     const c = conteo("final-" + r.inventario.id, local, r._final.items, empleado, null, r._final.kilos, null, true);
@@ -2618,7 +2631,7 @@ function inventarios(local, empleado) {
     .sort((a, b) => Number(b.ts) - Number(a.ts))
     .slice(0, 12)
     .map((r) => _inventarioPublico(r, verValor));
-  return { ok: true, inventarios: lista, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado) };
+  return { ok: true, inventarios: lista, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local) };
 }
 
 
