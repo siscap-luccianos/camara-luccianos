@@ -762,6 +762,7 @@ body:has(.etiqOv){overflow:hidden}
   .stkPasoTx span{font-size:.88rem}
 }
 .cntTit{margin:0 0 14px}
+.stkOff{opacity:.55;cursor:not-allowed}
 .cntAcla{margin:8px 0 0;font-size:.84rem;line-height:1.45;color:var(--muted);max-width:640px}
 .cntKick{font-size:.7rem;letter-spacing:.16em;font-weight:800;color:#8A6A3A}
 .cntTit h1{margin:4px 0 0;font-family:Fraunces,serif;font-weight:600;font-size:2rem;letter-spacing:-.02em;line-height:1.05}
@@ -1386,7 +1387,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.164.1";
+const FRONTEND_VERSION = "1.165.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4207,6 +4208,14 @@ function bannerBorradorConteoHTML(){
     <div class="b"><button type="button" class="btn" id="continuarConteo">Continuar donde quedé</button><button type="button" class="btn ghost" id="descartarBorradorBtn">Descartar</button></div></div>`;
 }
 /** «Conteo inicial»: adentro, Conteo cámara + Conteo local = Conteo inicial (el resultado se guarda al terminar el conteo del local). */
+/** Desde el 1/12 el Conteo físico suelto se retira (el servidor lo vuelve a controlar): el hub lo muestra apagado cuando corresponde. */
+async function cargarConteoBloqueado(){
+  if(!S.local) return;
+  const local=S.local, r=await api("inventarios",{local});
+  if(local!==S.local) return;
+  const b=!!(r&&r.ok&&r.conteoBloqueado);
+  if(S.conteoBloqueado!==b){ S.conteoBloqueado=b; if(S.hubInicial && !S.inv && !S.conteo) renderApp() }
+}
 function conteoInicialHubHTML(){
   const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
   const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -4218,7 +4227,7 @@ function conteoInicialHubHTML(){
   <h2 class="pdH1">Conteo inicial</h2>
   <p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>
   <div class="stkFisico"><div class="stkPasos">
-    ${paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
+    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o final.</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
     <span class="stkSep">+</span>
     ${paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
     <span class="stkSep">=</span>
@@ -6797,8 +6806,9 @@ document.addEventListener("click", async e=>{
     return;
   }
   if(t.id==="avisoConteoOk"){ try{ ls.set("avisoConteoInicial","1") }catch(e){} renderApp(); return }
-  if(t.id==="conteoInicialBtn"){ S.hubInicial=true; renderApp(); window.scrollTo(0,0); return }
+  if(t.id==="conteoInicialBtn"){ S.hubInicial=true; renderApp(); window.scrollTo(0,0); cargarConteoBloqueado(); return }
   if(t.id==="hubVolver"){ S.hubInicial=false; renderApp(); return }
+  if(t.id==="conteoBtn" && S.conteoBloqueado){ toast("Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o final."); return }
   if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; iniciarConteo(false,"todo"); return }
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }

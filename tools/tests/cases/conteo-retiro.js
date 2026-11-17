@@ -1,0 +1,24 @@
+// Hub del Conteo inicial: cuando ya hay un conteo inicial de este mes, «Conteo cámara» queda apagado (el servidor también lo rechaza).
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 390, height: 900 } })).newPage();
+  const err = []; page.on("pageerror", e => err.push(e.message));
+  let fallas = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) fallas++ };
+  page.on("dialog", d => d.accept());
+  await page.goto("http://localhost:8999/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal", "Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave", "op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click('[data-tecla="' + d + '"]') }
+  await page.waitForSelector("header"); await page.waitForTimeout(300);
+  await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1200);
+  await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.waitForTimeout(500);
+  ok(!!(await page.$("#conteoBtn")), "sin conteo inicial este mes: «Conteo cámara» se puede usar");
+  await page.evaluate(() => { S.conteoBloqueado = true; renderApp(); });
+  ok(!(await page.$("#conteoBtn")) && !!(await page.$(".stkOff")), "con un conteo inicial de este mes: «Conteo cámara» queda apagado");
+  ok(/Ya hay un conteo inicial de este mes/.test(await page.innerText(".stkOff")) && /parcial o final/.test(await page.innerText(".stkOff")), "y explica que lo controla supervisión con el parcial o final");
+  ok(!!(await page.$("#invBtn")) && !!(await page.$("#invGuardadosBtn")), "Conteo local y Guardados siguen disponibles");
+  console.log("errores:", err.length ? err : "ninguno"); await b.close();
+  console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); process.exit(fallas || err.length ? 1 : 0);
+})();
