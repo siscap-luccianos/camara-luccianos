@@ -85,7 +85,7 @@ function resp(b){
     inv.cambios.push({ts:Date.now(),q:"Gabi Busquets",s:String(b.saborId),antes,despues:nuevo,mot:b.motivo});
     console.log("CORREGIR",JSON.stringify({s:b.saborId,antes,nuevo,mot:b.motivo})); return {ok:true,inventario:inv};
   }
-  if(a==="pedirConteoParcial"){ db.pedidos=db.pedidos||[]; const ya=db.pedidos.find(q=>q.local===b.local&&q.estado==="pendiente"); if(ya) return {ok:true,repetido:true,pedido:ya}; const q={id:String(db.pedidos.length+1),local:b.local,ts:Date.now(),por:"Gabi Busquets",estado:"pendiente"}; db.pedidos.push(q); return {ok:true,pedido:q}; }
+  if(a==="pedirConteoParcial"||a==="pedirConteoFinal"){ db.pedidos=db.pedidos||[]; const ya=db.pedidos.find(q=>q.local===b.local&&q.estado==="pendiente"); if(ya) return {ok:true,repetido:true,pedido:ya}; const q={id:String(db.pedidos.length+1),local:b.local,ts:Date.now(),por:"Gabi Busquets",estado:"pendiente",tipo:a==="pedirConteoFinal"?"final":"parcial"}; db.pedidos.push(q); return {ok:true,pedido:q}; }
   if(a==="cancelarPedidoConteo"){ (db.pedidos||[]).forEach(q=>{ if(q.local===b.local&&q.estado==="pendiente") q.estado="cancelado" }); return {ok:true}; }
   if(a==="pedidoConteo") return {ok:true,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null};
   if(a==="desbloquearInventario"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; console.log("DESBLOQUEAR",JSON.stringify({inv:b.inventarioId,mot:b.motivo})); db.desb=(db.desb||0)+1; return {ok:true,desbloqueado_hasta:Date.now()+864e5}; }

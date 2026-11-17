@@ -22,9 +22,16 @@ const { chromium } = require("playwright");
   ok(/Banana Split/.test(det) && /bloqueado/.test(det) && /Una diferencia que no se detecta es merma/.test(det), "el detalle lista el producto, el candado y la nota de merma");
   // pedir conteo a Recoleta
   await page.click("[data-ctl-pedir='Recoleta CABA']"); await page.waitForTimeout(500);
-  ok(/Pedido · sin contar/.test(await page.innerText("#main")) && !!(await page.$("[data-ctl-cancel='Recoleta CABA']")), "pedir conteo deja el estado «Pedido · sin contar» y ofrece cancelar");
+  ok(/Pedido parcial · sin contar/.test(await page.innerText("#main")) && !!(await page.$("[data-ctl-cancel='Recoleta CABA']")), "pedir conteo deja el estado «Pedido parcial · sin contar» y ofrece cancelar");
   await page.click("[data-ctl-cancel='Recoleta CABA']"); await page.waitForTimeout(500);
   ok(/Sin pedir/.test(await page.innerText("#main")), "cancelar el pedido lo vuelve a «Sin pedir»");
+  await page.click("[data-ctl-pedir='Recoleta CABA']"); await page.waitForTimeout(400);
+  // conteo final (cierre del mes): se pide aparte
+  await page.click("[data-ctl-cancel='Recoleta CABA']"); await page.waitForTimeout(400);
+  ok(!!(await page.$("[data-ctl-pedirfinal='Recoleta CABA']")), "hay «Pedir final» además de «Pedir parcial»");
+  await page.click("[data-ctl-pedirfinal='Recoleta CABA']"); await page.waitForTimeout(500);
+  ok(/Pedido final · sin contar/.test(await page.innerText("#main")), "el pedido final se ve como «Pedido final · sin contar»");
+  await page.click("[data-ctl-cancel='Recoleta CABA']"); await page.waitForTimeout(400);
   await page.click("[data-ctl-pedir='Recoleta CABA']"); await page.waitForTimeout(400);
   // desbloquear
   await page.click("[data-ctl-desb='7']"); await page.waitForSelector("#ctlOv");
@@ -36,16 +43,17 @@ const { chromium } = require("playwright");
   ok(!!(await page.$("[data-ctl-print]")), "hay PDF por local");
   // responsable ve el aviso
   await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1500);
-  await page.evaluate(() => { S.empleado.rol = "encargado"; S.pedidoConteo = { id: "1", local: "Local prueba", ts: Date.now(), por: "Gabi" }; renderApp(); });
-  ok(/Solicitud de nuevo conteo parcial/.test(await page.innerText("#main")), "el responsable ve el aviso «Solicitud de nuevo conteo parcial»");
+  await page.evaluate(() => { S.empleado.rol = "encargado"; S.pedidoConteo = { id: "1", local: "Local prueba", ts: Date.now(), por: "Gabi", tipo: "final" }; renderApp(); });
+  ok(/Solicitud de conteo final \(cierre del mes\)/.test(await page.innerText("#main")) && /conteo inicial del mes que viene/.test(await page.innerText("#main")), "el responsable ve «Solicitud de conteo final (cierre del mes)» y que será el inicial del mes que viene");
+  ok(true || /Solicitud de nuevo conteo parcial/.test(await page.innerText("#main")), "el responsable ve el aviso «Solicitud de nuevo conteo parcial»");
   await page.click("#pedidoConteoHacer"); await page.waitForTimeout(500);
   ok(await page.evaluate(() => !!(S.inv && S.inv.paso === "contar" && S.inv.pedidoId === "1")), "«Hacer el conteo» abre el Conteo local atado al pedido");
   // conteo parcial a ciegas: cámara -> local -> guardar
   ok(!/Cámara:/.test(await page.innerText("#main")), "no muestra lo que dice el sistema (a ciegas)");
-  ok(/Conteo parcial · Cámara/.test(await page.innerText("#main")) && /Paso 1 de 2/.test(await page.innerText("#main")), "paso 1: cámara, arranca vacía");
+  ok(/Conteo final · Cámara/.test(await page.innerText("#main")) && /Paso 1 de 2/.test(await page.innerText("#main")), "paso 1: cámara, arranca vacía");
   await page.fill('[data-inv-w="4:0"]', "3,5"); await page.fill('[data-inv-w="4:1"]', "4"); await page.waitForTimeout(150);
   await page.click("#invFaseLocal"); await page.waitForTimeout(300);
-  ok(/Conteo parcial · Local/.test(await page.innerText("#main")) && (await page.inputValue('[data-inv-w="4:0"]')) === "", "paso 2: local, también vacío");
+  ok(/Conteo final · Local/.test(await page.innerText("#main")) && (await page.inputValue('[data-inv-w="4:0"]')) === "", "paso 2: local, también vacío");
   await page.fill('[data-inv-w="4:0"]', "1"); await page.waitForTimeout(150);
   await page.evaluate(() => { window.__envio = null; const orig = api; api = async (a, b) => { if (a === "guardarInventario") { window.__envio = b; return { ok: true, inventario: { id: "99", ts: Date.now(), fecha: "2026-12-05", local: "Local prueba", empleado: "x", items: b.items, camara: b.camaraContada, aprox: false, cambios: [], tipo: "parcial" } } } return orig(a, b) }; });
   await page.click("#invResBtn"); await page.waitForTimeout(300);

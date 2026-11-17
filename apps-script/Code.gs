@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.85.1";
+const BACKEND_VERSION = "1.86.0";
 
 function doPost(e) {
   let resultado;
@@ -120,7 +120,8 @@ function _despacharConSesion(accion, body, empleado) {
     case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado, body.pedidoId, body.camaraContada);
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
-    case "pedirConteoParcial": return pedirConteoParcial(body.local, empleado);
+    case "pedirConteoParcial": return pedirConteo(body.local, "parcial", empleado);
+    case "pedirConteoFinal": return pedirConteo(body.local, "final", empleado);
     case "cancelarPedidoConteo": return cancelarPedidoConteo(body.local, empleado);
     case "pedidoConteo": return pedidoConteo(body.local, empleado);
     case "desbloquearInventario": return desbloquearInventario(body.local, body.inventarioId, body.pin, body.motivo, empleado);
@@ -2412,10 +2413,10 @@ function _inventarioPublico(r, verValor) {
     items: _jsonObj(r.items, {}), camara: _jsonObj(r.camara, {}), aprox: _esVerdadero(r.aprox) === true,
     cambios: _jsonObj(r.cambios, []),
     camara_ts: Number(r.camara_ts) || 0, fuera_jornada: _esVerdadero(r.fuera_jornada) === true,
-    tipo: String(r.tipo || "inicial") === "parcial" ? "parcial" : "inicial",
+    tipo: String(r.tipo) === "parcial" ? "parcial" : String(r.tipo) === "final" ? "final" : "inicial",
     desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0,
     con_original: !!r.items_original,
-    fijo: (Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE && !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
+    fijo: ((Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE || String(r.tipo) === "final") && !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
     precios: verValor ? _jsonObj(r.precios, null) : null,
     valor_total: verValor && r.valor_total !== "" && r.valor_total !== undefined ? Number(r.valor_total) || 0 : null,
   };
@@ -2507,11 +2508,11 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId
       items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "",
       valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]",
       camara_ts: camaraTs || "", fuera_jornada: fueraJornada ? "SI" : "NO",
-      tipo: pedidoFila ? "parcial" : "inicial", pedido_id: pedidoFila ? pedidoFila.id : "",
+      tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", pedido_id: pedidoFila ? pedidoFila.id : "",
     });
     if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
-    _auditar(pedidoFila ? "conteo_parcial_inventario" : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo parcial pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
-    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? "parcial" : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+    _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "final (cierre del mes)" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
+    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
   } finally {
     lock.releaseLock();
   }
@@ -2538,7 +2539,7 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
     if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese inventario." };
     const desbloqueado = (Number(fila.desbloqueado_hasta) || 0) > Date.now();
-    if ((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE && !desbloqueado) return { ok: false, error: "El conteo está bloqueado: no se puede corregir. Para un nuevo conteo, supervisión lo desbloquea con su PIN (vale 24 horas)." };
+    if (((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE || String(fila.tipo) === "final") && !desbloqueado) return { ok: false, error: "El conteo está bloqueado: no se puede corregir. Para un nuevo conteo, supervisión lo desbloquea con su PIN (vale 24 horas)." };
     const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
     const antes = Number(items[String(saborId)]) || 0;
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
@@ -2582,7 +2583,7 @@ function inventarios(local, empleado) {
      La versión original se conserva al lado (items_original) y cada cambio queda en «cambios».
 ============================================================ */
 
-const COLUMNAS_PEDIDOS_CONTEO = ["id", "local", "ts", "pedido_por_id", "pedido_por", "estado", "inventario_id", "hecho_ts", "hecho_por"];
+const COLUMNAS_PEDIDOS_CONTEO = ["id", "local", "ts", "pedido_por_id", "pedido_por", "estado", "inventario_id", "hecho_ts", "hecho_por", "tipo"];
 
 function _hojaPedidosConteo() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2595,7 +2596,7 @@ function _hojaPedidosConteo() {
   return sh;
 }
 
-function _pedidoPublico(q) { return q ? { id: q.id, local: q.local, ts: Number(q.ts) || 0, por: q.pedido_por || "", estado: q.estado || "" } : null; }
+function _pedidoPublico(q) { return q ? { id: q.id, local: q.local, ts: Number(q.ts) || 0, por: q.pedido_por || "", estado: q.estado || "", tipo: String(q.tipo) === "final" ? "final" : "parcial" } : null; }
 
 function _pedidoPendiente(local) {
   _hojaPedidosConteo();
@@ -2606,7 +2607,9 @@ function _soloSupervision(empleado) {
   return empleado.rol === "admin" || empleado.rol === "supervisor";
 }
 
-function pedirConteoParcial(local, empleado) {
+/** Supervisión pide un conteo a un local: «parcial» (control en el medio del mes) o «final» (cierre del mes: queda como el conteo inicial del mes que viene). */
+function pedirConteo(local, tipo, empleado) {
+  tipo = tipo === "final" ? "final" : "parcial";
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede pedir un conteo parcial." };
   if (!local) return { ok: false, error: "Falta el local." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
@@ -2615,14 +2618,19 @@ function pedirConteoParcial(local, empleado) {
   lock.tryLock(10000);
   try {
     const ya = _pedidoPendiente(local);
-    if (ya) return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
-    const r = _escribirCrudo("PedidosConteo", { local: local, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente" });
-    _auditar("pedir_conteo_parcial", empleado.id, empleado.nombre, local + ": pidió un conteo parcial");
-    return { ok: true, pedido: _pedidoPublico(Object.assign({ id: r.id, local: local, ts: Date.now(), pedido_por: empleado.nombre, estado: "pendiente" })) };
+    if (ya) {
+      if ((String(ya.tipo) === "final") !== (tipo === "final")) return { ok: false, error: "Ya hay un pedido de conteo " + (String(ya.tipo) === "final" ? "final" : "parcial") + " para este local: cancelalo primero." };
+      return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
+    }
+    const r = _escribirCrudo("PedidosConteo", { local: local, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo });
+    _auditar(tipo === "final" ? "pedir_conteo_final" : "pedir_conteo_parcial", empleado.id, empleado.nombre, local + ": pidió un conteo " + tipo);
+    return { ok: true, pedido: _pedidoPublico(Object.assign({ id: r.id, local: local, ts: Date.now(), pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo })) };
   } finally {
     lock.releaseLock();
   }
 }
+
+function pedirConteoParcial(local, empleado) { return pedirConteo(local, "parcial", empleado); }
 
 function cancelarPedidoConteo(local, empleado) {
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede cancelar el pedido." };
@@ -2731,8 +2739,9 @@ function controlStock(empleado) {
     const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(b.ts) - Number(a.ts));
     const pend = pedidos.filter((q) => String(q.local).trim() === nombre && String(q.estado) === "pendiente")[0];
     if (!mios.length && !pend) return;
-    const parcial = mios.filter((r) => String(r.tipo) === "parcial")[0] || null;
-    const inicial = mios.filter((r) => String(r.tipo || "inicial") !== "parcial" && (!parcial || Number(r.ts) < Number(parcial.ts)))[0] || null;
+    // Lo comparado es el último conteo parcial o final; la base, el último conteo inicial o final ANTERIOR a ese (un final es el inicial del mes siguiente).
+    const parcial = mios.filter((r) => String(r.tipo) === "parcial" || String(r.tipo) === "final")[0] || null;
+    const inicial = mios.filter((r) => String(r.tipo) !== "parcial" && (!parcial || Number(r.ts) < Number(parcial.ts)))[0] || null;
     const fila = { local: nombre, pedido: _pedidoPublico(pend), inicial: inicial ? _inventarioPublico(inicial, false) : null, parcial: parcial ? _inventarioPublico(parcial, false) : null, estado: "", debia: 0, conto: 0, diferencia: 0, detalle: [] };
     if (parcial && inicial) {
       const debe = _deberiaHaber(inicial, Number(parcial.ts) || 0, nombre, catalogo);
