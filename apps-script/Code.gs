@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.84.0";
+const BACKEND_VERSION = "1.85.1";
 
 function doPost(e) {
   let resultado;
@@ -117,9 +117,14 @@ function _despacharConSesion(accion, body, empleado) {
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos, body.pesos);
     case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta, body.pesos);
-    case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado);
+    case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado, body.pedidoId, body.camaraContada);
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
+    case "pedirConteoParcial": return pedirConteoParcial(body.local, empleado);
+    case "cancelarPedidoConteo": return cancelarPedidoConteo(body.local, empleado);
+    case "pedidoConteo": return pedidoConteo(body.local, empleado);
+    case "desbloquearInventario": return desbloquearInventario(body.local, body.inventarioId, body.pin, body.motivo, empleado);
+    case "controlStock": return controlStock(empleado);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
@@ -2345,7 +2350,7 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
    Vasquetas y tipo k (Crumble/Granella) se cuentan en kilos (hasta 2 decimales); el resto, en unidades enteras.
 ============================================================ */
 
-const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios", "camara_ts", "fuera_jornada"];
+const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios", "camara_ts", "fuera_jornada", "tipo", "pedido_id", "items_original", "desbloqueado_hasta", "desbloqueo"];
 
 /** Desde el 01/12/2026 00:00 (Argentina) el Conteo inicial (ex «Stock definitivo») queda FIJO: no se corrige. Lo guardado antes era de práctica y se puede seguir corrigiendo. */
 const CONTEO_INICIAL_FIJO_DESDE = Date.parse("2026-12-01T00:00:00-03:00");
@@ -2407,7 +2412,10 @@ function _inventarioPublico(r, verValor) {
     items: _jsonObj(r.items, {}), camara: _jsonObj(r.camara, {}), aprox: _esVerdadero(r.aprox) === true,
     cambios: _jsonObj(r.cambios, []),
     camara_ts: Number(r.camara_ts) || 0, fuera_jornada: _esVerdadero(r.fuera_jornada) === true,
-    fijo: (Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE,
+    tipo: String(r.tipo || "inicial") === "parcial" ? "parcial" : "inicial",
+    desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0,
+    con_original: !!r.items_original,
+    fijo: (Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE && !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
     precios: verValor ? _jsonObj(r.precios, null) : null,
     valor_total: verValor && r.valor_total !== "" && r.valor_total !== undefined ? Number(r.valor_total) || 0 : null,
   };
@@ -2421,7 +2429,7 @@ function _invPermiso(empleado, local) {
 }
 
 /** Guarda un inventario. items: {idSabor: lo contado en el local}; camaraKg: {idSabor: {k: kilos, ap: 1 si son aproximados}} (lo calcula el cliente con lo que ve). */
-function guardarInventario(clienteId, local, items, camaraKg, empleado) {
+function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   const err = _invPermiso(empleado, local);
   if (err) return { ok: false, error: err };
   if (!items || typeof items !== "object") return { ok: false, error: "Falta el inventario." };
@@ -2448,12 +2456,30 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado) {
       const existente = _leerUltimasFilas("Inventarios", 50).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
       if (existente) return { ok: true, repetido: true, inventario: _inventarioPublico(existente, _invVerValor(filaLocal, empleado)) };
     }
+    // Si hay un pedido de Conteo parcial pendiente de este local y se lo manda, este guardado ES ese conteo parcial.
+    let pedidoFila = null;
+    if (pedidoId) {
+      pedidoFila = _hojaPedidosConteo() && _leerCrudo("PedidosConteo").filter((q) => String(q.id) === String(pedidoId) && String(q.local).trim() === String(local).trim() && String(q.estado) === "pendiente")[0];
+      if (!pedidoFila) return { ok: false, error: "Ese pedido de conteo ya no está pendiente." };
+    }
     const stock = _stockActualLocal(local);
     const camara = {};
     const aMirar = {};
     Object.keys(stock).forEach((id) => { if ((Number(stock[id]) || 0) > 0) aMirar[id] = 1; });
     Object.keys(contados).forEach((id) => { aMirar[id] = 1; });
     let aprox = false;
+    // Conteo parcial: la cámara es la que CONTÓ el responsable (a ciegas), no el stock del sistema. No se toca el stock de trabajo.
+    if (pedidoFila && camaraContada && typeof camaraContada === "object") {
+      Object.keys(camaraContada).forEach((id) => {
+        const sab = catalogo[id]; if (!sab) return;
+        const d = camaraContada[id] || {};
+        const u = Math.max(0, Math.round(Number(d.u) || 0));
+        const c = { u: u };
+        if (_invEsKg(sab)) { const k = Number(d.k); c.k = isFinite(k) && k >= 0 && k <= 100000 ? Math.round(k * 100) / 100 : 0; }
+        if (u > 0 || (c.k || 0) > 0) camara[id] = c;
+      });
+      Object.keys(aMirar).forEach((k) => { delete aMirar[k]; });
+    }
     Object.keys(aMirar).forEach((id) => {
       const sab = catalogo[id];
       if (!sab) return;
@@ -2481,9 +2507,11 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado) {
       items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "",
       valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]",
       camara_ts: camaraTs || "", fuera_jornada: fueraJornada ? "SI" : "NO",
+      tipo: pedidoFila ? "parcial" : "inicial", pedido_id: pedidoFila ? pedidoFila.id : "",
     });
-    _auditar("guardar_inventario", empleado.id, empleado.nombre, local + ": inventario del local (" + Object.keys(contados).length + " productos con algo en el local)");
-    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+    if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
+    _auditar(pedidoFila ? "conteo_parcial_inventario" : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo parcial pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
+    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? "parcial" : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
   } finally {
     lock.releaseLock();
   }
@@ -2509,7 +2537,8 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
   try {
     const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
     if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese inventario." };
-    if ((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE) return { ok: false, error: "El Conteo inicial es fijo: no se puede corregir. Si hay un desvío, lo ajusta supervisión." };
+    const desbloqueado = (Number(fila.desbloqueado_hasta) || 0) > Date.now();
+    if ((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE && !desbloqueado) return { ok: false, error: "El conteo está bloqueado: no se puede corregir. Para un nuevo conteo, supervisión lo desbloquea con su PIN (vale 24 horas)." };
     const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
     const antes = Number(items[String(saborId)]) || 0;
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
@@ -2517,9 +2546,12 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     cambios.push({ ts: Date.now(), q: empleado.nombre, s: String(saborId), antes: antes, despues: nuevo, mot: motivo });
     const precios = _jsonObj(fila.precios, null);
     const valorTotal = precios && Object.keys(precios).length ? _invValor(items, camara, precios, catalogo) : (fila.valor_total === undefined ? "" : fila.valor_total);
-    _actualizarCrudo("Inventarios", fila.id, { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal });
+    // La primera corrección de un conteo desbloqueado guarda la versión original: queda al lado, no se pisa.
+    const cambiosFila = { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal };
+    if (!fila.items_original) cambiosFila.items_original = String(fila.items || "{}");
+    _actualizarCrudo("Inventarios", fila.id, cambiosFila);
     _auditar("corregir_inventario", empleado.id, empleado.nombre, local + ": inventario " + fila.id + ", " + sab.nombre + " " + antes + " → " + nuevo + " (" + motivo + ")");
-    const publica = _inventarioPublico(Object.assign({}, fila, { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal }), _invVerValor(filaLocal, empleado));
+    const publica = _inventarioPublico(Object.assign({}, fila, { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal, items_original: fila.items_original || String(fila.items || "{}") }), _invVerValor(filaLocal, empleado));
     return { ok: true, inventario: publica };
   } finally {
     lock.releaseLock();
@@ -2539,6 +2571,192 @@ function inventarios(local, empleado) {
     .slice(0, 12)
     .map((r) => _inventarioPublico(r, verValor));
   return { ok: true, inventarios: lista, verValor: verValor };
+}
+
+
+/* ============================================================
+   CONTEO PARCIAL (pedido por supervisión), CANDADO Y CONTROL DE STOCK
+   - Supervisión (admin/supervisor) pide un Conteo parcial de un local: el responsable lo hace (cámara + local, igual que el
+     inicial) y queda guardado como tipo «parcial». NO toca el stock operativo de la cámara: solo deja la diferencia a la vista.
+   - Un conteo guardado queda con candado; solo admin/supervisor lo desbloquean con su PIN personal y un motivo (vale 24 h).
+     La versión original se conserva al lado (items_original) y cada cambio queda en «cambios».
+============================================================ */
+
+const COLUMNAS_PEDIDOS_CONTEO = ["id", "local", "ts", "pedido_por_id", "pedido_por", "estado", "inventario_id", "hecho_ts", "hecho_por"];
+
+function _hojaPedidosConteo() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName("PedidosConteo");
+  if (!sh) {
+    sh = ss.insertSheet("PedidosConteo");
+    sh.getRange(1, 1, 1, COLUMNAS_PEDIDOS_CONTEO.length).setValues([COLUMNAS_PEDIDOS_CONTEO]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function _pedidoPublico(q) { return q ? { id: q.id, local: q.local, ts: Number(q.ts) || 0, por: q.pedido_por || "", estado: q.estado || "" } : null; }
+
+function _pedidoPendiente(local) {
+  _hojaPedidosConteo();
+  return _leerCrudo("PedidosConteo").filter((q) => String(q.local).trim() === String(local).trim() && String(q.estado) === "pendiente").sort((a, b) => Number(b.ts) - Number(a.ts))[0] || null;
+}
+
+function _soloSupervision(empleado) {
+  return empleado.rol === "admin" || empleado.rol === "supervisor";
+}
+
+function pedirConteoParcial(local, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede pedir un conteo parcial." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  if (!filaLocal || _esVerdadero(filaLocal.operaciones) === true) return { ok: false, error: "No se encontró ese local." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const ya = _pedidoPendiente(local);
+    if (ya) return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
+    const r = _escribirCrudo("PedidosConteo", { local: local, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente" });
+    _auditar("pedir_conteo_parcial", empleado.id, empleado.nombre, local + ": pidió un conteo parcial");
+    return { ok: true, pedido: _pedidoPublico(Object.assign({ id: r.id, local: local, ts: Date.now(), pedido_por: empleado.nombre, estado: "pendiente" })) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cancelarPedidoConteo(local, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede cancelar el pedido." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const q = _pedidoPendiente(local);
+    if (!q) return { ok: true, sinPedido: true };
+    _actualizarCrudo("PedidosConteo", q.id, { estado: "cancelado", hecho_ts: Date.now(), hecho_por: empleado.nombre });
+    _auditar("cancelar_pedido_conteo", empleado.id, empleado.nombre, local + ": canceló el pedido de conteo parcial");
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** ¿Hay un conteo parcial pedido para este local? (lo ve quien hace el conteo; el colaborador no) */
+function pedidoConteo(local, empleado) {
+  const err = _invPermiso(empleado, local);
+  if (err) return { ok: false, error: err };
+  return { ok: true, pedido: _pedidoPublico(_pedidoPendiente(local)) };
+}
+
+/** Desbloquea UN conteo guardado por 24 horas: solo admin/supervisor, con su PIN personal y un motivo. */
+function desbloquearInventario(local, inventarioId, pin, motivo, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede desbloquear un conteo." };
+  motivo = String(motivo || "").trim().slice(0, 200);
+  if (motivo.length < 3) return { ok: false, error: "Escribí el motivo del desbloqueo." };
+  const ePin = _exigirPinAdmin(empleado, pin, local);
+  if (ePin) return ePin;
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    _hojaInventarios();
+    const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
+    if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese conteo." };
+    const hasta = Date.now() + 24 * 3600 * 1000;
+    const log = _jsonObj(fila.desbloqueo, []);
+    log.push({ ts: Date.now(), q: empleado.nombre, mot: motivo });
+    _actualizarCrudo("Inventarios", fila.id, { desbloqueado_hasta: hasta, desbloqueo: JSON.stringify(log) });
+    _auditar("desbloquear_inventario", empleado.id, empleado.nombre, local + ": desbloqueó el conteo " + fila.id + " por 24 h (" + motivo + ")");
+    return { ok: true, desbloqueado_hasta: hasta };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Total contado de un conteo (cámara + local) por sabor: kilos en vasquetas/kilos, unidades en el resto. */
+function _totalContado(inv, catalogo) {
+  const items = _jsonObj(inv.items, {}), camara = _jsonObj(inv.camara, {});
+  const out = {};
+  const ids = {};
+  Object.keys(items).forEach((id) => { ids[id] = 1; });
+  Object.keys(camara).forEach((id) => { ids[id] = 1; });
+  Object.keys(ids).forEach((id) => {
+    const sab = catalogo[id];
+    if (!sab) return;
+    const c = camara[id] || {}, loc = Number(items[id]) || 0;
+    out[id] = _invEsKg(sab) ? { kg: true, v: Math.round(((Number(c.k) || 0) + loc) * 100) / 100 } : { kg: false, v: (Number(c.u) || 0) + loc };
+  });
+  return out;
+}
+
+/** Lo que el sistema dice que debería haber: el conteo inicial + ingresos − salidas (y cambios de sabor) hasta el momento del parcial. */
+function _deberiaHaber(inicial, tsHasta, local, catalogo) {
+  const base = _totalContado(inicial, catalogo);
+  const t0 = Number(inicial.ts) || 0;
+  _leerCrudo("Registros").forEach((r) => {
+    if (String(r.local).trim() !== String(local).trim() || r.anulado_ts) return;
+    const ts = Number(r.ts) || 0;
+    if (ts <= t0 || ts > tsHasta) return;
+    if (r.tipo === "cambio" && String(r.subtipo) === "conteo_parcial") return; // el ajuste de un conteo no es un movimiento real
+    const signo = (r.tipo === "ingreso" || r.tipo === "cambio") ? 1 : r.tipo === "salida" ? -1 : 0;
+    if (!signo) return;
+    const items = _jsonObj(r.items, {}), kilos = _jsonObj(r.kilos, {}), pesos = _jsonObj(r.pesos, {});
+    Object.keys(items).forEach((id) => {
+      const sab = catalogo[id];
+      if (!sab) return;
+      const n = Number(items[id]) || 0;
+      if (!base[id]) base[id] = { kg: _invEsKg(sab), v: 0 };
+      if (!base[id].kg) { base[id].v += signo * n; return; }
+      let kg;
+      if (r.tipo === "salida") { const pp = pesos[id]; kg = Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0); }
+      else if (kilos[id] !== undefined && kilos[id] !== "") kg = Math.abs(Number(kilos[id]) || 0) * (r.tipo === "cambio" ? (n < 0 ? -1 : 1) : 1);
+      else kg = Math.abs(n) * (Number(sab.peso) || 0) * (n < 0 ? -1 : 1);
+      base[id].v = Math.round((base[id].v + (r.tipo === "cambio" ? kg : signo * kg)) * 100) / 100;
+    });
+  });
+  return base;
+}
+
+/** Control de stock (solo supervisión): por local, el conteo inicial vigente, el último parcial y la diferencia contra lo que debería haber. */
+function controlStock(empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
+  _hojaInventarios(); _hojaPedidosConteo();
+  const locales = _leerCrudo("Locales").filter((l) => _esVerdadero(l.operaciones) !== true && _esVerdadero(l.activo) !== false);
+  const invs = _leerCrudo("Inventarios");
+  const pedidos = _leerCrudo("PedidosConteo");
+  const sabores = _leerCrudo("Sabores");
+  const filas = [];
+  locales.forEach((l) => {
+    const nombre = String(l.nombre).trim();
+    const pais = _paisDeLocal(l);
+    const catalogo = {};
+    sabores.forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
+    const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(b.ts) - Number(a.ts));
+    const pend = pedidos.filter((q) => String(q.local).trim() === nombre && String(q.estado) === "pendiente")[0];
+    if (!mios.length && !pend) return;
+    const parcial = mios.filter((r) => String(r.tipo) === "parcial")[0] || null;
+    const inicial = mios.filter((r) => String(r.tipo || "inicial") !== "parcial" && (!parcial || Number(r.ts) < Number(parcial.ts)))[0] || null;
+    const fila = { local: nombre, pedido: _pedidoPublico(pend), inicial: inicial ? _inventarioPublico(inicial, false) : null, parcial: parcial ? _inventarioPublico(parcial, false) : null, estado: "", debia: 0, conto: 0, diferencia: 0, detalle: [] };
+    if (parcial && inicial) {
+      const debe = _deberiaHaber(inicial, Number(parcial.ts) || 0, nombre, catalogo);
+      const conto = _totalContado(parcial, catalogo);
+      const ids = {}; Object.keys(debe).forEach((id) => { ids[id] = 1; }); Object.keys(conto).forEach((id) => { ids[id] = 1; });
+      let dk = 0, ck = 0, du = 0, cu = 0;
+      Object.keys(ids).forEach((id) => {
+        const sab = catalogo[id]; if (!sab) return;
+        const d = debe[id] ? debe[id].v : 0, c = conto[id] ? conto[id].v : 0;
+        const esKg = _invEsKg(sab);
+        if (esKg) { dk += d; ck += c; } else { du += d; cu += c; }
+        const dif = Math.round((c - d) * 100) / 100;
+        if (dif !== 0) fila.detalle.push({ id: id, nombre: sab.nombre, kg: esKg, debia: Math.round(d * 100) / 100, conto: Math.round(c * 100) / 100, dif: dif });
+      });
+      fila.debia = Math.round(dk * 100) / 100; fila.conto = Math.round(ck * 100) / 100; fila.diferencia = Math.round((ck - dk) * 100) / 100;
+      fila.debiaU = du; fila.contoU = cu; fila.difU = cu - du;
+      fila.detalle.sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif));
+      fila.estado = pend ? "pedido" : "controlado";
+    } else {
+      fila.estado = pend ? "pedido" : (inicial ? "sin_pedir" : "sin_inicial");
+    }
+    filas.push(fila);
+  });
+  return { ok: true, locales: filas };
 }
 
 /* ============================================================
