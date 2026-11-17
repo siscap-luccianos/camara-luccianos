@@ -1398,7 +1398,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.162.1";
+const FRONTEND_VERSION = "1.163.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4604,6 +4604,7 @@ function invIniciar(){
   const pesos={};
   if(b) Object.keys(b.pesos||{}).forEach(id=>{ if(S.saboresPorId[id] && Array.isArray(b.pesos[id])) pesos[id]=b.pesos[id].map(x=>x===""||x===null?"":+x||0) });
   S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, pesos, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
+  S.filtroFamilia=S.inv.rubro; S.filtroCategoria="todas"; S.q=""; S.catAbierta=false; S.soloAlerta=false;
   window.scrollTo(0,0); renderApp();
 }
 /** Conteo parcial (pedido por supervisión): arranca de cero y a ciegas (no muestra lo que dice el sistema). Dos pasos: cámara y local. No toca el stock de trabajo. */
@@ -4629,8 +4630,11 @@ function inventarioView(){
 }
 function invContarHTML(){
   const I=S.inv, grupos=invGrupos(), cam=invCamaraLive();
-  if(!grupos.includes(I.rubro)) I.rubro=grupos[0];
-  const lista=invSabores().filter(s=>grupoProductoDe(s)===I.rubro);
+  // El menú de arriba es el MISMO de Conteo cámara: rubro, subcategoría, buscador y «Debajo del mínimo».
+  if(!grupos.includes(S.filtroFamilia||"vasquetas")){ S.filtroFamilia=grupos[0]; S.filtroCategoria="todas" }
+  I.rubro=S.filtroFamilia||"vasquetas";
+  const idsInv=new Set(invSabores().map(x=>String(x.id)));
+  const lista=listaFiltrada(stockMap()).filter(x=>idsInv.has(String(x.id)));
   const kgR=I.rubro==="vasquetas";
   const row=s=>{
     const kg=invEsKg(s), v=I.items[s.id]||0, t=!!I.tocado[s.id], c=cam[s.id];
@@ -4650,17 +4654,38 @@ function invContarHTML(){
       <div class="nm">${esc(s.nombre)}${metaCam}</div>
       <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
   };
-  const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
   const parc=!!I.pedidoId, enCam=parc&&I.fase==="camara";
-  return `<div class="invHead"><b>${parc?(enCam?"Conteo parcial · Cámara":"Conteo parcial · Local"):"Conteo local"}</b>${parc?"":`<button type="button" class="chip" data-inv-guardados>Guardados</button>`}</div>
-  <div class="defin"><b>${parc?"Supervisión pidió este conteo. Se guarda aparte y no cambia el stock de la cámara.":"Esto queda guardado como el conteo inicial."}</b></div>
-  <p class="invHint">${parc?(enCam?"Paso 1 de 2: contá lo que hay <b>dentro de la cámara</b>, empezando de cero. ":"Paso 2 de 2: contá lo que hay <b>en el local, fuera de la cámara</b>. "):"Contá solo lo que hay <b>en el local, fuera de la cámara</b>. "} ${kgR?"En las vasquetas <b>pesá cada una</b> y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
+  const titulo=parc?(enCam?"Conteo parcial · Cámara":"Conteo parcial · Local"):"Conteo local";
+  const acla=parc
+    ? (enCam?"Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ":"Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ")+"Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara."
+    : "Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial.";
+  const tEsc=parc&&conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
+  const tCero=accTileHTML("invCeroBtn","Poner todo en 0","para empezar de cero y contar todo","swap");
+  return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>${titulo}</h1><p class="cntAcla">${acla}${kgR?" En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":" Va por unidad, como en el resto de la app."}</p></div>
+  ${accGridHTML([tEsc,tCero].filter(Boolean))}
+  ${parc&&conteoEscVisible()?`<div class="pcDestino"><span>Escanear en:</span><button type="button" class="chip" data-pc-target="camara" aria-pressed="${I.fase==="camara"}">Cámara</button><button type="button" class="chip" data-pc-target="local" aria-pressed="${I.fase!=="camara"}">Local</button></div>`:""}
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
-  ${parc&&conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return `<button type="button" class="ctaCard glass" id="escConteoBtn" style="margin:0 0 12px" aria-label="Contar escaneando"><span style="font-size:1.4rem">📷</span><span style="flex:1;text-align:left"><b style="display:block">Contar escaneando</b><small>${n?n+(n===1?" lectura":" lecturas")+" · tocá para seguir":"Vasquetas: escaneá cada rótulo o cada caja."}</small></span></button>` })():""}
-  <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
-  <div class="rows" style="margin-top:12px">${lista.map(row).join("")||`<div class="note">No hay productos de este rubro en el local.</div>`}</div>
-  ${sinTocar?`<div class="note" style="margin-top:10px">Sin tocar: <b data-inv-sintocar>${sinTocar}</b>. Si no hay nada afuera de la cámara, queda en 0.</div>`:""}`;
+  <div class="cProg" id="invProg">${invProgresoHTML()}</div>
+  ${chipFiltros()}
+  <div class="rows cntGrid" style="margin-top:14px">${lista.map(row).join("")||`<div class="note">No hay productos con ese filtro.</div>`}</div>`;
 }
+/** Avance del conteo del local: «N de M contados» (los que se tocaron, aunque queden en 0). */
+function invProgresoHTML(){
+  const I=S.inv, ids=invSabores().map(x=>String(x.id)), total=ids.length, hechos=ids.filter(id=>I.tocado[id]).length, pct=total?Math.round(hechos/total*100):100;
+  return `<div class="cProgTx"><b>${hechos} de ${total} contados</b><span>Lo que no toques cuenta como 0</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
+}
+function invRefrescarProg(){ const e=document.getElementById("invProg"); if(e&&S.inv) e.innerHTML=invProgresoHTML() }
+/** «Poner todo en 0»: marca como contado, en 0, todo lo que se ve con el filtro de arriba. */
+function invPonerCero(){
+  const I=S.inv; if(!I) return;
+  const idsInv=new Set(invSabores().map(x=>String(x.id)));
+  const visibles=listaFiltrada(stockMap()).filter(x=>idsInv.has(String(x.id)));
+  if(!visibles.length) return;
+  if(!confirm("¿Poner en 0 los "+visibles.length+" productos que se ven ("+(GRUPO_PRODUCTO_LABEL[I.rubro]||I.rubro)+")? Después cargás lo que haya.")) return;
+  visibles.forEach(x=>{ const id=String(x.id); Reflect.deleteProperty(I.items,id); Reflect.deleteProperty(I.pesos,id); I.tocado[id]=1; if(I.pedidoId) pcSacarEscaneoFase(id) });
+  invGuardarBorrador(); renderApp(); renderBar();
+}
+function pcSacarEscaneoFase(id){ const E=ceEsc(); E.items=E.items.filter(x=>String(x.id)!==String(id)); Reflect.deleteProperty(E.previo,id) }
 function invResumenCargado(){
   const I=S.inv, t={};
   Object.keys(I.items).forEach(id=>{ const s=S.saboresPorId[id]; if(!s) return; const g=grupoProductoDe(s); t[g]=(t[g]||0)+(+I.items[id]||0) });
@@ -4861,8 +4886,7 @@ function invPonerValor(id,n,input){
   I.tocado[id]=1;
   const row=document.querySelector(`[data-inv-row="${id}"]`);
   if(row){ row.classList.remove("sin"); if(!row.querySelector("[data-inv-reset]")){ const r=document.createElement("button"); r.type="button"; r.className="r"; r.dataset.invReset=id; r.title="Deshacer"; r.setAttribute("aria-label","Deshacer lo cargado de "+s.nombre); r.textContent="↺"; row.querySelector(".invStep").appendChild(r) } }
-  const sin=document.querySelector("[data-inv-sintocar]");
-  if(sin){ const lista=invSabores().filter(x=>grupoProductoDe(x)===I.rubro), k=lista.filter(x=>!I.tocado[x.id]).length; sin.textContent=k; if(!k && sin.parentElement) sin.parentElement.hidden=true }
+  invRefrescarProg();
   invGuardarBorrador(); renderBar();
 }
 function invClick(t){
@@ -4870,6 +4894,7 @@ function invClick(t){
   if(t.id==="invBtn"){ invIniciar(); return true }
   if(t.id==="invGuardadosBtn"){ S.inv={paso:"guardados", rubro:invGrupos()[0], items:{}, tocado:{}, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:false, guardando:false, inicio:Date.now()}; renderApp(); invCargarLista(); return true }
   if(!I) return false;
+  if(t.id==="invCeroBtn"){ invPonerCero(); return true }
   if(t.id==="invSalir"){ invSalir(); return true }
   if(t.id==="invNuevo"){ invIniciar(); return true }
   if(t.id==="invReintentar"){ invCargarLista(); renderApp(); return true }
