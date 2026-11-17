@@ -16,7 +16,7 @@ const { chromium } = require("playwright");
   const stock = id => page.evaluate(i => stockMap()[i] || 0, id);
   const s5 = await stock("5"), s20 = await stock("20");
 
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForTimeout(400);
   const cargar = async (id, v, kg) => { await page.fill(`[data-c="${id}"]`, String(v)); await page.dispatchEvent(`[data-c="${id}"]`, "input"); if (kg) { await page.fill(`[data-kc="${id}"]`, kg); await page.dispatchEvent(`[data-kc="${id}"]`, "input") } await page.waitForTimeout(80) };
   // contar solo Banana Split (30 vasquetas) con sus kilos; el resto sin tocar (y sin kilos cargados)
   await cargar(4, 30, "117");
@@ -47,7 +47,7 @@ const { chromium } = require("playwright");
   ok(await page.evaluate(() => !S.conteo), "y el conteo se cerró");
   // --- «Solo un rubro → Vasquetas»: contar un solo sabor y guardar (caso real de Gabi: Dubai)
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click('[data-ce="rubro"]'); await page.click('[data-ce-rubro="vasquetas"]'); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.evaluate(() => abrirElegirConteo()); await page.waitForSelector("#contOv"); await page.click('[data-ce="rubro"]'); await page.click('[data-ce-rubro="vasquetas"]'); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
   await cargar(5, 9, "28,5");
   await page.click("#go"); await page.waitForTimeout(400);
   for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }

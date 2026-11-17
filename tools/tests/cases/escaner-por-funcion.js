@@ -14,7 +14,7 @@ const { chromium } = require("playwright");
   if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click(`[data-tecla="${d}"]`); }
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   const irA = async n => { await page.fill("#local", n); await page.press("#local", "Enter"); await page.waitForTimeout(1200); };
-  const conteoBtn = async () => { await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400); await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); const e = await page.$("[data-ce-empezar]"); if (e) { await e.click(); await page.waitForTimeout(400); } return await page.$("#escConteoBtn") !== null; };
+  const conteoBtn = async () => { await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400); await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForTimeout(500); return await page.$("#escConteoBtn") !== null; };
   const salidaTiene = async () => { await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); await page.click("[data-sal-menu='comun']").catch(()=>{}); await page.waitForTimeout(200); return await page.$("#irEscaner") !== null; };
   const flags = () => page.evaluate(() => ({ p: S.escanerPeso, s: S.escanerSalida, c: S.escanerConteo, k: S.kilosReales }));
 

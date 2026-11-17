@@ -13,7 +13,7 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
 
   // ---------- CAMBIO DE SABOR ----------
   await page.click("[data-t='ingreso']"); await page.waitForTimeout(300);
-  ok(await page.$("[data-ing-menu='cambio']")!==null, "responsable ve «¿Llegó un sabor cambiado?» en Ingreso");
+  ok(await page.$("[data-ing-menu='cambio']")!==null, "responsable ve «¿Llegó un sabor mal rotulado?» en Ingreso");
   await page.click("[data-ing-menu='cambio']"); await page.waitForTimeout(300);
   ok((await page.$eval("#cmbOk",e=>e.disabled)), "Registrar apagado al entrar");
   const desdeOpts=await page.$$eval("#cmbDesde option",o=>o.map(x=>x.textContent));

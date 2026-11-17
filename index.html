@@ -126,6 +126,7 @@ html .timerInact.urgente{color:#F2C879}
 .ayCard b{display:block;font-size:.98rem;margin-bottom:2px}
 .ayCard p{margin:0;font-size:.84rem;line-height:1.4;color:var(--muted);font-weight:600}
 .ayLista{display:flex;flex-direction:column;gap:8px}
+.ayGrupo{margin:8px 0 0;font-size:.68rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .ayTema{border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);overflow:hidden}
 .ayTema.abierto{border-color:var(--accent)}
 .ayTemaBtn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;background:none;border:0;color:inherit;font:inherit;font-weight:800;font-size:.95rem;text-align:left;cursor:pointer}
@@ -384,6 +385,19 @@ select{max-width:220px}
 .card.consulta>.pick:active{transform:none}
 .consultaAviso{display:flex;flex-direction:column;gap:10px;background:rgba(var(--accent-rgb),.10);border:1px solid rgba(var(--accent-rgb),.25);border-radius:14px;padding:12px 14px;margin:6px 0 10px;font-size:.84rem;color:var(--ink)}
 .consultaAviso b{display:block;font-size:.9rem;margin-bottom:2px}
+.rcBloq{font-weight:800;font-size:.78rem;color:#C62828}
+.ctlCuenta{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 14px;margin:10px 0}
+.ctlCl{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:.88rem;font-variant-numeric:tabular-nums}
+.ctlCuenta>.ctlCl:first-child{border-top:0}
+.ctlCl.tot{border-top:2px solid var(--ink)}.ctlCl.tot span{font-weight:800}
+.ctlCl.pos b{color:#1E8A4C}.ctlCl.neg b{color:#C62828}.ctlCl.dif b{color:#C62828}
+.ctlCuentaAnu{border-top:1px solid var(--line);padding:9px 0;font-size:.82rem;display:grid;gap:3px}
+.chocoBarra{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.chocoBtn{flex:1 1 220px;min-height:48px;border-radius:14px;font-weight:700;font-size:.92rem;font-family:inherit;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;color:var(--ink);border:1.5px solid var(--line);background:var(--surface)}
+.chocoBtn.consumo{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45)}
+.chocoBtn.venc{background:rgba(11,93,143,.09);border-color:rgba(11,93,143,.4);color:#0B5D8F}
+:root[data-tema="dorado"] .chocoBtn.venc{color:#8CC8EE;background:rgba(11,93,143,.22)}
+.chocoBtn:active{transform:scale(.98)}
 .consultaGo{align-self:flex-start;min-height:42px;padding:0 16px;font-size:.84rem}
 .consultaNota{color:var(--muted);font-weight:700;font-size:.8rem}
 .card.sel>.pick{border-color:var(--accent);border-width:2.5px}
@@ -669,9 +683,8 @@ body:has(.etiqOv){overflow:hidden}
 .accTile .accTx{display:flex;flex-direction:column;gap:2px;min-width:0}
 .accTile b{font-size:.95rem;line-height:1.2}
 .accTile small{font-size:.72rem;color:var(--muted);font-weight:600;line-height:1.25}
-.accTile.m{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.accTile.m small{color:inherit;opacity:.85}
-.accTile.m .accIco{background:rgba(255,255,255,.2);color:inherit}
+.accTile.m{background:rgba(var(--accent-rgb),.12);border-color:rgba(var(--accent-rgb),.45)}
+.accTile.m .accIco{background:rgba(var(--accent-rgb),.22)}
 .accTile.dest{background:rgba(var(--accent-rgb),.1);border-color:rgba(var(--accent-rgb),.45)}
 .accTile:active{transform:scale(.98)}
 @media(min-width:900px){
@@ -762,6 +775,8 @@ body:has(.etiqOv){overflow:hidden}
   .stkPasoTx span{font-size:.88rem}
 }
 .cntTit{margin:0 0 14px}
+.stkOff{opacity:.55;cursor:not-allowed}
+.cntAcla{margin:8px 0 0;font-size:.84rem;line-height:1.45;color:var(--muted);max-width:640px}
 .cntKick{font-size:.7rem;letter-spacing:.16em;font-weight:800;color:#8A6A3A}
 .cntTit h1{margin:4px 0 0;font-family:Fraunces,serif;font-weight:600;font-size:2rem;letter-spacing:-.02em;line-height:1.05}
 .cntTit p{margin:6px 0 0;color:var(--muted);font-size:.88rem;line-height:1.4}
@@ -775,7 +790,11 @@ body:has(.etiqOv){overflow:hidden}
 .cStep{display:inline-flex;align-items:center;gap:8px}
 .cStep button{width:38px;height:38px;border-radius:19px;border:1.5px solid #CDBFAE;background:var(--surface);color:var(--ink);font-size:1.15rem;font-weight:700;cursor:pointer;font-family:inherit}
 .cStep button.cP{background:#2A201A;border-color:#2A201A;color:#F8F1E6}
-.cStep input{width:56px;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.3rem;border:0;background:transparent;padding:0}
+.cStep input{width:56px;min-width:56px;flex:none;box-sizing:border-box;text-align:center;font-family:Fraunces,serif;font-weight:600;font-size:1.3rem;border:0;background:transparent;padding:0;-moz-appearance:textfield}
+.cStep input::placeholder{color:var(--muted);opacity:.6}
+.row .cStep input[type=number],.row .cStep input[type=text]{width:56px;text-align:center}
+.cntGrid .row .right{align-items:center;gap:8px}
+.cntGrid .row .right .chip{height:26px;min-height:26px;padding:0 12px;font-size:.72rem;line-height:1;align-self:center}
 .rcLista{display:flex;flex-direction:column;gap:10px}
 .rcLin{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:20px;border:1px solid #E8DFD2;background:var(--surface)}
 .rcLin.raro{background:#FFF1CC;border-color:#E9C45A}
@@ -801,6 +820,60 @@ body:has(.etiqOv){overflow:hidden}
 .avisoNovedad .btn{white-space:nowrap}
 @media(max-width:700px){.avisoNovedad{flex-direction:column;align-items:stretch}}
 .ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
+/* tarjetas premium (18/11/2026) */
+.stkAcc2{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin:22px 0 6px;align-items:stretch}
+@media (max-width:720px){.stkAcc2{grid-template-columns:1fr}}
+.stkAcc2.solo{grid-template-columns:1fr}
+.stkHero,.stkCI,.hubRes,.hubTile,.salTile{box-sizing:border-box;position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:168px;padding:18px;border-radius:22px;text-align:left;font-family:inherit;cursor:pointer}
+.stkHero{min-height:280px;background:linear-gradient(160deg,#EEF3E6,#F6F3EA);border:1px solid rgba(47,125,79,.28);color:#2A3A22;box-shadow:0 14px 30px rgba(47,125,79,.12)}
+.shTop,.ciTop,.htTop,.salTop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.shIco{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(47,125,79,.16);color:#2F7D4F}
+.shChip{font-size:.72rem;font-weight:800;padding:5px 11px;border-radius:999px;background:#F8DDD5;color:#8F2A17;white-space:nowrap}
+.shTit{font-family:Fraunces,serif;font-weight:600;font-size:1.75rem;line-height:1.1;max-width:22ch}
+.shDatos{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.shD{display:grid;gap:2px;padding:9px 12px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(47,125,79,.16)}
+.shD i{font:800 .6rem Manrope,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6B6A5C;font-style:normal}
+.shD b{font:600 1.5rem Fraunces,serif;font-variant-numeric:tabular-nums}
+.shTend b{display:flex;align-items:center;gap:8px;font:800 .85rem Manrope,sans-serif}
+.shTend.up b{color:#2F7D4F}.shTend.down b{color:#B3362B}.shTend.m b{color:#6B6A5C}
+.shGo{margin-left:auto;align-self:center;font-weight:800;font-size:.84rem;color:#2F7D4F}
+:root[data-tema="dorado"] .stkHero{background:linear-gradient(160deg,#1F2A1D,#1B1F17);border-color:rgba(88,180,124,.35);color:#E6F0DA;box-shadow:0 14px 32px rgba(10,20,10,.4)}
+:root[data-tema="dorado"] .shD{background:rgba(255,255,255,.06);border-color:rgba(88,180,124,.22)}
+:root[data-tema="dorado"] .shD i{color:rgba(230,240,218,.6)}
+:root[data-tema="dorado"] .shIco{background:rgba(88,180,124,.18);color:#58B47C}
+:root[data-tema="dorado"] .shGo{color:#58B47C}
+:root[data-tema="dorado"] .shTend.up b{color:#58B47C}
+.stkCI{min-height:280px;background:linear-gradient(160deg,#3A2B22,#2A1F19);color:#F8F1E6;border:1px solid rgba(201,162,74,.35);box-shadow:0 14px 32px rgba(20,12,8,.35)}
+.ciIco,.htIco,.salIc{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(201,162,74,.18);color:#D9B869}
+.ciChip,.htChip{font-size:.7rem;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(201,162,74,.22);color:#D9B869;white-space:nowrap}
+.ciTx{display:grid;gap:2px}
+.ciTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.55rem}
+.ciTx span{font-weight:700;font-size:.95rem;opacity:.85}
+.ciTx small{font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-top:4px}
+.ciKg{font-family:Fraunces,serif;font-weight:600;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.ciKg small{font-family:Manrope,sans-serif;font-size:.8rem;font-weight:700;opacity:.7}
+.hubR{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:6px}
+@media (max-width:720px){.hubR{grid-template-columns:1fr}}
+.hubRes{min-height:300px;background:linear-gradient(160deg,#3A2B22,#2A1F19);color:#F8F1E6;border:1px solid rgba(201,162,74,.35);box-shadow:0 14px 32px rgba(20,12,8,.35)}
+.htTx{display:grid;gap:2px}
+.htTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.55rem}
+.htTx span{font-weight:700;font-size:.9rem;opacity:.85}
+.htTx small{font-size:.62rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#7A6A5C}
+.hubKg{font-family:Fraunces,serif;font-weight:600;font-size:3.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.hubKg small{font-family:Manrope,sans-serif;font-size:1.1rem;font-weight:700;opacity:.7}
+.hubDes{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+.hubTile{min-height:140px;background:var(--surface);color:var(--ink);border:1px solid var(--line,#E8DFD2);box-shadow:0 10px 26px rgba(74,63,56,.08)}
+.hubTile .htIco{background:rgba(201,162,74,.16);color:#7B3F1E}
+.hubTile .htChip{background:rgba(183,121,31,.16);color:#B7791F}.hubTile .htChip.ok{background:rgba(47,125,79,.14);color:#2F7D4F}
+.hkg{font-family:Fraunces,serif;font-weight:600;font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.hkg small{font-family:Manrope,sans-serif;font-size:.78rem;font-weight:700;opacity:.65}
+.hubTile.stkOff{opacity:1;cursor:default}
+.salMenu{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.salMenu .salTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:168px;padding:18px;border-radius:22px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 10px 26px rgba(74,63,56,.08)}
+.salTile b{font-family:Fraunces,serif;font-weight:600;font-size:1.45rem;line-height:1.1}
+.salTile .salIc{background:rgba(201,162,74,.16);color:#7B3F1E}
+.salChip{font-size:.7rem;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(122,106,92,.12);color:var(--muted)}
+.salTile:active{transform:scale(.985)}.salTile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
 .ingTile:active{transform:scale(.985)}.ingTile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -1205,6 +1278,19 @@ body:has(.mantenerOv){overflow:hidden}
 .invStep .p{background:var(--accent);color:var(--accent-ink)}
 .invStep input{width:58px;height:38px;text-align:center;font-weight:800;font-size:1rem;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 4px;box-sizing:border-box}
 .invStep .r{width:26px;height:26px;font-size:.9rem;background:none;color:var(--muted)}
+.invWs{flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:420px}.invWs input.invW{width:62px}
+.invWrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px 12px;align-items:center;border:1px solid var(--line)!important;border-radius:18px;margin:0 0 10px;padding:12px 14px;background:var(--surface)}
+.invWrow.sin{background:var(--surface)}
+.invWs{max-width:none}
+.cntGrid .row.cwRow{grid-template-columns:auto minmax(0,1fr) auto}
+.cwRow .cwHide{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
+.cwRow .cwPills{grid-column:1/-1;padding-top:6px}
+.cwTot{display:flex;align-items:center;gap:10px}.cwN{font-size:.82rem;color:var(--muted);white-space:nowrap}
+.invPillsW{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:4px}
+.invPillsW input.invW{width:64px;height:38px;text-align:center;font-weight:800;font-size:1rem;border:1.5px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);padding:0 4px;box-sizing:border-box}
+.invPillsW .p{width:34px;height:34px;border-radius:999px;border:0;font-weight:800;font-size:1.1rem;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.rows:has(.invWrow){background:none;border:0;box-shadow:none;padding:0}
+.invTotW{display:flex;flex-direction:column;align-items:center;min-width:74px;padding:4px 10px;border-radius:12px;background:rgba(var(--header-bg-rgb),.07)}.invWs .invTotW small{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}.invWs .invTotW b{font-size:.98rem}
 .invRow.sin .invStep input{color:var(--muted);border-style:dashed}
 .invEq{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
 .invEqh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
@@ -1331,6 +1417,47 @@ tr.gvdRub td{font-weight:700;border-top:1px solid var(--line)}tr.gvdProd td{back
   .rlv .rlvRow.tot,.rlv .rlvRow.tot *{background:#f0f0f0!important;font-weight:800!important}
   .rlv .rlvRow.tot{border-top:2px solid #0d0c0a!important}
 }
+
+/* ---- Control de stock (Operaciones) ---- */
+.ctl h1{margin:2px 0 6px}
+.ctlBarra{display:flex;gap:8px;margin:10px 0}
+.ctlTabla{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:10px 18px}
+.ctlHead,.ctlRow{display:grid;grid-template-columns:2fr 1.3fr 1fr 1fr 1.4fr 1.2fr;gap:10px;align-items:center;text-align:center}
+.ctlHead{font-size:.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 0}
+.ctlRow{padding:12px 0;border-top:1px solid var(--line)}
+.ctlLocBtn{all:unset;cursor:pointer;font-weight:800;text-align:left}
+.ctlLoc{font-weight:800;text-align:left}
+.ctlPill{display:inline-block;padding:4px 10px;border-radius:12px;background:#EFE6DA;color:#4A3F38;font-weight:800;font-size:.72rem}
+.ctlPill.ok{background:#E3EFE0;color:#2F5A2A}.ctlPill.warn{background:#FFF1CC;color:#8A5A00}
+.ctlDif{display:inline-block;padding:4px 10px;border-radius:12px;font-weight:800;font-size:.74rem}
+.ctlDif.neg{background:#FDE8E6;color:#B42318}.ctlDif.pos{background:#FFF1CC;color:#8A5A00}.ctlDif.ok{background:#E3EFE0;color:#2F5A2A}
+.ctlDetalle{padding:6px 4px 16px;display:flex;flex-direction:column;gap:10px}
+.ctlInv{font-size:.85rem}.ctlLock{color:#2F5A2A;font-weight:800}.ctlUnlock{color:#8A5A00;font-weight:800}
+.ctlHead,.ctlRow{grid-template-columns:2.2fr 1.2fr 1.2fr 1.2fr 1.6fr 1fr}
+.ctlRow .v{font-family:var(--display);font-weight:600;font-size:1.05rem}.ctlRow .f{font-size:.7rem;color:var(--muted)}
+.ctlLey{margin-left:auto;font-size:.78rem;color:var(--muted)}
+.ctlTitulo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 6px}.ctlTitulo h1{margin:0}
+.ctlLockTag{padding:5px 12px;border-radius:99px;background:#E3EFE0;color:#2F5A2A;font-weight:800;font-size:.72rem;letter-spacing:.05em}.ctlLockTag.abierto{background:#FFF1CC;color:#8A5A00}
+.ctlSub{font-size:.84rem;color:var(--muted);margin-bottom:10px}
+.ctlCandado{display:flex;align-items:center;gap:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);padding:12px 16px;margin:0 0 12px;font-size:.84rem;line-height:1.45}.ctlCandado>span{font-size:1.2rem}.ctlCandado>div{flex:1}
+.ctlSel small{display:block;font-size:.68rem;font-weight:800;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}.ctlSel{margin-bottom:12px}
+.ctlFranja{display:flex;gap:18px;align-items:center;flex-wrap:wrap;border-radius:20px;background:#2A201A;color:#F8F1E6;padding:16px 22px;margin:0 0 12px}
+.ctlTot{text-align:center}.ctlTot small{display:block;font-size:.68rem;letter-spacing:.1em;color:#E7DAC6}.ctlTot b{font-family:var(--display);font-size:2rem}.ctlTot span{display:block;font-size:.78rem;color:#E7DAC6}
+.ctlKpis{flex:1;display:flex;gap:8px;min-width:280px}.ctlKpi{flex:1;border-radius:14px;background:#3E342C;padding:8px 6px;text-align:center}.ctlKpi small{display:block;font-size:.64rem;letter-spacing:.08em;color:#C9A961;font-weight:800}.ctlKpi b{font-family:var(--display);font-size:1.15rem;font-weight:600}.ctlKpi i{display:block;font-size:.68rem;font-style:normal;opacity:.8}
+.ctlKpi.dif.ok{background:#E3EFE0;color:#2F5A2A}.ctlKpi.dif.warn{background:#FFF1CC;color:#8A5A00}.ctlKpi.dif.bad{background:#FDE8E6;color:#B42318}.ctlKpi.dif small{color:inherit}
+.ctlRubro{border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:14px 18px;margin:0 0 10px}
+.ctlRubroTit{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.ctlRubroTit b{font-family:var(--display);font-size:1.15rem}
+.ctlEq{display:flex;align-items:center;gap:10px;text-align:center;flex-wrap:wrap}.ctlEq>div{flex:1;min-width:90px;padding:8px 4px;border-radius:12px}.ctlEq small{display:block;font-size:.64rem;letter-spacing:.08em;color:var(--muted);font-weight:800}.ctlEq b{font-size:1.05rem}.ctlEq>span{color:var(--muted);font-size:1.1rem}.ctlEq .t{background:#2A201A;color:#F8F1E6}.ctlEq .t small{color:#E7DAC6}
+.ctlEq .d{font-weight:800}.ctlEq .d i{display:block;font-style:normal;font-size:.72rem}.ctlEq .d.ok{background:#E3EFE0;color:#2F5A2A}.ctlEq .d.warn{background:#FFF1CC;color:#8A5A00}.ctlEq .d.bad{background:#FDE8E6;color:#B42318}.ctlEq .d small{color:inherit}
+.ctlProds{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
+.ctlPedir{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:16px;background:#FFF8E6;border:1px solid #E7C873;padding:12px 18px;margin:12px 0 8px}
+.ctlNota{font-size:.78rem;color:var(--muted)}
+@media (max-width:700px){.ctlPr{grid-template-columns:1.6fr 1fr 1fr 1fr}.ctlPr span:nth-child(5),.ctlPr span:nth-child(6){display:none}}
+.ctlRes{display:none;gap:26px;flex-wrap:wrap}.ctlRes small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}.ctlRes b{font-family:Fraunces,serif;font-size:1.3rem}
+.ctlTbl td,.ctlTbl th{text-align:center}
+.ctlPrint{display:none}
+@media (max-width:700px){.ctlHead{display:none}.ctlRow{grid-template-columns:1fr 1fr;text-align:left}}
+@media print{.ctl .noPrint{display:none!important}.ctlPrint{display:block}.ctlTabla{display:none}.ctlFranja{background:#fff!important;color:#000!important;border:1px solid #000}.ctlKpi{background:#fff!important;border:1px solid #999;color:#000!important}.ctlTot,.ctlTot small,.ctlTot span,.ctlKpi small{color:#000!important}.ctlEq .t{background:#fff!important;color:#000!important;border:1px solid #000}}
 </style>
 </head>
 <body>
@@ -1351,7 +1478,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.159.0";
+const FRONTEND_VERSION = "1.178.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1571,6 +1698,17 @@ function stockMap(){ return stockMapHasta(Date.now()) }
    No hay peso promedio: un sabor sin kilos cargados queda en null («sin kilos cargados»).
 ============================================================ */
 function esVasquetaKilos(id){ const s=S.saboresPorId[String(id)]; return !!(S.kilosReales && s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas") }
+/** Kilos imposibles de vasquetas (errores de tipeo: 12 vasquetas con 12 kg, o 2 con 7400 kg). Una vasqueta pesa como máximo 12 kg y, si es nueva (Ingreso, Producción), al menos 1,5 kg. */
+const KG_VASQ_MAX=12, KG_VASQ_MIN_NUEVA=1.5;
+function kgVasqProblema(id, q, kg, conMinimo){
+  if(q>CONTEO_VASQ_MAX) return `${q} vasquetas no puede ser.`;
+  if(!(q>0) || !(kg>0)) return null;
+  const prom=kg/q, k=String(Math.round(kg*100)/100).replace(".",","), n=q+(q===1?" vasqueta":" vasquetas");
+  if(prom>KG_VASQ_MAX) return `${n} no pueden pesar ${k} kg.`;
+  if(conMinimo && prom<KG_VASQ_MIN_NUEVA) return `${n} con ${k} kg: cada una pesaría ${String(Math.round(prom*100)/100).replace(".",",")} kg.`;
+  return null;
+}
+function esVasquetaNormal(id){ const sb=S.saboresPorId[String(id)]; return !!(sb && sb.tipo==="v" && grupoProductoDe(sb)==="vasquetas") }
 function kilosNum(v){ return parseFloat(String(v==null?"":v).replace(",","."))||0 }
 function kilosMap(hasta){
   const out={}; if(!S.kilosReales) return out;
@@ -1712,7 +1850,7 @@ function syncDevolucion(){
     const ws=[];
     (S.devSel[id]||[]).forEach(i=>{ if(pend[id].pesos[i]!==undefined) ws.push(pend[id].pesos[i]) });
     const tip=S.devTip[id]||{};
-    for(let k=0;k<pend[id].sinPeso;k++){ const kg=kilosNum(tip[k]); if(kg>=0.1&&kg<=30) ws.push(Math.round(kg*100)/100) }
+    for(let k=0;k<pend[id].sinPeso;k++){ const kg=kilosNum(tip[k]); if(kg>=0.1&&kg<=KG_VASQ_MAX) ws.push(Math.round(kg*100)/100) }
     if(ws.length){ cart[id]=ws.length; pes[id]=ws; S.kilosProduccion[id]=String(Math.round(ws.reduce((a,x)=>a+x,0)*100)/100).replace(".",",") }
     else { delete cart[id]; delete pes[id]; delete S.kilosProduccion[id] }
   });
@@ -2725,9 +2863,9 @@ function iniciarConteo(conBorrador, alcance){
   const bor=conBorrador?borradorConteo():null;
   S.conteoAlcance=bor?(bor.alcance||"todo"):(alcance||"todo");
   if(S.conteoAlcance!=="todo"){ S.filtroFamilia=S.conteoAlcance; S.filtroCategoria="todas"; S.catAbierta=false; S.q=""; S.soloAlerta=false; S.conteoAplicar="visible" }
-  S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+  S.conteo={}; S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
   S.conteoTocado={}; S.conteoAck={}; S.conteoRevisar=false; S.conteoVerTodos=false; S.conteoAplicar="visible"; S.conteoAplicarVal=""; resetConteoEsc();
-  Object.keys(st).forEach(id=>S.conteo[id]=Math.max(0,st[id]));
+  Object.keys(st).forEach(id=>S.conteo[id]=0); // a ciegas: se cuenta de cero, sin mostrar el stock del sistema
   if(conBorrador){ const b=borradorConteo(); if(b) aplicarBorradorConteo(b) } else descartarBorradorConteo();
   S.confirm=false; renderApp();
 }
@@ -2756,7 +2894,7 @@ function borradorConteo(){
 function aplicarBorradorConteo(b){
   Object.keys(b.vals||{}).forEach(id=>{ if(S.conteo[id]!==undefined || S.saboresPorId[id]) S.conteo[id]=Math.max(0,+b.vals[id]||0) });
   S.conteoTocado=Object.assign({},b.tocados||{});
-  S.vencConteo=Object.assign({},b.venc||{}); S.kilosConteo=Object.assign({},b.kilos||{}); S.vencOmit=Object.assign({},b.omit||{});
+  S.vencConteo=Object.assign({},b.venc||{}); S.kilosConteo=Object.assign({},b.kilos||{}); S.conteoPesos=Object.assign({},b.pesos||{}); S.vencOmit=Object.assign({},b.omit||{});
   limpiarLotesExtra("conteo:"); Object.keys(b.lotes||{}).forEach(k=>{ S.lotesExtra[k]=b.lotes[k] });
   S.conteoGuardado=Object.assign({},b.guardado||{});
   if(b.esc && Array.isArray(b.esc.items)) S.conteoEsc={items:b.esc.items, n:+b.esc.n||0, previo:b.esc.previo||{}};
@@ -2774,29 +2912,56 @@ function guardarBorradorConteo(){
   if(!Object.keys(vals).length && !Object.keys(S.conteoTocado).length) { descartarBorradorConteo(); return }
   const lotes={}; Object.keys(S.lotesExtra).forEach(k=>{ if(k.indexOf("conteo:")===0) lotes[k]=S.lotesExtra[k] });
   if(!S.conteoInicio) S.conteoInicio=Date.now();
-  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, alcance:S.conteoAlcance, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, omit:S.vencOmit, lotes, esc:ceEsc(), guardado:S.conteoGuardado||{}})) }catch(e){}
+  try{ ls.set(claveBorradorConteo(), JSON.stringify({ts:Date.now(), inicio:S.conteoInicio, alcance:S.conteoAlcance, empleado:(S.empleado||{}).nombre||"", vals, tocados:S.conteoTocado, venc:S.vencConteo, kilos:S.kilosConteo, pesos:S.conteoPesos||{}, omit:S.vencOmit, lotes, esc:ceEsc(), guardado:S.conteoGuardado||{}})) }catch(e){}
 }
 /** Estado de cada sabor del conteo respecto del stock del sistema: sin (sin contar), igual, cambia, cero (queda en 0), salto (cambio raro). */
 function conteoEstadoDe(id, prev, v){
   const tocado=!!S.conteoTocado[id];
   if(v===prev && S.conteoGuardado && S.conteoGuardado[id]) return "guardado";
+  if(!tocado && v===0 && prev>0) return "sin";
   if(v===prev) return tocado ? "igual" : (prev>0 ? "sin" : "igual0");
   if(prev>=CONTEO_CERO_MIN && v===0) return "cero";
   if(prev>0 && v>0 && Math.abs(v-prev)>=CONTEO_SALTO_DIF && (v>=prev*CONTEO_SALTO_X || v*CONTEO_SALTO_X<=prev)) return "salto";
   return "cambia";
 }
 const CONTEO_BADGE={sin:"Sin contar", guardado:"Guardado ✓", igual:"Igual al sistema", cambia:"Cambia", cero:"Queda en 0", salto:"Salto raro"};
+/** Números imposibles o raros de un sabor contado (errores de tipeo: «7400 kg» por 7,4). nivel «bloq» = no se puede guardar; «aviso» = hay que confirmarlo. */
+const CONTEO_KG_VASQ_MAX=12, CONTEO_KG_VASQ_AVISO_MAX=7, CONTEO_KG_VASQ_AVISO_MIN=1.5, CONTEO_VASQ_AVISO=120, CONTEO_VASQ_MAX=500, CONTEO_UNID_MAX=50000;
+function conteoChequeo(id, v){
+  const s=S.saboresPorId[String(id)]; if(!s || !(v>0)) return null;
+  if(esVasquetaNormal(id) && !esVasquetaKilos(id)){ // local sin kilos reales: las vasquetas se cuentan en unidades
+    if(v>CONTEO_VASQ_MAX) return {nivel:"bloq", msg:`${v} vasquetas no puede ser. Revisá el número.`};
+    if(v>CONTEO_VASQ_AVISO) return {nivel:"aviso", msg:`${v} vasquetas es mucho. ¿Está bien?`};
+    return null;
+  }
+  if(esVasquetaKilos(id)){
+    const pesos=cwPesos(id).map(x=>+x||0).filter(x=>x>0), kg=pesos.length?cwSuma(id):kilosNum(S.kilosConteo[id]);
+    const grande=pesos.find(x=>x>CONTEO_KG_VASQ_MAX);
+    if(grande) return {nivel:"bloq", msg:`Una vasqueta pesa ${String(grande).replace(".",",")} kg: no puede ser. Revisá la coma.`};
+    if(v>CONTEO_VASQ_MAX) return {nivel:"bloq", msg:`${v} vasquetas no puede ser. Revisá el número.`};
+    if(kg>0){
+      const prom=kg/v;
+      if(prom>CONTEO_KG_VASQ_MAX) return {nivel:"bloq", msg:`${v} ${v===1?"vasqueta no puede pesar":"vasquetas no pueden pesar"} ${String(kg).replace(".",",")} kg. Revisá los kilos.`};
+      if(prom>CONTEO_KG_VASQ_AVISO_MAX || prom<CONTEO_KG_VASQ_AVISO_MIN) return {nivel:"aviso", msg:`${String(Math.round(prom*100)/100).replace(".",",")} kg por vasqueta es raro. ¿Está bien?`};
+    }
+    if(v>CONTEO_VASQ_AVISO) return {nivel:"aviso", msg:`${v} vasquetas es mucho. ¿Está bien?`};
+    return null;
+  }
+  if(v>CONTEO_UNID_MAX) return {nivel:"bloq", msg:`${v} unidades no puede ser. Revisá el número.`};
+  return null;
+}
 function conteoResumen(){
   const st=stockMap(), lista=saboresDelConteo();
-  const filas=lista.map(s=>{ const prev=Math.max(0,st[s.id]||0), v=S.conteo[s.id]||0; return {s, prev, v, e:conteoEstadoDe(s.id,prev,v)} });
+  const filas=lista.map(s=>{ const prev=Math.max(0,st[s.id]||0), v=S.conteo[s.id]||0; return {s, prev, v, e:conteoEstadoDe(s.id,prev,v), chk:conteoChequeo(s.id,v)} });
   const sinContar=filas.filter(f=>f.e==="sin");
   return {
     filas, sinContar,
     contados: filas.filter(f=>f.e!=="sin" && f.e!=="igual0").length,
     total: filas.filter(f=>f.e!=="igual0").length,
-    cambian: filas.filter(f=>f.e==="cambia"||f.e==="cero"||f.e==="salto"),
+    cambian: filas.filter(f=>f.e==="cambia"||f.e==="cero"||f.e==="salto"||f.chk),
     ceros: filas.filter(f=>f.e==="cero"), saltos: filas.filter(f=>f.e==="salto"),
-    flags: filas.filter(f=>f.e==="cero"||f.e==="salto"),
+    bloqueos: filas.filter(f=>f.chk&&f.chk.nivel==="bloq"),
+    flags: filas.filter(f=>f.e==="cero"||f.e==="salto"||(f.chk&&f.chk.nivel==="aviso")),
     antes: filas.reduce((a,f)=>a+f.prev,0), despues: filas.reduce((a,f)=>a+f.v,0)
   };
 }
@@ -3035,7 +3200,8 @@ function fechaHoraRelevamiento(){
 let tituloOriginal=null;
 function nombreArchivoInforme(){
   const f=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"numeric",month:"numeric",year:"2-digit"}).replace(/\//g,"-");
-  const quien=(!S.local || document.querySelector(".rlv[data-rlv-n]")) ? "Relevamiento" : String(S.local).trim();
+  const ctl=document.querySelector(".ctl[data-ctl-n]");
+  const quien=ctl ? "Control_"+ctl.dataset.ctlN : (!S.local || document.querySelector(".rlv[data-rlv-n]")) ? "Relevamiento" : String(S.local).trim();
   return ("LogiStock_"+(document.querySelector("[data-inv-print]")?"ConteoInicial_":"")+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
 }
 window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); if(tituloOriginal!==null){ document.title=tituloOriginal; tituloOriginal=null } });
@@ -3093,6 +3259,7 @@ const ICONOS_TAB = {
   historial: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
   equipo: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   inicio: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>`,
+  control: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`,
   relevar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 4v16"/></svg>`,
   gestion: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.8 9a2.6 2.6 0 0 0-2.8-1.6c-1.5 0-2.6.8-2.6 2s1 1.7 2.6 2 2.6.8 2.6 2-1.1 2-2.6 2A2.8 2.8 0 0 1 9.2 14.6"/><path d="M12 6v1.4M12 16.6V18"/></svg>`,
   sabores: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3.24H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .59 1.41l9.58 9.58a2 2 0 0 0 2.83 0l4.59-4.59a2 2 0 0 0 0-2.83Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>`,
@@ -3212,6 +3379,231 @@ function relevarView(){
     <button type="button" class="rlvBtn noPrint" id="rlvExportar">🖨 Exportar</button>
   </div></div>`;
 }
+
+/* ============================================================
+   CONTROL DE STOCK (Operaciones, solo admin y supervisor) — etapa 2 del Conteo inicial.
+   Por local: conteo inicial, conteo parcial pedido, y la diferencia contra lo que debería haber (cámara + local).
+   Supervisión pide el conteo, ve las diferencias, desbloquea un conteo con su PIN y baja el PDF de cada local.
+============================================================ */
+function controlEstado(){ if(!S.control) S.control={datos:undefined, error:null, abierto:"", ocupado:""}; return S.control }
+async function cargarControl(){
+  const C=controlEstado(); C.error=null; if(C.datos===undefined) C.datos=null;
+  const r=await api("controlStock",{});
+  if(r && r.ok){ C.datos=r.locales||[]; }
+  else { C.datos=undefined; C.error=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver el control de stock.":(r&&r.error)||"No se pudo conectar. Probá de nuevo."; }
+  if(!S.local && S.tab==="control") renderApp();
+}
+function ctlKg(n){ return (Math.round((+n||0)*100)/100).toLocaleString("es-AR",{maximumFractionDigits:2}) }
+function ctlV(v,kg){ return kg?ctlKg(v)+" kg":Math.round(+v||0).toLocaleString("es-AR")+" u." }
+function ctlFecha(ts){ return ts? new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"}) : "—" }
+function ctlFechaHora(ts){ return ts? ctlFecha(ts)+" "+new Date(ts).toLocaleTimeString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}) : "—" }
+/** Semáforo de la diferencia, sobre el inicial: verde hasta 1 %, amarillo hasta 3 %, rojo más. */
+function ctlSem(dif,pct){ if(!dif) return "ok"; const a=Math.abs(pct===null||pct===undefined?100:pct); return a<=1?"ok":a<=3?"warn":"bad" }
+function ctlPill(dif,pct,kg){
+  if(dif===null||dif===undefined) return "—";
+  if(!dif) return `<span class="ctlDif ok">Sin diferencia</span>`;
+  const signo=dif<0?"−":"+";
+  return `<span class="ctlDif ${ctlSem(dif,pct)}">${signo}${ctlV(Math.abs(dif),kg)}${pct!==null&&pct!==undefined?" · "+(pct<0?"−":"+")+String(Math.abs(pct)).replace(".",",")+" %":""}</span>`;
+}
+function ctlDifFila(f){
+  if(f.estado!=="controlado") return "—";
+  const a=ctlPill(f.difKg,f.pctKg,true), b=f.difU?ctlPill(f.difU,f.pctU,false):"";
+  return (f.difKg||!f.difU?a:"")+(f.difKg&&f.difU?" ":"")+b;
+}
+async function cargarControlDetalle(local,id){
+  const C=controlEstado(); C.detError=null;
+  const r=await api("controlDetalle",{local, inventarioId:id||undefined});
+  if(C.det!==local) return;
+  if(r&&r.ok){ C.detData=r; C.detId=r.conteo?String(r.conteo.id):"" }
+  else { C.detData=undefined; C.detError=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver el detalle.":(r&&r.error)||"No se pudo conectar. Probá de nuevo." }
+  if(!S.local && S.tab==="control") renderApp();
+}
+function ctlRefrescar(){ const C=controlEstado(); cargarControl(); if(C.det) cargarControlDetalle(C.det,C.detId) }
+const CTL_TIPO={inicial:"Inicial",parcial:"Parcial",final:"Cierre"};
+function ctlCuentaHTML(D,c,base){
+  const m=D.mov; if(!m||!base||!D.dif) return "";
+  const C=controlEstado();
+  const esperado=Math.round(D.grupos.filter(g=>g.kg).reduce((a,g)=>a+(g.esperado||0),0)*100)/100;
+  const f=ctlFecha, u=(n)=>n?` · ${n>0?"+":"−"}${Math.abs(Math.round(n)).toLocaleString("es-AR")} u.`:"";
+  const lin=(t,v,cls)=>`<div class="ctlCl${cls?" "+cls:""}"><span>${t}</span><b>${v}</b></div>`;
+  const ver=(k,txt)=>`<button type="button" class="invLnk noPrint" data-ctl-mov="${k}">${C.verMov&&C.verMov[k]?"ocultar":"ver"}</button>`;
+  const listaIng=C.verMov&&C.verMov.ing?`<div class="ctlProds">${m.ing.lista.map(x=>`<div class="ctlCl"><span>${f(x.ts)} · ${esc(x.remito||(x.sub==="devolucion"?"devolución":"—"))} · ${esc(x.empleado)}</span><b>${ctlKg(x.kg)} kg${u(x.u)}</b></div>`).join("")||`<div class="note">Sin ingresos.</div>`}</div>`:"";
+  const listaSal=C.verMov&&C.verMov.sal?`<div class="ctlProds">${m.sal.semanas.map(x=>`<div class="ctlCl"><span>Semana del ${f(x.ts)} · ${x.n} mov.</span><b>${ctlKg(x.kg)} kg${u(x.u)}</b></div>`).join("")||`<div class="note">Sin salidas.</div>`}</div>`:"";
+  const anu=m.anulados.length?`<div class="ctlCuentaAnu"><b>Anulados en el período · ${m.anulados.length}</b>${m.anulados.map(x=>`<div class="mut">${f(x.ts)} · ${x.tipo==="ingreso"?"Ingreso":"Salida"} ${ctlKg(x.kg)} kg${u(x.u)} · ${esc(x.anulado_por||x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</div>`).join("")}</div>`:"";
+  return `<div class="ctlCuenta">
+    ${lin("Inicial (cámara) · "+f(base.ts),ctlKg(base.camKg)+" kg")}
+    ${lin(`+ Ingresos · ${m.ing.n} ${ver("ing")}`,"+"+ctlKg(m.ing.kg)+" kg"+u(m.ing.u),"pos")}${listaIng}
+    ${lin(`− Salidas · ${m.sal.n} ${ver("sal")}`,"−"+ctlKg(m.sal.kg)+" kg"+u(-m.sal.u),"neg")}${listaSal}
+    ${lin("Debería haber",ctlKg(esperado)+" kg","tot")}
+    ${lin("Contó",ctlKg(c.camKg)+" kg")}
+    ${lin("Diferencia",(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg"+(D.dif.pctKg===null||D.dif.pctKg===undefined?"":" · "+(D.dif.pctKg<0?"−":D.dif.pctKg>0?"+":"")+String(Math.abs(D.dif.pctKg)).replace(".",",")+" %"),"dif")}
+    ${anu}</div>`;
+}
+function ctlDetalleHTML(){
+  const C=controlEstado(), D=C.detData;
+  const volver=`<div class="noPrint" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button type="button" class="btn volver" data-ctl-volver>‹ Volver a Control</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button></div>`;
+  if(C.detError) return `<div class="rlv ctl">${volver}<div class="note">${esc(C.detError)}</div></div>`;
+  if(D===undefined||D===null) return `<div class="rlv ctl">${volver}<div class="note">Cargando…</div></div>`;
+  if(!D.conteo) return `<div class="rlv ctl">${volver}<div class="note">Este local todavía no tiene conteos guardados.</div></div>`;
+  const c=D.conteo, base=D.base, desb=c.desbloqueado_hasta>Date.now(), fijo=c.fijo;
+  const tipoTxt=CTL_TIPO[c.tipo]||"Conteo", esCmp=c.tipo!=="inicial"&&!!D.dif;
+  const chips=D.conteos.map(x=>`<button type="button" class="chip" data-ctl-sel="${esc(x.id)}" aria-pressed="${String(x.id)===String(c.id)}">${x.fijo?"🔒 ":""}${CTL_TIPO[x.tipo]||x.tipo} · ${ctlFecha(x.ts)}</button>`).join("");
+  const ult=t=>{ const l=D.conteos.filter(x=>x.tipo===t); return l.length?l[l.length-1]:null };
+  const ini=D.conteos.filter(x=>x.tipo!=="parcial")[0]||null, par=ult("parcial"), cie=ult("final");
+  const bloque=(tit,x)=>`<div class="ctlKpi"><small>${tit}</small><b>${x?ctlKg(x.camKg)+" kg":"—"}</b>${x?`<i>${ctlFecha(x.ts)}</i>`:""}</div>`;
+  const totKg=Math.round((c.camKg+c.locKg)*100)/100, totU=c.camU+c.locU;
+  const franja=`<div class="ctlFranja"><div class="ctlTot"><small>HELADO EN EL LOCAL</small><b>${ctlKg(totKg)} kg</b><span>Cámara ${ctlKg(c.camKg)} kg + local ${ctlKg(c.locKg)} kg</span>${totU?`<span>Otros rubros: ${Math.round(totU).toLocaleString("es-AR")} u.</span>`:""}</div>
+    <div class="ctlKpis">${bloque("INICIAL",ini)}${bloque("PARCIAL",par)}${bloque("CIERRE",cie)}<div class="ctlKpi dif ${esCmp?ctlSem(D.dif.kg,D.dif.pctKg):""}"><small>DIFERENCIA</small><b>${esCmp?(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg":"—"}</b>${esCmp&&D.dif.pctKg!==null?`<i>${D.dif.pctKg<0?"−":"+"}${String(Math.abs(D.dif.pctKg)).replace(".",",")} % del inicial</i>`:""}</div></div></div>`;
+  const grp=D.grupos.slice().sort((a,b)=>(GRUPO_PRODUCTO_ORDEN.indexOf(a.g)+1||99)-(GRUPO_PRODUCTO_ORDEN.indexOf(b.g)+1||99));
+  const filaProd=(x)=>`<div class="ctlPr"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.cam,x.kg)}</span><span>${ctlV(x.loc,x.kg)}</span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>${x.esperado===null?"—":ctlV(x.esperado,x.kg)}</span><span>${x.dif===null?"—":ctlPill(x.dif,null,x.kg).replace(/ · [^<]*%/,"")}</span></div>`;
+  const cabProd=`<div class="ctlPr cab"><span class="n">Producto</span><span>Cámara</span><span>Local</span><span>Total</span><span>Esperado</span><span>Diferencia</span></div>`;
+  let cuerpo;
+  if(C.vista==="producto"){
+    const todos=[].concat.apply([],grp.map(g=>g.productos)).sort((a,b)=>Math.abs(b.dif||0)-Math.abs(a.dif||0)||String(a.nombre).localeCompare(String(b.nombre)));
+    cuerpo=`<div class="ctlProds">${cabProd}${todos.map(filaProd).join("")||`<div class="note">Sin productos.</div>`}</div>`;
+  } else {
+    cuerpo=grp.map(g=>`<div class="ctlRubro"><div class="ctlRubroTit"><b>${esc(GRUPO_PRODUCTO_LABEL[g.g]||g.g)}</b><button type="button" class="invLnk noPrint" data-ctl-verg="${esc(g.g)}">${C.verG&&C.verG[g.g]?"Ocultar sabores":"Ver sabores"}</button></div>
+      <div class="ctlEq"><div><small>CÁMARA</small><b>${ctlV(g.cam,g.kg)}</b></div><span>+</span><div><small>LOCAL</small><b>${ctlV(g.loc,g.kg)}</b></div><span>=</span><div class="t"><small>TOTAL</small><b>${ctlV(g.tot,g.kg)}</b></div>${g.dif!==null?`<div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div>`:""}</div>
+      ${C.verG&&C.verG[g.g]?`<div class="ctlProds">${cabProd}${g.productos.map(filaProd).join("")}</div>`:""}</div>`).join("")||`<div class="note">Sin productos en este conteo.</div>`;
+  }
+  const pend=D.pedido;
+  const pedir=pend?`<span><b>Hay un pedido de ${pend.tipo==="final"?"cierre":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Cancelar pedido</button>`:`<span><b>Pedir un conteo nuevo a este local:</b></span><button type="button" class="rlvBtn" data-ctl-pedir="${esc(C.det)}">Pedir parcial</button><button type="button" class="rlvBtn" data-ctl-pedirfinal="${esc(C.det)}">Pedir cierre</button>`;
+  return `<div class="rlv ctl" data-ctl-n="${esc(C.det)}">
+    ${volver}
+    <div class="noPrint"><div class="cntKick">CONTROL › ${esc(String(C.det).toUpperCase())}</div></div>
+    <div class="ctlTitulo"><h1>Total del local</h1><span class="invBadgeDef">${tipoTxt==="Cierre"?"Conteo de cierre":"Conteo "+tipoTxt.toLowerCase()}</span>${fijo&&!desb?`<span class="ctlLockTag">🔒 BLOQUEADO</span>`:desb?`<span class="ctlLockTag abierto">🔓 hasta ${esc(ctlFechaHora(c.desbloqueado_hasta))}</span>`:""}<button type="button" class="rlvBtn noPrint" data-ctl-print="${esc(C.det)}" style="margin-left:auto">📄 PDF</button></div>
+    <div class="ctlSub">${esc(ctlFechaHora(c.ts))} · hecho por ${esc(c.empleado||"")}${base&&esCmp?` · se compara contra el ${(CTL_TIPO[base.tipo]||"inicial").toLowerCase()} del ${esc(ctlFecha(base.ts))} (cámara, más ingresos y menos salidas)`:""}</div>
+    ${fijo?`<div class="ctlCandado noPrint"><span>🔒</span><div><b>Todo conteo guardado queda con candado.</b> No se corrige ni se borra. Solo supervisión lo desbloquea, con su PIN y un motivo, para una corrección (vale 24 horas); el original se conserva.</div>${desb?"":`<button type="button" class="btn" data-ctl-desb="${esc(c.id)}" data-ctl-local="${esc(C.det)}">Desbloquear (PIN)</button>`}</div>`:""}
+    ${visRespHTML(c)}
+    ${camaraCardHTML(D)}
+    <div class="noPrint ctlSel"><small>ELEGÍ UN CONTEO YA CARGADO (no pide nada nuevo)</small><div class="invPills">${chips}</div></div>
+    ${franja}
+    ${esCmp?ctlCuentaHTML(D,c,base):""}
+    <div class="noPrint invPills" style="margin:6px 0 10px"><button type="button" class="chip" data-ctl-vista="rubro" aria-pressed="${C.vista!=="producto"}">Por rubro</button><button type="button" class="chip" data-ctl-vista="producto" aria-pressed="${C.vista==="producto"}">Por producto</button></div>
+    ${cuerpo}
+    <div class="ctlPedir noPrint">${pedir}</div>
+    <div class="ctlNota">La diferencia es de la <b>cámara</b> y se mide siempre contra el <b>inicial</b>. El local se cuenta aparte y suma al total. Una diferencia que no se detecta es merma.</div>
+    <div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Total del local",sub:C.det,lineaHTML:esc(tipoTxt)+" · "+esc(ctlFechaHora(c.ts))+" · generado por "+esc(S.empleado.nombre)})}${informePieHTML("Control de stock · "+C.det)}</div>
+  </div>`;
+}
+function controlView(){
+  const C=controlEstado();
+  if(C.det) return ctlDetalleHTML();
+  if(C.datos===undefined && !C.error) cargarControl();
+  if(C.error) return `<div class="rlv ctl"><h1>Control de stock</h1><div class="note">${esc(C.error)}</div><button class="rlvBtn" data-ctl-refresh>Reintentar</button></div>`;
+  if(C.datos===null || C.datos===undefined) return `<div class="rlv ctl"><h1>Control de stock</h1><div class="note">Cargando…</div></div>`;
+  const cel=(x)=>x?`<div class="v">${ctlKg(x.camKg)} kg</div><div class="f">${ctlFecha(x.ts)}</div>`:`<div class="f">—</div>`;
+  const filas=C.datos.map(f=>{
+    const par=f.conteos.filter(x=>x.tipo==="parcial"), cie=f.conteos.filter(x=>x.tipo==="final");
+    const ultP=par.length?par[par.length-1]:null, ultC=cie.length?cie[cie.length-1]:null;
+    const pill=f.pedido?`<span class="ctlPill warn">Pedido ${f.pedido.tipo==="final"?"de cierre":"parcial"} · sin contar</span>`:!f.base?`<span class="ctlPill">Sin conteo inicial</span>`:"";
+    return `<div class="ctlRow"><div class="ctlLoc"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button>${pill?`<div>${pill}</div>`:""}</div><div>${cel(f.base)}</div><div>${cel(ultP)}${par.length>1?`<div class="f">+${par.length-1} más</div>`:""}</div><div>${cel(ultC)}</div><div>${ctlDifFila(f)}</div><div class="noPrint"><button type="button" class="rlvBtn" data-ctl-ver="${esc(f.local)}">Abrir</button></div></div>`;
+  }).join("");
+  return `<div class="rlv ctl">
+    <div class="noPrint"><div class="cntKick">OPERACIONES · SUPERVISIÓN</div><h1>Control de stock por local</h1>
+
+    <div class="ctlBarra"><button type="button" class="rlvBtn" data-ctl-refresh>↻ Actualizar</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button><span class="ctlLey">Semáforo: verde hasta 1 % · amarillo hasta 3 % · rojo más de 3 %</span></div></div>
+    <div class="ctlTabla"><div class="ctlHead"><div>Local</div><div>Inicial</div><div>Parcial</div><div>Cierre</div><div>Diferencia</div><div class="noPrint"></div></div>${filas||`<div class="note">Todavía ningún local hizo su conteo inicial.</div>`}</div>
+  </div>`;
+}
+function camaraCardHTML(D){
+  const c=D&&D.camaraCont; if(!c) return "";
+  const abierto=(c.desbloqueado_hasta||0)>Date.now();
+  const btn=abierto?"":`<button type="button" class="btn" data-ctl-camdesb="${esc(controlEstado().det)}">Desbloquear (PIN)</button>`;
+  return `<div class="ctlCandado noPrint"><span>${abierto?"🔓":"🔒"}</span><div><b>Conteo cámara.</b> ${abierto?"Desbloqueado: el responsable puede recontar una vez y se vuelve a cerrar.":"Hecho el "+esc(ctlFecha(c.ts))+" por "+esc(c.empleado||"—")+"."}</div>${btn}</div>`;
+}
+function visRespHTML(c){
+  if(!c || c.tipo==="inicial") return "";
+  const manual=(c.visible_resp_ts||0)>0, auto=c.tipo==="final" && !manual && Date.now()>=(c.libera_ts||0);
+  const hora=ts=>new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const txt=manual?"Mostrado al responsable el "+hora(c.visible_resp_ts)+".":auto?"Visible para el responsable desde las 12:00 ("+hora(c.libera_ts)+").":c.tipo==="final"?"Oculto. Se muestra solo a las 12:00 ("+hora(c.libera_ts)+") o cuando lo muestres vos.":"Oculto. El responsable solo ve «hecho ✓». Lo ve únicamente si lo mostrás.";
+  const btn=auto?"":`<button type="button" class="btn${manual?" ghost":""}" data-ctl-lib="${esc(c.id)}" data-ctl-libmostrar="${manual?0:1}" data-ctl-local="${esc(controlEstado().det)}">${manual?"Volver a ocultar":"Mostrar al responsable (PIN)"}</button>`;
+  return `<div class="ctlCandado noPrint"><span>${manual||auto?"👁":"🙈"}</span><div><b>Visibilidad para el responsable.</b> ${txt} Ve solo cámara + local = total, sin diferencia ni %.</div>${btn}</div>`;
+}
+function ctlLiberar(inventarioId, local, mostrar){
+  if(document.getElementById("ctlOv")) return;
+  const ov=document.createElement("div"); ov.id="ctlOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
+    <p class="mantTit" id="ctlTit" style="margin:0">${mostrar?"Mostrar el conteo al responsable":"Volver a ocultar el conteo"}</p>
+    <p class="mantSub" style="margin:0">${esc(local)} · queda registrado con tu nombre.${mostrar?" El responsable ve solo cámara + local = total.":""}</p>
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <div class="warn" id="ctlErr" style="display:none"></div>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>${mostrar?"Mostrar":"Ocultar"}</button></div></div>`;
+  document.body.appendChild(ov);
+  const err=(m)=>{ const e=ov.querySelector("#ctlErr"); e.textContent=m; e.style.display="block" };
+  ov.addEventListener("click", async e=>{
+    if(e.target===ov || e.target.closest("[data-ctl-no]")){ ov.remove(); return }
+    if(e.target.closest("[data-ctl-si]")){
+      const pin=ov.querySelector("#ctlPin").value.trim();
+      if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const r=await api("liberarInventario",{local, inventarioId, pin, mostrar});
+      if(r && r.ok){ ov.remove(); toast(mostrar?"Conteo mostrado al responsable":"Conteo oculto otra vez"); ctlRefrescar() }
+      else err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar.");
+    }
+  });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove(); if(e.key==="Enter"){ const b=ov.querySelector("[data-ctl-si]"); if(b) b.click() } });
+  setTimeout(()=>{ const m=ov.querySelector("#ctlPin"); if(m) m.focus() },30);
+}
+function ctlDesbloquear(inventarioId, local, despues, accion){
+  if(document.getElementById("ctlOv")) return;
+  const ov=document.createElement("div"); ov.id="ctlOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
+    <p class="mantTit" id="ctlTit" style="margin:0">Desbloquear conteo</p>
+    <p class="mantSub" style="margin:0">${esc(local)} · habilita una corrección y después se vuelve a cerrar. Queda registrado con tu nombre y el motivo; el conteo original se conserva.</p>
+    <input id="ctlMotivo" type="text" maxlength="200" placeholder="Motivo (obligatorio)" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <div class="warn" id="ctlErr" style="display:none"></div>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>Desbloquear</button></div></div>`;
+  document.body.appendChild(ov);
+  const err=(m)=>{ const e=ov.querySelector("#ctlErr"); e.textContent=m; e.style.display="block" };
+  ov.addEventListener("click", async e=>{
+    if(e.target===ov || e.target.closest("[data-ctl-no]")){ ov.remove(); return }
+    if(e.target.closest("[data-ctl-si]")){
+      const motivo=ov.querySelector("#ctlMotivo").value.trim(), pin=ov.querySelector("#ctlPin").value.trim();
+      if(motivo.length<3){ err("Escribí el motivo."); return }
+      if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const r=await (accion==="camara"?api("desbloquearConteoCamara",{local, pin, motivo}):api("desbloquearInventario",{local, inventarioId, pin, motivo}));
+      if(r && r.ok){ ov.remove(); toast("Desbloqueado: se puede hacer una corrección"); if(despues) despues(); else ctlRefrescar() }
+      else err((r&&r.error)||"No se pudo desbloquear.");
+    }
+  });
+  ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove() });
+  setTimeout(()=>{ const m=ov.querySelector("#ctlMotivo"); if(m) m.focus() },30);
+}
+function controlClick(t){
+  const C=controlEstado();
+  if(t.dataset.ctlRefresh!==undefined){ C.datos=null; C.error=null; renderApp(); cargarControl(); return true }
+  if(t.dataset.ctlVer!==undefined){ C.det=t.dataset.ctlVer; C.detData=null; C.detId=""; C.detError=null; C.vista="rubro"; C.verG={}; renderApp(); window.scrollTo(0,0); cargarControlDetalle(C.det,""); return true }
+  if(t.dataset.ctlVolver!==undefined){ C.det=null; C.detData=null; renderApp(); cargarControl(); return true }
+  if(t.dataset.ctlSel){ C.detId=t.dataset.ctlSel; C.detData=null; renderApp(); cargarControlDetalle(C.det,C.detId); return true }
+  if(t.dataset.ctlComo!==undefined){ abrirAyuda("control"); return true }
+  if(t.dataset.ctlMov){ C.verMov=C.verMov||{}; C.verMov[t.dataset.ctlMov]=!C.verMov[t.dataset.ctlMov]; renderApp(); return true }
+  if(t.dataset.ctlVista){ C.vista=t.dataset.ctlVista; renderApp(); return true }
+  if(t.dataset.ctlVerg){ C.verG=C.verG||{}; C.verG[t.dataset.ctlVerg]=!C.verG[t.dataset.ctlVerg]; renderApp(); return true }
+  if(t.dataset.ctlPedir){ const l=t.dataset.ctlPedir; (async()=>{ const r=await api("pedirConteoParcial",{local:l}); toast(r&&r.ok?"Pedido enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
+  if(t.dataset.ctlPedirfinal){ const l=t.dataset.ctlPedirfinal; if(!confirm("¿Pedir el conteo de CIERRE de "+l+"? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.")) return true; (async()=>{ const r=await api("pedirConteoFinal",{local:l}); toast(r&&r.ok?"Pedido de cierre enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
+  if(t.dataset.ctlCancel){ const l=t.dataset.ctlCancel; if(!confirm("¿Cancelar el pedido de conteo de "+l+"?")) return true; (async()=>{ const r=await api("cancelarPedidoConteo",{local:l}); toast(r&&r.ok?"Pedido cancelado":(r&&r.error)||"No se pudo cancelar."); ctlRefrescar() })(); return true }
+  if(t.dataset.ctlCamdesb){ ctlDesbloquear("", t.dataset.ctlCamdesb, null, "camara"); return true }
+  if(t.dataset.ctlLib){ ctlLiberar(t.dataset.ctlLib, t.dataset.ctlLocal, t.dataset.ctlLibmostrar==="1"); return true }
+  if(t.dataset.ctlDesb){ ctlDesbloquear(t.dataset.ctlDesb, t.dataset.ctlLocal); return true }
+  if(t.dataset.ctlPrint){ window.print(); return true }
+  return false;
+}
+/** Aviso al responsable: supervisión le pidió un conteo parcial (cámara + local). */
+async function cargarPedidoConteo(){
+  if(!S.local || !S.empleado || ["encargado","turno","produccion"].indexOf(S.empleado.rol)===-1) { S.pedidoConteo=null; return }
+  const local=S.local;
+  const r=await api("pedidoConteo",{local});
+  if(local!==S.local) return;
+  const nuevo=(r&&r.ok&&r.pedido)||null;
+  if((S.pedidoConteo&&S.pedidoConteo.id)!==(nuevo&&nuevo.id)){ S.pedidoConteo=nuevo; if(!_estaEscribiendo() && !(S.inv && S.inv.paso==="contar")) renderApp(); }
+}
+function pedidoConteoBannerHTML(){
+  if(!S.pedidoConteo || !S.empleado || ["encargado","turno","produccion"].indexOf(S.empleado.rol)===-1) return "";
+  const fin=S.pedidoConteo.tipo==="final";
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo de cierre del mes":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene.":"Supervisión pidió un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
+}
+
 function relevarClick(t){
   const R=relevarEstado();
   const alt=(obj,k)=>{ if(obj[k]) delete obj[k]; else obj[k]=true };
@@ -3240,9 +3632,9 @@ function renderNav(){
   // Operaciones (admin sin local elegido): solo Inicio (la portada) y Sabores (catálogo global).
   if(!S.local){
     if(!S.empleado || (S.empleado.rol!=="admin" && S.empleado.rol!=="supervisor")) return "";
-    const tabsOp=[["inicio","Inicio"],["relevar","Relevar"]];
+    const tabsOp=[["inicio","Inicio"],["relevar","Relevar"],["control","Control"]];
     if(S.empleado.rol==="admin") tabsOp.push(["sabores","Sabores"]);
-    const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : "inicio";
+    const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : S.tab==="control" ? "control" : "inicio";
     return `<nav role="tablist" id="tabs" class="bottomNav navCorta">${tabsOp.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${act===t}">${ICONOS_TAB[t]}<span>${l}</span></button>`).join("")}</nav>`;
   }
   // La barra se arma por rol, sin esperar los datos del local (antes aparecía recién cuando llegaban los sabores).
@@ -3260,10 +3652,8 @@ function renderNav(){
 
 /** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
 function avisoConteoInicialHTML(){
-  if(Date.now()>Date.parse("2026-12-15T00:00:00-03:00")) return "";
-  let visto=null; try{ visto=ls.get("avisoConteoInicial") }catch(e){}
-  if(visto) return "";
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica: podés cargarlo y corregirlo. <b>Desde el 1/12 queda fijo</b>: lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div><button type="button" class="btn" id="avisoConteoOk">Entendido</button></div>`;
+  if(Date.now()>=Date.parse("2026-12-01T00:00:00-03:00")) return ""; // fijo hasta el fin del 30/11 (00:00 del 1/12), sin botón para cerrarlo
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica. <b>Una vez guardado queda con candado</b>: solo supervisión lo desbloquea, con su PIN. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div></div>`;
 }
 function renderMain(){
   if(S.local && S.tab==="gestion" && !S.stockValorizado && S.sabores.length) S.tab="salida"; // Gestión solo con stock_valorizado=SI
@@ -3271,6 +3661,7 @@ function renderMain(){
   // Vista general (sin local elegido): la portada ocupa toda la pantalla como fondo,
   // y la barra LogiStock de arriba queda encima.
   if(!S.local && S.tab==="relevar" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return relevarView();
+  if(!S.local && S.tab==="control" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return controlView();
   if(!S.local && S.tab!=="sabores") return `
     <div class="portadaLocal"><div class="portadaMarco"><img src="media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="sabores">Gestionar sabores de todos los locales</button>` : ""}</div>`;
   // En Operaciones (sin local) la pestaña Sabores usa su propia lista (S.saboresAdmin): no hay que esperar los datos de ningún local.
@@ -3291,7 +3682,7 @@ function renderMain(){
   // Si la última carga falló y lo que se ve viene de la copia guardada en este equipo, se avisa (antes quedaba en
   // silencio y faltaba lo que solo manda el servidor, como la solapa Gestión).
   if(S.errorCarga && S.sabores.length) h = `<div class="note" style="border-color:var(--warn,#C98A1B)">No se pudieron actualizar los datos de este local: se muestra lo último guardado en este equipo y se reintenta solo.<br><button class="btn ghost" id="reintentarCarga" style="margin-top:8px">Reintentar ahora</button></div>` + h;
-  return avisoConteoInicialHTML()+h;
+  return pedidoConteoBannerHTML()+avisoConteoInicialHTML()+h;
 }
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
@@ -3406,16 +3797,18 @@ function revisarAccion(t){
   if(t.dataset.revQuitar){ const id=t.dataset.revQuitar; delete c[id]; delete pes[id]; S.escItems=S.escItems.filter(e=>String(e.id)!==String(id)); fin(); return true }
   return false;
 }
+function chocoBarraHTML(){
+  const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
+  const consumo=(S.ventaDia&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
+  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
+}
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
 function menuSalidaHTML(){
-  const rv=resumenVenc(), pv=rv.rojo.l+rv.amarillo.l;
-  const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-sal-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
-  const t=[tile("comun","📤","Retiro de cámara","Elegís qué sabores retirás."),
-           tile("desp","🗑️","Desperdicio","Roto, caído o vencido. Pide el motivo.")];
-  if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia enviada","Mandás o prestás mercadería a otro local."));
-  if(S.ventaDia&&S.empleado.rol!=="colaborador") t.push(tile("choco","🍫","Salida de chocolatería","Venta del día, gift card, sin cargo o baja."));
-  t.push(tile("venc","⏰","Ver vencimientos",rv.rojo.l?`${rv.rojo.l} ${rv.rojo.l===1?"lote vence":"lotes vencen"} pronto`:pv?`${pv} por vencer`:"Solo consulta: lotes por vencer."));
-  return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
+  const tile=(k,svg,tit,chip)=>`<button type="button" class="ingTile salTile" data-sal-menu="${k}"><span class="salTop"><span class="salIc" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></span><span class="salChip">${chip}</span></span><b>${tit}</b></button>`;
+  const t=[tile("comun",'<path d="M12 15V4M8 8l4-4 4 4M4 15v4h16v-4"/>',"Retiro de cámara","Cámara"),
+           tile("desp",'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',"Desperdicio","Pide motivo")];
+  if(puedeTransferir()) t.push(tile("transf",'<path d="M4 8h14l-3-3M20 16H6l3 3"/>',"Transferencia enviada","Otro local"));
+  return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu salMenu">${t.join("")}</div>`;
 }
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
@@ -3441,7 +3834,8 @@ function gridSalida(st){
   ${segSalidaHTML()}
   ${accionesSalidaHTML()}
   ${chipFiltros()}
-  <div class="consultaAviso"><div><b>Solo informativo</b>La chocolatería se descuenta con «Salida de chocolatería». Acá ves cuánto hay y qué vence primero.</div>${S.empleado.rol!=="colaborador"?`<button type="button" class="btn consultaGo" id="irVentaDia2">Ir a Salida de chocolatería</button>`:`<div class="consultaNota">La carga un responsable.</div>`}</div>
+  ${S.empleado.rol==="colaborador"?`<div class="consultaAviso"><div><b>Solo consulta</b>La carga un responsable.</div></div>`:""}
+  ${chocoBarraHTML()}
   ${hayLotesConFecha()?leyendaVencHTML():""}
   ${list.length?`<div class="grid" style="margin-top:12px">${list.map(cardConsulta).join("")}</div>`:`<div class="empty">Ningún producto coincide con la búsqueda.</div>`}`;
   }
@@ -3460,6 +3854,7 @@ function gridSalida(st){
   ${accionesSalidaHTML()}
   ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("salida"):""}
   ${chipFiltros()}
+  ${S.filtroFamilia==="chocolateria"?chocoBarraHTML():""}
   ${hayLotesConFecha()&&S.filtroFamilia==="chocolateria"?leyendaVencHTML():""}
   <p class="sec" style="margin-top:16px">${GRUPOS_PAD.includes(S.filtroFamilia)?"Tocá un producto y escribí cuántas unidades":"Tocá un sabor para sumar una unidad"}</p>
   ${list.length?`<div class="grid">${list.map(card).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
@@ -3503,9 +3898,10 @@ function segSalidaHTML(){
 }
 function accionesSalidaHTML(){
   // Desperdicio, transferencia, salida de chocolatería y vencimientos se eligen en el menú «¿Qué vas a hacer?»: acá solo queda el escáner.
+  if(S.filtroFamilia==="chocolateria") return ""; // en Chocolatería no hay escáner: arriba van «Registrar consumo» y «Vencimientos»
   const t=[];
   if(escanerDisponible()) t.push(accTileHTML("irEscaner","Activar escáner","Vasquetas","scan","m"));
-  const nota=(S.ventaDia&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: va por «Salida de chocolatería» (venta, gift card, sin cargo, baja).</p>`:"";
+  const nota=(S.ventaDia&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: se registra con «Registrar consumo».</p>`:"";
   return (t.length?accGridHTML(t):"")+nota;
 }
 function gridDesperdicio(st){
@@ -3654,7 +4050,7 @@ function gridVentaDia(st){
   ${sub==="transferencia"?`<div class="remitoRow"><label for="destinoTransf" style="font-weight:700">Local de destino</label><input type="text" id="destinoTransf" placeholder="Ej: Obelisco CABA" value="${esc(S.destinoTransf)}"></div>`:""}`
     : "";
   return `<button class="btn volver" type="button" id="volverVenta" style="margin-bottom:12px">Volver a Salida</button>
-  <p class="sec" style="margin-top:6px">Salida de chocolatería</p>
+  <p class="sec" style="margin-top:6px">Registrar consumo</p>
   <div class="tabsCat" role="tablist" style="margin-bottom:10px">
     ${TIPOS_CHOCO.map(([k,l])=>`<button type="button" class="tabCat" role="tab" data-tipo-choco="${k}" aria-selected="${tipo===k}">${l}</button>`).join("")}
   </div>
@@ -3711,6 +4107,7 @@ function lectorRemitoView(){
   }
   const total=lr.items.reduce((a,it)=>a+(it.ignorar?0:(it.cantidad||0)),0);
   const sinResolver=lr.items.filter(it=>!it.saborId && !it.ignorar).length;
+  const kgMalRem=S.kilosReales?lr.items.filter(it=>!it.ignorar && it.saborId && esVasquetaKilos(it.saborId) && kgVasqProblema(it.saborId,it.cantidad,+it.kilos||0,true)).length:0;
   const fila=(it,i)=>{
     const flag=!it.saborId && !it.ignorar;
     const dudoso=it.saborId && it.confianza==="media" && !it.ignorar;
@@ -3718,7 +4115,7 @@ function lectorRemitoView(){
       ${it.saborId?plateHTML(it.saborId):`<span class="plate" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--warn);font-weight:800">?</span>`}
       <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${it.saborId&&!it.ignorar?`<div class="meta">El remito dice: ${esc(nombreSinSeccion(it.nombreDetectado))}${it.repetido?` — <b style="color:var(--alert)">otro renglón del remito quedó en este mismo sabor, revisá cuál es cuál</b>`:""}</div>`:""}${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo. ${it.bultos} bulto${it.bultos===1?"":"s"} en el remito — elegí el sabor para calcular la cantidad real, o cargala a mano.</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:dudoso?`<div class="meta">Lo matcheamos por parecido con "${esc(it.nombreDetectado)}" — revisá que sea el sabor correcto.</div>`:""}</div>
       <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
-      ${(S.kilosReales && it.saborId && !it.ignorar && esVasquetaKilos(it.saborId))?(()=>{ const kg=+it.kilos||0, por=(kg>0&&it.cantidad>0)?kg/it.cantidad:0; return `<div class="lotesFull"><div class="kgFila"><label for="rkg-${i}">Kilos del renglón</label><input type="text" id="rkg-${i}" inputmode="decimal" data-remito-kg="${i}" value="${kg>0?esc(String(kg).replace(".",",")):""}" placeholder="0,00"> kg${!(kg>0)?`<span class="kgAv">No se leyeron los kilos: escribilos a mano.</span>`:(por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta — revisá cantidad y kilos.</span>`:""}</div></div>` })():""}
+      ${(S.kilosReales && it.saborId && !it.ignorar && esVasquetaKilos(it.saborId))?(()=>{ const kg=+it.kilos||0, por=(kg>0&&it.cantidad>0)?kg/it.cantidad:0; return `<div class="lotesFull"><div class="kgFila"><label for="rkg-${i}">Kilos del renglón</label><input type="text" id="rkg-${i}" inputmode="decimal" data-remito-kg="${i}" value="${kg>0?esc(String(kg).replace(".",",")):""}" placeholder="0,00"> kg${!(kg>0)?`<span class="kgAv">No se leyeron los kilos: escribilos a mano.</span>`:kgVasqProblema(it.saborId,it.cantidad,kg,true)?`<span class="kgAv" style="color:#C62828;font-weight:800">${esc(kgVasqProblema(it.saborId,it.cantidad,kg,true))} Corregilo para cargar.</span>`:(por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta — revisá cantidad y kilos.</span>`:""}</div></div>` })():""}
       ${flag||it.ignorar||dudoso?`<div class="flagPick"><select data-remito-elegir="${i}">
         <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>
         ${gruposParaSelectSabor().map(g=>`<optgroup label="${esc(g.label)}">${g.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("")}
@@ -3774,7 +4171,7 @@ function lectorRemitoView(){
   <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
     <button class="btn ghost" type="button" id="remitoCancelar">Cancelar</button>
     <button class="btn ghost" type="button" id="remitoAgregarPagina">+ Agregar otra página</button>
-    <button class="btn" type="button" id="remitoCargar" ${sinResolver?"disabled":""} style="flex:1">Cargar al carrito de ingreso</button>
+    <button class="btn" type="button" id="remitoCargar" ${(sinResolver||kgMalRem)?"disabled":""} style="flex:1">Cargar al carrito de ingreso</button>
   </div>`;
 }
 /** Las fotos de celular pueden pasar de 5 MB o venir en HEIC, y la API de
@@ -3896,7 +4293,7 @@ function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
   if(soloEsc) return t.length?accGridHTML(t):"";
   if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
   if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
-  if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor cambiado?","swap"));
+  if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor mal rotulado?","swap"));
   return t.length?accGridHTML(t):"";
 }
 /** Menú «¿Qué vas a hacer?»: primero se elige la acción, recién después aparece la lista de sabores. */
@@ -3906,7 +4303,7 @@ function menuIngresoHTML(){
   if(rol!=="colaborador") t.push(tile("merc","📦","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito."));
   t.push(tile("dev","↩️","Devolución","Algo que sacaste y volvés a guardar."));
   if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
-  if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor cambiado","Cambio de sabor: figura uno y era otro."));
+  if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor mal rotulado","Cambio de sabor: figura uno y era otro."));
   if(S.produccionLocal) t.push(tile("prod","🏭","Producción","Lo que fabricás en el local (kilos y vasquetas)."));
   if(resp) t.push(tile("compa","↩️","Devolver por un compañero","Se fue y dejó algo pendiente: lo devolvés a su nombre."));
   return `<p class="sec">Ingreso</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
@@ -4066,23 +4463,48 @@ function bannerBorradorConteoHTML(){
     <div class="b"><button type="button" class="btn" id="continuarConteo">Continuar donde quedé</button><button type="button" class="btn ghost" id="descartarBorradorBtn">Descartar</button></div></div>`;
 }
 /** «Conteo inicial»: adentro, Conteo cámara + Conteo local = Conteo inicial (el resultado se guarda al terminar el conteo del local). */
+/** Desde el 1/12 el Conteo físico suelto se retira (el servidor lo vuelve a controlar): el hub lo muestra apagado cuando corresponde. */
+async function cargarConteoBloqueado(){
+  if(!S.local) return;
+  const local=S.local, r=await api("inventarios",{local});
+  if(local!==S.local) return;
+  const b=!!(r&&r.ok&&r.conteoBloqueado), cob=(r&&r.ok&&r.cobertura)||null, cam=(r&&r.ok&&r.camaraBloqueada!==undefined)?!!r.camaraBloqueada:b;
+  const cambio=(S.conteoBloqueado!==b)||(S.camaraBloqueada!==cam)||((S.cobertura&&S.cobertura.ts)!==(cob&&cob.ts))||!S.inicialCargado;
+  S.conteoBloqueado=b; S.camaraBloqueada=cam; S.cobertura=cob; S.inicialCargado=true;
+  // kilos del conteo inicial del mes (cámara + local), para las tarjetas
+  S.inicialMes=null;
+  if(cob && r && r.ok){
+    const x=(r.inventarios||[]).find(z=>z.ts===cob.ts);
+    if(x){ const t=invTotales(invFilas({items:x.items,camara:x.camara,precios:null})).vasquetas; S.inicialMes={ts:x.ts, tipo:cob.tipo, cam:t?t.camQ:0, loc:t?t.loc:0, tot:t?t.tot:0} }
+  }
+  if(cambio && !S.inv && !S.conteo && (S.hubInicial || S.tab==="stock")) renderApp()
+}
+/** Carga una vez por local (y otra vez después de guardar un conteo) el estado del conteo inicial para las tarjetas de Stock. */
+function cargarInicialUnaVez(){ if(S._inicialLocal===S.local) return; S._inicialLocal=S.local; S.inicialCargado=false; cargarConteoBloqueado() }
+function mesActualTxt(){ const m=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",month:"long"}); return m.charAt(0).toUpperCase()+m.slice(1) }
+function kgTxt(n){ return (Math.round((+n||0)*10)/10).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1}) }
 function conteoInicialHubHTML(){
-  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
-  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
-      <span class="stkPasoTop">${n?`<span class="stkNum">${n}</span>`:""}<span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
-      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span></button>`;
+  const ic=d=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const ini=S.inicialMes, camOff=!!(S.camaraBloqueada||S.conteoBloqueado), locOff=!!S.conteoBloqueado;
+  const fch=ts=>new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"});
+  const nota=S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+fch(S.cobertura.ts):"Este mes ya tiene su conteo inicial ("+fch(S.cobertura.ts)+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:"";
+  const kg=v=>`<span class="hkg">${v?kgTxt(v):"—"} <small>kg</small></span>`;
+  const tile=(off,id,tit,icono,chip,cls,v)=>off
+    ? `<div class="hubTile stkOff" aria-disabled="true"><span class="htTop"><span class="htIco">${ic(icono)}</span><span class="htChip ok">${chip}</span></span><span class="htTx"><small>Desglose</small><b>${tit}</b></span>${kg(v)}</div>`
+    : `<button type="button" class="hubTile" id="${id}" aria-label="${tit}"><span class="htTop"><span class="htIco">${ic(icono)}</span><span class="htChip ${cls}">${chip}</span></span><span class="htTx"><small>Desglose</small><b>${tit}</b></span>${kg(v)}</button>`;
   return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Conteo inicial</div>
-  <h2 class="pdH1">Conteo inicial</h2>
-  <p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>
-  <div class="stkFisico"><div class="stkPasos">
-    ${paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
-    <span class="stkSep">+</span>
-    ${paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
-    <span class="stkSep">=</span>
-    ${paso(3,"invGuardadosBtn","Conteo inicial","Ver los conteos iniciales guardados.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
-  </div></div>`;
+  ${nota}
+  <div class="hubR">
+    <button type="button" class="hubRes" id="invGuardadosBtn" aria-label="Ver conteos iniciales guardados">
+      <span class="htTop"><span class="htIco">${ic('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>')}</span><span class="htChip gold">${S.cobertura?"Resultado · 🔒":"Pendiente"}</span></span>
+      <span class="htTx"><b>Conteo inicial</b><span>Cámara + Local · ${esc(mesActualTxt())}</span></span>
+      <span class="hubKg">${ini?kgTxt(ini.tot):"—"} <small>kg</small></span></button>
+    <div class="hubDes">
+      ${tile(camOff,"conteoBtn","Cámara",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',camOff?"Hecho · 🔒":"Pendiente","warn",ini&&ini.cam)}
+      ${tile(locOff,"invBtn","Local",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',locOff?"Hecho · 🔒":(invHayBorrador()?"Sin terminar":"Pendiente"),"warn",ini&&ini.loc)}
+    </div>
+  </div>`;
 }
 function stockView(st){
   if(S.inv) return inventarioView();
@@ -4106,7 +4528,9 @@ function stockViewGeneral(st){
   });
   const s7=salidasDias(7), consumoSemanal=Math.round(Object.values(s7).reduce((a,b)=>a+b,0));
   const pedidoTotal=S.sabores.reduce((a,s)=>a+pedidoSugerido(s.id,st),0);
+  const lun0=lunesDe(Date.now()), sem3=[3,2,1].map(k=>Math.round(S.sabores.reduce((a,sb)=>a+salidasPorDia(sb.id,addDias(lun0,-7*k),7).reduce((x,y)=>x+y,0),0)));
   const puedeGestionar = S.empleado.rol!=="colaborador";
+  if(puedeGestionar) cargarInicialUnaVez();
   const puedePedido = S.empleado.rol!=="colaborador";
   const last=S.stock?new Date(S.stock.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}):null;
   const listaVisible = listaFiltrada(st);
@@ -4127,12 +4551,11 @@ function stockViewGeneral(st){
 
   return `<div class="kpis">
     <div class="kpi"><span class="lbl">Sabores en alerta</span><span class="val${al.length?" crit":""}">${al.length}</span><span class="sub">${al.length?al.slice(0,4).map(s=>esc(s.nombre)).join(" · ")+(al.length>4?" …":""):"Todo en orden"}</span></div>
-    <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
     ${km?`<div class="kpi"><span class="lbl">Kilos de helado en cámara</span><span class="val">${fmtKg(kgReal)} kg</span><span class="sub">${sinKilos?`${sinKilos} ${sinKilos===1?"sabor sin kilos cargados":"sabores sin kilos cargados"}: se cargan con un conteo con kilos`:"Lo que entró menos lo que salió, pesado"}</span></div>`:""}
     ${(!km&&kgTotal>0)?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
   ${bannerBorradorConteoHTML_si(puedeGestionar)}
-  ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal)}
+  ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal,{consumoSemanal,sem3})}
   <p style="margin:20px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
   ${chipFiltros()}
   <div class="rows stkCols" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
@@ -4141,22 +4564,31 @@ function bannerBorradorConteoHTML_si(ok){ return ok?bannerBorradorConteoHTML():"
 /** Tarjetas de arriba de Stock, tal cual el mock aprobado por Gabi (13/11/2026): «Pedido sugerido» aparte, en verde suave, y «Stock físico · en orden»
  *  con tres pasos numerados (1 Conteo físico → 2 Stock de local → 3 Conteo inicial, este último oscuro y dorado). Desde acá no se hace ningún movimiento.
  *  Paso 2 abre el conteo del local (ex «Conteo inicial»); paso 3 abre los conteos iniciales guardados. */
-function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
-  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
-  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  const pedido=puedePedido?`<button type="button" class="stkPedido" id="verPedidoBtn" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
-      <span class="stkPedTop"><span class="stkPedIco">${ic('<path d="M8 6h12M8 12h12M8 18h8"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>')}</span>${al.length?`<span class="stkPedBajos">${al.length} ${al.length===1?"bajo":"bajos"}</span>`:""}</span>
-      <span class="stkPedTx"><small>PARA PEDIR</small><b>Pedido sugerido</b><span>${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"} por pedir</span></span>
-    </button>`:"";
-  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
-      <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
-      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span>
-    </button>`;
-  const fisico=puedeGestionar?`<div class="stkFisico"><div class="stkPasos">
-      ${paso(0,"conteoInicialBtn","Conteo inicial","Cámara + local. Hacerlo o ver el del mes.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Conteo inicial: cámara más local")}
-    </div></div>`:"";
+function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal,x){
+  x=x||{consumoSemanal:0,sem3:[0,0,0]};
+  const ic=d=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  // Pedido sugerido y tendencia de retiros: lo que más se mira para decidir el pedido
+  const sem=x.sem3, max=Math.max(1,...sem), ult=sem[2], prev=(sem[0]+sem[1])/2;
+  const tend=(ult===0&&prev===0)?{t:"Sin retiros",c:"m"}:prev===0?{t:"↑ Subiendo",c:"up"}:ult>prev*1.1?{t:"↑ Subiendo",c:"up"}:ult<prev*0.9?{t:"↓ Bajando",c:"down"}:{t:"→ Estable",c:"m"};
+  const barras=`<svg width="46" height="22" viewBox="0 0 46 22" aria-hidden="true">${sem.map((v,i)=>{ const h=Math.max(4,Math.round(19*v/max)); return `<rect x="${2+16*i}" y="${21-h}" width="10" height="${h}" rx="2" fill="currentColor" opacity="${[.35,.6,1][i]}"/>` }).join("")}</svg>`;
+  const pedido=puedePedido?`<button type="button" class="stkHero" id="verPedidoBtn" aria-label="Ver pedido sugerido y tendencia de retiros">
+      <span class="shTop"><span class="shIco">${ic('<path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>')}</span>${al.length?`<span class="shChip">${al.length} ${al.length===1?"sabor bajo mínimo":"sabores bajo mínimo"}</span>`:""}</span>
+      <span class="shTit">Pedido sugerido y tendencia de retiros</span>
+      <span class="shDatos">
+        <span class="shD"><i>Consumo semanal</i><b>${x.consumoSemanal} u.</b></span>
+        <span class="shD shTend ${tend.c}"><i>Retiros · 3 semanas</i><b>${barras} ${tend.t}</b></span>
+        <span class="shGo">Ver pedido ›</span>
+      </span></button>`:"";
+  // Conteo inicial: cámara + local del mes, con los kilos como protagonista
+  const ini=S.inicialMes, hecho=!!S.cobertura;
+  const fch=ts=>new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"});
+  const chip=hecho?`Hecho ${fch(S.cobertura.ts)} · 🔒`:"Pendiente";
+  const fisico=puedeGestionar?`<button type="button" class="stkCI" id="conteoInicialBtn" aria-label="Conteo inicial: cámara más local">
+      <span class="ciTop"><span class="ciIco">${ic('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>')}</span><span class="ciChip">${chip}</span></span>
+      <span class="ciTx"><b>Conteo inicial</b><span>Cámara + Local</span><small>${esc(mesActualTxt())}</small></span>
+      <span class="ciKg">${ini?kgTxt(ini.tot):"—"} <small>kg</small></span></button>`:"";
   if(!pedido&&!fisico) return "";
-  return `<div class="stkAcc${pedido&&fisico?"":" solo"}">${pedido}${pedido&&fisico?`<span class="stkDiv"></span>`:""}${fisico}</div>`;
+  return `<div class="stkAcc2${pedido&&fisico?"":" solo"}">${pedido}${fisico}</div>`;
 }
 
 function stockViewPedido(st){
@@ -4298,11 +4730,11 @@ function conteoRevisarView(){
   const r=conteoResumen(), pend=conteoFaltaConfirmar(r);
   const flag=new Set(r.flags.map(f=>f.s.id));
   const linea=f=>{
-    const raro=flag.has(f.s.id), ok=!!S.conteoAck[f.s.id];
-    const motivo=raro ? (f.e==="cero" ? `Tenía ${f.prev} y lo dejaste en 0. ¿De verdad no queda nada?` : `Salto grande: de ${f.prev} a ${f.v}. ¿Está bien?`) : (f.v>f.prev?`Sube ${f.v-f.prev}`:`Baja ${f.prev-f.v}`);
-    return `<div class="rcLin${raro&&!ok?" raro":""}">${plateHTML(f.s.id)}<div class="rcNm"><b>${esc(f.s.nombre)}</b><small>${motivo}</small></div>
+    const raro=flag.has(f.s.id), ok=!!S.conteoAck[f.s.id], imposible=!!(f.chk&&f.chk.nivel==="bloq");
+    const motivo=f.chk ? f.chk.msg : raro ? (f.e==="cero" ? `Tenía ${f.prev} y lo dejaste en 0. ¿De verdad no queda nada?` : `Salto grande: de ${f.prev} a ${f.v}. ¿Está bien?`) : (f.v>f.prev?`Sube ${f.v-f.prev}`:`Baja ${f.prev-f.v}`);
+    return `<div class="rcLin${(raro&&!ok)||imposible?" raro":""}">${plateHTML(f.s.id)}<div class="rcNm"><b>${esc(f.s.nombre)}</b><small>${motivo}</small></div>
       <div class="rcNum"><span class="a">${f.prev}</span><span class="f">→</span><span>${f.v}</span></div>
-      ${raro?`<button type="button" class="rcOk${ok?" on":""}" data-cack="${f.s.id}">${ok?"Confirmado ✓":"Está bien"}</button>`:""}
+      ${imposible?`<span class="rcBloq">Corregilo</span>`:raro?`<button type="button" class="rcOk${ok?" on":""}" data-cack="${f.s.id}">${ok?"Confirmado ✓":"Está bien"}</button>`:""}
       <button type="button" class="rcX" data-cdeshacer="${f.s.id}" aria-label="Deshacer ${esc(f.s.nombre)}">✕</button></div>`;
   };
   const iguales=r.filas.filter(f=>f.e==="igual"||f.e==="guardado");
@@ -4311,22 +4743,40 @@ function conteoRevisarView(){
   <p class="revSub">${conteoParcialActivo()?`Solo se reemplaza el stock de ${esc(etiquetaRubroConteo())}. Los demás rubros no se tocan. `:""}Se guarda tal cual lo ves. Tocá la ✕ para volver un sabor a como estaba.</p>
   ${r.cambian.length?`<p class="revGrupo">Cambian · ${r.cambian.length}${r.flags.length>3?` <button type="button" class="chip" data-cack-todos>${pend.length?"Confirmar todos":"Quitar confirmaciones"}</button>`:""}</p><div class="rcLista">${r.cambian.map(linea).join("")}</div>`:`<div class="empty">No cambia ningún número.</div>`}
   ${iguales.length?`<div class="rcResto"><b>Igual al sistema</b><span class="v">${iguales.length} ${iguales.length===1?"sabor":"sabores"} ✓</span></div>`:""}
-  ${r.sinContar.length?`<div class="rcResto"><b>Sin contar</b><span>${r.sinContar.length} ${r.sinContar.length===1?"sabor":"sabores"} · quedan como están</span></div>`:""}`;
+  ${r.sinContar.length?`<div class="rcResto"><b>Sin contar</b><span>${r.sinContar.length} ${r.sinContar.length===1?"sabor":"sabores"} · quedan como están</span><button type="button" class="chip" data-csin0>Dejar en 0</button></div>`:""}`;
 }
+
+/* ---- Conteo cámara: las vasquetas se cargan igual que en el Conteo local: una casilla por vasqueta pesada, debajo del sabor, y el total se suma solo ---- */
+function cwPesos(id){ S.conteoPesos=S.conteoPesos||{}; return S.conteoPesos[id]||[] }
+function cwSuma(id){ return Math.round(cwPesos(id).reduce((a,x)=>a+(+x||0),0)*100)/100 }
+function cwCuenta(id){ return cwPesos(id).filter(x=>x!==""&&+x>0).length }
+function cwPillsHTML(s){
+  const w=cwPesos(s.id), n=Math.max(3,w.length);
+  const pills=Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-cw="${s.id}|${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
+  return `<div class="cwPills invPillsW">${pills}<button type="button" class="p" data-cwmas="${s.id}" aria-label="Agregar otra vasqueta" title="Otra vasqueta">+</button></div>`;
+}
+/** Pasa lo cargado en las casillas al conteo de siempre: cantidad = vasquetas pesadas, kilos = la suma. */
+function cwSincronizar(id){
+  const inp=document.querySelector(`input[data-c="${id}"]`), kg=document.querySelector(`input[data-kc="${id}"]`), n=cwCuenta(id), suma=cwSuma(id);
+  if(inp){ inp.value=n||""; inp.dispatchEvent(new Event("input",{bubbles:true})) } else { S.conteo[id]=n; S.conteoTocado[id]=true }
+  S.kilosConteo[id]=suma?String(suma).replace(".",","):"";
+  if(kg) kg.value=S.kilosConteo[id];
+  const tot=document.querySelector(`[data-cwtot="${id}"]`); if(tot) tot.textContent=suma?(suma.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:2})+" kg"):"–";
+  const cn=document.querySelector(`[data-cwn="${id}"]`); if(cn) cn.textContent=n?(n+(n===1?" vasqueta":" vasquetas")):"";
+  S.confirm=false; programarBorradorConteo(); renderBar();
+}
+
 function stockViewConteo(){
   if(S.conteoRevisar) return conteoRevisarView();
   const cont=S.conteo, st0=stockMap(), parcial=conteoParcialActivo();
   const list=listaFiltrada(st0);
-  const row=s=>`<div class="row" data-cestado="${conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0)}">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""} · Sistema: ${Math.max(0,st0[s.id]||0)}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
-    <div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}" placeholder="–"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+  const row=s=>`<div class="row${esVasquetaKilos(s.id)?" cwRow":""}" data-cestado="${conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0)}">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
+    ${esVasquetaKilos(s.id)?`<div class="right cwTot"><span class="cwN" data-cwn="${s.id}">${cwCuenta(s.id)?cwCuenta(s.id)+(cwCuenta(s.id)===1?" vasqueta":" vasquetas"):""}</span><div class="invTotW"><small>Total</small><b data-cwtot="${s.id}">${cwSuma(s.id)?cwSuma(s.id).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:2})+" kg":"–"}</b></div></div><span class="cwHide"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}"><input type="text" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}"></span>${cwPillsHTML(s)}`:`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}" placeholder="–"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>`}${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
   const tEsc=conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
-  const tApl=accTileHTML("aplicarAbrir","Poner todo en 0","para empezar de cero y contar todo","swap","",`aria-expanded="${!!S.conteoAplicarAbierto}"`);
-  return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>Conteo físico</h1><p>Cargá lo que hay hoy en la cámara. Reemplaza el stock de cada sabor que toques.</p></div>
+  return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>Conteo cámara</h1><p class="cntAcla">Contá por rubro: cuando termines uno (por ejemplo Vasquetas), tocá «Revisar y guardar» y elegí «Guardar y seguir contando»; después seguí con el siguiente. Lo que no toques no se modifica.</p></div>
   ${parcial?`<div class="cParcial"><b>Contando solo ${esc(etiquetaRubroConteo())}.</b> El resto del local no se toca al guardar.</div>`:""}
-  ${accGridHTML([tEsc,tApl].filter(Boolean))}
-  ${S.conteoAplicarAbierto?`<div class="aplicarBox"><div class="aplicarOp"><button type="button" class="chip" data-apl="visible" aria-pressed="${!soloTodo||parcial}">Solo ${esc(rub)} · ${list.length}</button>${parcial?"":`<button type="button" class="chip" data-apl="todo" aria-pressed="${soloTodo}">Todo el local · ${nTodo}</button>`}</div>
-    <div class="remitoRow"><input type="number" min="0" inputmode="numeric" id="aplicarTodosValor" style="width:80px" placeholder="0" value="${esc(S.conteoAplicarVal)}"><button class="btn ghost" id="aplicarTodos" type="button">Aplicar</button></div></div>`:""}
+  ${accGridHTML([tEsc].filter(Boolean))}
   <div class="cProg" id="conteoProg">${conteoProgresoHTML(conteoResumen())}</div>
   ${chipFiltros()}
   <div class="rows cntGrid" style="margin-top:14px">${list.map(row).join("")}</div>`;
@@ -4354,6 +4804,19 @@ function invCant(s,v){ return invFmtNum(s,v)+(invEsKg(s)?" kg":" u.") }
 function invTxtG(g,v,ap){ return (ap?"≈ ":"")+(g==="vasquetas" ? (Number(v)||0).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})+" kg" : Math.round(Number(v)||0).toLocaleString("es-AR")+" u.") }
 /** Lo que hay en la cámara según LogiStock: unidades y, en vasquetas, kilos (reales si el local los usa; si no, vasquetas × peso promedio, marcado como aproximado). */
 function invCamaraLive(){
+  const I0=S.inv;
+  if(I0 && I0.pedidoId && I0.cam){ // parcial: lo que se contó en la cámara
+    const o={};
+    Object.keys(I0.cam.items).forEach(id=>{
+      const s=S.saboresPorId[id]; if(!s) return;
+      const q=+I0.cam.items[id]||0; if(!(q>0)) return;
+      if(!invEsKg(s)){ o[id]={u:q}; return }
+      if(s.tipo==="k"){ o[id]={u:Math.round(q),k:q}; return }
+      const w=(I0.cam.pesos[id]||[]).filter(x=>x!==""&&x!==null&&+x>0).length;
+      o[id]={u:w||1,k:q};
+    });
+    return o;
+  }
   const st=stockMap(), km=kilosMap(), out={};
   invSabores().forEach(s=>{
     const u=Math.max(0,st[s.id]||0);
@@ -4400,9 +4863,9 @@ function invTotales(filas){
 }
 function invFecha(ts){ return new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) }
 function invGuardarBorrador(){
-  if(!S.inv || !S.local) return;
+  if(!S.inv || !S.local || S.inv.pedidoId) return;
   if(!Object.keys(S.inv.tocado).length){ try{ ls.del(invClaveBorrador()) }catch(e){} return }
-  try{ ls.set(invClaveBorrador(), JSON.stringify({ts:Date.now(), inicio:S.inv.inicio, rubro:S.inv.rubro, items:S.inv.items, tocado:S.inv.tocado})) }catch(e){}
+  try{ ls.set(invClaveBorrador(), JSON.stringify({ts:Date.now(), inicio:S.inv.inicio, rubro:S.inv.rubro, items:S.inv.items, tocado:S.inv.tocado, pesos:S.inv.pesos||{}})) }catch(e){}
 }
 function invHayBorrador(){
   if(!S.local) return false;
@@ -4416,10 +4879,26 @@ function invIniciar(){
   const items={}, tocado={};
   if(b) Object.keys(b.items||{}).forEach(id=>{ if(S.saboresPorId[id]) items[id]=+b.items[id]||0 });
   if(b) Object.keys(b.tocado||{}).forEach(id=>{ if(S.saboresPorId[id]) tocado[id]=1 });
-  S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
+  const pesos={};
+  if(b) Object.keys(b.pesos||{}).forEach(id=>{ if(S.saboresPorId[id] && Array.isArray(b.pesos[id])) pesos[id]=b.pesos[id].map(x=>x===""||x===null?"":+x||0) });
+  S.inv={paso:"contar", rubro:(b && grupos.includes(b.rubro))?b.rubro:grupos[0], items, tocado, pesos, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:!!(b && Object.keys(tocado).length), guardando:false, inicio:b?(+b.inicio||Date.now()):Date.now()};
+  S.filtroFamilia=S.inv.rubro; S.filtroCategoria="todas"; S.q=""; S.catAbierta=false; S.soloAlerta=false;
   window.scrollTo(0,0); renderApp();
 }
-function invSalir(){ S.inv=null; renderApp(); window.scrollTo(0,0) }
+/** Conteo parcial (pedido por supervisión): arranca de cero y a ciegas (no muestra lo que dice el sistema). Dos pasos: cámara y local. No toca el stock de trabajo. */
+function invIniciarParcial(pedidoId, tipo){
+  invIniciar();
+  const I=S.inv; if(!I) return;
+  I.pedidoId=pedidoId; I.pedidoTipo=tipo==="final"?"final":"parcial"; I.restaurado=false;
+  I.cam={items:{},pesos:{},tocado:{}}; I.loc={items:{},pesos:{},tocado:{}};
+  I.fase="camara"; I.items=I.cam.items; I.pesos=I.cam.pesos; I.tocado=I.cam.tocado;
+  renderApp(); window.scrollTo(0,0);
+}
+function invFase(f){
+  const I=S.inv; if(!I||!I.pedidoId||I.fase===f) return;
+  const d=f==="camara"?I.cam:I.loc; I.fase=f; I.items=d.items; I.pesos=d.pesos; I.tocado=d.tocado;
+}
+function invSalir(){ S._inicialLocal=null; S.inv=null; renderApp(); window.scrollTo(0,0) }
 
 function inventarioView(){
   const I=S.inv;
@@ -4429,39 +4908,89 @@ function inventarioView(){
 }
 function invContarHTML(){
   const I=S.inv, grupos=invGrupos(), cam=invCamaraLive();
-  if(!grupos.includes(I.rubro)) I.rubro=grupos[0];
-  const lista=invSabores().filter(s=>grupoProductoDe(s)===I.rubro);
+  // El menú de arriba es el MISMO de Conteo cámara: rubro, subcategoría, buscador y «Debajo del mínimo».
+  if(!grupos.includes(S.filtroFamilia||"vasquetas")){ S.filtroFamilia=grupos[0]; S.filtroCategoria="todas" }
+  I.rubro=S.filtroFamilia||"vasquetas";
+  const idsInv=new Set(invSabores().map(x=>String(x.id)));
+  const lista=listaFiltrada(stockMap()).filter(x=>idsInv.has(String(x.id)));
   const kgR=I.rubro==="vasquetas";
   const row=s=>{
     const kg=invEsKg(s), v=I.items[s.id]||0, t=!!I.tocado[s.id], c=cam[s.id];
     const camTxt=c?(kg?`${(+c.u)} vasq.${s.tipo==="v"?` · ${c.ap?"≈ ":""}${invFmtNum(s,c.k)} kg`:""}`:`${c.u} u.`):"sin stock";
+    const metaCam=I.pedidoId?"":`<div class="meta">Cámara: ${esc(camTxt)}</div>`;
+    if(s.tipo==="v"){
+      // Vasquetas: una casilla por vasqueta que se pesa (3 y «+» para más); el total se suma solo. Nada de ir sumando a mano.
+      const w=(I.pesos&&I.pesos[s.id])||[], n=Math.max(3,w.length);
+      // Los pesos se apilan debajo del sabor como pills que bajan de renglón (caben 30 o más), sin línea separadora.
+      const cajas=Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-inv-w="${s.id}:${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
+      return `<div class="row invRow invWrow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
+      <div class="nm">${esc(s.nombre)}${metaCam}${I.pedidoId?ceTagHTML(s.id):""}</div>
+      <div class="invStep invWs"><div class="invTotW"><small>Total</small><b data-inv-tot="${s.id}">${t?invFmtNum(s,v)+" kg":"–"}</b></div>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div>
+      <div class="invPillsW">${cajas}<button type="button" class="p" data-inv-wmas="${s.id}" aria-label="Agregar otra casilla" title="Otra vasqueta">+</button></div></div>`;
+    }
     return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Cámara: ${esc(camTxt)}</div></div>
+      <div class="nm">${esc(s.nombre)}${metaCam}</div>
       <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
   };
-  const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
-  return `<div class="invHead"><b>Conteo inicial</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
-  <div class="defin"><b>Esto queda guardado como el conteo inicial.</b></div>
-  <p class="invHint">Contá solo lo que hay <b>en el local, fuera de la cámara</b>. ${kgR?"Las vasquetas van en <b>kilos</b>: una a la mitad suma media.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
+  const parc=!!I.pedidoId, enCam=parc&&I.fase==="camara";
+  const nomP=I.pedidoTipo==="final"?"Conteo de cierre":"Conteo parcial";
+  const titulo=parc?(enCam?nomP+" · Cámara":nomP+" · Local"):"Conteo local";
+  const acla=parc
+    ? (enCam?"Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ":"Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ")+(I.pedidoTipo==="final"?"Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene.":"Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara.")
+    : "Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial.";
+  const tEsc=parc&&conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
+  return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>${titulo}</h1><p class="cntAcla">${acla}${kgR?" En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":" Va por unidad, como en el resto de la app."}</p></div>
+  ${tEsc?accGridHTML([tEsc]):""}
+  ${parc&&conteoEscVisible()?`<div class="pcDestino"><span>Escanear en:</span><button type="button" class="chip" data-pc-target="camara" aria-pressed="${I.fase==="camara"}">Cámara</button><button type="button" class="chip" data-pc-target="local" aria-pressed="${I.fase!=="camara"}">Local</button></div>`:""}
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
-  <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
-  <div class="rows" style="margin-top:12px">${lista.map(row).join("")||`<div class="note">No hay productos de este rubro en el local.</div>`}</div>
-  ${sinTocar?`<div class="note" style="margin-top:10px">Sin tocar: <b data-inv-sintocar>${sinTocar}</b>. Si no hay nada afuera de la cámara, queda en 0.</div>`:""}`;
+  <div class="cProg" id="invProg">${invProgresoHTML()}</div>
+  ${chipFiltros()}
+  <div class="rows cntGrid" style="margin-top:14px">${lista.map(row).join("")||`<div class="note">No hay productos con ese filtro.</div>`}</div>`;
 }
+/** Avance del conteo del local: «N de M contados» (los que se tocaron, aunque queden en 0). */
+function invProgresoHTML(){
+  const I=S.inv, ids=invSabores().map(x=>String(x.id)), total=ids.length, hechos=ids.filter(id=>I.tocado[id]).length, pct=total?Math.round(hechos/total*100):100;
+  return `<div class="cProgTx"><b>${hechos} de ${total} contados</b><span>Lo que no toques cuenta como 0</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
+}
+function invRefrescarProg(){ const e=document.getElementById("invProg"); if(e&&S.inv) e.innerHTML=invProgresoHTML() }
 function invResumenCargado(){
   const I=S.inv, t={};
   Object.keys(I.items).forEach(id=>{ const s=S.saboresPorId[id]; if(!s) return; const g=grupoProductoDe(s); t[g]=(t[g]||0)+(+I.items[id]||0) });
   return t;
 }
+/** Números imposibles en el conteo local: una pesada de más de 12 kg, o más de 300 kg de un sabor. */
+function invImposibles(){
+  const I=S.inv, out=[]; if(!I||!I.items) return out;
+  Object.keys(I.items).forEach(id=>{
+    const sb=S.saboresPorId[String(id)]; if(!sb) return;
+    const kg=+I.items[id]||0, g=((I.pesos&&I.pesos[id])||[]).map(x=>+x||0).find(x=>x>KG_VASQ_MAX);
+    if(g) out.push(`${sb.nombre}: una vasqueta de ${String(g).replace(".",",")} kg`);
+    else if(esVasquetaNormal(id) && kg>300) out.push(`${sb.nombre}: ${String(kg).replace(".",",")} kg`);
+  });
+  return out;
+}
 function invBar(inn){
+  const vis=invBarBase(inn), raros=vis?invImposibles():[];
+  if(raros.length){
+    const sum=inn.querySelector(".sum"); if(sum) sum.insertAdjacentHTML("beforeend",`<div class="warn">Revisá los kilos: ${raros.map(esc).join("; ")}. No pueden ser.</div>`);
+    ["invResBtn","invGuardar","invFaseLocal"].forEach(id=>{ const b=inn.querySelector("#"+id); if(b) b.disabled=true });
+  }
+  return vis;
+}
+function invBarBase(inn){
   const I=S.inv;
   if(I.paso==="contar"){
     const t=invResumenCargado(), partes=invGrupos().filter(g=>t[g]).map(g=>`<b>${invTxtG(g,t[g])}</b> ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}`);
+    if(I.pedidoId){
+      const enCam=I.fase==="camara";
+      inn.innerHTML=`<div class="sum">${I.pedidoTipo==="final"?"Conteo de cierre":"Conteo parcial"} · ${enCam?"cámara":"local"}: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div>${enCam?`<button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invFaseLocal">Seguir con el local</button>`:`<button class="btn ghost" id="invFaseCam">Volver a la cámara</button><button class="btn" id="invResBtn">Ver resultado</button>`}`;
+      return true;
+    }
     inn.innerHTML=`<div class="sum">Inventario local: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div><button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invResBtn">Ver resultado</button>`;
     return true;
   }
   if(I.paso==="resultado"){
-    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":"Guardar conteo inicial"}</button>`;
+    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":(I.pedidoId?(I.pedidoTipo==="final"?"Guardar conteo de cierre":"Guardar conteo parcial"):"Guardar conteo inicial")}</button>`;
     return true;
   }
   return false;
@@ -4472,7 +5001,8 @@ function invEqHTML(c,l,t,extra){
 function invProdCardHTML(f,d){
   const camTxt=(f.kg?(f.cam.ap?"≈ ":""):"")+invCant(f.s,f.camQ);
   const extra=f.kg && f.s.tipo==="v" ? `<span class="u">${+f.cam.u} ${+f.cam.u===1?"vasqueta":"vasquetas"}</span>` : "";
-  const btn=d.guardado ? (d.x&&d.x.fijo?"":`<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>`) : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
+  const sup=S.empleado&&(S.empleado.rol==="admin"||S.empleado.rol==="supervisor");
+  const btn=d.guardado ? (d.x&&d.x.fijo?(sup?`<button type="button" class="invLnk noPrint" data-inv-desb="${d.x.id}" title="Desbloquear para corregir (PIN de supervisión)">🔒 Desbloquear</button>`:`<span class="invLnk noPrint" title="Solo supervisión lo desbloquea" style="opacity:.7;cursor:default">🔒</span>`):`<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>`) : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
   return `<div class="invEq"><div class="invEqh"><b>${esc(f.s.nombre)}</b>${btn}</div>${invEqHTML(camTxt,invCant(f.s,f.loc),(f.kg&&f.cam.ap?"≈ ":"")+invCant(f.s,f.tot),extra)}</div>`;
 }
 function invListaProdHTML(filas,d){
@@ -4521,36 +5051,38 @@ function invResultadoHTML(){
     ${d.cambios.length?`<p class="invNotaP">Corregido ${d.cambios.length} ${d.cambios.length===1?"vez":"veces"} después de guardar (queda registrado en LogiStock).</p>`:""}
   </div>
   <div class="noPrint">
-  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">Conteo inicial</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
-  <p class="invHint">${esc(fechaTxt)} · <b>Cámara</b> (stock de LogiStock) + <b>Local</b> (inventario) = <b>Total</b>.${d.guardado?` Guardado por ${esc(quien)}.`:""}</p>
+  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">${d.x&&d.x.tipo==="parcial"?"Conteo parcial":d.x&&d.x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
+  <p class="invHint">${esc(fechaTxt)}${d.guardado?` · Guardado por ${esc(quien)}`:` · <b>Cámara</b> (stock de LogiStock) + <b>Local</b> (inventario) = <b>Total</b>.`}</p>
   <div class="invTot">${helado?`<small>Helado en el local</small><b>${invTxtG("vasquetas",helado.tot,helado.ap)}</b><span>Cámara ${invTxtG("vasquetas",helado.camQ,helado.ap)} + local ${invTxtG("vasquetas",helado.loc)}</span>`:`<small>Total del local</small><span style="font-size:.9rem;color:inherit">${otrosTxt||"Todavía no hay nada cargado."}</span>`}${helado&&otrosTxt?`<span style="display:block;margin-top:6px">${otrosTxt}</span>`:""}</div>
   <div class="invPills"><button type="button" class="chip" data-inv-res="rubro" aria-pressed="${I.res==="rubro"}">Por rubro</button><button type="button" class="chip" data-inv-res="prod" aria-pressed="${I.res==="prod"}">Por producto</button></div>
   <div style="margin-top:12px">${I.res==="rubro" ? (grupos.map(rubroCard).join("")||`<div class="note">Todavía no hay nada cargado.</div>`) : `<input type="search" id="invBusca" class="invBusca" placeholder="Buscar producto…" value="${esc(I.busca||"")}" aria-label="Buscar producto"><div id="invLista">${invListaProdHTML(filas,d)}</div>`}</div>
   ${aproxAlgo?`<p class="invHint" style="margin-top:6px">«≈»: los kilos de la cámara se calculan con el peso promedio de cada sabor. Con kilos reales pasan a ser exactos.</p>`:""}
-  ${d.guardado?(d.x&&d.x.fijo?`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0"><b>🔒 Conteo inicial fijo.</b> No se corrige. Si hay un error, supervisión habilita un recuento.</div>`:`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0">Conteo inicial de práctica: hasta el 30/11 se puede corregir. Si hay un error, tocá «Corregir» en el producto: queda registrado el cambio. Desde el 1/12 queda fijo.</div>`)+invHorasHTML(d.x):""}
+  ${d.guardado?(d.x&&d.x.fijo?"":`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0"><b>🔓 Desbloqueado por supervisión.</b> Tocá «Corregir» en el producto: queda registrado el cambio y, al guardar, el conteo vuelve a cerrarse.</div>`)+invHorasHTML(d.x):""}
   ${d.guardado?invCambiosHTML(d):""}
   <div class="tools" style="justify-content:center;gap:8px;margin:14px 0 0;flex-wrap:wrap">${d.guardado?`<button type="button" class="btn ghost" data-inv-guardados>Ver guardados</button><button type="button" class="btn ghost" id="invSalir">Terminar</button>`:""}<button type="button" class="btn ghost" id="invPdf">🖨 Exportar PDF</button></div>
   </div>`;
 }
 function invGuardadosHTML(){
   const I=S.inv;
-  const cab=`<div class="invHead"><b>Conteo inicial · guardados</b><button type="button" class="chip" id="invSalir">Salir</button></div>`;
+  const cab=`<div class="invHead"><b>Conteos guardados</b><button type="button" class="chip" id="invSalir">Salir</button></div>`;
   if(I.lista===null) return cab+(I.errorLista?`<div class="note">${esc(I.errorLista)}<br><button class="btn ghost" id="invReintentar" style="margin-top:10px">Reintentar</button></div>`:`<div class="note">Cargando los inventarios…</div>`);
   const lista=I.lista;
   const resumen=x=>{ const filas=invFilas({items:x.items,camara:x.camara,precios:null}), t=invTotales(filas); return {t, kg:t.vasquetas?t.vasquetas.tot:0, ap:!!x.aprox && t.vasquetas && t.vasquetas.ap} };
   const items=lista.map((x,i)=>{
-    const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=prev?r.kg-prev.kg:null;
+    const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=(prev&&I.verDif!==false)?r.kg-prev.kg:null;
     const otros=GRUPO_PRODUCTO_ORDEN.filter(g=>g!=="vasquetas" && r.t[g]).map(g=>`${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())} ${invTxtG(g,r.t[g].tot)}`).join(" · ");
-    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">Conteo inicial</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
+    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">${x.tipo==="parcial"?"Conteo parcial":x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span></b><small>Cargado por ${esc(x.empleado||"—")}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
   }).join("");
-  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+(items||`<div class="note">Todavía no hay conteos iniciales guardados en este local.</div>`)+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
+  const hora12=ts=>new Date(ts).toLocaleString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  const ocultos=(I.ocultos||[]).map(o=>`<div class="invHist" style="cursor:default;opacity:.85"><b>${esc(invFecha(o.ts))}<span class="invBadgeDef">${o.tipo==="final"?"Conteo de cierre":"Conteo parcial"}</span></b><span class="big">${o.tipo==="final"?"En revisión":"Hecho ✓"}</span><small>Hecho por ${esc(o.empleado||"—")}${o.tipo==="final"?" · lo ves desde las 12:00 ("+esc(hora12(o.libera_ts))+") o cuando supervisión lo libere":""}</small></div>`).join("");
+  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+ocultos+(items||(ocultos?"":`<div class="note">Todavía no hay conteos guardados en este local.</div>`))+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
 }
 async function invCargarLista(){
   const I=S.inv; if(!I) return;
   I.lista=null; I.errorLista=null;
   const r=await api("inventarios",{local:S.local});
   if(!S.inv) return;
-  if(r && r.ok){ S.inv.lista=r.inventarios||[]; }
+  if(r && r.ok){ S.inv.lista=r.inventarios||[]; S.inv.ocultos=r.ocultos||[]; S.inv.verDif=r.verDiferencias!==false; }
   else S.inv.errorLista=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver los inventarios.":(r&&r.error)||"No se pudo conectar. Probá de nuevo.";
   if(S.inv.paso==="guardados") renderApp();
 }
@@ -4561,12 +5093,18 @@ async function invGuardarServidor(){
   Object.keys(camara).forEach(id=>{ if(camara[id].k!==undefined) camaraKg[id]={k:camara[id].k, ap:camara[id].ap?1:0} });
   const items={}; Object.keys(I.items).forEach(id=>{ if(+I.items[id]>0) items[id]=+I.items[id] });
   const clienteId="inv-"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-  const r=await api("guardarInventario",{clienteId, local:S.local, items, camaraKg});
+  const r=await api("guardarInventario",{clienteId, local:S.local, items, camaraKg, pedidoId:I.pedidoId||undefined, camaraContada:I.pedidoId?camara:undefined});
   if(!S.inv) return;
   if(r && r.ok){
     try{ ls.del(invClaveBorrador()) }catch(e){}
+    if(r.inventario && r.inventario.oculto){
+      if(I.pedidoId) S.pedidoConteo=null;
+      toast(r.inventario.tipo==="final"?(r.avisoStock?"Conteo de cierre enviado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo de cierre enviado ✓. Supervisión lo revisa: lo ves desde las 12:00. El stock de la cámara quedó igual a lo contado."):"Conteo parcial enviado ✓. Lo revisa supervisión.");
+      S.inv=null; renderApp(); window.scrollTo(0,0); return;
+    }
     S.inv.guardando=false; S.inv.ver=r.inventario; S.inv.paso="ver"; S.inv.lista=null; S.inv.res="rubro"; S.inv.det=null; S.inv.busca="";
-    toast("Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
+    if(I.pedidoId) S.pedidoConteo=null;
+    toast(I.pedidoId?(I.pedidoTipo==="final"?(r.avisoStock?"Conteo de cierre guardado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado"):"Conteo parcial guardado"):"Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
   } else {
     S.inv.guardando=false;
     toast((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para guardar inventarios.":(r&&r.offline)?"Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal.":(r&&r.error)||"No se pudo guardar el inventario.");
@@ -4579,10 +5117,10 @@ function invConfirmarGuardar(){
   const ov=document.createElement("div"); ov.id="invConfOv"; ov.className="mantenerOv";
   const hoy=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric"});
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="invConfTit">
-    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el conteo inicial?</p>
-    <p class="mantSub" style="margin:0">Vas a guardar el conteo inicial del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
-    <p class="mantSub" style="margin:0">Después solo se puede corregir dejando un motivo, y queda registrado.</p>
-    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar conteo inicial</button></div></div>`;
+    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"de cierre":"parcial"):"inicial"}?</p>
+    <p class="mantSub" style="margin:0">Vas a guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"de cierre":"parcial"):"inicial"} del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
+    <p class="mantSub" style="margin:0">${S.inv.pedidoTipo==="final"?"Es el conteo de CIERRE: el stock de la cámara pasa a ser lo que contaste y es el conteo inicial del mes que viene. Queda bloqueado; solo supervisión lo puede desbloquear.":"Después solo se puede corregir dejando un motivo, y queda registrado."}</p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"de cierre":"parcial"):"inicial"}</button></div></div>`;
   ov.addEventListener("click", e=>{
     if(e.target===ov || e.target.closest("[data-inv-conf-no]")){ ov.remove(); return }
     if(e.target.closest("[data-inv-conf-si]")){ ov.remove(); invGuardarServidor() }
@@ -4642,8 +5180,7 @@ function invPonerValor(id,n,input){
   I.tocado[id]=1;
   const row=document.querySelector(`[data-inv-row="${id}"]`);
   if(row){ row.classList.remove("sin"); if(!row.querySelector("[data-inv-reset]")){ const r=document.createElement("button"); r.type="button"; r.className="r"; r.dataset.invReset=id; r.title="Deshacer"; r.setAttribute("aria-label","Deshacer lo cargado de "+s.nombre); r.textContent="↺"; row.querySelector(".invStep").appendChild(r) } }
-  const sin=document.querySelector("[data-inv-sintocar]");
-  if(sin){ const lista=invSabores().filter(x=>grupoProductoDe(x)===I.rubro), k=lista.filter(x=>!I.tocado[x.id]).length; sin.textContent=k; if(!k && sin.parentElement) sin.parentElement.hidden=true }
+  invRefrescarProg();
   invGuardarBorrador(); renderBar();
 }
 function invClick(t){
@@ -4654,7 +5191,9 @@ function invClick(t){
   if(t.id==="invSalir"){ invSalir(); return true }
   if(t.id==="invNuevo"){ invIniciar(); return true }
   if(t.id==="invReintentar"){ invCargarLista(); renderApp(); return true }
-  if(t.id==="invResBtn"){ I.paso="resultado"; I.res="rubro"; I.det=null; renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invFaseLocal"){ invFase("local"); renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invFaseCam"){ invFase("camara"); renderApp(); window.scrollTo(0,0); return true }
+  if(t.id==="invResBtn"){ invFase("local"); I.paso="resultado"; I.res="rubro"; I.det=null; renderApp(); window.scrollTo(0,0); return true }
   if(t.id==="invVolver"){ I.paso="contar"; renderApp(); window.scrollTo(0,0); return true }
   if(t.id==="invGuardar"){ invConfirmarGuardar(); return true }
   if(t.id==="invPdf"){ window.print(); return true }
@@ -4663,17 +5202,20 @@ function invClick(t){
   if(t.dataset.invRes){ I.res=t.dataset.invRes; renderApp(); return true }
   if(t.dataset.invDet){ I.det=I.det===t.dataset.invDet?null:t.dataset.invDet; renderApp(); return true }
   if(t.dataset.invEdit){ I.paso="contar"; I.rubro=t.dataset.invEdit; renderApp(); window.scrollTo(0,0); return true }
+  if(t.dataset.invDesb){ const id=t.dataset.invDesb; ctlDesbloquear(id, S.local, async()=>{ const r=await api("inventarios",{local:S.local}); if(r&&r.ok&&S.inv){ S.inv.lista=r.inventarios||[]; const n=S.inv.lista.find(x=>String(x.id)===String(id)); if(n) S.inv.ver=n; renderApp() } }); return true }
   if(t.dataset.invCor){ invAbrirCor(t.dataset.invCor); return true }
   if(t.dataset.invAbrir){ const x=(I.lista||[]).find(z=>String(z.id)===t.dataset.invAbrir); if(x){ I.ver=x; I.paso="ver"; I.res="rubro"; I.det=null; I.busca=""; renderApp(); window.scrollTo(0,0) } return true }
-  if(t.dataset.invBorrar!==undefined){ if(!confirm("¿Borrar lo que cargaste y empezar de cero?")) return true; I.items={}; I.tocado={}; I.restaurado=false; try{ ls.del(invClaveBorrador()) }catch(e){} renderApp(); return true }
+  if(t.dataset.invBorrar!==undefined){ if(!confirm("¿Borrar lo que cargaste y empezar de cero?")) return true; I.items={}; I.tocado={}; I.pesos={}; I.restaurado=false; try{ ls.del(invClaveBorrador()) }catch(e){} renderApp(); return true }
   if(t.dataset.invInc || t.dataset.invDec){
     const id=t.dataset.invInc||t.dataset.invDec, s=S.saboresPorId[id], input=document.querySelector(`[data-inv-in="${id}"]`);
     const cur=invNum(s,input?input.value:I.items[id]), paso=invEsKg(s)?0.5:1, sig=Math.max(0,Math.round((cur+(t.dataset.invInc?paso:-paso))*100)/100);
     if(input) input.value=String(sig).replace(".",",");
     invPonerValor(id,sig,input); return true }
+  if(t.dataset.invWmas){ const id=t.dataset.invWmas; const w=(I.pesos[id]=I.pesos[id]||[]); while(w.length<3) w.push(""); w.push(""); invGuardarBorrador(); renderApp(); setTimeout(()=>{ const c=document.querySelectorAll(`[data-inv-w^="${id}:"]`); const u=c[c.length-1]; if(u) u.focus() },30); return true }
   if(t.dataset.invReset){
     const id=t.dataset.invReset, input=document.querySelector(`[data-inv-in="${id}"]`);
-    delete I.items[id]; delete I.tocado[id];
+    delete I.items[id]; delete I.tocado[id]; if(I.pesos) delete I.pesos[id];
+    document.querySelectorAll(`[data-inv-w^="${id}:"]`).forEach(x=>{ x.value="" }); const tot=document.querySelector(`[data-inv-tot="${id}"]`); if(tot) tot.textContent="–";
     if(input) input.value="0";
     const row=document.querySelector(`[data-inv-row="${id}"]`); if(row){ row.classList.add("sin"); const r=row.querySelector("[data-inv-reset]"); if(r) r.remove() }
     invGuardarBorrador(); renderBar(); return true }
@@ -4687,14 +5229,25 @@ document.addEventListener("input", e=>{
     if(el.value==="" && !S.inv.tocado[el.dataset.invIn]) return;   // solo letras: no cuenta como haber contado
     invPonerValor(el.dataset.invIn, invNum(s,el.value), el);
   }
+  if(el.dataset.invW!==undefined){
+    const [id,ix]=el.dataset.invW.split(":"), s=S.saboresPorId[id]; if(!s) return;
+    if(S.inv.pedidoId && ceMano(id)){ const tg=el.closest(".row"), tag=tg&&tg.querySelector(".cEscTag"); if(tag) tag.remove() }
+    el.value=el.value.replace(/[^\d.,]/g,"");
+    const I=S.inv; const w=(I.pesos[id]=I.pesos[id]||[]); while(w.length<=(+ix)) w.push("");
+    w[+ix]=el.value===""?"":invNum(s,el.value);
+    const suma=Math.round(w.reduce((a,x)=>a+(+x||0),0)*100)/100;
+    if(el.value==="" && !suma && !I.tocado[id]) return;
+    const tot=document.querySelector(`[data-inv-tot="${id}"]`); if(tot) tot.textContent=invFmtNum(s,suma)+" kg";
+    invPonerValor(id,suma,null);
+  }
   if(el.id==="invBusca"){ S.inv.busca=el.value; const d=invDatos(); const l=document.getElementById("invLista"); if(l) l.innerHTML=invListaProdHTML(invFilas(d),d); }
 });
-document.addEventListener("focusin", e=>{ if(e.target && e.target.dataset && e.target.dataset.invIn!==undefined) e.target.select() });
+document.addEventListener("focusin", e=>{ if(e.target && e.target.dataset && (e.target.dataset.invIn!==undefined||e.target.dataset.invW!==undefined)) e.target.select() });
 document.addEventListener("keydown", e=>{
-  const el=e.target; if(!el || !el.dataset || el.dataset.invIn===undefined) return;
+  const el=e.target; if(!el || !el.dataset || (el.dataset.invIn===undefined && el.dataset.invW===undefined)) return;
   if(e.key!=="Enter" && e.key!=="ArrowDown" && e.key!=="ArrowUp") return;
   e.preventDefault();
-  const campos=[...document.querySelectorAll("[data-inv-in]")], i=campos.indexOf(el), n=campos[i+(e.key==="ArrowUp"?-1:1)];
+  const campos=[...document.querySelectorAll("[data-inv-in],[data-inv-w]")], i=campos.indexOf(el), n=campos[i+(e.key==="ArrowUp"?-1:1)];
   if(n){ n.focus(); n.select(); n.scrollIntoView({block:"center"}) } else el.blur();
 });
 
@@ -5851,7 +6404,7 @@ function renderBar(){
     const rc=conteoResumen();
     if(S.conteoRevisar){
       const pend=conteoFaltaConfirmar(rc);
-      inn.innerHTML=`<div class="sum">${pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button>${rc.sinContar.length?`<button class="btn ghost" id="okContado" ${(S.busy||faltaKgTocados.length||faltaOtros||pend.length||!nContados)?"disabled":""}>Guardar y seguir contando</button>`:""}<button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":(rc.sinContar.length?"Guardar lo contado":"Guardar conteo")}</button>`;
+      inn.innerHTML=`<div class="sum">${rc.bloqueos.length?`<div class="warn">Corregí ${rc.bloqueos.length} ${rc.bloqueos.length===1?"número imposible":"números imposibles"} para poder guardar.</div>`:pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Volver a contar</button>${rc.sinContar.length?`<button class="btn ghost" id="okContado" ${(S.busy||faltaKgTocados.length||faltaOtros||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>Guardar y seguir contando</button>`:""}<button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":(rc.sinContar.length?"Guardar lo contado":"Guardar conteo")}</button>`;
     } else {
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar y guardar</button>`;
     }
@@ -5871,9 +6424,10 @@ function renderBar(){
       // Kilos reales: cada vasqueta que sale se pesa; todo ingreso de vasquetas trae sus kilos totales.
       const faltaKilosProd = enProduccion ? ent.filter(([id])=>{ const sb=S.saboresPorId[id]; return sb && grupoProductoDe(sb)!=="icepops" && !(kilosNum(S.kilosProduccion[id])>0) }) : [];
       const faltaKilos = enProduccion ? faltaKilosProd : !S.kilosReales ? [] : conPeso ? ent.filter(([id,q])=>esVasquetaKilos(id) && ((pesosDe(cartKey)[id]||[]).length<q)) : (cartKey==="ingreso"||enDevolucion||enProduccion) ? ent.filter(([id])=>esVasquetaKilos(id) && !(kilosNum(S.kilosProduccion[id])>0)) : [];
+      const kgMalos=(cartKey==="ingreso"||enDevolucion||enProduccion)?ent.map(([id,q])=>{ if(!esVasquetaNormal(id)) return null; const m=kgVasqProblema(id,q,kilosNum(S.kilosProduccion[id]),cartKey==="ingreso"||enProduccion); return m?{id,m}:null }).filter(Boolean):[];
       const nDup=(cartKey==="salida")?escDuplicados().length:0;
       const avisoDup = nDup ? `<div class="warn" style="background:#F2B400;color:#2A2118;border-radius:10px;padding:6px 10px">⚠ ${nDup===1?"1 código repetido":nDup+" códigos repetidos"} en lo escaneado: revisalo antes de confirmar (${S.confirm&&cartKey==="salida"?"quitá esa línea con la ✕":"tocá Escanear vasqueta y la ✕ de esa fila"}).</div>` : "";
-      const avisoKilos = avisoDup + (faltaKilos.length ? `<div class="warn">${enProduccion?"Faltan los kilos fabricados de":conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "");
+      const avisoKilos = avisoDup + (kgMalos.length?`<div class="warn">Revisá los kilos: ${kgMalos.map(x=>esc(nombre(x.id))+" · "+esc(x.m)).join(" ")}</div>`:"") + (faltaKilos.length ? `<div class="warn">${enProduccion?"Faltan los kilos fabricados de":conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "");
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
@@ -5888,7 +6442,7 @@ function renderBar(){
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>${cartKey==="salida"?"Seguir cargando":"Volver"}</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
         inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">${enTransfOut?"Escribí a qué local va para poder registrarla.":enTransfIn?"Escribí de qué local viene para poder registrarla.":"Escribí el motivo arriba para poder registrarlo."}</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
-          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
+          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||kgMalos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
   }
@@ -5940,6 +6494,7 @@ async function cargarDatos(){
   S.stock = r.stock;
   if(S.stockValorizado && S.preciosLocal!==local && !S.errorPrecios) cargarPrecios(); // se piden de fondo, antes de que se abra Gestión
   guardarDatosCache(local, {sabores:r.sabores, excluidos:r.excluidos||[], produccion:!!r.produccion, escanerPeso:!!r.escanerPeso, escanerSalida:!!(r.escanerSalida||r.escanerPeso), escanerConteo:!!(r.escanerConteo||r.escanerPeso), sinEscaner:!!r.sinEscaner, kilosReales:!!r.kilosReales, ventaDia:!!r.ventaDia, produccionRubros:r.produccionRubros||[], produccionSabores:r.produccionSabores||[], ingresoSoloProduccion:!!r.ingresoSoloProduccion, registros:r.registros, stock:r.stock});
+  cargarPedidoConteo();
   if(S.conteo || (S.inv && S.inv.paso==="contar")){ renderBar(); return }
   if(_estaEscribiendo()) return; // no repintamos toda la pantalla mientras alguien está escribiendo algo — se ve solo en el próximo refresco
   renderApp();
@@ -6035,7 +6590,7 @@ async function guardarMovimiento(){
 }
 function conteoIdsContables(){ return saboresDelConteo().map(x=>String(x.id)) }
 /** Sabores que se contaron: los que se tocaron o cuyo número ya difiere del sistema (ej. «Poner el mismo número»). El resto queda como está. */
-function idsContados(){ const st=stockMap(); return conteoIdsContables().filter(id=>S.conteo[id]!==undefined && (S.conteoTocado[id] || S.conteo[id]!==Math.max(0,st[id]||0))) }
+function idsContados(){ return conteoIdsContables().filter(id=>S.conteo[id]!==undefined && (S.conteoTocado[id] || S.conteo[id]>0)) }
 /** «Guardar solo lo contado y seguir»: guarda únicamente los sabores que se contaron (por rubro, como conteo parcial) y se sigue contando.
  *  Lo no contado no se toca. Usa la acción conteoParcial (no hace falta tocar Code.gs). */
 async function guardarContado(terminar){
@@ -6073,7 +6628,7 @@ async function guardarContado(terminar){
     if(ok){
       toast(offline?"Sin conexión: lo contado se va a enviar solo.":"Guardado: "+ok+" "+(ok===1?"sabor":"sabores")+(terminar?".":". Seguí contando."));
       S.conteoRevisar=false; if(!offline) await cargarDatos();
-      if(terminar){ S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:"); clearTimeout(_borradorTimer); descartarBorradorConteo() }
+      if(terminar){ S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:"); clearTimeout(_borradorTimer); descartarBorradorConteo() }
       else programarBorradorConteo();
     }
   } finally { S.busy=false; renderApp() }
@@ -6100,7 +6655,7 @@ async function guardarConteo(){
   const r = await api(accion, payload);
   if(r && r.ok){
     toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
-    S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
+    S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
     await cargarDatos();
   } else if(r && r.offline){
@@ -6132,9 +6687,12 @@ async function conBoton(btn, fn){
   finally{ btn.disabled=false; btn.textContent=original; }
 }
 async function anularMovimiento(id, btn){
-  const motivo = prompt("Motivo (opcional):"); if(motivo===null) return;
+  let motivo = prompt("Motivo (opcional):"); if(motivo===null) return;
   await conBoton(btn, async ()=>{
-    const r = await api("anular", {registroId:id, motivo});
+    let r = await api("anular", {registroId:id, motivo});
+    // Un movimiento anterior al último conteo: supervisión lo anula con motivo y PIN.
+    if(r && !r.ok && r.pideMotivo){ motivo = prompt((r.error||"Escribí el motivo.")); if(motivo===null) return; r = await api("anular", {registroId:id, motivo}) }
+    if(r && !r.ok && r.pidePin){ const pin = prompt((r.error||"Confirmá con tu PIN.")); if(pin===null) return; r = await api("anular", {registroId:id, motivo, pin:String(pin).trim()}) }
     if(r && r.ok){ toast("Movimiento anulado"); cargarDatos() } else toast((r&&r.error)||"No se pudo anular.");
   });
 }
@@ -6295,7 +6853,7 @@ document.addEventListener("click", async e=>{
   }
   const secreto=e.target.closest("[data-secreto-otro]");
   if(secreto){ if(tocarSecretoOtroLocal()){ const loc=(S.auth&&S.auth.local)||S.deviceLocal; if(loc){ S.auth={paso:"clave", local:loc, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } else { S.auth={paso:"local", local:null, empleados:[], elegido:null, pin:"", pin1:"", error:"", cargando:false, otroLocal:true} } renderApp() } return }
-  if(e.target.closest("[data-consulta]")){ toast("Solo consulta. Las ventas se cargan en «Salida de chocolatería»."); return }
+  if(e.target.closest("[data-consulta]")){ toast("Solo consulta. Las ventas se cargan en «Registrar consumo»."); return }
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
@@ -6365,6 +6923,8 @@ document.addEventListener("click", async e=>{
 
   if(invClick(t)) return;
   if(relevarClick(t)) return;
+  if(controlClick(t)) return;
+  if(t.id==="pedidoConteoHacer"){ S.tab="stock"; S.hubInicial=true; S.inv=null; invIniciarParcial(S.pedidoConteo&&S.pedidoConteo.id, S.pedidoConteo&&S.pedidoConteo.tipo); return }
   if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; S.hubInicial=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
@@ -6385,7 +6945,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; recortarPesos(t.dataset.wsub,"desperdicio"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
   if(t.id==="escConteoBtn"){ abrirEscanerConteo(); return }
-  if(t.dataset.cescMano){ ceMano(t.dataset.cescMano); programarBorradorConteo(); renderApp(); return }
+  if(t.dataset.cescMano){ ceMano(t.dataset.cescMano); if(!ceInv()) programarBorradorConteo(); renderApp(); return }
   if(t.dataset.ccaja){ const id=t.dataset.ccaja; ceMano(id); S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
@@ -6557,9 +7117,10 @@ document.addEventListener("click", async e=>{
     return;
   }
   if(t.id==="avisoConteoOk"){ try{ ls.set("avisoConteoInicial","1") }catch(e){} renderApp(); return }
-  if(t.id==="conteoInicialBtn"){ S.hubInicial=true; renderApp(); window.scrollTo(0,0); return }
+  if(t.id==="conteoInicialBtn"){ S.hubInicial=true; renderApp(); window.scrollTo(0,0); cargarConteoBloqueado(); return }
   if(t.id==="hubVolver"){ S.hubInicial=false; renderApp(); return }
-  if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; abrirElegirConteo(); return }
+  if(t.id==="conteoBtn" && (S.conteoBloqueado||S.camaraBloqueada)){ toast("Conteo cámara ya hecho 🔒. Lo desbloquea supervisión."); return }
+  if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; iniciarConteo(false,"todo"); return }
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
@@ -6603,26 +7164,28 @@ document.addEventListener("click", async e=>{
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     // «Todo el local» o solo lo que se está viendo (rubro y subcategoría elegidos, ej. Icepops › Frutales).
     const objetivo=(S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap());
-    objetivo.forEach(x=>{ ceMano(x.id); S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id]; delete S.kilosConteo[x.id]; delete S.vencConteo[x.id] }); // los kilos y vencimientos de antes ya no valen con el número nuevo. No cuenta como haber contado: hay que tocar cada sabor
+    objetivo.forEach(x=>{ ceMano(x.id); S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id]; delete S.kilosConteo[x.id]; if(S.conteoPesos) delete S.conteoPesos[x.id]; delete S.vencConteo[x.id] }); // los kilos y vencimientos de antes ya no valen con el número nuevo. No cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }
   if(t.id==="cancelConteo"){
     if((Object.keys(S.conteoTocado).length||Object.keys(S.kilosConteo||{}).length) && !confirm("¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia.")) return;
-    clearTimeout(_borradorTimer); descartarBorradorConteo(); S.vencConteo={}; S.kilosConteo={}; S.vencOmit={}; limpiarLotesExtra("conteo:"); S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
+    clearTimeout(_borradorTimer); descartarBorradorConteo(); S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:"); S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
   if(t.dataset.cdec||t.dataset.cinc){
     const id=t.dataset.cdec||t.dataset.cinc, inp=document.querySelector(`input[data-c="${id}"]`); if(!inp) return;
     inp.value=Math.max(0,(parseInt(inp.value,10)||0)+(t.dataset.cinc?1:-1)); inp.dispatchEvent(new Event("input",{bubbles:true})); return;
   }
   if(t.id==="aplicarAbrir"){ S.conteoAplicarAbierto=!S.conteoAplicarAbierto; renderApp(); return }
+  if(t.dataset.cwmas){ const id=t.dataset.cwmas; S.conteoPesos=S.conteoPesos||{}; const w=(S.conteoPesos[id]=S.conteoPesos[id]||[]); while(w.length<3) w.push(""); w.push(""); renderApp(); setTimeout(()=>{ const c=document.querySelectorAll(`[data-cw^="${id}|"]`); const u=c[c.length-1]; if(u) u.focus() },30); return }
   if(t.dataset.cdeshacer){
     const id=t.dataset.cdeshacer, st=stockMap(); ceMano(id);
-    S.conteo[id]=Math.max(0,st[id]||0); delete S.conteoTocado[id]; delete S.conteoAck[id]; delete S.kilosConteo[id]; delete S.vencConteo[id];
+    S.conteo[id]=Math.max(0,st[id]||0); delete S.conteoTocado[id]; delete S.conteoAck[id]; delete S.kilosConteo[id]; if(S.conteoPesos) delete S.conteoPesos[id]; delete S.vencConteo[id];
     programarBorradorConteo(); renderApp(); renderBar(); return;
   }
   if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
   if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); if(S.tab==="salida"&&cartKeyActual()==="salida") window.scrollTo(0,0); return }
   if(t.dataset.apl){ const iv=$("#aplicarTodosValor"); if(iv) S.conteoAplicarVal=iv.value; S.conteoAplicar=t.dataset.apl==="todo"?"todo":"visible"; renderApp(); return }
   if(t.dataset.cack){ const id=t.dataset.cack; if(S.conteoAck[id]) delete S.conteoAck[id]; else S.conteoAck[id]=true; renderApp(); return }
+  if(t.dataset.csin0!==undefined){ conteoResumen().sinContar.forEach(f=>{ S.conteo[f.s.id]=0; S.conteoTocado[f.s.id]=true }); programarBorradorConteo(); renderApp(); return }
   if(t.dataset.cackTodos!==undefined){ const r=conteoResumen(), pend=conteoFaltaConfirmar(r); if(pend.length) r.flags.forEach(f=>S.conteoAck[f.s.id]=true); else S.conteoAck={}; renderApp(); return }
   if(t.dataset.cverTodos!==undefined){ S.conteoVerTodos=!S.conteoVerTodos; renderApp(); return }
   if(t.id==="continuarConteo"){ iniciarConteo(true); return }
@@ -6639,10 +7202,10 @@ document.addEventListener("keydown", e=>{
   // Conteo físico como una columna de Excel: Enter y flecha abajo bajan al
   // siguiente sabor, flecha arriba sube al anterior; al entrar al campo se
   // selecciona el número (ver focusin) y se pisa tipeando.
-  if(e.target.dataset && (e.target.dataset.c!==undefined || e.target.dataset.vd!==undefined || e.target.dataset.cantInput!==undefined || e.target.dataset.remitoQty!==undefined || e.target.dataset.remitoKg!==undefined) && ["Enter","ArrowDown","ArrowUp"].includes(e.key)){
+  if(e.target.dataset && (e.target.dataset.c!==undefined || e.target.dataset.vd!==undefined || e.target.dataset.cw!==undefined || e.target.dataset.cantInput!==undefined || e.target.dataset.remitoQty!==undefined || e.target.dataset.remitoKg!==undefined) && ["Enter","ArrowDown","ArrowUp"].includes(e.key)){
     e.preventDefault();
     // Lector de remitos: cantidad y kilos de cada renglón, en el orden en que se ven en pantalla.
-    const sel = e.target.dataset.c!==undefined ? "input[data-c]" : e.target.dataset.vd!==undefined ? "input[data-vd]:not([disabled])" : (e.target.dataset.remitoQty!==undefined || e.target.dataset.remitoKg!==undefined) ? "input[data-remito-qty]:not([disabled]),input[data-remito-kg]" : "input[data-cant-input]";
+    const sel = e.target.dataset.cw!==undefined ? "input[data-cw]" : e.target.dataset.c!==undefined ? "input[data-c]" : e.target.dataset.vd!==undefined ? "input[data-vd]:not([disabled])" : (e.target.dataset.remitoQty!==undefined || e.target.dataset.remitoKg!==undefined) ? "input[data-remito-qty]:not([disabled]),input[data-remito-kg]" : "input[data-cant-input]";
     const campos=[...document.querySelectorAll(sel)];
     const paso = e.key==="ArrowUp" ? -1 : 1;
     const destino=campos[campos.indexOf(e.target)+paso];
@@ -6757,6 +7320,14 @@ document.addEventListener("input", e=>{
   if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
   if(e.target.dataset.devtip){ const [did,ds]=e.target.dataset.devtip.split(":"); (S.devTip[did]=S.devTip[did]||{})[ds]=e.target.value; syncDevolucion(); S.confirm=false; renderBar() }
   if(e.target.dataset.kc){ S.kilosConteo[e.target.dataset.kc]=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.dataset.cw!==undefined){
+    const [id,ix]=e.target.dataset.cw.split("|"), sab=S.saboresPorId[id]; if(!sab) return;
+    if(ceMano(id)){ const tg=e.target.closest(".row"), tag=tg&&tg.querySelector(".cEscTag"); if(tag) tag.remove() }
+    e.target.value=e.target.value.replace(/[^\d.,]/g,"");
+    S.conteoPesos=S.conteoPesos||{}; const w=(S.conteoPesos[id]=S.conteoPesos[id]||[]); while(w.length<=(+ix)) w.push("");
+    w[+ix]=e.target.value===""?"":Math.round((parseFloat(e.target.value.replace(",","."))||0)*100)/100;
+    cwSincronizar(id); return;
+  }
   if(e.target.dataset.remitoKg!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoKg].kilos=kilosNum(e.target.value)||null }
   if(e.target.id==="cmbKilos"||e.target.id==="cmbOtro"){
     if(e.target.id==="cmbKilos") S.cambio.kilos=e.target.value; else S.cambio.otro=e.target.value;
@@ -7383,10 +7954,17 @@ function procesarEscaneoIng(txt, cam){
    caja abierta o con dudas: se escanea cada vasqueta (+1) y NO la caja. El primer escaneo de un sabor pisa el número
    que venía del sistema; lo que no se escanea queda «Sin contar». El código no es único: repetido avisa pero no bloquea. */
 function resetConteoEsc(){ S.conteoEsc={items:[],n:0,previo:{}}; S.escAsig={}; S.conteoGuardado={} }
-function ceEsc(){ return S.conteoEsc||(S.conteoEsc={items:[],n:0,previo:{}}) }
+/** Conteo parcial (pedido por supervisión) en curso: el escáner de vasquetas también sirve ahí, en la cámara y en el local. */
+function ceInv(){ return !!(S.inv && S.inv.pedidoId && S.inv.paso==="contar") }
+function ceEsc(){
+  if(ceInv()){ const I=S.inv; I.esc=I.esc||{camara:{items:[],n:0,previo:{}},local:{items:[],n:0,previo:{}}}; return I.esc[I.fase==="camara"?"camara":"local"] }
+  return S.conteoEsc||(S.conteoEsc={items:[],n:0,previo:{}})
+}
+function ceValor(id){ return ceInv()? (+S.inv.items[id]||0) : S.conteo[id] }
+function ceSabores(){ return ceInv()? invSabores() : saboresDelConteo() }
 function esVasquetaEsc(s){ return !!s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas" }
-function conteoEscActivo(){ return escanerConteoDisponible() && !!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas") }
-function conteoEscVisible(){ return conteoEscActivo() && (ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
+function conteoEscActivo(){ return escanerConteoDisponible() && (ceInv() ? S.inv.rubro==="vasquetas" : (!!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas"))) }
+function conteoEscVisible(){ return conteoEscActivo() && (ceInv() || ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
 function ceItemsDe(id){ return ceEsc().items.filter(x=>String(x.id)===String(id)) }
 /** Pesos de lo escaneado en este conteo, por sabor: vasqueta suelta = su peso; caja cerrada = "c:KG" (2 vasquetas, un solo peso).
  *  Solo de los sabores indicados que siguen contados con escáner (si se corrigió a mano, ceMano ya sacó sus lecturas). */
@@ -7396,15 +7974,32 @@ function pesosConteoDe(ids){
     out[id]=its.map(x=>x.t==="caja"?"c:"+(Math.round(x.kg*100)/100):Math.round(x.kg*100)/100) });
   return out;
 }
+function ceAplicarInv(id){
+  const I=S.inv, E=ceEsc(), its=ceItemsDe(id);
+  if(its.length){
+    if(!E.previo[id]) E.previo[id]={i:I.items[id], w:I.pesos[id]?I.pesos[id].slice():undefined, t:!!I.tocado[id]};
+    const w=[]; its.forEach(x=>{ if(x.t==="caja"){ const h=Math.round(x.kg/2*100)/100; for(let i=0;i<x.u;i++) w.push(h) } else w.push(Math.round(x.kg*100)/100) });
+    I.pesos[id]=w; I.items[id]=Math.round(w.reduce((a,x)=>a+x,0)*100)/100; I.tocado[id]=true;
+  } else if(E.previo[id]){
+    const p=E.previo[id];
+    if(p.i===undefined) delete I.items[id]; else I.items[id]=p.i;
+    if(p.w===undefined) delete I.pesos[id]; else I.pesos[id]=p.w;
+    if(p.t) I.tocado[id]=true; else delete I.tocado[id];
+    delete E.previo[id];
+  }
+}
 function ceAplicar(id){
+  if(ceInv()) return ceAplicarInv(id);
   const E=ceEsc(), its=ceItemsDe(id);
   if(its.length){
-    if(!E.previo[id]) E.previo[id]={c:S.conteo[id], k:S.kilosConteo[id], t:!!S.conteoTocado[id]};
+    if(!E.previo[id]) E.previo[id]={c:S.conteo[id], k:S.kilosConteo[id], t:!!S.conteoTocado[id], w:(S.conteoPesos&&S.conteoPesos[id])?S.conteoPesos[id].slice():undefined};
+    if(esVasquetaKilos(id)){ S.conteoPesos=S.conteoPesos||{}; const w=[]; its.forEach(x=>{ if(x.t==="caja"){ const h=Math.round(x.kg/2*100)/100; for(let i=0;i<x.u;i++) w.push(h) } else w.push(Math.round(x.kg*100)/100) }); S.conteoPesos[id]=w }
     S.conteo[id]=its.reduce((a,x)=>a+x.u,0);
     if(S.kilosReales) S.kilosConteo[id]=String(Math.round(its.reduce((a,x)=>a+x.kg,0)*100)/100).replace(".",",");
     S.conteoTocado[id]=true;
   } else if(E.previo[id]){
     const p=E.previo[id]; S.conteo[id]=p.c;
+    if(S.conteoPesos){ if(p.w===undefined) Reflect.deleteProperty(S.conteoPesos,id); else S.conteoPesos[id]=p.w }
     if(p.k===undefined) delete S.kilosConteo[id]; else S.kilosConteo[id]=p.k;
     if(p.t) S.conteoTocado[id]=true; else delete S.conteoTocado[id];
     delete E.previo[id];
@@ -7485,7 +8080,7 @@ function renderEscanerConteo(){
       const pr=e.pregunta;
       q.innerHTML=`<div class="escPreg"><b>Esta caja pesa ${fmtKg(pr.p.kg)} kg</b> y ${esc(pr.s.nombre)} pesa unos ${fmtKg(+pr.s.peso)} kg por vasqueta. ¿Cuántas vasquetas trae?<div class="mantAcc" style="margin-top:8px"><button type="button" class="btn" data-esc-cajan="2">2 vasquetas</button><button type="button" class="btn ghost" data-esc-cajan="1">1 sola</button><button type="button" class="btn ghost" data-esc-cajan="0">Descartar</button></div></div>`;
     } else if(e.asignar){
-      const as=e.asignar, op=saboresDelConteo().filter(esVasquetaEsc).map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join("");
+      const as=e.asignar, op=ceSabores().filter(esVasquetaEsc).map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join("");
       q.innerHTML=`<div class="escPreg"><b>Código ${esc(as.p.codigo)} sin asignar en la planilla</b> (${fmtKg(as.p.kg)} kg · lote ${esc(as.p.lote)}). ¿Qué sabor es?<select id="escAsigSel" style="width:100%;margin-top:8px"><option value="">Elegí el sabor…</option>${op}</select><div class="mantAcc" style="margin-top:8px"><button type="button" class="btn" data-esc-asig-ok>Asignar y sumar</button><button type="button" class="btn ghost" data-esc-asig-no>Descartar</button></div><small style="display:block;margin-top:6px;color:var(--muted)">Vale solo para este conteo. Para que el sistema lo reconozca siempre, cargá el código en Sabores.codigo_fabrica.</small></div>`;
     } else q.innerHTML="";
   }
@@ -7520,7 +8115,7 @@ function procesarEscaneoConteo(txt, cam){
 function ceProcesar(p,s){
   const e=S.escaner; if(!e) return;
   if(!esVasquetaEsc(s)){ e.msg={tipo:"err", t:s.nombre+" no es una vasqueta: contalo a mano."}; pitido(false); renderEscanerConteo(); return }
-  if(S.conteo[s.id]===undefined || !saboresDelConteo().some(x=>String(x.id)===String(s.id))){ e.msg={tipo:"err", t:s.nombre+" no está en este conteo."}; pitido(false); renderEscanerConteo(); return }
+  if(ceInv() ? !ceSabores().some(x=>String(x.id)===String(s.id)) : (S.conteo[s.id]===undefined || !saboresDelConteo().some(x=>String(x.id)===String(s.id)))){ e.msg={tipo:"err", t:s.nombre+" no está en este conteo."}; pitido(false); renderEscanerConteo(); return }
   if(p.tipo==="caja"){
     const pr=+s.peso;
     if(pr>0 && Math.abs(p.kg/2-pr)/pr>0.35){ e.pregunta={p,s}; e.msg={tipo:"warn", titulo:"Revisá la caja", t:s.nombre+" · "+fmtKg(p.kg)+" kg en la caja."}; pitido("dup"); renderEscanerConteo(); return }
@@ -7535,7 +8130,7 @@ function ceCommit(p,s,u){
   const que=p.tipo==="caja"?"caja ×"+u:"vasqueta";
   if(e) e.msg = repetido
     ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+". ¿Es otra "+(p.tipo==="caja"?"caja":"vasqueta")+" igual o la pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
-    : {tipo:"ok", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+" → ahora "+S.conteo[s.id]};
+    : {tipo:"ok", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+" → ahora "+ceValor(s.id)};
   pitido(repetido?"dup":true);
   scheduleRender(); renderEscanerConteo();
   const i=document.getElementById("escCodigo"); if(i) i.focus();
@@ -7711,7 +8306,7 @@ function agregarKilos(){
   const d=S.kilosDlg; if(!d) return false;
   const inp=document.getElementById("kgPeso"), msg=document.getElementById("kgMsg");
   const kg=Math.round(parseFloat(String(inp.value).replace(",","."))*100)/100;
-  if(!(kg>=0.1&&kg<=30)){ msg.hidden=false; msg.className="escMsg err"; msg.textContent="Escribí los kilos de la vasqueta (entre 0,1 y 30), por ejemplo 3,40."; pitido(false); inp.focus(); return false }
+  if(!(kg>=0.1&&kg<=KG_VASQ_MAX)){ msg.hidden=false; msg.className="escMsg err"; msg.textContent="Escribí los kilos de la vasqueta (entre 0,1 y 12), por ejemplo 3,40."; pitido(false); inp.focus(); return false }
   if(disponibleParaPesar(d.id,d.c)<=0){ cerrarKilos(); toast("No hay stock de ese sabor."); return false }
   sumarPesada(d.c, d.id, kg);
   d.cargadas.push(kg);
@@ -7734,21 +8329,37 @@ function ayudaTemas(){
   const rol=S.empleado&&S.empleado.rol, colab=rol==="colaborador";
   const li=a=>`<ol class="ayPasos">${a.filter(Boolean).map(x=>`<li>${x}</li>`).join("")}</ol>`;
   const nota=t=>`<div class="ayNota">${t}</div>`;
+  const supervision=rol==="admin"||rol==="supervisor", SUP=[];
+  if(supervision){
+    const ps=(id,titulo,sub,pasos,nt)=>SUP.push({id,grupo:"sup",titulo,sub,html:li(pasos)+(nt?nota(nt):"")});
+    ps("control","Control de stock","La tabla y el semáforo",["Cada fila es un local: <b>Inicial · Parcial · Cierre · Diferencia</b>.","La diferencia se mide siempre contra el <b>inicial</b>, con su porcentaje.","Semáforo: <b>verde</b> hasta 1 %, <b>amarillo</b> hasta 3 %, <b>rojo</b> más de 3 %.","Tocá un local para abrir su detalle."]);
+    ps("pedir","Pedir un conteo","Parcial o cierre",["Abrí el detalle del local y tocá <b>Pedir parcial</b> o <b>Pedir cierre</b>.","El responsable ve un aviso en Stock y cuenta cámara y local de cero, a ciegas.","Al guardar ve «enviado ✓», sin totales ni diferencias.","El <b>cierre</b> deja la cámara igual a lo contado y es el inicial del mes siguiente."]);
+    ps("detalle","Leer el detalle","De dónde sale la diferencia",["<b>Inicial + Ingresos − Salidas = Debería haber</b>.","Debajo ves lo que contó y la diferencia en kg y %.","«ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana.","Los movimientos <b>anulados</b> del período aparecen aparte."]);
+    ps("mostrar","Mostrar al responsable","Qué ve y cuándo",["El responsable ve solo su inicial. Parcial y cierre quedan ocultos.","Para mostrarlos tocá <b>Mostrar al responsable (PIN)</b>.","El <b>cierre</b> se muestra solo a las 12:00; el <b>parcial</b> nunca se muestra solo.","Con <b>ver_diferencias=SI</b> en un local, ese local lo ve todo."]);
+    ps("candados","Candados","Corregir un conteo guardado",["Todo conteo guardado queda con 🔒.","<b>Desbloquear</b> pide tu PIN y un motivo. Vale para <b>una</b> corrección (24 h máximo).","Al guardar la corrección el candado se cierra solo y el original se conserva.","El <b>Conteo cámara</b> tiene su propio candado: lo desbloqueás igual para que el responsable recuente una vez."]);
+    ps("anular","Anular antes del conteo","Solo supervisión",["Un movimiento anterior al último conteo no lo anula el responsable.","Vos lo anulás en Historial con <b>motivo</b> y <b>PIN</b>.","Queda en Auditoría con tu nombre."]);
+    ps("imposibles","Números imposibles","Lo que el sistema no deja guardar",["Una vasqueta de más de <b>12 kg</b>, o de menos de 1,5 kg si es nueva.","Más de <b>500</b> vasquetas de un sabor.","Ejemplo: 2 vasquetas con 7400 kg, o 12 con 12 kg.","Pasa en conteos, ingresos, producción y remitos. El servidor también lo rechaza."]);
+  }
   const T=[];
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
-    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después."}</p></div>
+    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."}</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
-  if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor cambiado", sub:"La caja decía un sabor y era otro", html:li([
-    "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor cambiado?</b>.",
+  if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
+    "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor mal rotulado?</b>.",
     "Elegí el sabor que figura en la caja y el que era en realidad.",
     "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
     "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
-  if(!colab) T.push({id:"inventario", titulo:"Conteo inicial", sub:"Inventario: lo de afuera de la cámara + la cámara", html:li([
-    "En <b>Stock</b> tocá <b>Conteo inicial</b>.",
-    "Contá solo lo que hay <b>en el local, fuera de la cámara</b>: las vasquetas en <b>kilos</b> (una a la mitad suma media) y el resto por unidad.",
-    "Tocá <b>Ver resultado</b>: ves cámara + local = total por rubro y por producto"+(S.stockValorizado?", con el valor en pesos":"")+".",
-    "Tocá <b>Guardar conteo inicial</b> y confirmá. Queda como una foto del día y se puede exportar a PDF."])+nota("No cambia el stock de la cámara ni cuenta como salida. Si te equivocaste antes de guardar, tocá «Editar» o «↺». Si ya guardaste, tocá «Corregir» en el producto: pide un motivo y queda registrado qué había, qué quedó, quién y cuándo.")});
+  if(!colab) T.push({id:"inventario", titulo:"Conteo inicial", sub:"Una vez al mes: cámara + local", html:li([
+    "Se hace <b>una sola vez por mes</b>. Si el mes arranca con el conteo de cierre del anterior, no hace falta.",
+    "En <b>Stock</b> tocá <b>Conteo inicial</b>. Primero el <b>Conteo cámara</b> y después el <b>Conteo local</b> (lo que hay afuera de la cámara).",
+    "Contá de cero. Las vasquetas del local van en <b>kilos</b>; el resto, por unidad.",
+    "Tocá <b>Ver resultado</b> y después <b>Guardar conteo inicial</b>."])+nota("Una vez guardado queda con candado 🔒: solo supervisión lo desbloquea, con su PIN, para una corrección. No cambia el stock de la cámara ni cuenta como salida.")});
+  if(!colab) T.push({id:"parcial", titulo:"Conteo parcial y de cierre", sub:"Cuando supervisión lo pide", html:li([
+    "Supervisión pide el conteo y te aparece un aviso en Stock: <b>Hacer el conteo</b>.",
+    "Contá la <b>cámara</b> y después el <b>local</b>, de cero y <b>a ciegas</b> (no se ve el número del sistema).",
+    "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
+    "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])+nota("Una vez guardado no se corrige: avisale a supervisión.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
@@ -7764,51 +8375,51 @@ function ayudaTemas(){
     <div class="ayCard"><span class="ayTag a">Enviás mercadería</span><b>Salida › Transferencia</b><p>En <b>Salida</b> tocá <b>Transferencia</b>, escribí <b>a qué local va</b> (es obligatorio) y cargá lo que sale, a mano${escanerDisponible()?" o con <b>Escanear vasqueta</b>":""}. Sirve para cualquier rubro.</p></div>
     <div class="ayCard"><span class="ayTag b">Recibís mercadería</span><b>Ingreso › Transferencia</b><p>En <b>Ingreso</b> tocá <b>Transferencia</b>, escribí <b>de qué local viene</b> y cargá lo que llegó${escanerDisponible()?": con <b>Escanear vasqueta</b> hacés pic, pic, pic (una caja cerrada suma 2 vasquetas)":""}.</p></div>
     <div class="ayCard"><span class="ayTag c">Cómo queda</span><b>Mueve el stock, no cuenta como consumo</b><p>Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia».</p></div></div>`});
-  if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Salida de chocolatería", sub:"Venta del día, gift card, sin cargo y baja", html:li([
-    "En este local la chocolatería <b>no se saca por la Salida común</b>: se carga en <b>Salida de chocolatería</b>.",
+  if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Registrar consumo", sub:"Venta del día, gift card, sin cargo y baja", html:li([
+    "En este local la chocolatería <b>no se saca por la Salida común</b>: en <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Registrar consumo</b>.",
     "Elegí el tipo: <b>Venta del día</b> (lo que dice la caja al cerrar), <b>Gift card</b>, <b>Sin cargo</b> (regalo, evento o muestra: pide motivo) o <b>Baja</b> (por vencimiento, o transferencia a otro local: pide el destino).",
     "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
     "Alfajores: botones <b>+1, x5, x6, x10</b> y los <b>mix</b> (surtidos). Conitos: <b>+1</b> y <b>x6</b>. Minis: solo <b>+1</b>. Abajo de cada producto ves de dónde vino cada cantidad; tocá una caja para quitarla.",
     "Lo que recibís de otro local se carga en Ingreso › <b>Transferencia recibida</b>."])+nota("Si te equivocaste, anulalo desde Historial y cargalo de nuevo.")});
-  T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
-    "En Salida tocá <b>Ver vencimientos</b>: lista cada lote de chocolatería con su fecha.",
-    "El semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días. Los filtros de arriba muestran solo un color o los que no tienen fecha.",
-    "Al sacar, sale primero el lote que vence antes. Lo vencido no se puede vender.",
-    colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock con el motivo ya cargado.",
-    colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b> la completa: te propone la fecha según la vida útil del producto y se puede cambiar; elegís cuántas unidades."])+nota("Las latas no tienen vencimiento.")});
-  if(!colab) T.push({id:"conteo", titulo:"Conteo físico", sub:"Cómo recontar sin errores", html:li([
-    "Entrá a Stock › <b>Conteo físico</b> y elegí qué vas a contar: <b>todo el local</b> o <b>solo un rubro</b> (ej. Vasquetas). Si es un rubro, el resto del stock <b>no se toca</b>.",
-    "Contá <b>una sola vez, de punta a punta</b>.",
-    "Antes de empezar, poné <b>0</b> en «Poner el mismo número» y elegí si es para <b>todo el local</b> o solo el rubro que estás viendo (ej. Icepops › Frutales). Así ningún sabor arrastra el número viejo.",
-    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía.",
-    escanerConteoDisponible()?"En <b>Vasquetas</b> también podés <b>Contar escaneando</b> (opcional): <b>caja cerrada</b> → escaneá la caja (suma 2); <b>caja abierta o con dudas</b> → escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema; si un rótulo no se lee, escribí el número a mano. Si pasás dos veces el mismo código te avisa en amarillo (puede ser otra caja igual): quitá con la ✕ el que sobre.":null,
-    S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",
-    "En la revisión mirá cómo queda el stock. Los sabores que pasan a <b>0</b> o saltan de golpe piden que los confirmes con <b>Está bien, así es</b>.",
-    "Si contaste solo algunos sabores, tocá <b>Guardar lo contado</b>: te pregunta «¿Solo es esto?» y guarda únicamente esos sabores; <b>los demás quedan como están en el sistema</b>. Con <b>Guardar y seguir contando</b> guarda lo contado (queda «Guardado ✓») y podés seguir. Tu avance también se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
+  T.push({id:"venc", titulo:"Vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
+    "En <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Vencimientos</b>: lista cada lote con su fecha.",
+    "Semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días.",
+    "Al sacar, sale primero el lote que vence antes. Lo vencido no se vende.",
+    colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock.",
+    colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b>; en uno con fecha, <b>Cambiar fecha</b> (fecha y unidades)."])+nota("Las latas no tienen vencimiento.")});
+  if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo contar sin errores", html:li([
+    "Entrá a Stock › <b>Conteo inicial › Conteo cámara</b>.",
+    "Arranca <b>de cero y a ciegas</b>: no se ve el número del sistema.",
+    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>."+(S.kilosReales?" En las vasquetas cargá el peso de cada una.":""),
+    escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
+    "Tocá <b>Revisar y guardar</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
+    "Lo que no tocaste queda «Sin contar» y conserva el stock. Con <b>Dejar en 0</b> lo ponés en cero a propósito.",
+    "<b>Guardar lo contado</b> guarda solo esos sabores; con <b>Guardar y seguir contando</b> seguís con otro rubro. Tu avance se guarda solo en este equipo."])+nota("Al guardar, la cámara queda con candado 🔒 hasta fin de mes: solo supervisión la desbloquea.")});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
     "Revisá lo que leyó: los renglones en <b>amarillo</b> con «?» son los que no pudo identificar; elegí el sabor a mano o ignorá el renglón. Las cantidades se pueden corregir.",
     "Si el remito tiene más de una hoja, tocá <b>+ Agregar otra página</b>.",
-    S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
+    S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
     "Tocá <b>Cargar al carrito de ingreso</b> y después <b>Confirmar ingreso</b>."])+nota("Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo».")});
   if(!colab) T.push({id:"pedido", titulo:"Pedido sugerido", sub:"Cuánto pedir y cómo mandarlo", html:li([
     "Entrá a Stock › <b>Pedido sugerido</b>.",
     "Marcá <b>qué día hiciste el último pedido</b> (si pedís siempre el mismo día, ya viene marcado) y <b>qué día te llega la mercadería</b>. Lo recuerda para este local.",
     "Cada rubro muestra qué hay hoy y cuánto pedir: lo que salió desde tu último pedido, proyectado día por día hasta que llega. Tocá un sabor para ver de dónde sale. Con − y + ajustás la cantidad.",
     "Tocá <b>Ver resumen para enviar</b>: ahí copiás el pedido por rubro, mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
-  return T;
+  return SUP.concat(T);
 }
 function renderAyuda(){
   const ov=document.getElementById("ayudaOv"); if(!ov) return;
   const T=ayudaTemas(), abierto=S.ayudaTema;
-  ov.querySelector("#ayLista").innerHTML=T.map(t=>`<div class="ayTema${abierto===t.id?" abierto":""}">
+  const hayS=T.some(t=>t.grupo==="sup");
+  ov.querySelector("#ayLista").innerHTML=T.map((t,i)=>(hayS&&(i===0||(t.grupo!=="sup"&&T[i-1].grupo==="sup"))?`<p class="ayGrupo">${t.grupo==="sup"?"Supervisión":"Para todos"}</p>`:"")+`<div class="ayTema${abierto===t.id?" abierto":""}">
     <button type="button" class="ayTemaBtn" data-ay-tema="${t.id}" aria-expanded="${abierto===t.id}"><span>${t.titulo}<small>${t.sub}</small></span><span class="ayMas">${abierto===t.id?"−":"+"}</span></button>
     ${abierto===t.id?`<div class="ayTemaCuerpo">${t.html}</div>`:""}</div>`).join("");
 }
-function abrirAyuda(){
+function abrirAyuda(tema){
   if(document.getElementById("ayudaOv")) return;
   ls.set("ayudaVista","1"); const bt=document.getElementById("ayudaBtn"); if(bt) bt.classList.add("vista"); // ya lo abrió: deja de pulsar, solo queda el brillo lento
-  S.ayudaTema=S.conteo?"conteo":"quepaso"; // contando: abre directo «Conteo físico»
+  S.ayudaTema=tema||(S.conteo?"conteo":null); // contando: abre directo «Conteo físico»; desde Control de supervisión: «Control de stock»
   const ov=document.createElement("div"); ov.id="ayudaOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox escBox" role="dialog" aria-modal="true" aria-labelledby="ayTit">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><p class="mantTit" id="ayTit" style="margin:0">¿Cómo se usa?</p><button type="button" class="btn ghost" data-ay-cerrar aria-label="Cerrar" style="min-height:34px;padding:0 12px">✕</button></div>
