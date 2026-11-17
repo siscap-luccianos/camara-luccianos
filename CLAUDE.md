@@ -538,3 +538,4 @@ Pedido de Gabi: algunos locales no tienen ciertos productos (ej. Baldes) y hací
 - Historial 17/11/2026 (front 1.178.5, pedido de Gabi): los movimientos anulados siguen en Historial (nunca se borran), ahora con el detalle tachado suave y un filtro «Anulados · N» en Movimientos. Incluye 1.178.4 (texto «sin ver el número del sistema»). Solo en /pruebas/.
 - **Producción actualizada 17/11/2026 (con OK de Gabi):** la raíz de `main` pasó de front 1.178.3 a 1.178.5 (texto «sin ver el número del sistema», filtro «Anulados» y tachado suave en Historial).
 - Textos 17/11/2026 (front 1.178.6, pedido de Gabi): se sacaron de la ayuda del «?» y del aviso de novedad las frases sobre candado y PIN (el candado sigue existiendo desde el 30/11, solo se quitó la explicación). Solo en /pruebas/.
+- **Producción actualizada 17/11/2026 (con OK de Gabi):** la raíz de `main` pasó de front 1.178.5 a 1.178.6 (sin las frases de candado/PIN en la ayuda y el aviso de novedad).
