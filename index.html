@@ -1386,7 +1386,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.163.0";
+const FRONTEND_VERSION = "1.163.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4648,9 +4648,8 @@ function invContarHTML(){
     ? (enCam?"Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ":"Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ")+"Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara."
     : "Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial.";
   const tEsc=parc&&conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
-  const tCero=accTileHTML("invCeroBtn","Poner todo en 0","para empezar de cero y contar todo","swap");
   return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>${titulo}</h1><p class="cntAcla">${acla}${kgR?" En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":" Va por unidad, como en el resto de la app."}</p></div>
-  ${accGridHTML([tEsc,tCero].filter(Boolean))}
+  ${tEsc?accGridHTML([tEsc]):""}
   ${parc&&conteoEscVisible()?`<div class="pcDestino"><span>Escanear en:</span><button type="button" class="chip" data-pc-target="camara" aria-pressed="${I.fase==="camara"}">Cámara</button><button type="button" class="chip" data-pc-target="local" aria-pressed="${I.fase!=="camara"}">Local</button></div>`:""}
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
   <div class="cProg" id="invProg">${invProgresoHTML()}</div>
@@ -4663,17 +4662,6 @@ function invProgresoHTML(){
   return `<div class="cProgTx"><b>${hechos} de ${total} contados</b><span>Lo que no toques cuenta como 0</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
 }
 function invRefrescarProg(){ const e=document.getElementById("invProg"); if(e&&S.inv) e.innerHTML=invProgresoHTML() }
-/** «Poner todo en 0»: marca como contado, en 0, todo lo que se ve con el filtro de arriba. */
-function invPonerCero(){
-  const I=S.inv; if(!I) return;
-  const idsInv=new Set(invSabores().map(x=>String(x.id)));
-  const visibles=listaFiltrada(stockMap()).filter(x=>idsInv.has(String(x.id)));
-  if(!visibles.length) return;
-  if(!confirm("¿Poner en 0 los "+visibles.length+" productos que se ven ("+(GRUPO_PRODUCTO_LABEL[I.rubro]||I.rubro)+")? Después cargás lo que haya.")) return;
-  visibles.forEach(x=>{ const id=String(x.id); Reflect.deleteProperty(I.items,id); Reflect.deleteProperty(I.pesos,id); I.tocado[id]=1; if(I.pedidoId) pcSacarEscaneoFase(id) });
-  invGuardarBorrador(); renderApp(); renderBar();
-}
-function pcSacarEscaneoFase(id){ const E=ceEsc(); E.items=E.items.filter(x=>String(x.id)!==String(id)); Reflect.deleteProperty(E.previo,id) }
 function invResumenCargado(){
   const I=S.inv, t={};
   Object.keys(I.items).forEach(id=>{ const s=S.saboresPorId[id]; if(!s) return; const g=grupoProductoDe(s); t[g]=(t[g]||0)+(+I.items[id]||0) });
@@ -4882,7 +4870,6 @@ function invClick(t){
   if(t.id==="invBtn"){ invIniciar(); return true }
   if(t.id==="invGuardadosBtn"){ S.inv={paso:"guardados", rubro:invGrupos()[0], items:{}, tocado:{}, res:"rubro", det:null, busca:"", ver:null, lista:null, errorLista:null, restaurado:false, guardando:false, inicio:Date.now()}; renderApp(); invCargarLista(); return true }
   if(!I) return false;
-  if(t.id==="invCeroBtn"){ invPonerCero(); return true }
   if(t.id==="invSalir"){ invSalir(); return true }
   if(t.id==="invNuevo"){ invIniciar(); return true }
   if(t.id==="invReintentar"){ invCargarLista(); renderApp(); return true }
