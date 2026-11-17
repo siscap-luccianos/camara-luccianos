@@ -1353,7 +1353,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.159.4";
+const FRONTEND_VERSION = "1.159.5";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3262,10 +3262,8 @@ function renderNav(){
 
 /** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
 function avisoConteoInicialHTML(){
-  if(Date.now()>Date.parse("2026-12-15T00:00:00-03:00")) return "";
-  let visto=null; try{ visto=ls.get("avisoConteoInicial") }catch(e){}
-  if(visto) return "";
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica: podés cargarlo y corregirlo. <b>Desde el 1/12 queda fijo</b>: lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div><button type="button" class="btn" id="avisoConteoOk">Entendido</button></div>`;
+  if(Date.now()>=Date.parse("2026-12-01T00:00:00-03:00")) return ""; // fijo hasta el fin del 30/11 (00:00 del 1/12), sin botón para cerrarlo
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica: podés cargarlo y corregirlo. <b>Desde el 1/12 queda fijo</b>: lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div></div>`;
 }
 function renderMain(){
   if(S.local && S.tab==="gestion" && !S.stockValorizado && S.sabores.length) S.tab="salida"; // Gestión solo con stock_valorizado=SI

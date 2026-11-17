@@ -12,15 +12,14 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click('[data-tecla="' + d + '"]') }
   await page.waitForSelector("header"); await page.waitForTimeout(300);
   await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1500);
-  const bannerVisible = async () => (await page.$("#avisoConteoOk")) !== null;
+  const bannerVisible = async () => (await page.$(".avisoNovedad")) !== null;
   ok(await bannerVisible(), "el aviso de novedad se ve al abrir la app");
   ok(/Stock definitivo pasa a ser el «Conteo inicial»/.test(await page.innerText("#main")) && /Desde el 1\/12 queda fijo/.test(await page.innerText("#main")), "el aviso explica el cambio y la fecha");
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
   ok(await bannerVisible(), "se ve también en Stock");
-  await page.click("#avisoConteoOk"); await page.waitForTimeout(200);
-  ok(!(await bannerVisible()), "«Entendido» lo oculta");
+  ok(!(await page.$("#avisoConteoOk")), "no tiene botón «Entendido»: queda fijo");
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1200);
-  ok(!(await bannerVisible()), "después de recargar no vuelve a aparecer");
+  ok(await bannerVisible(), "después de recargar sigue ahí");
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(400);
   const tarjetas = await page.$$eval(".stkPaso", e => e.map(x => x.textContent.replace(/\s+/g, " ").trim()));
   ok(tarjetas.length === 1 && /Conteo inicial/.test(tarjetas[0]) && !/Conteo físico/.test(await page.innerText("#main")), "en Stock queda un solo cartel «Conteo inicial» (sin «Conteo físico» suelto): " + tarjetas.join(" | "));
