@@ -1374,7 +1374,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.160.2";
+const FRONTEND_VERSION = "1.160.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4596,7 +4596,7 @@ function invContarHTML(){
       const w=(I.pesos&&I.pesos[s.id])||[], n=Math.max(3,w.length);
       const cajas=Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-inv-w="${s.id}:${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
       return `<div class="row invRow invWrow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}${metaCam}</div>
+      <div class="nm">${esc(s.nombre)}${metaCam}${I.pedidoId?ceTagHTML(s.id):""}</div>
       <div class="invStep invWs">${cajas}<button type="button" class="p" data-inv-wmas="${s.id}" aria-label="Agregar otra casilla" title="Otra vasqueta">+</button><div class="invTotW"><small>Total</small><b data-inv-tot="${s.id}">${t?invFmtNum(s,v)+" kg":"–"}</b></div>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
     }
     return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
@@ -4609,6 +4609,7 @@ function invContarHTML(){
   <div class="defin"><b>${parc?"Supervisión pidió este conteo. Se guarda aparte y no cambia el stock de la cámara.":"Esto queda guardado como el conteo inicial."}</b></div>
   <p class="invHint">${parc?(enCam?"Paso 1 de 2: contá lo que hay <b>dentro de la cámara</b>, empezando de cero. ":"Paso 2 de 2: contá lo que hay <b>en el local, fuera de la cámara</b>. "):"Contá solo lo que hay <b>en el local, fuera de la cámara</b>. "} ${kgR?"En las vasquetas <b>pesá cada una</b> y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
+  ${parc&&conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return `<button type="button" class="ctaCard glass" id="escConteoBtn" style="margin:0 0 12px" aria-label="Contar escaneando"><span style="font-size:1.4rem">📷</span><span style="flex:1;text-align:left"><b style="display:block">Contar escaneando</b><small>${n?n+(n===1?" lectura":" lecturas")+" · tocá para seguir":"Vasquetas: escaneá cada rótulo o cada caja."}</small></span></button>` })():""}
   <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
   <div class="rows" style="margin-top:12px">${lista.map(row).join("")||`<div class="note">No hay productos de este rubro en el local.</div>`}</div>
   ${sinTocar?`<div class="note" style="margin-top:10px">Sin tocar: <b data-inv-sintocar>${sinTocar}</b>. Si no hay nada afuera de la cámara, queda en 0.</div>`:""}`;
@@ -4864,6 +4865,7 @@ document.addEventListener("input", e=>{
   }
   if(el.dataset.invW!==undefined){
     const [id,ix]=el.dataset.invW.split(":"), s=S.saboresPorId[id]; if(!s) return;
+    if(S.inv.pedidoId && ceMano(id)){ const tg=el.closest(".row"), tag=tg&&tg.querySelector(".cEscTag"); if(tag) tag.remove() }
     el.value=el.value.replace(/[^\d.,]/g,"");
     const I=S.inv; const w=(I.pesos[id]=I.pesos[id]||[]); while(w.length<=(+ix)) w.push("");
     w[+ix]=el.value===""?"":invNum(s,el.value);
@@ -6573,7 +6575,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.wsub){ const c=S.cart.desperdicio; c[t.dataset.wsub]=Math.max(0,(c[t.dataset.wsub]||0)-1); if(!c[t.dataset.wsub]) delete c[t.dataset.wsub]; recortarPesos(t.dataset.wsub,"desperdicio"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.icaja){ const c=S.cart.ingreso; c[t.dataset.icaja]=(c[t.dataset.icaja]||0)+(Number(t.dataset.cant)||0); S.confirm=false; scheduleRender(); return }
   if(t.id==="escConteoBtn"){ abrirEscanerConteo(); return }
-  if(t.dataset.cescMano){ ceMano(t.dataset.cescMano); programarBorradorConteo(); renderApp(); return }
+  if(t.dataset.cescMano){ ceMano(t.dataset.cescMano); if(!ceInv()) programarBorradorConteo(); renderApp(); return }
   if(t.dataset.ccaja){ const id=t.dataset.ccaja; ceMano(id); S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
@@ -7571,10 +7573,17 @@ function procesarEscaneoIng(txt, cam){
    caja abierta o con dudas: se escanea cada vasqueta (+1) y NO la caja. El primer escaneo de un sabor pisa el número
    que venía del sistema; lo que no se escanea queda «Sin contar». El código no es único: repetido avisa pero no bloquea. */
 function resetConteoEsc(){ S.conteoEsc={items:[],n:0,previo:{}}; S.escAsig={}; S.conteoGuardado={} }
-function ceEsc(){ return S.conteoEsc||(S.conteoEsc={items:[],n:0,previo:{}}) }
+/** Conteo parcial (pedido por supervisión) en curso: el escáner de vasquetas también sirve ahí, en la cámara y en el local. */
+function ceInv(){ return !!(S.inv && S.inv.pedidoId && S.inv.paso==="contar") }
+function ceEsc(){
+  if(ceInv()){ const I=S.inv; I.esc=I.esc||{camara:{items:[],n:0,previo:{}},local:{items:[],n:0,previo:{}}}; return I.esc[I.fase==="camara"?"camara":"local"] }
+  return S.conteoEsc||(S.conteoEsc={items:[],n:0,previo:{}})
+}
+function ceValor(id){ return ceInv()? (+S.inv.items[id]||0) : S.conteo[id] }
+function ceSabores(){ return ceInv()? invSabores() : saboresDelConteo() }
 function esVasquetaEsc(s){ return !!s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas" }
-function conteoEscActivo(){ return escanerConteoDisponible() && !!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas") }
-function conteoEscVisible(){ return conteoEscActivo() && (ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
+function conteoEscActivo(){ return escanerConteoDisponible() && (ceInv() ? S.inv.rubro==="vasquetas" : (!!S.conteo && (!conteoParcialActivo() || S.conteoAlcance==="vasquetas"))) }
+function conteoEscVisible(){ return conteoEscActivo() && (ceInv() || ceEsc().items.length>0 || conteoParcialActivo() || (S.filtroFamilia||"vasquetas")==="vasquetas") }
 function ceItemsDe(id){ return ceEsc().items.filter(x=>String(x.id)===String(id)) }
 /** Pesos de lo escaneado en este conteo, por sabor: vasqueta suelta = su peso; caja cerrada = "c:KG" (2 vasquetas, un solo peso).
  *  Solo de los sabores indicados que siguen contados con escáner (si se corrigió a mano, ceMano ya sacó sus lecturas). */
@@ -7584,7 +7593,22 @@ function pesosConteoDe(ids){
     out[id]=its.map(x=>x.t==="caja"?"c:"+(Math.round(x.kg*100)/100):Math.round(x.kg*100)/100) });
   return out;
 }
+function ceAplicarInv(id){
+  const I=S.inv, E=ceEsc(), its=ceItemsDe(id);
+  if(its.length){
+    if(!E.previo[id]) E.previo[id]={i:I.items[id], w:I.pesos[id]?I.pesos[id].slice():undefined, t:!!I.tocado[id]};
+    const w=[]; its.forEach(x=>{ if(x.t==="caja"){ const h=Math.round(x.kg/2*100)/100; for(let i=0;i<x.u;i++) w.push(h) } else w.push(Math.round(x.kg*100)/100) });
+    I.pesos[id]=w; I.items[id]=Math.round(w.reduce((a,x)=>a+x,0)*100)/100; I.tocado[id]=true;
+  } else if(E.previo[id]){
+    const p=E.previo[id];
+    if(p.i===undefined) delete I.items[id]; else I.items[id]=p.i;
+    if(p.w===undefined) delete I.pesos[id]; else I.pesos[id]=p.w;
+    if(p.t) I.tocado[id]=true; else delete I.tocado[id];
+    delete E.previo[id];
+  }
+}
 function ceAplicar(id){
+  if(ceInv()) return ceAplicarInv(id);
   const E=ceEsc(), its=ceItemsDe(id);
   if(its.length){
     if(!E.previo[id]) E.previo[id]={c:S.conteo[id], k:S.kilosConteo[id], t:!!S.conteoTocado[id]};
@@ -7673,7 +7697,7 @@ function renderEscanerConteo(){
       const pr=e.pregunta;
       q.innerHTML=`<div class="escPreg"><b>Esta caja pesa ${fmtKg(pr.p.kg)} kg</b> y ${esc(pr.s.nombre)} pesa unos ${fmtKg(+pr.s.peso)} kg por vasqueta. ¿Cuántas vasquetas trae?<div class="mantAcc" style="margin-top:8px"><button type="button" class="btn" data-esc-cajan="2">2 vasquetas</button><button type="button" class="btn ghost" data-esc-cajan="1">1 sola</button><button type="button" class="btn ghost" data-esc-cajan="0">Descartar</button></div></div>`;
     } else if(e.asignar){
-      const as=e.asignar, op=saboresDelConteo().filter(esVasquetaEsc).map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join("");
+      const as=e.asignar, op=ceSabores().filter(esVasquetaEsc).map(x=>`<option value="${x.id}">${esc(x.nombre)}</option>`).join("");
       q.innerHTML=`<div class="escPreg"><b>Código ${esc(as.p.codigo)} sin asignar en la planilla</b> (${fmtKg(as.p.kg)} kg · lote ${esc(as.p.lote)}). ¿Qué sabor es?<select id="escAsigSel" style="width:100%;margin-top:8px"><option value="">Elegí el sabor…</option>${op}</select><div class="mantAcc" style="margin-top:8px"><button type="button" class="btn" data-esc-asig-ok>Asignar y sumar</button><button type="button" class="btn ghost" data-esc-asig-no>Descartar</button></div><small style="display:block;margin-top:6px;color:var(--muted)">Vale solo para este conteo. Para que el sistema lo reconozca siempre, cargá el código en Sabores.codigo_fabrica.</small></div>`;
     } else q.innerHTML="";
   }
@@ -7708,7 +7732,7 @@ function procesarEscaneoConteo(txt, cam){
 function ceProcesar(p,s){
   const e=S.escaner; if(!e) return;
   if(!esVasquetaEsc(s)){ e.msg={tipo:"err", t:s.nombre+" no es una vasqueta: contalo a mano."}; pitido(false); renderEscanerConteo(); return }
-  if(S.conteo[s.id]===undefined || !saboresDelConteo().some(x=>String(x.id)===String(s.id))){ e.msg={tipo:"err", t:s.nombre+" no está en este conteo."}; pitido(false); renderEscanerConteo(); return }
+  if(ceInv() ? !ceSabores().some(x=>String(x.id)===String(s.id)) : (S.conteo[s.id]===undefined || !saboresDelConteo().some(x=>String(x.id)===String(s.id)))){ e.msg={tipo:"err", t:s.nombre+" no está en este conteo."}; pitido(false); renderEscanerConteo(); return }
   if(p.tipo==="caja"){
     const pr=+s.peso;
     if(pr>0 && Math.abs(p.kg/2-pr)/pr>0.35){ e.pregunta={p,s}; e.msg={tipo:"warn", titulo:"Revisá la caja", t:s.nombre+" · "+fmtKg(p.kg)+" kg en la caja."}; pitido("dup"); renderEscanerConteo(); return }
@@ -7723,7 +7747,7 @@ function ceCommit(p,s,u){
   const que=p.tipo==="caja"?"caja ×"+u:"vasqueta";
   if(e) e.msg = repetido
     ? {tipo:"warn", titulo:"Este código ya se escaneó", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+". ¿Es otra "+(p.tipo==="caja"?"caja":"vasqueta")+" igual o la pasaste dos veces? Si fue un error, tocá la ✕ de esa fila."}
-    : {tipo:"ok", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+" → ahora "+S.conteo[s.id]};
+    : {tipo:"ok", t:s.nombre+" · "+que+" · "+fmtKg(p.kg)+" kg · lote "+p.lote+" → ahora "+ceValor(s.id)};
   pitido(repetido?"dup":true);
   scheduleRender(); renderEscanerConteo();
   const i=document.getElementById("escCodigo"); if(i) i.focus();
