@@ -6,7 +6,7 @@ const sb={console,Date:FDate,Math,JSON,String,Number,Array,Object,isFinite,
  PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
  SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},
  Utilities:{formatDate:(d)=>new Date(d.getTime()-3*3600e3).toISOString().slice(0,10)}};
-vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8"),sb);
+vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8").replace("CANDADO_DESDE = \"2026-11-30\"","CANDADO_DESDE = \"2000-01-01\""),sb);
 let inv=[];
 sb._hojaInventarios=()=>({});
 sb._leerCrudo=h=>h==="Inventarios"?inv:[];

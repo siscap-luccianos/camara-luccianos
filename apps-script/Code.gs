@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.96.0";
+const BACKEND_VERSION = "1.97.0";
 
 function doPost(e) {
   let resultado;
@@ -2216,6 +2216,11 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
 function _mesSiguiente(m) { const a = String(m).split("-"); let y = Number(a[0]), mm = Number(a[1]) + 1; if (mm > 12) { mm = 1; y++; } return y + "-" + (mm < 10 ? "0" : "") + mm; }
 /** ¿Qué conteo cubre el mes actual como «conteo inicial»? Uno inicial guardado este mes, o un FINAL guardado el mes anterior (el final es el
  *  inicial del mes siguiente). Devuelve {tipo, ts} o null. */
+/** Período de práctica (Gabi, 17/11/2026): hasta el 29/11 el conteo inicial / Conteo cámara NO quedan con candado, así los locales pueden usar la app y recontar.
+ *  Desde el último día del mes (30/11) rige todo: candado, un solo conteo inicial por mes. Cambiar CANDADO_DESDE para mover la fecha. */
+const CANDADO_DESDE = "2026-11-30";
+function _candadoActivo() { return _jornadaClave(Date.now()) >= CANDADO_DESDE; }
+
 function _coberturaMes(local) {
   const ahora = Date.now();
   _hojaInventarios();
@@ -2294,6 +2299,7 @@ function _camaraRecerrar(local) {
 /** El Conteo cámara y el conteo suelto quedan cerrados para los responsables: ya hay un conteo inicial que cubre el mes, o la cámara ya se contó este mes (salvo que supervisión la desbloquee). */
 function _conteoSueltoBloqueado(local, empleado) {
   if (empleado && (empleado.rol === "admin" || empleado.rol === "supervisor")) return false;
+  if (!_candadoActivo()) return false;
   if (_coberturaMes(local)) return true;
   return !!_camaraContadaMes(local) && _camaraDesbloqueadaHasta(local) <= Date.now();
 }
@@ -2563,7 +2569,7 @@ function _invPermiso(empleado, local) {
 /** Guarda un inventario. Si es el CONTEO DE CIERRE (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
  *  es el inicial del mes que viene y el mes arranca con ese arrastre. Se aplica DESPUÉS de soltar el candado (conteo() toma el suyo). */
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
-  if (!pedidoId && empleado && empleado.rol !== "admin" && empleado.rol !== "supervisor") {
+  if (!pedidoId && empleado && empleado.rol !== "admin" && empleado.rol !== "supervisor" && _candadoActivo()) {
     const cob = _coberturaMes(local);
     if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo de cierre del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
   }
@@ -2742,7 +2748,7 @@ function inventarios(local, empleado) {
   const lista = todos.filter((r) => _visibleParaResponsable(r, verTodo)).map((r) => _inventarioPublico(r, verValor));
   // Lo que todavía no se le muestra al responsable: solo que existe (tipo, fecha y si se libera sola), sin kilos.
   const ocultos = todos.filter((r) => !_visibleParaResponsable(r, verTodo)).map((r) => ({ id: r.id, empleado: r.empleado || "", tipo: String(r.tipo) === "final" ? "final" : "parcial", ts: Number(r.ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }));
-  return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: !_soloSupervision(empleado) && !!_coberturaMes(local), camaraBloqueada: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
+  return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: _candadoActivo() && !_soloSupervision(empleado) && !!_coberturaMes(local), camaraBloqueada: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
 }
 
 
