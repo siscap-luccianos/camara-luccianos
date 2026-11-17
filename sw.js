@@ -9,7 +9,7 @@
 // Subir una versión nueva: cambiar CACHE_VERSION junto con FRONTEND_VERSION
 // en index.html (no hace falta que sea el mismo número, alcanza con que
 // cambie) — así el navegador descarta la caché vieja sola.
-const CACHE_VERSION = "logistock-shell-v1.160.4";
+const CACHE_VERSION = "logistock-shell-v1.162.0";
 const SHELL_KEY = "./";
 const PRECACHE = [
   "./",
