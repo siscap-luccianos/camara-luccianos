@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.89.0";
+const BACKEND_VERSION = "1.89.1";
 
 function doPost(e) {
   let resultado;
@@ -2461,17 +2461,17 @@ function _invPermiso(empleado, local) {
 }
 
 /** Guarda un inventario. items: {idSabor: lo contado en el local}; camaraKg: {idSabor: {k: kilos, ap: 1 si son aproximados}} (lo calcula el cliente con lo que ve). */
-/** Guarda un inventario. Si es el CONTEO FINAL (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
+/** Guarda un inventario. Si es el CONTEO DE CIERRE (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
  *  es el inicial del mes que viene y el mes arranca con ese arrastre. Se aplica DESPUÉS de soltar el candado (conteo() toma el suyo). */
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   if (!pedidoId && empleado && empleado.rol !== "admin" && empleado.rol !== "supervisor") {
     const cob = _coberturaMes(local);
-    if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo final del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
+    if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo de cierre del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
   }
   const r = _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada);
   if (r && r.ok && r._final) {
     const c = conteo("final-" + r.inventario.id, local, r._final.items, empleado, null, r._final.kilos, null, true);
-    if (c && c.ok) r.stockAplicado = true; else r.avisoStock = (c && c.error) || "No se pudo dejar el stock de la cámara igual al conteo final.";
+    if (c && c.ok) r.stockAplicado = true; else r.avisoStock = (c && c.error) || "No se pudo dejar el stock de la cámara igual al conteo de cierre.";
     Reflect.deleteProperty(r, "_final");
   } else if (r && r._final) {
     Reflect.deleteProperty(r, "_final");
@@ -2479,7 +2479,7 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId
   return r;
 }
 
-/** Stock de la cámara que deja un conteo final: lo contado en la cámara; lo que no se contó queda en 0 (se contó desde cero). */
+/** Stock de la cámara que deja un conteo de cierre: lo contado en la cámara; lo que no se contó queda en 0 (se contó desde cero). */
 function _armarStockFinal(catalogo, camara) {
   const items = {}, kilos = {};
   Object.keys(catalogo).forEach((id) => {
@@ -2571,7 +2571,7 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
       tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", pedido_id: pedidoFila ? pedidoFila.id : "",
     });
     if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
-    _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "final (cierre del mes)" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
+    _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "de cierre del mes" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
     return { ok: true, _final: (pedidoFila && String(pedidoFila.tipo) === "final") ? _armarStockFinal(catalogo, camara) : null, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
   } finally {
     lock.releaseLock();
@@ -2679,7 +2679,7 @@ function pedirConteo(local, tipo, empleado) {
   try {
     const ya = _pedidoPendiente(local);
     if (ya) {
-      if ((String(ya.tipo) === "final") !== (tipo === "final")) return { ok: false, error: "Ya hay un pedido de conteo " + (String(ya.tipo) === "final" ? "final" : "parcial") + " para este local: cancelalo primero." };
+      if ((String(ya.tipo) === "final") !== (tipo === "final")) return { ok: false, error: "Ya hay un pedido de conteo " + (String(ya.tipo) === "final" ? "de cierre" : "parcial") + " para este local: cancelalo primero." };
       return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
     }
     const r = _escribirCrudo("PedidosConteo", { local: local, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo });

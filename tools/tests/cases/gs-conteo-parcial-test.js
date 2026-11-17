@@ -87,13 +87,13 @@ E("encargado"); r=run(`pedirConteo("Galerías","final",emp)`); ok(!r.ok,"el resp
 E("supervisor"); r=run(`pedirConteoFinal_("Galerías")`.replace("pedirConteoFinal_(\"Galerías\")",`pedirConteo("Galerías","final",emp)`));
 ok(r.ok&&r.pedido.tipo==="final","supervisión pide el conteo final");
 const idFin=r.pedido.id;
-r=run(`pedirConteo("Galerías","parcial",emp)`); ok(!r.ok&&/final/.test(r.error),"no se puede pedir un parcial con un final pendiente");
+r=run(`pedirConteo("Galerías","parcial",emp)`); ok(!r.ok&&/cierre/.test(r.error),"no se puede pedir un parcial con un final pendiente");
 r=run(`pedirConteo("Galerías","final",emp)`); ok(r.ok&&r.repetido,"el mismo pedido no se duplica");
 E("encargado"); r=run(`pedidoConteo("Galerías",emp)`); ok(r.ok&&r.pedido.tipo==="final","el responsable ve que es un conteo final");
 regs.push({local:"Galerías",tipo:"salida",ts:Date.parse("2026-12-10T10:00:00-03:00"),items:'{"4":1}',pesos:'{"4":[3.5]}'});
 NOW=Date.parse("2026-12-31T22:00:00-03:00"); sb._stockActualLocal=()=>({"4":4,"49":10});
 r=run(`guardarInventario("f-f","Galerías",{"49":4},{},emp,"${idFin}",{"4":{u:2,k:6},"49":{u:10}})`);
-ok(r.ok&&r.inventario.tipo==="final"&&r.inventario.fijo===true,"el conteo final se guarda como «final» y queda bloqueado");
+ok(r.ok&&r.inventario.tipo==="final"&&r.inventario.fijo===true,"el conteo de cierre se guarda como «final» y queda bloqueado");
 ok(r.stockAplicado===true&&CONTEOS.length===1&&CONTEOS[0].items["4"]===2&&CONTEOS[0].items["49"]===10&&CONTEOS[0].kilos["4"]===6,"el conteo final deja el stock de la cámara igual a lo contado (2 vasq / 6 kg y 10 icepops): "+JSON.stringify(CONTEOS[0]));
 ok(r._final===undefined,"el dato interno no se devuelve al cliente");
 r=run(`corregirInventario("Galerías","${r.inventario.id}","49",5,"motivo largo",emp)`); ok(!r.ok&&/bloqueado/.test(r.error),"no se corrige: "+JSON.stringify(r).slice(0,160));
