@@ -40,6 +40,32 @@ const { chromium } = require("playwright");
   const txt = (await page.innerText("#main")).replace(/\s+/g, " ");
   ok(/no pueden pesar 7400 kg/.test(txt) && /Corregilo/.test(txt) && !(await page.$("[data-cack='4']")), "la revisión lo marca con «Corregilo», sin botón «Está bien»");
   ok(await page.$eval("#ok", e => e.disabled), "«Guardar» queda apagado");
+  // local sin kilos reales (ej. Marruecos): 7400 vasquetas en Banana Split
+  const m = await page.evaluate(() => { S.kilosReales = false; iniciarConteo(false, "todo"); S.conteo["4"] = 7400; S.conteoTocado["4"] = true; const a = conteoChequeo("4", 7400); S.conteo["4"] = 40; return { a, b: conteoChequeo("4", 40), bloq: (S.conteo["4"] = 7400, conteoResumen().bloqueos.length) } });
+  ok(m.a && m.a.nivel === "bloq" && /7400 vasquetas/.test(m.a.msg), "sin kilos reales: 7400 vasquetas de Banana Split no deja guardar: " + (m.a && m.a.msg));
+  ok(m.b === null && m.bloq === 1, "40 vasquetas está bien; el resumen cuenta 1 imposible");
+  // Ingreso / Producción: 12 vasquetas con 12 kg no deja registrar
+  const g = await page.evaluate(() => {
+    S.kilosReales = true; S.conteo = null; S.inv = null; S.tab = "ingreso"; S.salidaElegida = false;
+    S.cart.ingreso = { "4": 12 }; S.kilosProduccion = { "4": "12" }; S.confirm = false; renderApp();
+    const a = kgVasqProblema("4", 12, 12, true), b2 = kgVasqProblema("4", 2, 7400, true), c = kgVasqProblema("4", 4, 14.57, true), d = kgVasqProblema("4", 1, 1.1, false);
+    return { a, b2, c, d };
+  });
+  ok(g.a && /12 vasquetas con 12 kg/.test(g.a), "ingreso/producción: 12 vasquetas con 12 kg es un error: " + g.a);
+  ok(g.b2 && /no pueden pesar/.test(g.b2), "2 vasquetas con 7400 kg es un error");
+  ok(g.c === null && g.d === null, "4 vasquetas con 14,57 kg está bien, y una vasqueta abierta de 1,1 kg en devolución también");
+  await page.waitForTimeout(300);
+  const bar = (await page.innerText("#bar")).replace(/\s+/g, " ");
+  ok(/Revisá los kilos/.test(bar) && await page.$eval("#go", e => e.disabled), "la barra de Ingreso avisa «Revisá los kilos» y no deja registrar: " + bar.slice(0, 120));
+  // Conteo local: una pesada de 350 kg o 400 kg de un sabor tampoco deja avanzar
+  const l = await page.evaluate(() => {
+    S.tab = "stock"; S.cart.ingreso = {}; S.kilosProduccion = {};
+    S.inv = { paso: "contar", items: { "4": 350 }, pesos: { "4": [3.5, 350] }, tocado: { "4": true }, camara: {}, filtroFamilia: "vasquetas" };
+    renderApp(); return invImposibles();
+  });
+  ok(l.length === 1 && /350/.test(l[0]), "conteo local: una vasqueta de 350 kg se marca: " + JSON.stringify(l));
+  await page.waitForTimeout(300);
+  ok(/Revisá los kilos/.test(await page.innerText("#bar")) && await page.$eval("#invResBtn", e => e.disabled), "y «Ver resultado» queda apagado");
   console.log("errores:", err.length ? err : "ninguno"); await b.close();
   console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); process.exit(fallas || err.length ? 1 : 0);
 })();
