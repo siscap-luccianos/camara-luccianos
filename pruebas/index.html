@@ -1217,7 +1217,8 @@ body:has(.mantenerOv){overflow:hidden}
 .invStep input{width:58px;height:38px;text-align:center;font-weight:800;font-size:1rem;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 4px;box-sizing:border-box}
 .invStep .r{width:26px;height:26px;font-size:.9rem;background:none;color:var(--muted)}
 .invWs{flex-wrap:wrap;justify-content:flex-end;gap:6px;max-width:420px}.invWs input.invW{width:62px}
-.invWs .invTotW{display:flex;flex-direction:column;align-items:center;min-width:74px;padding:4px 10px;border-radius:12px;background:rgba(var(--header-bg-rgb),.07)}.invWs .invTotW small{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}.invWs .invTotW b{font-size:.98rem}
+.invWs .invWcomp{font-size:.9rem;white-space:nowrap}
+.invTotW{display:flex;flex-direction:column;align-items:center;min-width:74px;padding:4px 10px;border-radius:12px;background:rgba(var(--header-bg-rgb),.07)}.invWs .invTotW small{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}.invWs .invTotW b{font-size:.98rem}
 .invRow.sin .invStep input{color:var(--muted);border-style:dashed}
 .invEq{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px}
 .invEqh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
@@ -1386,7 +1387,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.160.3";
+const FRONTEND_VERSION = "1.160.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4606,10 +4607,12 @@ function invContarHTML(){
     if(s.tipo==="v"){
       // Vasquetas: una casilla por vasqueta que se pesa (3 y «+» para más); el total se suma solo. Nada de ir sumando a mano.
       const w=(I.pesos&&I.pesos[s.id])||[], n=Math.max(3,w.length);
-      const cajas=Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-inv-w="${s.id}:${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
+      // Muchas vasquetas (p. ej. 25 escaneadas): no se dibujan 25 casillas; se ve la cantidad y se abren con «Ver pesos».
+      const compacto=w.length>6 && !(I.verPesos&&I.verPesos[s.id]);
+      const cajas=compacto?`<span class="invWcomp"><b>${w.filter(x=>x!==""&&+x>0).length}</b> vasquetas</span><button type="button" class="invLnk" data-inv-verpesos="${s.id}">Ver pesos</button>`:Array.from({length:n},(_,i)=>`<input type="text" inputmode="decimal" autocomplete="off" class="invW" data-inv-w="${s.id}:${i}" value="${w[i]!==undefined&&w[i]!==""?esc(String(w[i]).replace(".",",")):""}" placeholder="kg" aria-label="Peso de la vasqueta ${i+1} de ${esc(s.nombre)}">`).join("");
       return `<div class="row invRow invWrow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}${metaCam}${I.pedidoId?ceTagHTML(s.id):""}</div>
-      <div class="invStep invWs">${cajas}<button type="button" class="p" data-inv-wmas="${s.id}" aria-label="Agregar otra casilla" title="Otra vasqueta">+</button><div class="invTotW"><small>Total</small><b data-inv-tot="${s.id}">${t?invFmtNum(s,v)+" kg":"–"}</b></div>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
+      <div class="invStep invWs">${cajas}${compacto?"":`<button type="button" class="p" data-inv-wmas="${s.id}" aria-label="Agregar otra casilla" title="Otra vasqueta">+</button>`}<div class="invTotW"><small>Total</small><b data-inv-tot="${s.id}">${t?invFmtNum(s,v)+" kg":"–"}</b></div>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
     }
     return `<div class="row invRow${t?"":" sin"}" data-inv-row="${s.id}">${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}${metaCam}</div>
@@ -4857,6 +4860,7 @@ function invClick(t){
     const cur=invNum(s,input?input.value:I.items[id]), paso=invEsKg(s)?0.5:1, sig=Math.max(0,Math.round((cur+(t.dataset.invInc?paso:-paso))*100)/100);
     if(input) input.value=String(sig).replace(".",",");
     invPonerValor(id,sig,input); return true }
+  if(t.dataset.invVerpesos){ const I=S.inv; I.verPesos=I.verPesos||{}; I.verPesos[t.dataset.invVerpesos]=!I.verPesos[t.dataset.invVerpesos]; renderApp(); return true }
   if(t.dataset.invWmas){ const id=t.dataset.invWmas; const w=(I.pesos[id]=I.pesos[id]||[]); while(w.length<3) w.push(""); w.push(""); invGuardarBorrador(); renderApp(); setTimeout(()=>{ const c=document.querySelectorAll(`[data-inv-w^="${id}:"]`); const u=c[c.length-1]; if(u) u.focus() },30); return true }
   if(t.dataset.invReset){
     const id=t.dataset.invReset, input=document.querySelector(`[data-inv-in="${id}"]`);
