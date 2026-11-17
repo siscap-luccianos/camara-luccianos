@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.83.0";
+const BACKEND_VERSION = "1.84.0";
 
 function doPost(e) {
   let resultado;
@@ -2345,7 +2345,12 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
    Vasquetas y tipo k (Crumble/Granella) se cuentan en kilos (hasta 2 decimales); el resto, en unidades enteras.
 ============================================================ */
 
-const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios"];
+const COLUMNAS_INVENTARIOS = ["id", "clienteId", "local", "ts", "fecha", "empleadoId", "empleado", "items", "camara", "precios", "valor_total", "aprox", "cambios", "camara_ts", "fuera_jornada"];
+
+/** Desde el 01/12/2026 00:00 (Argentina) el Conteo inicial (ex «Stock definitivo») queda FIJO: no se corrige. Lo guardado antes era de práctica y se puede seguir corrigiendo. */
+const CONTEO_INICIAL_FIJO_DESDE = Date.parse("2026-12-01T00:00:00-03:00");
+/** Jornada (día comercial) de un momento: corta a las 04:00, hora de Argentina. */
+function _jornadaClave(ts) { return Utilities.formatDate(new Date(Number(ts) - 4 * 3600 * 1000), "America/Argentina/Buenos_Aires", "yyyy-MM-dd"); }
 
 function _hojaInventarios() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -2401,6 +2406,8 @@ function _inventarioPublico(r, verValor) {
     id: r.id, ts: Number(r.ts) || 0, fecha: String(r.fecha || ""), local: r.local, empleado: r.empleado,
     items: _jsonObj(r.items, {}), camara: _jsonObj(r.camara, {}), aprox: _esVerdadero(r.aprox) === true,
     cambios: _jsonObj(r.cambios, []),
+    camara_ts: Number(r.camara_ts) || 0, fuera_jornada: _esVerdadero(r.fuera_jornada) === true,
+    fijo: (Number(r.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE,
     precios: verValor ? _jsonObj(r.precios, null) : null,
     valor_total: verValor && r.valor_total !== "" && r.valor_total !== undefined ? Number(r.valor_total) || 0 : null,
   };
@@ -2466,13 +2473,17 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado) {
     const valor = Object.keys(precios).length ? _invValor(contados, camara, precios, catalogo) : "";
     const ts = Date.now();
     const fecha = Utilities.formatDate(new Date(ts - 4 * 3600 * 1000), "America/Argentina/Buenos_Aires", "yyyy-MM-dd");
+    // Cada parte lleva su hora: la cámara es la del último conteo físico; el local, la de este guardado. Si el cierre cruza el corte de jornada (04:00) queda marcado para supervisión.
+    const camaraTs = Number(((_datosSinCache(local) || {}).stock || {}).ts) || 0;
+    const fueraJornada = camaraTs > 0 && _jornadaClave(camaraTs) !== _jornadaClave(ts);
     const r = _escribirCrudo("Inventarios", {
       clienteId: clienteId || "", local: local, ts: ts, fecha: fecha, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "",
       valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]",
+      camara_ts: camaraTs || "", fuera_jornada: fueraJornada ? "SI" : "NO",
     });
     _auditar("guardar_inventario", empleado.id, empleado.nombre, local + ": inventario del local (" + Object.keys(contados).length + " productos con algo en el local)");
-    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
+    return { ok: true, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
   } finally {
     lock.releaseLock();
   }
@@ -2498,6 +2509,7 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
   try {
     const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
     if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese inventario." };
+    if ((Number(fila.ts) || 0) >= CONTEO_INICIAL_FIJO_DESDE) return { ok: false, error: "El Conteo inicial es fijo: no se puede corregir. Si hay un desvío, lo ajusta supervisión." };
     const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
     const antes = Number(items[String(saborId)]) || 0;
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };

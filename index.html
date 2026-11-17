@@ -796,6 +796,10 @@ body:has(.etiqOv){overflow:hidden}
 .pedCorr button{border:1px solid #C9A961;background:#fff;color:#2A201A;border-radius:8px;padding:2px 8px;font:inherit;font-weight:800;cursor:pointer}
 .pedCajasTot{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;margin:12px 0 0;padding:12px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line,#E8DFD2);font-size:.88rem}.pedCajasTot>b:first-child{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .pdSubP{display:block;font-size:.74rem;font-weight:700;color:var(--muted);margin-top:2px}.pdBorrar{display:flex;justify-content:flex-end;margin:-4px 0 10px}.pdBorrar .btn{height:36px;padding:0 14px;font-size:.82rem}
+.avisoNovedad{display:flex;gap:14px;align-items:center;margin:0 0 16px;padding:16px 18px;border-radius:20px;background:#FFF8E6;border:2px solid #C9A961;color:#2A201A;box-shadow:0 8px 24px rgba(138,106,58,.12)}
+.avisoNovedad .avisoIco{font-size:1.7rem}.avisoNovedad .avisoTx{flex:1;display:flex;flex-direction:column;gap:4px;font-size:.88rem;line-height:1.45}.avisoNovedad .avisoTx b:first-child{font-family:Fraunces,serif;font-size:1.05rem}
+.avisoNovedad .btn{white-space:nowrap}
+@media(max-width:700px){.avisoNovedad{flex-direction:column;align-items:stretch}}
 .ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
 .ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
@@ -1347,7 +1351,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.158.0";
+const FRONTEND_VERSION = "1.159.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1421,6 +1425,7 @@ const S = {
   vencOmit: {}, // alfajores/conitos: "ing:<id>" o "conteo:<id>" marcados con Omitir (sin fecha, opcional)
   kilosProduccion: {}, // kilos fabricados por sabor en modo Producción — dato suelto, sin fórmula con las vasquetas del carrito
   modoCambio: false, cambio: {desde:"",hacia:"",cant:1,kilos:"",motivo:"",otro:""}, // «Cambio de sabor» (solo responsables), desde adentro de Ingreso
+  hubInicial: false, // Stock: dentro de «Conteo inicial» (Conteo cámara + Conteo local)
   salidaElegida: false, // Salida: ya se eligió «Sacar de la cámara» o «Transferencia» (si no, se ve el menú «¿Qué vas a hacer?»)
   ingresoElegido: false, // Ingreso: ya se eligió «Mercadería que llegó» (si no, se ve el menú «¿Qué vas a hacer?»)
   devCompa: false, devPor: null, devMotivo: "", // Devolución de un responsable por un compañero que ya se fue (id del compañero, motivo)
@@ -3031,7 +3036,7 @@ let tituloOriginal=null;
 function nombreArchivoInforme(){
   const f=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"numeric",month:"numeric",year:"2-digit"}).replace(/\//g,"-");
   const quien=(!S.local || document.querySelector(".rlv[data-rlv-n]")) ? "Relevamiento" : String(S.local).trim();
-  return ("LogiStock_"+(document.querySelector("[data-inv-print]")?"StockDefinitivo_":"")+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
+  return ("LogiStock_"+(document.querySelector("[data-inv-print]")?"ConteoInicial_":"")+quien+"_"+f).replace(/[\\/:*?"<>|]/g,"-");
 }
 window.addEventListener("afterprint",()=>{ const e=document.getElementById("rlvOrientacion"); if(e) e.remove(); if(tituloOriginal!==null){ document.title=tituloOriginal; tituloOriginal=null } });
 window.addEventListener("beforeprint",()=>{
@@ -3253,6 +3258,13 @@ function renderNav(){
   return `<nav role="tablist" id="tabs" class="bottomNav${tabs.length<=3?" navCorta":""}">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
 }
 
+/** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
+function avisoConteoInicialHTML(){
+  if(Date.now()>Date.parse("2026-12-15T00:00:00-03:00")) return "";
+  let visto=null; try{ visto=ls.get("avisoConteoInicial") }catch(e){}
+  if(visto) return "";
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">📣</span><div class="avisoTx"><b>Novedad: el Stock definitivo pasa a ser el «Conteo inicial»</b><span>Hasta el 30/11 es de práctica: podés cargarlo y corregirlo. <b>Desde el 1/12 queda fijo</b>: lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias.</span></div><button type="button" class="btn" id="avisoConteoOk">Entendido</button></div>`;
+}
 function renderMain(){
   if(S.local && S.tab==="gestion" && !S.stockValorizado && S.sabores.length) S.tab="salida"; // Gestión solo con stock_valorizado=SI
   if(S.local && S.tab==="relevar") S.tab="salida"; // Relevar es solo de Operaciones (sin local elegido)
@@ -3279,7 +3291,7 @@ function renderMain(){
   // Si la última carga falló y lo que se ve viene de la copia guardada en este equipo, se avisa (antes quedaba en
   // silencio y faltaba lo que solo manda el servidor, como la solapa Gestión).
   if(S.errorCarga && S.sabores.length) h = `<div class="note" style="border-color:var(--warn,#C98A1B)">No se pudieron actualizar los datos de este local: se muestra lo último guardado en este equipo y se reintenta solo.<br><button class="btn ghost" id="reintentarCarga" style="margin-top:8px">Reintentar ahora</button></div>` + h;
-  return h;
+  return avisoConteoInicialHTML()+h;
 }
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
@@ -4053,9 +4065,29 @@ function bannerBorradorConteoHTML(){
     <div class="d"><b>${n} ${n===1?"sabor cargado":"sabores cargados"}</b> · guardado en este equipo a las ${hora}${b.empleado?" por "+esc(b.empleado):""}. No se mandó al servidor: el stock no cambió.</div>
     <div class="b"><button type="button" class="btn" id="continuarConteo">Continuar donde quedé</button><button type="button" class="btn ghost" id="descartarBorradorBtn">Descartar</button></div></div>`;
 }
+/** «Conteo inicial»: adentro, Conteo cámara + Conteo local = Conteo inicial (el resultado se guarda al terminar el conteo del local). */
+function conteoInicialHubHTML(){
+  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
+      <span class="stkPasoTop">${n?`<span class="stkNum">${n}</span>`:""}<span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
+      <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span></button>`;
+  return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
+  <div class="pdEyebrow">Stock › Conteo inicial</div>
+  <h2 class="pdH1">Conteo inicial</h2>
+  <p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>
+  <div class="stkFisico"><div class="stkPasos">
+    ${paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
+    <span class="stkSep">+</span>
+    ${paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
+    <span class="stkSep">=</span>
+    ${paso(3,"invGuardadosBtn","Conteo inicial","Ver los conteos iniciales guardados.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
+  </div></div>`;
+}
 function stockView(st){
   if(S.inv) return inventarioView();
   if(S.conteo) return stockViewConteo();
+  if(S.hubInicial) return conteoInicialHubHTML();
   if(S.verPedido) return S.verResumenPedido ? stockViewResumen(st) : stockViewPedido(st);
   if(S.verVencimientos) return vencimientosPantallaHTML();
   return stockViewGeneral(st);
@@ -4107,8 +4139,8 @@ function stockViewGeneral(st){
 }
 function bannerBorradorConteoHTML_si(ok){ return ok?bannerBorradorConteoHTML():"" }
 /** Tarjetas de arriba de Stock, tal cual el mock aprobado por Gabi (13/11/2026): «Pedido sugerido» aparte, en verde suave, y «Stock físico · en orden»
- *  con tres pasos numerados (1 Conteo físico → 2 Stock de local → 3 Stock definitivo, este último oscuro y dorado). Desde acá no se hace ningún movimiento.
- *  Paso 2 abre el conteo del local (ex «Stock definitivo del local»); paso 3 abre los stock definitivos guardados. */
+ *  con tres pasos numerados (1 Conteo físico → 2 Stock de local → 3 Conteo inicial, este último oscuro y dorado). Desde acá no se hace ningún movimiento.
+ *  Paso 2 abre el conteo del local (ex «Conteo inicial»); paso 3 abre los conteos iniciales guardados. */
 function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
   const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
   const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -4120,13 +4152,8 @@ function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
       <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
       <span class="stkPasoTx"><b>${titulo}</b><span>${sub}</span></span>
     </button>`;
-  const fisico=puedeGestionar?`<div class="stkFisico">
-    <div class="stkPasos">
-      ${paso(1,"conteoBtn","Conteo físico","Corrige el stock de la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo físico")}
-      <span class="stkSep">${chev}</span>
-      ${paso(2,"invBtn","Stock de local",invHayBorrador()?"Tenés uno sin terminar.":"Lo que tenés afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Stock de local")}
-      <span class="stkSep">${chev}</span>
-      ${paso(3,"invGuardadosBtn","Stock definitivo","1 + 2. Ver por período.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Stock definitivo guardados")}
+  const fisico=puedeGestionar?`<div class="stkFisico"><div class="stkPasos">
+      ${paso(0,"conteoInicialBtn","Conteo inicial","Cámara + local. Hacerlo o ver el del mes.",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Conteo inicial: cámara más local")}
     </div></div>`:"";
   if(!pedido&&!fisico) return "";
   return `<div class="stkAcc${pedido&&fisico?"":" solo"}">${pedido}${pedido&&fisico?`<span class="stkDiv"></span>`:""}${fisico}</div>`;
@@ -4413,8 +4440,8 @@ function invContarHTML(){
       <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
   };
   const sinTocar=lista.filter(s=>!I.tocado[s.id]).length;
-  return `<div class="invHead"><b>Stock definitivo del local</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
-  <div class="defin"><b>Esto queda guardado como el stock definitivo del local.</b></div>
+  return `<div class="invHead"><b>Conteo inicial</b><button type="button" class="chip" data-inv-guardados>Guardados</button></div>
+  <div class="defin"><b>Esto queda guardado como el conteo inicial.</b></div>
   <p class="invHint">Contá solo lo que hay <b>en el local, fuera de la cámara</b>. ${kgR?"Las vasquetas van en <b>kilos</b>: una a la mitad suma media.":"Va por <b>unidad</b>, como en el resto de la app."} Lo que no toques cuenta como 0.</p>
   ${I.restaurado?`<div class="note" style="margin-bottom:10px">Retomaste lo que dejaste sin guardar. <button type="button" class="invLnk" data-inv-borrar>Empezar de cero</button></div>`:""}
   <div class="invPills">${grupos.map(g=>`<button type="button" class="chip" data-inv-rub="${g}" aria-pressed="${I.rubro===g}">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</button>`).join("")}</div>
@@ -4434,7 +4461,7 @@ function invBar(inn){
     return true;
   }
   if(I.paso==="resultado"){
-    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":"Guardar stock definitivo"}</button>`;
+    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":"Guardar conteo inicial"}</button>`;
     return true;
   }
   return false;
@@ -4445,7 +4472,7 @@ function invEqHTML(c,l,t,extra){
 function invProdCardHTML(f,d){
   const camTxt=(f.kg?(f.cam.ap?"≈ ":""):"")+invCant(f.s,f.camQ);
   const extra=f.kg && f.s.tipo==="v" ? `<span class="u">${+f.cam.u} ${+f.cam.u===1?"vasqueta":"vasquetas"}</span>` : "";
-  const btn=d.guardado ? `<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>` : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
+  const btn=d.guardado ? (d.x&&d.x.fijo?"":`<button type="button" class="invLnk noPrint" data-inv-cor="${f.id}">Corregir</button>`) : `<button type="button" class="invLnk noPrint" data-inv-edit="${f.g}">Editar</button>`;
   return `<div class="invEq"><div class="invEqh"><b>${esc(f.s.nombre)}</b>${btn}</div>${invEqHTML(camTxt,invCant(f.s,f.loc),(f.kg&&f.cam.ap?"≈ ":"")+invCant(f.s,f.tot),extra)}</div>`;
 }
 function invListaProdHTML(filas,d){
@@ -4456,6 +4483,13 @@ function invListaProdHTML(filas,d){
     return xs.length?`<p class="sec">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</p>${xs.map(f=>invProdCardHTML(f,d)).join("")}`:"";
   }).join("");
   return html||`<div class="note">Ningún producto coincide.</div>`;
+}
+/** Hora de cada parte del conteo inicial (cámara y local) y la marca si el cierre cruzó el corte de jornada. */
+function invHorasHTML(x){
+  if(!x) return "";
+  const f=ts=>new Date(ts).toLocaleString("es-AR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+  const cam=x.camara_ts?`Cámara contada: <b>${f(x.camara_ts)}</b> · `:"";
+  return `<p class="invHint" style="margin:6px 0">${cam}Local guardado: <b>${f(x.ts)}</b></p>${x.fuera_jornada?`<div class="note" style="background:#FFF1CC;border-color:#E7C873;margin:6px 0">⚠ Cerrado fuera de la jornada: el conteo cruzó el corte de las 04:00. Lo revisa supervisión.</div>`:""}`;
 }
 function invCambiosHTML(d){
   if(!d.cambios.length) return "";
@@ -4479,37 +4513,37 @@ function invResultadoHTML(){
     return `<div class="invEq"><div class="invEqh"><b>${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</b><button type="button" class="invLnk noPrint" data-inv-det="${g}">${abierto?"Ocultar sabores":"Ver sabores"}</button></div>${invEqHTML(invTxtG(g,x.camQ,x.ap),invTxtG(g,x.loc),invTxtG(g,x.tot,x.ap))}${det}</div>`;
   };
   const pdfFilas=grupos.map(g=>`<tr class="invG"><td colspan="4">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</td></tr>${filas.filter(f=>f.g===g).map(f=>`<tr><td>${esc(f.s.nombre)}</td><td>${f.kg&&f.cam.ap?"≈ ":""}${invCant(f.s,f.camQ)}</td><td>${invCant(f.s,f.loc)}</td><td><b>${f.kg&&f.cam.ap?"≈ ":""}${invCant(f.s,f.tot)}</b></td></tr>`).join("")}<tr class="invSub"><td>Total ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}</td><td>${invTxtG(g,tot[g].camQ,tot[g].ap)}</td><td>${invTxtG(g,tot[g].loc)}</td><td>${invTxtG(g,tot[g].tot,tot[g].ap)}</td></tr>`).join("");
-  return `${informeCabHTML({etiqueta:"Informe de stock definitivo", titulo:"Stock definitivo del local", sub:(S.local||"")+" | cámara + local", lineaHTML:`${d.guardado?"Stock definitivo del":"Calculado el"} <b>${esc(fechaTxt)}</b> por <b>${esc(quien)}</b>`})}
-  ${informePieHTML("Stock definitivo del local · "+(S.local||""))}
+  return `${informeCabHTML({etiqueta:"Informe de conteo inicial", titulo:"Conteo inicial", sub:(S.local||"")+" | cámara + local", lineaHTML:`${d.guardado?"Conteo inicial del":"Calculado el"} <b>${esc(fechaTxt)}</b> por <b>${esc(quien)}</b>`})}
+  ${informePieHTML("Conteo inicial · "+(S.local||""))}
   <div class="invPrint" data-inv-print>
     <div class="tbl"><table class="invTbl"><thead><tr><th>Producto</th><th>Cámara</th><th>Local</th><th>Total</th></tr></thead><tbody>${pdfFilas||`<tr><td colspan="4">Sin productos.</td></tr>`}</tbody></table></div>
     ${aproxAlgo?`<p class="invNotaP">«≈»: kilos de la cámara calculados con el peso promedio de cada sabor.</p>`:""}
     ${d.cambios.length?`<p class="invNotaP">Corregido ${d.cambios.length} ${d.cambios.length===1?"vez":"veces"} después de guardar (queda registrado en LogiStock).</p>`:""}
   </div>
   <div class="noPrint">
-  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">Stock definitivo</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
+  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">Conteo inicial</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
   <p class="invHint">${esc(fechaTxt)} · <b>Cámara</b> (stock de LogiStock) + <b>Local</b> (inventario) = <b>Total</b>.${d.guardado?` Guardado por ${esc(quien)}.`:""}</p>
   <div class="invTot">${helado?`<small>Helado en el local</small><b>${invTxtG("vasquetas",helado.tot,helado.ap)}</b><span>Cámara ${invTxtG("vasquetas",helado.camQ,helado.ap)} + local ${invTxtG("vasquetas",helado.loc)}</span>`:`<small>Total del local</small><span style="font-size:.9rem;color:inherit">${otrosTxt||"Todavía no hay nada cargado."}</span>`}${helado&&otrosTxt?`<span style="display:block;margin-top:6px">${otrosTxt}</span>`:""}</div>
   <div class="invPills"><button type="button" class="chip" data-inv-res="rubro" aria-pressed="${I.res==="rubro"}">Por rubro</button><button type="button" class="chip" data-inv-res="prod" aria-pressed="${I.res==="prod"}">Por producto</button></div>
   <div style="margin-top:12px">${I.res==="rubro" ? (grupos.map(rubroCard).join("")||`<div class="note">Todavía no hay nada cargado.</div>`) : `<input type="search" id="invBusca" class="invBusca" placeholder="Buscar producto…" value="${esc(I.busca||"")}" aria-label="Buscar producto"><div id="invLista">${invListaProdHTML(filas,d)}</div>`}</div>
   ${aproxAlgo?`<p class="invHint" style="margin-top:6px">«≈»: los kilos de la cámara se calculan con el peso promedio de cada sabor. Con kilos reales pasan a ser exactos.</p>`:""}
-  ${d.guardado?`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0">Stock definitivo guardado. Si hay un error, tocá «Corregir» en el producto: queda registrado el cambio.</div>`:""}
+  ${d.guardado?(d.x&&d.x.fijo?`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0"><b>🔒 Conteo inicial fijo.</b> No se corrige. Si hay un error, supervisión habilita un recuento.</div>`:`<div class="note" style="background:var(--ok-soft,#E3F1E8);margin:8px 0">Conteo inicial de práctica: hasta el 30/11 se puede corregir. Si hay un error, tocá «Corregir» en el producto: queda registrado el cambio. Desde el 1/12 queda fijo.</div>`)+invHorasHTML(d.x):""}
   ${d.guardado?invCambiosHTML(d):""}
   <div class="tools" style="justify-content:center;gap:8px;margin:14px 0 0;flex-wrap:wrap">${d.guardado?`<button type="button" class="btn ghost" data-inv-guardados>Ver guardados</button><button type="button" class="btn ghost" id="invSalir">Terminar</button>`:""}<button type="button" class="btn ghost" id="invPdf">🖨 Exportar PDF</button></div>
   </div>`;
 }
 function invGuardadosHTML(){
   const I=S.inv;
-  const cab=`<div class="invHead"><b>Stock definitivo · guardados</b><button type="button" class="chip" id="invSalir">Salir</button></div>`;
+  const cab=`<div class="invHead"><b>Conteo inicial · guardados</b><button type="button" class="chip" id="invSalir">Salir</button></div>`;
   if(I.lista===null) return cab+(I.errorLista?`<div class="note">${esc(I.errorLista)}<br><button class="btn ghost" id="invReintentar" style="margin-top:10px">Reintentar</button></div>`:`<div class="note">Cargando los inventarios…</div>`);
   const lista=I.lista;
   const resumen=x=>{ const filas=invFilas({items:x.items,camara:x.camara,precios:null}), t=invTotales(filas); return {t, kg:t.vasquetas?t.vasquetas.tot:0, ap:!!x.aprox && t.vasquetas && t.vasquetas.ap} };
   const items=lista.map((x,i)=>{
     const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=prev?r.kg-prev.kg:null;
     const otros=GRUPO_PRODUCTO_ORDEN.filter(g=>g!=="vasquetas" && r.t[g]).map(g=>`${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())} ${invTxtG(g,r.t[g].tot)}`).join(" · ");
-    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">Stock definitivo</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
+    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">Conteo inicial</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
   }).join("");
-  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+(items||`<div class="note">Todavía no hay stock definitivos guardados en este local.</div>`)+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el stock definitivo</button></div>`;
+  return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+(items||`<div class="note">Todavía no hay conteos iniciales guardados en este local.</div>`)+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
 }
 async function invCargarLista(){
   const I=S.inv; if(!I) return;
@@ -4532,23 +4566,23 @@ async function invGuardarServidor(){
   if(r && r.ok){
     try{ ls.del(invClaveBorrador()) }catch(e){}
     S.inv.guardando=false; S.inv.ver=r.inventario; S.inv.paso="ver"; S.inv.lista=null; S.inv.res="rubro"; S.inv.det=null; S.inv.busca="";
-    toast("Stock definitivo guardado"); renderApp(); window.scrollTo(0,0);
+    toast("Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
   } else {
     S.inv.guardando=false;
     toast((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para guardar inventarios.":(r&&r.offline)?"Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal.":(r&&r.error)||"No se pudo guardar el inventario.");
     renderApp();
   }
 }
-/* ---- Confirmación antes de guardar el stock definitivo ---- */
+/* ---- Confirmación antes de guardar el conteo inicial ---- */
 function invConfirmarGuardar(){
   if(document.getElementById("invConfOv") || !S.inv || S.inv.guardando) return;
   const ov=document.createElement("div"); ov.id="invConfOv"; ov.className="mantenerOv";
   const hoy=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric"});
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="invConfTit">
-    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el stock definitivo?</p>
-    <p class="mantSub" style="margin:0">Vas a guardar el stock definitivo del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
+    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el conteo inicial?</p>
+    <p class="mantSub" style="margin:0">Vas a guardar el conteo inicial del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
     <p class="mantSub" style="margin:0">Después solo se puede corregir dejando un motivo, y queda registrado.</p>
-    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar stock definitivo</button></div></div>`;
+    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar conteo inicial</button></div></div>`;
   ov.addEventListener("click", e=>{
     if(e.target===ov || e.target.closest("[data-inv-conf-no]")){ ov.remove(); return }
     if(e.target.closest("[data-inv-conf-si]")){ ov.remove(); invGuardarServidor() }
@@ -5377,7 +5411,7 @@ async function toggleSaborLocal(saborId){
 /* Los precios se piden apenas llega la bandera stockValorizado (no hace falta esperar a que se abra la solapa) y se
    guardan en el equipo (solo los del último local, se borran al cerrar sesión): así Gestión abre al instante y se
    actualiza de fondo. Es solo comodidad: el servidor igual valida el rol cada vez. */
-/* Stock definitivos guardados con su valor, para la tarjeta de Gestión. Si el servidor es viejo o falla, simplemente no hay tarjeta. */
+/* Conteos iniciales guardados con su valor, para la tarjeta de Gestión. Si el servidor es viejo o falla, simplemente no hay tarjeta. */
 async function cargarInvGestion(){
   if(!S.local || S._invGestionPidiendo) return;
   const local=S.local;
@@ -5386,12 +5420,12 @@ async function cargarInvGestion(){
   if(local!==S.local) return;
   if(r && r.ok){ S.invGestion=r.inventarios||[]; S.invGestionLocal=local; if(S.tab==="gestion" && !S.inv) renderApp(); }
 }
-/* Stock definitivos guardados con precios (solo los que ve quien ve Gestión). */
+/* Conteos iniciales guardados con precios (solo los que ve quien ve Gestión). */
 function gvDefLista(){
   if(S.invGestionLocal!==S.local || !S.invGestion) return [];
   return S.invGestion.filter(x=>x.precios && x.valor_total!==null && x.valor_total!==undefined);
 }
-/* Valor en pesos de un stock definitivo, separado en lo que había en la cámara, lo que había en el local y el total. */
+/* Valor en pesos de un conteo inicial, separado en lo que había en la cámara, lo que había en el local y el total. */
 function gvDefPartes(x){
   const filas=invFilas({items:x.items||{}, camara:x.camara||{}, precios:x.precios||{}});
   let cam=0, loc=0;
@@ -5399,20 +5433,20 @@ function gvDefPartes(x){
   return {filas, cam, loc, tot:cam+loc};
 }
 function gvFechaCorta(ts){ return new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric"}) }
-/* Tarjeta de Gestión: el último stock definitivo, con Cámara + Local = Total en pesos. Al tocarla abre el detalle. */
+/* Tarjeta de Gestión: el último conteo inicial, con Cámara + Local = Total en pesos. Al tocarla abre el detalle. */
 function invGestionHTML(){
   const lista=gvDefLista();
   if(!lista.length) return "";
   const u=lista[0], ant=lista[1], pu=gvDefPartes(u), dif=ant?pu.tot-gvDefPartes(ant).tot:null;
   return `<button type="button" class="gvDefCard noPrint" id="gvDefAbrir">
-    <span class="gvDefTop"><b>Stock definitivo · ${esc(gvFechaCorta(u.ts))}</b><span class="gvDefVer">Ver detalle ›</span></span>
+    <span class="gvDefTop"><b>Conteo inicial · ${esc(gvFechaCorta(u.ts))}</b><span class="gvDefVer">Ver detalle ›</span></span>
     <span class="gvDefEq"><span><small>Cámara</small><b>${pesosAR(pu.cam)}</b></span><span><small>+ Local</small><b>${pesosAR(pu.loc)}</b></span><span class="tot"><small>= Total</small><b>${pesosAR(pu.tot)}</b></span></span>
-    <span class="gvDefPie">Lo que había al hacer el stock definitivo${dif===null?"":` · ${dif>=0?"+":"−"} ${pesosAR(Math.abs(dif))} vs. el del ${esc(gvFechaCorta(ant.ts))}`}</span></button>`;
+    <span class="gvDefPie">Lo que había al hacer el conteo inicial${dif===null?"":` · ${dif>=0?"+":"−"} ${pesosAR(Math.abs(dif))} vs. el del ${esc(gvFechaCorta(ant.ts))}`}</span></button>`;
 }
-/* Detalle: el stock definitivo del período elegido, con la columna Valor. */
+/* Detalle: el conteo inicial del período elegido, con la columna Valor. */
 function gvDetalleHTML(){
   const lista=gvDefLista();
-  if(!lista.length) return `<button type="button" class="btn volver noPrint" id="gvDefVolver">‹ Volver a Gestión</button><div class="note" style="margin-top:12px">Todavía no hay stock definitivos guardados con valor en este local.</div>`;
+  if(!lista.length) return `<button type="button" class="btn volver noPrint" id="gvDefVolver">‹ Volver a Gestión</button><div class="note" style="margin-top:12px">Todavía no hay conteos iniciales guardados con valor en este local.</div>`;
   const D=S.gvDef, x=lista.find(z=>String(z.id)===String(D.id))||lista[0];
   const P=gvDefPartes(x), filas=P.filas, tot=invTotales(filas);
   const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>tot[g]);
@@ -5425,8 +5459,8 @@ function gvDetalleHTML(){
       +(abierto?filas.filter(f=>f.g===g).map(f=>fila(f,false).replace("<tr>",'<tr class="gvdProd">')).join(""):"");
   }).join("");
   const pdfFilas=grupos.map(g=>`<tr class="invG"><td colspan="5">${esc(GRUPO_PRODUCTO_LABEL[g]||g)}</td></tr>${filas.filter(f=>f.g===g).map(f=>fila(f,true)).join("")}<tr class="invSub"><td>Total ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}</td><td>${invTxtG(g,tot[g].camQ,tot[g].ap)}</td><td>${invTxtG(g,tot[g].loc)}</td><td>${invTxtG(g,tot[g].tot,tot[g].ap)}</td><td>${pesosAR(valG[g])}</td></tr>`).join("");
-  return `${informeCabHTML({etiqueta:"Informe de stock definitivo", titulo:"Stock definitivo valorizado", sub:(S.local||"")+" | cámara + local", lineaHTML:`Stock definitivo del <b>${esc(fechaTxt)}</b> por <b>${esc(x.empleado||"")}</b>`})}
-  ${informePieHTML("Stock definitivo valorizado · "+(S.local||""))}
+  return `${informeCabHTML({etiqueta:"Informe de conteo inicial", titulo:"Conteo inicial valorizado", sub:(S.local||"")+" | cámara + local", lineaHTML:`Conteo inicial del <b>${esc(fechaTxt)}</b> por <b>${esc(x.empleado||"")}</b>`})}
+  ${informePieHTML("Conteo inicial valorizado · "+(S.local||""))}
   <div class="invPrint" data-inv-print>
     <div class="invPrintTot">Valor del local (cámara + local): <b>${pesosAR(P.tot)}</b> <small>Cámara ${pesosAR(P.cam)} + Local ${pesosAR(P.loc)} · precio de lista, no es el precio al público</small></div>
     <div class="tbl"><table class="invTbl"><thead><tr><th>Producto</th><th>Cámara</th><th>Local</th><th>Total</th><th>Valor</th></tr></thead><tbody>${pdfFilas||`<tr><td colspan="5">Sin productos.</td></tr>`}</tbody></table></div>
@@ -5434,7 +5468,7 @@ function gvDetalleHTML(){
   </div>
   <div class="noPrint">
     <button type="button" class="btn volver" id="gvDefVolver">‹ Volver a Gestión</button>
-    <div class="invHead" style="margin-top:12px"><b>Stock definitivo<span class="invBadgeDef">Valorizado</span></b></div>
+    <div class="invHead" style="margin-top:12px"><b>Conteo inicial<span class="invBadgeDef">Valorizado</span></b></div>
     <div class="invPills">${lista.map(z=>`<button type="button" class="chip" data-gvd-id="${z.id}" aria-pressed="${String(z.id)===String(x.id)}">${esc(gvFechaCorta(z.ts))}</button>`).join("")}</div>
     <p class="invHint">${esc(fechaTxt)} · ${esc(x.empleado||"")} · cámara + local.${x.cambios&&x.cambios.length?` Corregido ${x.cambios.length} ${x.cambios.length===1?"vez":"veces"} después de guardar.`:""}</p>
     <div class="gvDefEq big"><span><small>Cámara</small><b>${pesosAR(P.cam)}</b></span><span><small>+ Local</small><b>${pesosAR(P.loc)}</b></span><span class="tot"><small>= Total</small><b>${pesosAR(P.tot)}</b></span></div>
@@ -5443,7 +5477,7 @@ function gvDetalleHTML(){
       <tr class="gvdTot"><td>Total</td><td>${pesosAR(P.cam)}</td><td>${pesosAR(P.loc)}</td><td>${pesosAR(P.tot)}</td><td><b>${pesosAR(P.tot)}</b></td></tr></tbody></table></div>
     ${aprox?`<p class="invHint" style="margin-top:6px">«≈»: los kilos de la cámara se calculan con el peso promedio de cada sabor.</p>`:""}
     <div class="tools" style="justify-content:center;margin:14px 0 0"><button type="button" class="btn ghost" id="exportarGestion">🖨 Exportar PDF</button></div>
-    <p class="invHint" style="text-align:center;margin-top:8px">Corregir un producto (con motivo) se hace en Stock › Stock definitivo.</p>
+    <p class="invHint" style="text-align:center;margin-top:8px">Corregir un producto (con motivo) se hace en Stock › Conteo inicial.</p>
   </div>`;
 }
 async function cargarPrecios(){
@@ -5919,7 +5953,7 @@ function iniciarPolling(){
   S.pollTimer = setInterval(()=>{ cargarDatos(); colaFlush(); }, POLL_MS);
 }
 function setLocal(local){
-  S.local = local; resetIngresoMenu(); resetSalidaMenu(); S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.invGestion=null; S.invGestionLocal=""; S.gvDef=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
+  S.local = local; S.hubInicial=false; resetIngresoMenu(); resetSalidaMenu(); S.stockValorizado=false; S.precios=null; S.preciosLocal=""; S.errorPrecios=null; S.invGestion=null; S.invGestionLocal=""; S.gvDef=null; S.filtroValor="todos"; S.catValor="todas"; S.catValorAbierta=false; S.controlEquipos=false; S.equipos=undefined; S.subEquipo="empleados"; S.sabores=[]; S.saboresPorId={}; S.saboresExcluidos=[]; S.saboresFuera=[]; S.paisLocal=""; S.produccionLocal=false; S.escanerPeso=false; S.ventaDia=false; S.produccionRubros=[]; S.produccionSabores=[]; S.ingresoSoloProduccion=false; S.regs=[]; limpiarPesos(); S.stock=undefined; S.errorCarga=null;
   try{ ls.set("ultimoLocal", local); }catch(e){}
   S.cart={salida:{},ingreso:{},devolucion:{},desperdicio:{},produccion:{},venta:{}}; S.kilosProduccion={}; S.vencimientos={}; S.vencOmit={}; S.lotePick={}; limpiarLotesExtra("ing:"); S.modoDevolucion=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.motivoDesperdicio=""; S.inv=null; S.conteo=null; resetConteoEsc(); S.conteoAlcance="todo"; S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; S.verPedido=false; S.verResumenPedido=false; S.confirm=false; S.equipo=undefined; S.errorEquipo=null; S.pedidoAdj={}; S.categoriaHist="todas"; S.tipoHist="todos"; S.rangoHist="s0"; S.calHist=null; S.rangoMenu=false;
   // Pintamos al toque con lo último que vimos de este local (si lo vimos antes)
@@ -6331,7 +6365,7 @@ document.addEventListener("click", async e=>{
 
   if(invClick(t)) return;
   if(relevarClick(t)) return;
-  if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
+  if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; S.hubInicial=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
@@ -6522,6 +6556,9 @@ document.addEventListener("click", async e=>{
     renderApp();
     return;
   }
+  if(t.id==="avisoConteoOk"){ try{ ls.set("avisoConteoInicial","1") }catch(e){} renderApp(); return }
+  if(t.id==="conteoInicialBtn"){ S.hubInicial=true; renderApp(); window.scrollTo(0,0); return }
+  if(t.id==="hubVolver"){ S.hubInicial=false; renderApp(); return }
   if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; abrirElegirConteo(); return }
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
@@ -7707,11 +7744,11 @@ function ayudaTemas(){
     "Elegí el sabor que figura en la caja y el que era en realidad.",
     "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
     "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
-  if(!colab) T.push({id:"inventario", titulo:"Stock definitivo del local", sub:"Inventario: lo de afuera de la cámara + la cámara", html:li([
-    "En <b>Stock</b> tocá <b>Stock definitivo del local</b>.",
+  if(!colab) T.push({id:"inventario", titulo:"Conteo inicial", sub:"Inventario: lo de afuera de la cámara + la cámara", html:li([
+    "En <b>Stock</b> tocá <b>Conteo inicial</b>.",
     "Contá solo lo que hay <b>en el local, fuera de la cámara</b>: las vasquetas en <b>kilos</b> (una a la mitad suma media) y el resto por unidad.",
     "Tocá <b>Ver resultado</b>: ves cámara + local = total por rubro y por producto"+(S.stockValorizado?", con el valor en pesos":"")+".",
-    "Tocá <b>Guardar stock definitivo</b> y confirmá. Queda como una foto del día y se puede exportar a PDF."])+nota("No cambia el stock de la cámara ni cuenta como salida. Si te equivocaste antes de guardar, tocá «Editar» o «↺». Si ya guardaste, tocá «Corregir» en el producto: pide un motivo y queda registrado qué había, qué quedó, quién y cuándo.")});
+    "Tocá <b>Guardar conteo inicial</b> y confirmá. Queda como una foto del día y se puede exportar a PDF."])+nota("No cambia el stock de la cámara ni cuenta como salida. Si te equivocaste antes de guardar, tocá «Editar» o «↺». Si ya guardaste, tocá «Corregir» en el producto: pide un motivo y queda registrado qué había, qué quedó, quién y cuándo.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
