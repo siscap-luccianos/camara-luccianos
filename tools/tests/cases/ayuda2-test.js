@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
   let t=await temas(); console.log("Local prueba:",t.join(","));
   ok(t.includes("quepaso")&&t.includes("escaner")&&t.includes("venc")&&t.includes("conteo")&&t.includes("remito")&&t.includes("pedido"),"Local prueba ve escáner, vencimientos, conteo, remito y pedido");
   ok(!t.includes("choco"),"sin «Salida de chocolatería» porque el local no tiene venta del día");
-  ok(await page.$(".ayTema.abierto .ayCards")!==null,"arranca abierto «Qué usar según lo que pasó»");
+  ok(await page.$(".ayTema.abierto")===null,"arranca todo cerrado"); await page.click("[data-ay-tema='quepaso']"); await page.waitForTimeout(100); ok(await page.$(".ayTema.abierto .ayCards")!==null,"se abre «Qué usar según lo que pasó»");
   await page.click("[data-ay-tema='escaner']"); await page.waitForTimeout(150);
   ok(await page.$(".ayTema.abierto .ayPasos")!==null && (await page.$$(".ayTema.abierto")).length===1,"abrir el escáner cierra el anterior");
   ok(/Activar escáner/.test(await page.$eval(".ayTema.abierto",e=>e.textContent)),"el texto del escáner está");
