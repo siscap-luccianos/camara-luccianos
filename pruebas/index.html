@@ -1435,7 +1435,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.174.0";
+const FRONTEND_VERSION = "1.175.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -8263,7 +8263,7 @@ function ayudaTemas(){
   const nota=t=>`<div class="ayNota">${t}</div>`;
   const T=[];
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
-    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después."}</p></div>
+    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."}</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
   if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
@@ -8271,11 +8271,16 @@ function ayudaTemas(){
     "Elegí el sabor que figura en la caja y el que era en realidad.",
     "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
     "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
-  if(!colab) T.push({id:"inventario", titulo:"Conteo inicial", sub:"Inventario: lo de afuera de la cámara + la cámara", html:li([
-    "En <b>Stock</b> tocá <b>Conteo inicial</b>.",
-    "Contá solo lo que hay <b>en el local, fuera de la cámara</b>: las vasquetas en <b>kilos</b> (una a la mitad suma media) y el resto por unidad.",
-    "Tocá <b>Ver resultado</b>: ves cámara + local = total por rubro y por producto"+(S.stockValorizado?", con el valor en pesos":"")+".",
-    "Tocá <b>Guardar conteo inicial</b> y confirmá. Queda como una foto del día y se puede exportar a PDF."])+nota("No cambia el stock de la cámara ni cuenta como salida. Si te equivocaste antes de guardar, tocá «Editar» o «↺». Si ya guardaste, tocá «Corregir» en el producto: pide un motivo y queda registrado qué había, qué quedó, quién y cuándo.")});
+  if(!colab) T.push({id:"inventario", titulo:"Conteo inicial", sub:"Una vez al mes: cámara + local", html:li([
+    "Se hace <b>una sola vez por mes</b>. Si el mes arranca con el conteo de cierre del anterior, no hace falta.",
+    "En <b>Stock</b> tocá <b>Conteo inicial</b>. Primero el <b>Conteo cámara</b> y después el <b>Conteo local</b> (lo que hay afuera de la cámara).",
+    "Contá de cero. Las vasquetas del local van en <b>kilos</b>; el resto, por unidad.",
+    "Tocá <b>Ver resultado</b> y después <b>Guardar conteo inicial</b>."])+nota("Una vez guardado queda con candado 🔒: solo supervisión lo desbloquea, con su PIN, para una corrección. No cambia el stock de la cámara ni cuenta como salida.")});
+  if(!colab) T.push({id:"parcial", titulo:"Conteo parcial y de cierre", sub:"Cuando supervisión lo pide", html:li([
+    "Supervisión pide el conteo y te aparece un aviso en Stock: <b>Hacer el conteo</b>.",
+    "Contá la <b>cámara</b> y después el <b>local</b>, de cero y <b>a ciegas</b> (no se ve el número del sistema).",
+    "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
+    "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])+nota("Una vez guardado no se corrige: avisale a supervisión.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
@@ -8292,31 +8297,30 @@ function ayudaTemas(){
     <div class="ayCard"><span class="ayTag b">Recibís mercadería</span><b>Ingreso › Transferencia</b><p>En <b>Ingreso</b> tocá <b>Transferencia</b>, escribí <b>de qué local viene</b> y cargá lo que llegó${escanerDisponible()?": con <b>Escanear vasqueta</b> hacés pic, pic, pic (una caja cerrada suma 2 vasquetas)":""}.</p></div>
     <div class="ayCard"><span class="ayTag c">Cómo queda</span><b>Mueve el stock, no cuenta como consumo</b><p>Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia».</p></div></div>`});
   if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Registrar consumo", sub:"Venta del día, gift card, sin cargo y baja", html:li([
-    "En este local la chocolatería <b>no se saca por la Salida común</b>: se carga en <b>Registrar consumo</b>.",
+    "En este local la chocolatería <b>no se saca por la Salida común</b>: en <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Registrar consumo</b>.",
     "Elegí el tipo: <b>Venta del día</b> (lo que dice la caja al cerrar), <b>Gift card</b>, <b>Sin cargo</b> (regalo, evento o muestra: pide motivo) o <b>Baja</b> (por vencimiento, o transferencia a otro local: pide el destino).",
     "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
     "Alfajores: botones <b>+1, x5, x6, x10</b> y los <b>mix</b> (surtidos). Conitos: <b>+1</b> y <b>x6</b>. Minis: solo <b>+1</b>. Abajo de cada producto ves de dónde vino cada cantidad; tocá una caja para quitarla.",
     "Lo que recibís de otro local se carga en Ingreso › <b>Transferencia recibida</b>."])+nota("Si te equivocaste, anulalo desde Historial y cargalo de nuevo.")});
-  T.push({id:"venc", titulo:"Ver vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
-    "En Salida tocá <b>Ver vencimientos</b>: lista cada lote de chocolatería con su fecha.",
-    "El semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días. Los filtros de arriba muestran solo un color o los que no tienen fecha.",
-    "Al sacar, sale primero el lote que vence antes. Lo vencido no se puede vender.",
-    colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock con el motivo ya cargado.",
-    colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b> la completa: te propone la fecha según la vida útil del producto y se puede cambiar; elegís cuántas unidades."])+nota("Las latas no tienen vencimiento.")});
-  if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo recontar sin errores", html:li([
-    "Entrá a Stock › <b>Conteo inicial › Conteo cámara</b> y elegí qué vas a contar: <b>todo el local</b> o <b>solo un rubro</b> (ej. Vasquetas). Si es un rubro, el resto del stock <b>no se toca</b>.",
-    "Contá <b>una sola vez, de punta a punta</b>.",
-    "El conteo arranca <b>de cero y a ciegas</b>: no se ve el número del sistema, así que no arrastra nada viejo.",
-    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía. Antes de guardar se avisa de los números raros, y los imposibles (por ejemplo 7400 kg en 2 vasquetas) no dejan guardar.",
-    escanerConteoDisponible()?"En <b>Vasquetas</b> también podés <b>Contar escaneando</b> (opcional): <b>caja cerrada</b> → escaneá la caja (suma 2); <b>caja abierta o con dudas</b> → escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema; si un rótulo no se lee, escribí el número a mano. Si pasás dos veces el mismo código te avisa en amarillo (puede ser otra caja igual): quitá con la ✕ el que sobre.":null,
-    S.kilosReales?"En las vasquetas escribí también los <b>kilos totales</b> de cada sabor (la suma de los rótulos).":"Tocá <b>Revisar y guardar</b> cuando termines.",
-    "En la revisión mirá cómo queda el stock. Los sabores que pasan a <b>0</b> o saltan de golpe piden que los confirmes con <b>Está bien, así es</b>.",
-    "Si contaste solo algunos sabores, tocá <b>Guardar lo contado</b>: te pregunta «¿Solo es esto?» y guarda únicamente esos sabores; <b>los demás quedan como están en el sistema</b>. Con <b>Guardar y seguir contando</b> guarda lo contado (queda «Guardado ✓») y podés seguir. Tu avance también se guarda solo en este equipo: si salís, al volver aparece «Tenés un conteo sin terminar»."])+nota("El conteo <b>reemplaza</b> el stock actual, no suma. Anularlo no lo revierte: para corregir hacé un conteo nuevo.")});
+  T.push({id:"venc", titulo:"Vencimientos", sub:"Semáforo, poner fecha y desperdicio", html:li([
+    "En <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Vencimientos</b>: lista cada lote con su fecha.",
+    "Semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días.",
+    "Al sacar, sale primero el lote que vence antes. Lo vencido no se vende.",
+    colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock.",
+    colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b>; en uno con fecha, <b>Cambiar fecha</b> (fecha y unidades)."])+nota("Las latas no tienen vencimiento.")});
+  if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo contar sin errores", html:li([
+    "Entrá a Stock › <b>Conteo inicial › Conteo cámara</b>.",
+    "Arranca <b>de cero y a ciegas</b>: no se ve el número del sistema.",
+    "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>."+(S.kilosReales?" En las vasquetas cargá el peso de cada una.":""),
+    escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
+    "Tocá <b>Revisar y guardar</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
+    "Lo que no tocaste queda «Sin contar» y conserva el stock. Con <b>Dejar en 0</b> lo ponés en cero a propósito.",
+    "<b>Guardar lo contado</b> guarda solo esos sabores; con <b>Guardar y seguir contando</b> seguís con otro rubro. Tu avance se guarda solo en este equipo."])+nota("Al guardar, la cámara queda con candado 🔒 hasta fin de mes: solo supervisión la desbloquea.")});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
     "Revisá lo que leyó: los renglones en <b>amarillo</b> con «?» son los que no pudo identificar; elegí el sabor a mano o ignorá el renglón. Las cantidades se pueden corregir.",
     "Si el remito tiene más de una hoja, tocá <b>+ Agregar otra página</b>.",
-    S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
+    S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
     "Tocá <b>Cargar al carrito de ingreso</b> y después <b>Confirmar ingreso</b>."])+nota("Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo».")});
   if(!colab) T.push({id:"pedido", titulo:"Pedido sugerido", sub:"Cuánto pedir y cómo mandarlo", html:li([
     "Entrá a Stock › <b>Pedido sugerido</b>.",
