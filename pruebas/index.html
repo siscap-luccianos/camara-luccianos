@@ -1435,7 +1435,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.173.0";
+const FRONTEND_VERSION = "1.174.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1655,6 +1655,17 @@ function stockMap(){ return stockMapHasta(Date.now()) }
    No hay peso promedio: un sabor sin kilos cargados queda en null («sin kilos cargados»).
 ============================================================ */
 function esVasquetaKilos(id){ const s=S.saboresPorId[String(id)]; return !!(S.kilosReales && s && s.tipo==="v" && grupoProductoDe(s)==="vasquetas") }
+/** Kilos imposibles de vasquetas (errores de tipeo: 12 vasquetas con 12 kg, o 2 con 7400 kg). Una vasqueta pesa como máximo 12 kg y, si es nueva (Ingreso, Producción), al menos 1,5 kg. */
+const KG_VASQ_MAX=12, KG_VASQ_MIN_NUEVA=1.5;
+function kgVasqProblema(id, q, kg, conMinimo){
+  if(q>CONTEO_VASQ_MAX) return `${q} vasquetas no puede ser.`;
+  if(!(q>0) || !(kg>0)) return null;
+  const prom=kg/q, k=String(Math.round(kg*100)/100).replace(".",","), n=q+(q===1?" vasqueta":" vasquetas");
+  if(prom>KG_VASQ_MAX) return `${n} no pueden pesar ${k} kg.`;
+  if(conMinimo && prom<KG_VASQ_MIN_NUEVA) return `${n} con ${k} kg: cada una pesaría ${String(Math.round(prom*100)/100).replace(".",",")} kg.`;
+  return null;
+}
+function esVasquetaNormal(id){ const sb=S.saboresPorId[String(id)]; return !!(sb && sb.tipo==="v" && grupoProductoDe(sb)==="vasquetas") }
 function kilosNum(v){ return parseFloat(String(v==null?"":v).replace(",","."))||0 }
 function kilosMap(hasta){
   const out={}; if(!S.kilosReales) return out;
@@ -1796,7 +1807,7 @@ function syncDevolucion(){
     const ws=[];
     (S.devSel[id]||[]).forEach(i=>{ if(pend[id].pesos[i]!==undefined) ws.push(pend[id].pesos[i]) });
     const tip=S.devTip[id]||{};
-    for(let k=0;k<pend[id].sinPeso;k++){ const kg=kilosNum(tip[k]); if(kg>=0.1&&kg<=30) ws.push(Math.round(kg*100)/100) }
+    for(let k=0;k<pend[id].sinPeso;k++){ const kg=kilosNum(tip[k]); if(kg>=0.1&&kg<=KG_VASQ_MAX) ws.push(Math.round(kg*100)/100) }
     if(ws.length){ cart[id]=ws.length; pes[id]=ws; S.kilosProduccion[id]=String(Math.round(ws.reduce((a,x)=>a+x,0)*100)/100).replace(".",",") }
     else { delete cart[id]; delete pes[id]; delete S.kilosProduccion[id] }
   });
@@ -2875,6 +2886,11 @@ const CONTEO_BADGE={sin:"Sin contar", guardado:"Guardado ✓", igual:"Igual al s
 const CONTEO_KG_VASQ_MAX=12, CONTEO_KG_VASQ_AVISO_MAX=7, CONTEO_KG_VASQ_AVISO_MIN=1.5, CONTEO_VASQ_AVISO=120, CONTEO_VASQ_MAX=500, CONTEO_UNID_MAX=50000;
 function conteoChequeo(id, v){
   const s=S.saboresPorId[String(id)]; if(!s || !(v>0)) return null;
+  if(esVasquetaNormal(id) && !esVasquetaKilos(id)){ // local sin kilos reales: las vasquetas se cuentan en unidades
+    if(v>CONTEO_VASQ_MAX) return {nivel:"bloq", msg:`${v} vasquetas no puede ser. Revisá el número.`};
+    if(v>CONTEO_VASQ_AVISO) return {nivel:"aviso", msg:`${v} vasquetas es mucho. ¿Está bien?`};
+    return null;
+  }
   if(esVasquetaKilos(id)){
     const pesos=cwPesos(id).map(x=>+x||0).filter(x=>x>0), kg=pesos.length?cwSuma(id):kilosNum(S.kilosConteo[id]);
     const grande=pesos.find(x=>x>CONTEO_KG_VASQ_MAX);
@@ -4048,6 +4064,7 @@ function lectorRemitoView(){
   }
   const total=lr.items.reduce((a,it)=>a+(it.ignorar?0:(it.cantidad||0)),0);
   const sinResolver=lr.items.filter(it=>!it.saborId && !it.ignorar).length;
+  const kgMalRem=S.kilosReales?lr.items.filter(it=>!it.ignorar && it.saborId && esVasquetaKilos(it.saborId) && kgVasqProblema(it.saborId,it.cantidad,+it.kilos||0,true)).length:0;
   const fila=(it,i)=>{
     const flag=!it.saborId && !it.ignorar;
     const dudoso=it.saborId && it.confianza==="media" && !it.ignorar;
@@ -4055,7 +4072,7 @@ function lectorRemitoView(){
       ${it.saborId?plateHTML(it.saborId):`<span class="plate" style="display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--warn);font-weight:800">?</span>`}
       <div class="nm"><b>${esc(it.saborId?it.nombreSabor:it.nombreDetectado)}</b>${it.saborId&&!it.ignorar?`<div class="meta">El remito dice: ${esc(nombreSinSeccion(it.nombreDetectado))}${it.repetido?` — <b style="color:var(--alert)">otro renglón del remito quedó en este mismo sabor, revisá cuál es cuál</b>`:""}</div>`:""}${flag?`<div class="meta">Detectado como "${esc(it.nombreDetectado)}" — no está en tu catálogo. ${it.bultos} bulto${it.bultos===1?"":"s"} en el remito — elegí el sabor para calcular la cantidad real, o cargala a mano.</div>`:it.ignorar?`<div class="meta">Se va a ignorar</div>`:dudoso?`<div class="meta">Lo matcheamos por parecido con "${esc(it.nombreDetectado)}" — revisá que sea el sabor correcto.</div>`:""}</div>
       <div class="right"><input type="number" min="0" data-remito-qty="${i}" value="${it.cantidad}" ${it.ignorar?"disabled":""}></div>
-      ${(S.kilosReales && it.saborId && !it.ignorar && esVasquetaKilos(it.saborId))?(()=>{ const kg=+it.kilos||0, por=(kg>0&&it.cantidad>0)?kg/it.cantidad:0; return `<div class="lotesFull"><div class="kgFila"><label for="rkg-${i}">Kilos del renglón</label><input type="text" id="rkg-${i}" inputmode="decimal" data-remito-kg="${i}" value="${kg>0?esc(String(kg).replace(".",",")):""}" placeholder="0,00"> kg${!(kg>0)?`<span class="kgAv">No se leyeron los kilos: escribilos a mano.</span>`:(por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta — revisá cantidad y kilos.</span>`:""}</div></div>` })():""}
+      ${(S.kilosReales && it.saborId && !it.ignorar && esVasquetaKilos(it.saborId))?(()=>{ const kg=+it.kilos||0, por=(kg>0&&it.cantidad>0)?kg/it.cantidad:0; return `<div class="lotesFull"><div class="kgFila"><label for="rkg-${i}">Kilos del renglón</label><input type="text" id="rkg-${i}" inputmode="decimal" data-remito-kg="${i}" value="${kg>0?esc(String(kg).replace(".",",")):""}" placeholder="0,00"> kg${!(kg>0)?`<span class="kgAv">No se leyeron los kilos: escribilos a mano.</span>`:kgVasqProblema(it.saborId,it.cantidad,kg,true)?`<span class="kgAv" style="color:#C62828;font-weight:800">${esc(kgVasqProblema(it.saborId,it.cantidad,kg,true))} Corregilo para cargar.</span>`:(por<2||por>6)?`<span class="kgAv">Da ${fmtKg(por)} kg por vasqueta — revisá cantidad y kilos.</span>`:""}</div></div>` })():""}
       ${flag||it.ignorar||dudoso?`<div class="flagPick"><select data-remito-elegir="${i}">
         <option value="" ${!it.saborId&&!it.ignorar?"selected":""}>Elegí a qué sabor corresponde…</option>
         ${gruposParaSelectSabor().map(g=>`<optgroup label="${esc(g.label)}">${g.sabores.map(s=>`<option value="${s.id}" ${it.saborId===s.id?"selected":""}>${esc(s.nombre)}</option>`).join("")}</optgroup>`).join("")}
@@ -4111,7 +4128,7 @@ function lectorRemitoView(){
   <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
     <button class="btn ghost" type="button" id="remitoCancelar">Cancelar</button>
     <button class="btn ghost" type="button" id="remitoAgregarPagina">+ Agregar otra página</button>
-    <button class="btn" type="button" id="remitoCargar" ${sinResolver?"disabled":""} style="flex:1">Cargar al carrito de ingreso</button>
+    <button class="btn" type="button" id="remitoCargar" ${(sinResolver||kgMalRem)?"disabled":""} style="flex:1">Cargar al carrito de ingreso</button>
   </div>`;
 }
 /** Las fotos de celular pueden pasar de 5 MB o venir en HEIC, y la API de
@@ -4873,7 +4890,26 @@ function invResumenCargado(){
   Object.keys(I.items).forEach(id=>{ const s=S.saboresPorId[id]; if(!s) return; const g=grupoProductoDe(s); t[g]=(t[g]||0)+(+I.items[id]||0) });
   return t;
 }
+/** Números imposibles en el conteo local: una pesada de más de 12 kg, o más de 300 kg de un sabor. */
+function invImposibles(){
+  const I=S.inv, out=[]; if(!I||!I.items) return out;
+  Object.keys(I.items).forEach(id=>{
+    const sb=S.saboresPorId[String(id)]; if(!sb) return;
+    const kg=+I.items[id]||0, g=((I.pesos&&I.pesos[id])||[]).map(x=>+x||0).find(x=>x>KG_VASQ_MAX);
+    if(g) out.push(`${sb.nombre}: una vasqueta de ${String(g).replace(".",",")} kg`);
+    else if(esVasquetaNormal(id) && kg>300) out.push(`${sb.nombre}: ${String(kg).replace(".",",")} kg`);
+  });
+  return out;
+}
 function invBar(inn){
+  const vis=invBarBase(inn), raros=vis?invImposibles():[];
+  if(raros.length){
+    const sum=inn.querySelector(".sum"); if(sum) sum.insertAdjacentHTML("beforeend",`<div class="warn">Revisá los kilos: ${raros.map(esc).join("; ")}. No pueden ser.</div>`);
+    ["invResBtn","invGuardar","invFaseLocal"].forEach(id=>{ const b=inn.querySelector("#"+id); if(b) b.disabled=true });
+  }
+  return vis;
+}
+function invBarBase(inn){
   const I=S.inv;
   if(I.paso==="contar"){
     const t=invResumenCargado(), partes=invGrupos().filter(g=>t[g]).map(g=>`<b>${invTxtG(g,t[g])}</b> ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}`);
@@ -6320,9 +6356,10 @@ function renderBar(){
       // Kilos reales: cada vasqueta que sale se pesa; todo ingreso de vasquetas trae sus kilos totales.
       const faltaKilosProd = enProduccion ? ent.filter(([id])=>{ const sb=S.saboresPorId[id]; return sb && grupoProductoDe(sb)!=="icepops" && !(kilosNum(S.kilosProduccion[id])>0) }) : [];
       const faltaKilos = enProduccion ? faltaKilosProd : !S.kilosReales ? [] : conPeso ? ent.filter(([id,q])=>esVasquetaKilos(id) && ((pesosDe(cartKey)[id]||[]).length<q)) : (cartKey==="ingreso"||enDevolucion||enProduccion) ? ent.filter(([id])=>esVasquetaKilos(id) && !(kilosNum(S.kilosProduccion[id])>0)) : [];
+      const kgMalos=(cartKey==="ingreso"||enDevolucion||enProduccion)?ent.map(([id,q])=>{ if(!esVasquetaNormal(id)) return null; const m=kgVasqProblema(id,q,kilosNum(S.kilosProduccion[id]),cartKey==="ingreso"||enProduccion); return m?{id,m}:null }).filter(Boolean):[];
       const nDup=(cartKey==="salida")?escDuplicados().length:0;
       const avisoDup = nDup ? `<div class="warn" style="background:#F2B400;color:#2A2118;border-radius:10px;padding:6px 10px">⚠ ${nDup===1?"1 código repetido":nDup+" códigos repetidos"} en lo escaneado: revisalo antes de confirmar (${S.confirm&&cartKey==="salida"?"quitá esa línea con la ✕":"tocá Escanear vasqueta y la ✕ de esa fila"}).</div>` : "";
-      const avisoKilos = avisoDup + (faltaKilos.length ? `<div class="warn">${enProduccion?"Faltan los kilos fabricados de":conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "");
+      const avisoKilos = avisoDup + (kgMalos.length?`<div class="warn">Revisá los kilos: ${kgMalos.map(x=>esc(nombre(x.id))+" · "+esc(x.m)).join(" ")}</div>`:"") + (faltaKilos.length ? `<div class="warn">${enProduccion?"Faltan los kilos fabricados de":conPeso?"Falta pesar cada vasqueta de":"Faltan los kilos totales de"}: ${faltaKilos.map(([id])=>esc(nombre(id))).join(", ")}.</div>` : "");
       const st=stockMap();
       if(S.confirm){
         const neg=(S.tab==="salida")?ent.filter(([id,q])=>st[id]-q<0).map(([id])=>nombre(id)):[];
@@ -6337,7 +6374,7 @@ function renderBar(){
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>${cartKey==="salida"?"Seguir cargando":"Volver"}</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
         inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">${enTransfOut?"Escribí a qué local va para poder registrarla.":enTransfIn?"Escribí de qué local viene para poder registrarla.":"Escribí el motivo arriba para poder registrarlo."}</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
-          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
+          <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||kgMalos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
   }
@@ -8201,7 +8238,7 @@ function agregarKilos(){
   const d=S.kilosDlg; if(!d) return false;
   const inp=document.getElementById("kgPeso"), msg=document.getElementById("kgMsg");
   const kg=Math.round(parseFloat(String(inp.value).replace(",","."))*100)/100;
-  if(!(kg>=0.1&&kg<=30)){ msg.hidden=false; msg.className="escMsg err"; msg.textContent="Escribí los kilos de la vasqueta (entre 0,1 y 30), por ejemplo 3,40."; pitido(false); inp.focus(); return false }
+  if(!(kg>=0.1&&kg<=KG_VASQ_MAX)){ msg.hidden=false; msg.className="escMsg err"; msg.textContent="Escribí los kilos de la vasqueta (entre 0,1 y 12), por ejemplo 3,40."; pitido(false); inp.focus(); return false }
   if(disponibleParaPesar(d.id,d.c)<=0){ cerrarKilos(); toast("No hay stock de ese sabor."); return false }
   sumarPesada(d.c, d.id, kg);
   d.cargadas.push(kg);

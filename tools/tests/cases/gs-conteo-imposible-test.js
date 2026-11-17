@@ -17,4 +17,13 @@ ok(imp({49:6794})===null,"6794 icepops es posible");
 ok(imp({49:90000})!==null,"90000 icepops no puede ser");
 ok(imp({106:40},{106:40})===null,"el crumble se cuenta en kilos y no se evalúa como vasquetas");
 ok(imp({4:0},{4:5000})===null,"si no hay vasquetas contadas no se evalúa");
+// ingresos (remito, producción, devolución)
+const ki=(sub,items,kilos)=>{ sb.s_=sub; sb.i_=items; sb.k_=kilos; return vm.runInContext("_kgVasqImposible(s_,i_,k_,cat)",sb) };
+ok(ki("produccion",{4:12},{4:12})!==null,"producción: 12 vasquetas con 12 kg (1 kg cada una) se rechaza");
+ok(ki("",{4:12},{4:12})!==null,"remito: 12 vasquetas con 12 kg se rechaza");
+ok(ki("",{4:4},{4:14.57})===null,"remito: 4 vasquetas con 14,57 kg está bien");
+ok(ki("produccion",{4:2},{4:7400})!==null,"producción: 2 vasquetas con 7400 kg se rechaza");
+ok(ki("devolucion",{4:1},{4:1.1})===null,"devolución: una vasqueta abierta de 1,1 kg es posible");
+ok(ki("devolucion",{4:1},{4:30})!==null,"devolución: una vasqueta de 30 kg no puede ser");
+ok(ki("",{49:50},{})===null,"los icepops no se evalúan");
 console.log(f?"FALLAS "+f:"TODO OK"); process.exit(f?1:0);
