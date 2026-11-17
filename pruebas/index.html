@@ -1365,7 +1365,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.159.3";
+const FRONTEND_VERSION = "1.159.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7812,8 +7812,8 @@ function ayudaTemas(){
     "Al sacar, sale primero el lote que vence antes. Lo vencido no se puede vender.",
     colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock con el motivo ya cargado.",
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b> la completa: te propone la fecha según la vida útil del producto y se puede cambiar; elegís cuántas unidades."])+nota("Las latas no tienen vencimiento.")});
-  if(!colab) T.push({id:"conteo", titulo:"Conteo físico", sub:"Cómo recontar sin errores", html:li([
-    "Entrá a Stock › <b>Conteo físico</b> y elegí qué vas a contar: <b>todo el local</b> o <b>solo un rubro</b> (ej. Vasquetas). Si es un rubro, el resto del stock <b>no se toca</b>.",
+  if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo recontar sin errores", html:li([
+    "Entrá a Stock › <b>Conteo inicial › Conteo cámara</b> y elegí qué vas a contar: <b>todo el local</b> o <b>solo un rubro</b> (ej. Vasquetas). Si es un rubro, el resto del stock <b>no se toca</b>.",
     "Contá <b>una sola vez, de punta a punta</b>.",
     "Antes de empezar, poné <b>0</b> en «Poner el mismo número» y elegí si es para <b>todo el local</b> o solo el rubro que estás viendo (ej. Icepops › Frutales). Así ningún sabor arrastra el número viejo.",
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>. «Sin contar» = nadie lo tocó todavía.",
