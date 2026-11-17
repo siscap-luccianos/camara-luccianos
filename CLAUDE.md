@@ -544,3 +544,4 @@ Pedido de Gabi: algunos locales no tienen ciertos productos (ej. Baldes) y hací
 - **Producción actualizada 17/11/2026 (con OK de Gabi):** la raíz de `main` pasó de front 1.178.6 a 1.178.7 (Pedido sugerido legible en celular y tablet).
 
 - **Pedido sugerido 17/11/2026 (front 1.178.8, pedido de Gabi):** la línea de tendencia de 3 semanas (puntos, números de cada semana y Sube/Baja/Estable) ahora también se ve en celular (debajo del nombre) y en tablet (en la misma fila, con encabezado «Tendencia · 3 semanas»), no solo en PC. Solo en /pruebas/.
+- **Producción actualizada 17/11/2026 (con OK de Gabi):** la raíz de `main` pasó de front 1.178.7 a 1.178.8 (línea de tendencia de 3 semanas visible en Pedido sugerido en celular y tablet).
