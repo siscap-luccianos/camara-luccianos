@@ -30,8 +30,7 @@ w=escritos[escritos.length-1];
 ok(r.ok && !w.pesos, "pesos que no cierran con lo contado se descartan sin trabar el conteo");
 // peso inválido
 r=run(`conteo("c3","Torreon Mar del Plata",{"4":1,"5":3},emp,{},{"4":99,"5":11.4},{"4":[99]})`);
-w=escritos[escritos.length-1];
-ok(r.ok && !w.pesos, "un peso fuera de rango se descarta");
+ok(!r.ok && /error de tipeo/.test(r.error), "una vasqueta de 99 kg ya no se descarta en silencio: se rechaza el conteo");
 // sin pesos (cliente viejo): igual que antes
 r=run(`conteo("c4","Torreon Mar del Plata",{"4":2,"5":3},emp,{},{"4":8,"5":11.4})`);
 w=escritos[escritos.length-1];

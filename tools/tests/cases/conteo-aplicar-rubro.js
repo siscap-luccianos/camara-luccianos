@@ -1,4 +1,4 @@
-// Conteo físico: «Poner el mismo número» → «Solo <rubro seleccionado>» (por defecto) o «Todo el local».
+// Conteo cámara: arranca de cero y a ciegas; el «?» brilla fuerte mientras se cuenta.
 const { chromium } = require("playwright");
 (async () => {
   const b = await chromium.launch();
@@ -19,37 +19,13 @@ const { chromium } = require("playwright");
   const rubro = async f => { await page.click(`.tabCat[data-familia='${f}']`); await page.waitForTimeout(250) };
   const aplicar = async v => { if(!(await page.$("#aplicarTodosValor"))){ await page.click("#aplicarAbrir"); await page.waitForTimeout(150) } await page.fill("#aplicarTodosValor", String(v)); await page.click("#aplicarTodos"); await page.waitForTimeout(300) };
 
-  // Icepops: cargo un número a mano para ver que después no se pisa
-  await rubro("icepops");
-  await page.fill('[data-c="49"]', "10"); await page.dispatchEvent('[data-c="49"]', "input");
-  await rubro("chocolateria"); const choco = await valor("117");
-
-  // 1) Por defecto: solo el rubro seleccionado
+  // El conteo arranca de cero y a ciegas: sin «Poner todo en 0» ni el número del sistema
   await rubro("vasquetas");
-  ok(Number(await valor("4")) > 0, "Banana Split arranca con stock: " + await valor("4"));
-  if(!(await page.$(".aplicarOp"))){ await page.click("#aplicarAbrir"); await page.waitForTimeout(150) }
-  const opciones = (await page.innerText(".aplicarOp")).replace(/\s+/g, " ");
-  ok(/Solo Vasquetas · \d+/.test(opciones) && /Todo el local · \d+/.test(opciones), "ofrece «Solo Vasquetas» y «Todo el local»: " + opciones);
-  ok(await page.$eval('[data-apl="visible"]', e => e.getAttribute("aria-pressed")) === "true", "por defecto está elegido «Solo <rubro>»");
-  await aplicar(0);
-  ok(await valor("4") === "0" && await valor("5") === "0", "las vasquetas quedan en 0");
-  await rubro("icepops");
-  ok(await valor("49") === "10", "los Icepops NO se tocaron (sigue en 10): " + await valor("49"));
-  await rubro("chocolateria");
-  ok(await valor("117") === choco, "la chocolatería NO se tocó (sigue en " + choco + "): " + await valor("117"));
-
-  // 2) «Todo el local»: pisa todos los rubros
-  await page.click('[data-apl="todo"]'); await page.waitForTimeout(200);
-  ok(await page.$eval('[data-apl="todo"]', e => e.getAttribute("aria-pressed")) === "true", "se elige «Todo el local»");
-  await aplicar(0);
-  ok(await valor("117") === "0", "la chocolatería ahora queda en 0: " + await valor("117"));
-  await rubro("icepops");
-  ok(await valor("49") === "0", "los Icepops quedan en 0: " + await valor("49"));
-
-  // 3) «Aplicar» no cuenta como haber contado
-  await rubro("vasquetas");
-  const etiqueta = await page.$eval('[data-cbadge="4"]', e => e.hidden ? "" : e.textContent.trim());
-  ok(etiqueta === "Queda en 0", "Banana Split pasa a «Queda en 0» y no «contado»: " + etiqueta);
+  ok(await valor("4") === "0" && await valor("5") === "0", "las vasquetas arrancan en 0");
+  await rubro("icepops"); ok(await valor("49") === "0", "los Icepops arrancan en 0: " + await valor("49"));
+  await rubro("chocolateria"); ok(await valor("117") === "0", "la chocolatería arranca en 0: " + await valor("117"));
+  ok(!(await page.$("#aplicarAbrir")), "ya no hay «Poner todo en 0»");
+  ok(!/Sistema:/.test(await page.innerText("#main")), "no se muestra el número del sistema (a ciegas)");
 
   // 4) el «?» brilla fuerte mientras se cuenta y abre directo el tema «Conteo físico»
   ok(await page.$eval("#ayudaBtn", e => e.classList.contains("llama")), "el «?» está en modo llamada mientras se cuenta");

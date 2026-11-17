@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.94.0";
+const BACKEND_VERSION = "1.95.0";
 
 function doPost(e) {
   let resultado;
@@ -2230,6 +2230,30 @@ function _coberturaMes(local) {
   });
   return mejor;
 }
+/** Números imposibles en un conteo (errores de tipeo, ej. «2 vasquetas, 7400 kg»): una vasqueta no pesa más de CONTEO_KG_VASQ_MAX, no hay más de CONTEO_VASQ_MAX vasquetas de un sabor. Devuelve el mensaje o null. */
+const CONTEO_KG_VASQ_MAX = 12, CONTEO_VASQ_MAX = 500, CONTEO_UNID_MAX = 50000, CONTEO_LOCAL_KG_MAX = 300;
+function _conteoImposible(items, kilos, pesos, catalogo) {
+  const lista = Array.isArray(catalogo) ? catalogo : Object.keys(catalogo || {}).map((k) => catalogo[k]);
+  const porId = {};
+  lista.forEach((sab) => { porId[String(sab.id)] = sab; });
+  const malos = [];
+  Object.keys(items || {}).forEach((id) => {
+    const sab = porId[String(id)];
+    if (!sab) return;
+    const n = Number(items[id]) || 0;
+    if (n <= 0) return;
+    const esVasq = String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas";
+    if (esVasq) {
+      const k = Number((kilos || {})[id]) || 0;
+      const pp = ((pesos || {})[id] || []).map((x) => Number(x) || 0);
+      if (n > CONTEO_VASQ_MAX) malos.push(sab.nombre + ": " + n + " vasquetas no puede ser");
+      else if (k > 0 && k / n > CONTEO_KG_VASQ_MAX) malos.push(sab.nombre + ": " + n + (n === 1 ? " vasqueta no puede pesar " : " vasquetas no pueden pesar ") + String(k).replace(".", ",") + " kg");
+      else if (pp.some((x) => x > CONTEO_KG_VASQ_MAX)) malos.push(sab.nombre + ": una vasqueta no puede pesar " + String(Math.max.apply(null, pp)).replace(".", ",") + " kg");
+    } else if (String(sab.tipo || "v") !== "k" && n > CONTEO_UNID_MAX) malos.push(sab.nombre + ": " + n + " unidades no puede ser");
+  });
+  return malos.length ? "Revisá estos números, parecen un error de tipeo: " + malos.slice(0, 4).join("; ") + "." : null;
+}
+
 /** Último Conteo cámara (conteo físico) del local dentro del mes en curso, o null. Cuenta como parte del conteo inicial del mes. */
 function _camaraContadaMes(local) {
   const mes = _jornadaClave(Date.now()).slice(0, 7);
@@ -2294,6 +2318,8 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, e
     const total = _totalItems(items2);
     const ts = Date.now();
     const pesosConteo = _normalizarPesosConteo(pesos, items2);
+    const imposible = _conteoImposible(items2, kilosConteo, pesosConteo, catalogoConteo);
+    if (imposible) return { ok: false, error: imposible };
 
     _escribirCrudo("Registros", {
       clienteId: clienteId || "", tipo: "conteo", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
@@ -2358,6 +2384,8 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
   });
   if (malos) return { ok: false, error: "Las cantidades tienen que ser números enteros, 0 o más." };
   if (!Object.keys(contados).length) return { ok: false, error: "No hay nada para guardar en ese rubro." };
+  const imposibleP = _conteoImposible(contados, kilos, _normalizarPesosConteo(pesos, contados), Object.keys(deRubro).map((k) => deRubro[k]));
+  if (imposibleP) return { ok: false, error: imposibleP };
   const esKg = (sab) => String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas";
   const kilosReales = !!filaLocal && _esVerdadero(filaLocal.kilos_reales) === true;
   const kilosDeltaOk = {};
@@ -2583,6 +2611,7 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
     Object.keys(contados).forEach((id) => { aMirar[id] = 1; });
     let aprox = false;
     // Conteo parcial: la cámara es la que CONTÓ el responsable (a ciegas), no el stock del sistema. No se toca el stock de trabajo.
+    const imposibleCam = [];
     if (pedidoFila && camaraContada && typeof camaraContada === "object") {
       Object.keys(camaraContada).forEach((id) => {
         const sab = catalogo[id]; if (!sab) return;
@@ -2590,10 +2619,12 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
         const u = Math.max(0, Math.round(Number(d.u) || 0));
         const c = { u: u };
         if (_invEsKg(sab)) { const k = Number(d.k); c.k = isFinite(k) && k >= 0 && k <= 100000 ? Math.round(k * 100) / 100 : 0; }
+        if (c.k > 0 && u > 0 && String(sab.tipo || "v") === "v" && c.k / u > CONTEO_KG_VASQ_MAX) { imposibleCam.push(sab.nombre + ": " + u + (u === 1 ? " vasqueta no puede pesar " : " vasquetas no pueden pesar ") + String(c.k).replace(".", ",") + " kg"); }
         if (u > 0 || (c.k || 0) > 0) camara[id] = c;
       });
       Object.keys(aMirar).forEach((k) => { delete aMirar[k]; });
     }
+    if (imposibleCam.length) return { ok: false, error: "Revisá los kilos de la cámara, parecen un error de tipeo: " + imposibleCam.slice(0, 4).join("; ") + "." };
     Object.keys(aMirar).forEach((id) => {
       const sab = catalogo[id];
       if (!sab) return;

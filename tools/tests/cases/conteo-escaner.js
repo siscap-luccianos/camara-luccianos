@@ -82,7 +82,7 @@ const { chromium } = require("playwright");
   await page.click("#escConteoBtn"); await page.waitForSelector("#escanerOv");
   const n20 = await S_(() => ceItemsDe("20")[0].n);
   await page.click(`[data-esc-quitar="${n20}"]`); await page.waitForTimeout(100);
-  ok(await S_(() => S.conteo["20"]) === antes20 && await S_(() => !S.conteoTocado["20"]), "al quitar la única lectura vuelve el número del sistema y «sin contar»");
+  ok(await S_(() => S.conteo["20"]) === 0 && await S_(() => !S.conteoTocado["20"]), "al quitar la única lectura vuelve a 0 (el conteo arranca de cero) y «sin contar»");
   await page.click("[data-esc-cerrar]"); await page.waitForTimeout(150);
   // 10) guardar: mezcla de escaneado y a mano
   await page.fill('[data-kc="4"]', "19,4"); await page.dispatchEvent('[data-kc="4"]', "input");
