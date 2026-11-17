@@ -820,6 +820,60 @@ body:has(.etiqOv){overflow:hidden}
 .avisoNovedad .btn{white-space:nowrap}
 @media(max-width:700px){.avisoNovedad{flex-direction:column;align-items:stretch}}
 .ingPreg{font-family:'Fraunces',serif;font-weight:600;font-size:1.5rem;margin:2px 0 14px}
+/* tarjetas premium (18/11/2026) */
+.stkAcc2{display:grid;grid-template-columns:1.7fr 1fr;gap:14px;margin:22px 0 6px;align-items:stretch}
+@media (max-width:720px){.stkAcc2{grid-template-columns:1fr}}
+.stkAcc2.solo{grid-template-columns:1fr}
+.stkHero,.stkCI,.hubRes,.hubTile,.salTile{box-sizing:border-box;position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:168px;padding:18px;border-radius:22px;text-align:left;font-family:inherit;cursor:pointer}
+.stkHero{min-height:280px;background:linear-gradient(160deg,#EEF3E6,#F6F3EA);border:1px solid rgba(47,125,79,.28);color:#2A3A22;box-shadow:0 14px 30px rgba(47,125,79,.12)}
+.shTop,.ciTop,.htTop,.salTop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.shIco{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(47,125,79,.16);color:#2F7D4F}
+.shChip{font-size:.72rem;font-weight:800;padding:5px 11px;border-radius:999px;background:#F8DDD5;color:#8F2A17;white-space:nowrap}
+.shTit{font-family:Fraunces,serif;font-weight:600;font-size:1.75rem;line-height:1.1;max-width:22ch}
+.shDatos{display:flex;gap:10px;flex-wrap:wrap;align-items:stretch}
+.shD{display:grid;gap:2px;padding:9px 12px;border-radius:14px;background:rgba(255,255,255,.7);border:1px solid rgba(47,125,79,.16)}
+.shD i{font:800 .6rem Manrope,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6B6A5C;font-style:normal}
+.shD b{font:600 1.5rem Fraunces,serif;font-variant-numeric:tabular-nums}
+.shTend b{display:flex;align-items:center;gap:8px;font:800 .85rem Manrope,sans-serif}
+.shTend.up b{color:#2F7D4F}.shTend.down b{color:#B3362B}.shTend.m b{color:#6B6A5C}
+.shGo{margin-left:auto;align-self:center;font-weight:800;font-size:.84rem;color:#2F7D4F}
+:root[data-tema="dorado"] .stkHero{background:linear-gradient(160deg,#1F2A1D,#1B1F17);border-color:rgba(88,180,124,.35);color:#E6F0DA;box-shadow:0 14px 32px rgba(10,20,10,.4)}
+:root[data-tema="dorado"] .shD{background:rgba(255,255,255,.06);border-color:rgba(88,180,124,.22)}
+:root[data-tema="dorado"] .shD i{color:rgba(230,240,218,.6)}
+:root[data-tema="dorado"] .shIco{background:rgba(88,180,124,.18);color:#58B47C}
+:root[data-tema="dorado"] .shGo{color:#58B47C}
+:root[data-tema="dorado"] .shTend.up b{color:#58B47C}
+.stkCI{min-height:280px;background:linear-gradient(160deg,#3A2B22,#2A1F19);color:#F8F1E6;border:1px solid rgba(201,162,74,.35);box-shadow:0 14px 32px rgba(20,12,8,.35)}
+.ciIco,.htIco,.salIc{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(201,162,74,.18);color:#D9B869}
+.ciChip,.htChip{font-size:.7rem;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(201,162,74,.22);color:#D9B869;white-space:nowrap}
+.ciTx{display:grid;gap:2px}
+.ciTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.55rem}
+.ciTx span{font-weight:700;font-size:.95rem;opacity:.85}
+.ciTx small{font-size:.66rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-top:4px}
+.ciKg{font-family:Fraunces,serif;font-weight:600;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.ciKg small{font-family:Manrope,sans-serif;font-size:.8rem;font-weight:700;opacity:.7}
+.hubR{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-top:6px}
+@media (max-width:720px){.hubR{grid-template-columns:1fr}}
+.hubRes{min-height:300px;background:linear-gradient(160deg,#3A2B22,#2A1F19);color:#F8F1E6;border:1px solid rgba(201,162,74,.35);box-shadow:0 14px 32px rgba(20,12,8,.35)}
+.htTx{display:grid;gap:2px}
+.htTx b{font-family:Fraunces,serif;font-weight:600;font-size:1.55rem}
+.htTx span{font-weight:700;font-size:.9rem;opacity:.85}
+.htTx small{font-size:.62rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#7A6A5C}
+.hubKg{font-family:Fraunces,serif;font-weight:600;font-size:3.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.hubKg small{font-family:Manrope,sans-serif;font-size:1.1rem;font-weight:700;opacity:.7}
+.hubDes{display:grid;grid-template-rows:1fr 1fr;gap:14px}
+.hubTile{min-height:140px;background:var(--surface);color:var(--ink);border:1px solid var(--line,#E8DFD2);box-shadow:0 10px 26px rgba(74,63,56,.08)}
+.hubTile .htIco{background:rgba(201,162,74,.16);color:#7B3F1E}
+.hubTile .htChip{background:rgba(183,121,31,.16);color:#B7791F}.hubTile .htChip.ok{background:rgba(47,125,79,.14);color:#2F7D4F}
+.hkg{font-family:Fraunces,serif;font-weight:600;font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.hkg small{font-family:Manrope,sans-serif;font-size:.78rem;font-weight:700;opacity:.65}
+.hubTile.stkOff{opacity:1;cursor:default}
+.salMenu{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.salMenu .salTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:168px;padding:18px;border-radius:22px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 10px 26px rgba(74,63,56,.08)}
+.salTile b{font-family:Fraunces,serif;font-weight:600;font-size:1.45rem;line-height:1.1}
+.salTile .salIc{background:rgba(201,162,74,.16);color:#7B3F1E}
+.salChip{font-size:.7rem;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(122,106,92,.12);color:var(--muted)}
+.salTile:active{transform:scale(.985)}.salTile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ingMenu{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
 .ingTile:active{transform:scale(.985)}.ingTile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -1424,7 +1478,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.177.2";
+const FRONTEND_VERSION = "1.178.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3745,17 +3799,11 @@ function revisarAccion(t){
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
 function menuSalidaHTML(){
-  const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-sal-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
-  const t=[tile("comun","📤","Retiro de cámara","Elegís qué sabores retirás."),
-           tile("desp","🗑️","Desperdicio","Roto, caído o vencido. Pide el motivo.")];
-  if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia enviada","Mandás o prestás mercadería a otro local."));
-  return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
-}
-/** Arriba de la pestaña Chocolatería de Salida: registrar consumo (venta del día, gift card, sin cargo, baja) y vencimientos (ver, poner o corregir fecha). */
-function chocoBarraHTML(){
-  const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
-  const consumo=(S.ventaDia&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
-  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
+  const tile=(k,svg,tit,chip)=>`<button type="button" class="ingTile salTile" data-sal-menu="${k}"><span class="salTop"><span class="salIc" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></span><span class="salChip">${chip}</span></span><b>${tit}</b></button>`;
+  const t=[tile("comun",'<path d="M12 15V4M8 8l4-4 4 4M4 15v4h16v-4"/>',"Retiro de cámara","Cámara"),
+           tile("desp",'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',"Desperdicio","Pide motivo")];
+  if(puedeTransferir()) t.push(tile("transf",'<path d="M4 8h14l-3-3M20 16H6l3 3"/>',"Transferencia enviada","Otro local"));
+  return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu salMenu">${t.join("")}</div>`;
 }
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
@@ -4416,27 +4464,42 @@ async function cargarConteoBloqueado(){
   const local=S.local, r=await api("inventarios",{local});
   if(local!==S.local) return;
   const b=!!(r&&r.ok&&r.conteoBloqueado), cob=(r&&r.ok&&r.cobertura)||null, cam=(r&&r.ok&&r.camaraBloqueada!==undefined)?!!r.camaraBloqueada:b;
-  const cambio=(S.conteoBloqueado!==b)||(S.camaraBloqueada!==cam)||((S.cobertura&&S.cobertura.ts)!==(cob&&cob.ts));
-  S.conteoBloqueado=b; S.camaraBloqueada=cam; S.cobertura=cob;
-  if(cambio && S.hubInicial && !S.inv && !S.conteo) renderApp()
+  const cambio=(S.conteoBloqueado!==b)||(S.camaraBloqueada!==cam)||((S.cobertura&&S.cobertura.ts)!==(cob&&cob.ts))||!S.inicialCargado;
+  S.conteoBloqueado=b; S.camaraBloqueada=cam; S.cobertura=cob; S.inicialCargado=true;
+  // kilos del conteo inicial del mes (cámara + local), para las tarjetas
+  S.inicialMes=null;
+  if(cob && r && r.ok){
+    const x=(r.inventarios||[]).find(z=>z.ts===cob.ts);
+    if(x){ const t=invTotales(invFilas({items:x.items,camara:x.camara,precios:null})).vasquetas; S.inicialMes={ts:x.ts, tipo:cob.tipo, cam:t?t.camQ:0, loc:t?t.loc:0, tot:t?t.tot:0} }
+  }
+  if(cambio && !S.inv && !S.conteo && (S.hubInicial || S.tab==="stock")) renderApp()
 }
+/** Carga una vez por local (y otra vez después de guardar un conteo) el estado del conteo inicial para las tarjetas de Stock. */
+function cargarInicialUnaVez(){ if(S._inicialLocal===S.local) return; S._inicialLocal=S.local; S.inicialCargado=false; cargarConteoBloqueado() }
+function mesActualTxt(){ const m=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",month:"long"}); return m.charAt(0).toUpperCase()+m.slice(1) }
+function kgTxt(n){ return (Math.round((+n||0)*10)/10).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1}) }
 function conteoInicialHubHTML(){
-  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
-  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
-      <span class="stkPasoTop">${n?`<span class="stkNum">${n}</span>`:""}<span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
-      <span class="stkPasoTx"><b>${titulo}</b>${sub?`<span>${sub}</span>`:""}</span></button>`;
+  const ic=d=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const ini=S.inicialMes, camOff=!!(S.camaraBloqueada||S.conteoBloqueado), locOff=!!S.conteoBloqueado;
+  const fch=ts=>new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"});
+  const nota=S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+fch(S.cobertura.ts):"Este mes ya tiene su conteo inicial ("+fch(S.cobertura.ts)+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:"";
+  const kg=v=>`<span class="hkg">${v?kgTxt(v):"—"} <small>kg</small></span>`;
+  const tile=(off,id,tit,icono,chip,cls,v)=>off
+    ? `<div class="hubTile stkOff" aria-disabled="true"><span class="htTop"><span class="htIco">${ic(icono)}</span><span class="htChip ok">${chip}</span></span><span class="htTx"><small>Desglose</small><b>${tit}</b></span>${kg(v)}</div>`
+    : `<button type="button" class="hubTile" id="${id}" aria-label="${tit}"><span class="htTop"><span class="htIco">${ic(icono)}</span><span class="htChip ${cls}">${chip}</span></span><span class="htTx"><small>Desglose</small><b>${tit}</b></span>${kg(v)}</button>`;
   return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Conteo inicial</div>
-  <h2 class="pdH1">Conteo inicial</h2>
-  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"}):"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:""}
-  <div class="stkFisico"><div class="stkPasos">
-    ${(S.camaraBloqueada||S.conteoBloqueado)?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Cámara</b><span>🔒</span></span></div>`:paso(1,"conteoBtn","Cámara","",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
-    <span class="stkSep">+</span>
-    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Local</b><span>🔒</span></span></div>`:paso(2,"invBtn","Local",invHayBorrador()?"Tenés uno sin terminar.":"",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
-    <span class="stkSep">=</span>
-    ${paso(3,"invGuardadosBtn","Conteo inicial","",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Ver conteos iniciales guardados")}
-  </div></div>`;
+  ${nota}
+  <div class="hubR">
+    <button type="button" class="hubRes" id="invGuardadosBtn" aria-label="Ver conteos iniciales guardados">
+      <span class="htTop"><span class="htIco">${ic('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>')}</span><span class="htChip gold">${S.cobertura?"Resultado · 🔒":"Pendiente"}</span></span>
+      <span class="htTx"><b>Conteo inicial</b><span>Cámara + Local · ${esc(mesActualTxt())}</span></span>
+      <span class="hubKg">${ini?kgTxt(ini.tot):"—"} <small>kg</small></span></button>
+    <div class="hubDes">
+      ${tile(camOff,"conteoBtn","Cámara",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',camOff?"Hecho · 🔒":"Pendiente","warn",ini&&ini.cam)}
+      ${tile(locOff,"invBtn","Local",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',locOff?"Hecho · 🔒":(invHayBorrador()?"Sin terminar":"Pendiente"),"warn",ini&&ini.loc)}
+    </div>
+  </div>`;
 }
 function stockView(st){
   if(S.inv) return inventarioView();
@@ -4460,7 +4523,9 @@ function stockViewGeneral(st){
   });
   const s7=salidasDias(7), consumoSemanal=Math.round(Object.values(s7).reduce((a,b)=>a+b,0));
   const pedidoTotal=S.sabores.reduce((a,s)=>a+pedidoSugerido(s.id,st),0);
+  const lun0=lunesDe(Date.now()), sem3=[3,2,1].map(k=>Math.round(S.sabores.reduce((a,sb)=>a+salidasPorDia(sb.id,addDias(lun0,-7*k),7).reduce((x,y)=>x+y,0),0)));
   const puedeGestionar = S.empleado.rol!=="colaborador";
+  if(puedeGestionar) cargarInicialUnaVez();
   const puedePedido = S.empleado.rol!=="colaborador";
   const last=S.stock?new Date(S.stock.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}):null;
   const listaVisible = listaFiltrada(st);
@@ -4481,12 +4546,11 @@ function stockViewGeneral(st){
 
   return `<div class="kpis">
     <div class="kpi"><span class="lbl">Sabores en alerta</span><span class="val${al.length?" crit":""}">${al.length}</span><span class="sub">${al.length?al.slice(0,4).map(s=>esc(s.nombre)).join(" · ")+(al.length>4?" …":""):"Todo en orden"}</span></div>
-    <div class="kpi"><span class="lbl">Consumo semanal</span><span class="val">${consumoSemanal}</span><span class="sub">Pedido sugerido: ${pedidoTotal} unidades</span></div>
     ${km?`<div class="kpi"><span class="lbl">Kilos de helado en cámara</span><span class="val">${fmtKg(kgReal)} kg</span><span class="sub">${sinKilos?`${sinKilos} ${sinKilos===1?"sabor sin kilos cargados":"sabores sin kilos cargados"}: se cargan con un conteo con kilos`:"Lo que entró menos lo que salió, pesado"}</span></div>`:""}
     ${(!km&&kgTotal>0)?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
   ${bannerBorradorConteoHTML_si(puedeGestionar)}
-  ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal)}
+  ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal,{consumoSemanal,sem3})}
   <p style="margin:20px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
   ${chipFiltros()}
   <div class="rows stkCols" style="margin-top:14px">${filas.filter(f=>listaVisible.includes(f.s)).map(row).join("")}</div>`;
@@ -4495,22 +4559,31 @@ function bannerBorradorConteoHTML_si(ok){ return ok?bannerBorradorConteoHTML():"
 /** Tarjetas de arriba de Stock, tal cual el mock aprobado por Gabi (13/11/2026): «Pedido sugerido» aparte, en verde suave, y «Stock físico · en orden»
  *  con tres pasos numerados (1 Conteo físico → 2 Stock de local → 3 Conteo inicial, este último oscuro y dorado). Desde acá no se hace ningún movimiento.
  *  Paso 2 abre el conteo del local (ex «Conteo inicial»); paso 3 abre los conteos iniciales guardados. */
-function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal){
-  const chev=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
-  const ic=d=>`<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  const pedido=puedePedido?`<button type="button" class="stkPedido" id="verPedidoBtn" aria-label="Ver pedido sugerido para ${al.length} ${al.length===1?"sabor":"sabores"}">
-      <span class="stkPedTop"><span class="stkPedIco">${ic('<path d="M8 6h12M8 12h12M8 18h8"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>')}</span>${al.length?`<span class="stkPedBajos">${al.length} ${al.length===1?"bajo":"bajos"}</span>`:""}</span>
-      <span class="stkPedTx"><small>PARA PEDIR</small><b>Pedido sugerido</b><span>${pedidoTotal} ${pedidoTotal===1?"unidad":"unidades"} por pedir</span></span>
-    </button>`:"";
-  const paso=(n,id,titulo,sub,icono,oscuro,aria)=>`<button type="button" class="stkPaso${oscuro?" osc":""}" id="${id}" aria-label="${aria}">
-      <span class="stkPasoTop"><span class="stkNum">${n}</span><span class="stkPasoIco">${ic(icono)}</span><span class="stkPasoChev">${chev}</span></span>
-      <span class="stkPasoTx"><b>${titulo}</b>${sub?`<span>${sub}</span>`:""}</span>
-    </button>`;
-  const fisico=puedeGestionar?`<div class="stkFisico"><div class="stkPasos">
-      ${paso(0,"conteoInicialBtn","Conteo inicial","",'<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>',true,"Conteo inicial: cámara más local")}
-    </div></div>`:"";
+function stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal,x){
+  x=x||{consumoSemanal:0,sem3:[0,0,0]};
+  const ic=d=>`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  // Pedido sugerido y tendencia de retiros: lo que más se mira para decidir el pedido
+  const sem=x.sem3, max=Math.max(1,...sem), ult=sem[2], prev=(sem[0]+sem[1])/2;
+  const tend=(ult===0&&prev===0)?{t:"Sin retiros",c:"m"}:prev===0?{t:"↑ Subiendo",c:"up"}:ult>prev*1.1?{t:"↑ Subiendo",c:"up"}:ult<prev*0.9?{t:"↓ Bajando",c:"down"}:{t:"→ Estable",c:"m"};
+  const barras=`<svg width="46" height="22" viewBox="0 0 46 22" aria-hidden="true">${sem.map((v,i)=>{ const h=Math.max(4,Math.round(19*v/max)); return `<rect x="${2+16*i}" y="${21-h}" width="10" height="${h}" rx="2" fill="currentColor" opacity="${[.35,.6,1][i]}"/>` }).join("")}</svg>`;
+  const pedido=puedePedido?`<button type="button" class="stkHero" id="verPedidoBtn" aria-label="Ver pedido sugerido y tendencia de retiros">
+      <span class="shTop"><span class="shIco">${ic('<path d="M8 6h12M8 12h12M8 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01"/>')}</span>${al.length?`<span class="shChip">${al.length} ${al.length===1?"sabor bajo mínimo":"sabores bajo mínimo"}</span>`:""}</span>
+      <span class="shTit">Pedido sugerido y tendencia de retiros</span>
+      <span class="shDatos">
+        <span class="shD"><i>Consumo semanal</i><b>${x.consumoSemanal} u.</b></span>
+        <span class="shD shTend ${tend.c}"><i>Retiros · 3 semanas</i><b>${barras} ${tend.t}</b></span>
+        <span class="shGo">Ver pedido ›</span>
+      </span></button>`:"";
+  // Conteo inicial: cámara + local del mes, con los kilos como protagonista
+  const ini=S.inicialMes, hecho=!!S.cobertura;
+  const fch=ts=>new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"});
+  const chip=hecho?`Hecho ${fch(S.cobertura.ts)} · 🔒`:"Pendiente";
+  const fisico=puedeGestionar?`<button type="button" class="stkCI" id="conteoInicialBtn" aria-label="Conteo inicial: cámara más local">
+      <span class="ciTop"><span class="ciIco">${ic('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.3 6.8 19.1l1-5.8L3.5 9.2l5.9-.9L12 3z"/>')}</span><span class="ciChip">${chip}</span></span>
+      <span class="ciTx"><b>Conteo inicial</b><span>Cámara + Local</span><small>${esc(mesActualTxt())}</small></span>
+      <span class="ciKg">${ini?kgTxt(ini.tot):"—"} <small>kg</small></span></button>`:"";
   if(!pedido&&!fisico) return "";
-  return `<div class="stkAcc${pedido&&fisico?"":" solo"}">${pedido}${pedido&&fisico?`<span class="stkDiv"></span>`:""}${fisico}</div>`;
+  return `<div class="stkAcc2${pedido&&fisico?"":" solo"}">${pedido}${fisico}</div>`;
 }
 
 function stockViewPedido(st){
@@ -4820,7 +4893,7 @@ function invFase(f){
   const I=S.inv; if(!I||!I.pedidoId||I.fase===f) return;
   const d=f==="camara"?I.cam:I.loc; I.fase=f; I.items=d.items; I.pesos=d.pesos; I.tocado=d.tocado;
 }
-function invSalir(){ S.inv=null; renderApp(); window.scrollTo(0,0) }
+function invSalir(){ S._inicialLocal=null; S.inv=null; renderApp(); window.scrollTo(0,0) }
 
 function inventarioView(){
   const I=S.inv;
