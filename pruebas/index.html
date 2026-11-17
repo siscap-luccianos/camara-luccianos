@@ -1490,7 +1490,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.3";
+const FRONTEND_VERSION = "1.178.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4897,7 +4897,7 @@ function invIniciar(){
   S.filtroFamilia=S.inv.rubro; S.filtroCategoria="todas"; S.q=""; S.catAbierta=false; S.soloAlerta=false;
   window.scrollTo(0,0); renderApp();
 }
-/** Conteo parcial (pedido por supervisión): arranca de cero y a ciegas (no muestra lo que dice el sistema). Dos pasos: cámara y local. No toca el stock de trabajo. */
+/** Conteo parcial (pedido por supervisión): arranca de cero y sin mostrar (no muestra lo que dice el sistema). Dos pasos: cámara y local. No toca el stock de trabajo. */
 function invIniciarParcial(pedidoId, tipo){
   invIniciar();
   const I=S.inv; if(!I) return;
@@ -8345,7 +8345,7 @@ function ayudaTemas(){
   if(supervision){
     const ps=(id,titulo,sub,pasos,nt)=>SUP.push({id,grupo:"sup",titulo,sub,html:li(pasos)+(nt?nota(nt):"")});
     ps("control","Control de stock","La tabla y el semáforo",["Cada fila es un local: <b>Inicial · Parcial · Cierre · Diferencia</b>.","La diferencia se mide siempre contra el <b>inicial</b>, con su porcentaje.","Semáforo: <b>verde</b> hasta 1 %, <b>amarillo</b> hasta 3 %, <b>rojo</b> más de 3 %.","Tocá un local para abrir su detalle."]);
-    ps("pedir","Pedir un conteo","Parcial o cierre",["Abrí el detalle del local y tocá <b>Pedir parcial</b> o <b>Pedir cierre</b>.","El responsable ve un aviso en Stock y cuenta cámara y local de cero, a ciegas.","Al guardar ve «enviado ✓», sin totales ni diferencias.","El <b>cierre</b> deja la cámara igual a lo contado y es el inicial del mes siguiente."]);
+    ps("pedir","Pedir un conteo","Parcial o cierre",["Abrí el detalle del local y tocá <b>Pedir parcial</b> o <b>Pedir cierre</b>.","El responsable ve un aviso en Stock y cuenta cámara y local desde cero, sin ver el número del sistema.","Al guardar ve «enviado ✓», sin totales ni diferencias.","El <b>cierre</b> deja la cámara igual a lo contado y es el inicial del mes siguiente."]);
     ps("detalle","Leer el detalle","De dónde sale la diferencia",["<b>Inicial + Ingresos − Salidas = Debería haber</b>.","Debajo ves lo que contó y la diferencia en kg y %.","«ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana.","Los movimientos <b>anulados</b> del período aparecen aparte."]);
     ps("mostrar","Mostrar al responsable","Qué ve y cuándo",["El responsable ve solo su inicial. Parcial y cierre quedan ocultos.","Para mostrarlos tocá <b>Mostrar al responsable (PIN)</b>.","El <b>cierre</b> se muestra solo a las 12:00; el <b>parcial</b> nunca se muestra solo.","Con <b>ver_diferencias=SI</b> en un local, ese local lo ve todo."]);
     ps("candados","Candados","Corregir un conteo guardado",["Todo conteo guardado queda con 🔒.","<b>Desbloquear</b> pide tu PIN y un motivo. Vale para <b>una</b> corrección (24 h máximo).","Al guardar la corrección el candado se cierra solo y el original se conserva.","El <b>Conteo cámara</b> tiene su propio candado: lo desbloqueás igual para que el responsable recuente una vez."]);
@@ -8369,7 +8369,7 @@ function ayudaTemas(){
     "Tocá <b>Ver resultado</b> y después <b>Guardar conteo inicial</b>."])+nota("Una vez guardado queda con candado 🔒: solo supervisión lo desbloquea, con su PIN, para una corrección. No cambia el stock de la cámara ni cuenta como salida.")});
   if(!colab) T.push({id:"parcial", titulo:"Conteo parcial y de cierre", sub:"Cuando supervisión lo pide", html:li([
     "Supervisión pide el conteo y te aparece un aviso en Stock: <b>Hacer el conteo</b>.",
-    "Contá la <b>cámara</b> y después el <b>local</b>, de cero y <b>a ciegas</b> (no se ve el número del sistema).",
+    "Contá la <b>cámara</b> y después el <b>local</b>, desde cero, <b>sin ver el número del sistema</b>.",
     "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
     "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])+nota("Una vez guardado no se corrige: avisale a supervisión.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
@@ -8401,7 +8401,7 @@ function ayudaTemas(){
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b>; en uno con fecha, <b>Cambiar fecha</b> (fecha y unidades)."])+nota("Las latas no tienen vencimiento.")});
   if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo contar sin errores", html:li([
     "Entrá a Stock › <b>Conteo inicial › Conteo cámara</b>.",
-    "Arranca <b>de cero y a ciegas</b>: no se ve el número del sistema.",
+    "Arranca <b>desde cero</b>, sin ver el número del sistema.",
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>."+(S.kilosReales?" En las vasquetas cargá el peso de cada una.":""),
     escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
     "Tocá <b>Revisar y guardar</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
