@@ -1478,7 +1478,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.1";
+const FRONTEND_VERSION = "1.178.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3796,6 +3796,11 @@ function revisarAccion(t){
   if(t.dataset.revMas){ const id=t.dataset.revMas; if((c[id]||0)>=vendibleDe(id)){ toast("No queda más stock para sacar."); return true } c[id]=(c[id]||0)+1; fin(); return true }
   if(t.dataset.revQuitar){ const id=t.dataset.revQuitar; delete c[id]; delete pes[id]; S.escItems=S.escItems.filter(e=>String(e.id)!==String(id)); fin(); return true }
   return false;
+}
+function chocoBarraHTML(){
+  const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
+  const consumo=(S.ventaDia&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
+  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
 function menuSalidaHTML(){
