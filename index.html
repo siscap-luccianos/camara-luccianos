@@ -1210,7 +1210,7 @@ body:has(.mantenerOv){overflow:hidden}
 .invWrow.sin{background:var(--surface)}
 .invWs{max-width:none}
 .cntGrid .row.cwRow{grid-template-columns:auto minmax(0,1fr) auto}
-.cwRow .cwHide{display:none}
+.cwRow .cwHide{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden;pointer-events:none}
 .cwRow .cwPills{grid-column:1/-1;padding-top:6px}
 .cwTot{display:flex;align-items:center;gap:10px}.cwN{font-size:.82rem;color:var(--muted);white-space:nowrap}
 .invPillsW{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding-top:4px}
