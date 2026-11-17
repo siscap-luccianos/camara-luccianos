@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.89.0";
+const BACKEND_VERSION = "1.90.0";
 
 function doPost(e) {
   let resultado;
@@ -126,6 +126,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "pedidoConteo": return pedidoConteo(body.local, empleado);
     case "desbloquearInventario": return desbloquearInventario(body.local, body.inventarioId, body.pin, body.motivo, empleado);
     case "controlStock": return controlStock(empleado);
+    case "controlDetalle": return controlDetalle(body.local, body.inventarioId, empleado);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
@@ -2461,17 +2462,17 @@ function _invPermiso(empleado, local) {
 }
 
 /** Guarda un inventario. items: {idSabor: lo contado en el local}; camaraKg: {idSabor: {k: kilos, ap: 1 si son aproximados}} (lo calcula el cliente con lo que ve). */
-/** Guarda un inventario. Si es el CONTEO FINAL (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
+/** Guarda un inventario. Si es el CONTEO DE CIERRE (cierre del mes), además deja el stock de la cámara igual a lo contado: ese conteo
  *  es el inicial del mes que viene y el mes arranca con ese arrastre. Se aplica DESPUÉS de soltar el candado (conteo() toma el suyo). */
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   if (!pedidoId && empleado && empleado.rol !== "admin" && empleado.rol !== "supervisor") {
     const cob = _coberturaMes(local);
-    if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo final del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
+    if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo de cierre del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
   }
   const r = _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada);
   if (r && r.ok && r._final) {
     const c = conteo("final-" + r.inventario.id, local, r._final.items, empleado, null, r._final.kilos, null, true);
-    if (c && c.ok) r.stockAplicado = true; else r.avisoStock = (c && c.error) || "No se pudo dejar el stock de la cámara igual al conteo final.";
+    if (c && c.ok) r.stockAplicado = true; else r.avisoStock = (c && c.error) || "No se pudo dejar el stock de la cámara igual al conteo de cierre.";
     Reflect.deleteProperty(r, "_final");
   } else if (r && r._final) {
     Reflect.deleteProperty(r, "_final");
@@ -2479,7 +2480,7 @@ function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId
   return r;
 }
 
-/** Stock de la cámara que deja un conteo final: lo contado en la cámara; lo que no se contó queda en 0 (se contó desde cero). */
+/** Stock de la cámara que deja un conteo de cierre: lo contado en la cámara; lo que no se contó queda en 0 (se contó desde cero). */
 function _armarStockFinal(catalogo, camara) {
   const items = {}, kilos = {};
   Object.keys(catalogo).forEach((id) => {
@@ -2571,7 +2572,7 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
       tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", pedido_id: pedidoFila ? pedidoFila.id : "",
     });
     if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
-    _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "final (cierre del mes)" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
+    _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "de cierre del mes" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
     return { ok: true, _final: (pedidoFila && String(pedidoFila.tipo) === "final") ? _armarStockFinal(catalogo, camara) : null, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
   } finally {
     lock.releaseLock();
@@ -2631,7 +2632,7 @@ function inventarios(local, empleado) {
     .sort((a, b) => Number(b.ts) - Number(a.ts))
     .slice(0, 12)
     .map((r) => _inventarioPublico(r, verValor));
-  return { ok: true, inventarios: lista, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local) };
+  return { ok: true, inventarios: lista, verValor: verValor, conteoBloqueado: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
 }
 
 
@@ -2679,7 +2680,7 @@ function pedirConteo(local, tipo, empleado) {
   try {
     const ya = _pedidoPendiente(local);
     if (ya) {
-      if ((String(ya.tipo) === "final") !== (tipo === "final")) return { ok: false, error: "Ya hay un pedido de conteo " + (String(ya.tipo) === "final" ? "final" : "parcial") + " para este local: cancelalo primero." };
+      if ((String(ya.tipo) === "final") !== (tipo === "final")) return { ok: false, error: "Ya hay un pedido de conteo " + (String(ya.tipo) === "final" ? "de cierre" : "parcial") + " para este local: cancelalo primero." };
       return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
     }
     const r = _escribirCrudo("PedidosConteo", { local: local, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo });
@@ -2738,27 +2739,43 @@ function desbloquearInventario(local, inventarioId, pin, motivo, empleado) {
   }
 }
 
-/** Total contado de un conteo (cámara + local) por sabor: kilos en vasquetas/kilos, unidades en el resto. */
-function _totalContado(inv, catalogo) {
-  const items = _jsonObj(inv.items, {}), camara = _jsonObj(inv.camara, {});
+/** Lo que hay en la CÁMARA según un conteo, por sabor: kilos en vasquetas/kilos, unidades en el resto. El control se hace sobre la cámara;
+ *  el local se cuenta aparte y suma al total. */
+function _camaraPorProducto(inv, catalogo) {
+  const camara = _jsonObj(inv.camara, {});
   const out = {};
-  const ids = {};
-  Object.keys(items).forEach((id) => { ids[id] = 1; });
-  Object.keys(camara).forEach((id) => { ids[id] = 1; });
-  Object.keys(ids).forEach((id) => {
+  Object.keys(camara).forEach((id) => {
     const sab = catalogo[id];
     if (!sab) return;
-    const c = camara[id] || {}, loc = Number(items[id]) || 0;
-    out[id] = _invEsKg(sab) ? { kg: true, v: Math.round(((Number(c.k) || 0) + loc) * 100) / 100 } : { kg: false, v: (Number(c.u) || 0) + loc };
+    const c = camara[id] || {};
+    out[id] = _invEsKg(sab) ? { kg: true, v: Math.round((Number(c.k) || 0) * 100) / 100 } : { kg: false, v: Number(c.u) || 0 };
   });
   return out;
 }
 
-/** Lo que el sistema dice que debería haber: el conteo inicial + ingresos − salidas (y cambios de sabor) hasta el momento del parcial. */
-function _deberiaHaber(inicial, tsHasta, local, catalogo) {
-  const base = _totalContado(inicial, catalogo);
+/** Resumen de un conteo guardado: cámara y local, en kilos (vasquetas y kilos) y en unidades (el resto). */
+function _resumenConteo(inv, catalogo) {
+  const items = _jsonObj(inv.items, {}), camara = _jsonObj(inv.camara, {});
+  const ids = {};
+  Object.keys(items).forEach((id) => { ids[id] = 1; });
+  Object.keys(camara).forEach((id) => { ids[id] = 1; });
+  const r = { camKg: 0, camU: 0, locKg: 0, locU: 0 };
+  Object.keys(ids).forEach((id) => {
+    const sab = catalogo[id];
+    if (!sab) return;
+    const c = camara[id] || {}, l = Number(items[id]) || 0;
+    if (_invEsKg(sab)) { r.camKg += Number(c.k) || 0; r.locKg += l; } else { r.camU += Number(c.u) || 0; r.locU += l; }
+  });
+  r.camKg = Math.round(r.camKg * 100) / 100; r.locKg = Math.round(r.locKg * 100) / 100;
+  return r;
+}
+
+/** Lo que el sistema dice que debería haber EN LA CÁMARA: el conteo inicial (o el cierre del mes anterior) + ingresos − salidas
+ *  (y cambios de sabor) hasta el momento del conteo. La base es SIEMPRE el inicial: no se encadena de un parcial a otro. */
+function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
+  const base = _camaraPorProducto(inicial, catalogo);
   const t0 = Number(inicial.ts) || 0;
-  _leerCrudo("Registros").forEach((r) => {
+  (regs || _leerCrudo("Registros")).forEach((r) => {
     if (String(r.local).trim() !== String(local).trim() || r.anulado_ts) return;
     const ts = Number(r.ts) || 0;
     if (ts <= t0 || ts > tsHasta) return;
@@ -2782,7 +2799,26 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo) {
   return base;
 }
 
-/** Control de stock (solo supervisión): por local, el conteo inicial vigente, el último parcial y la diferencia contra lo que debería haber. */
+/** Compara un conteo (parcial o cierre) contra lo esperado desde su base (el inicial). La diferencia es de la CÁMARA y el porcentaje es sobre el inicial. */
+function _compararConteo(base, conteo, local, catalogo, regs) {
+  const debe = _deberiaHaber(base, Number(conteo.ts) || 0, local, catalogo, regs);
+  const conto = _camaraPorProducto(conteo, catalogo);
+  const ids = {};
+  Object.keys(debe).forEach((id) => { ids[id] = 1; });
+  Object.keys(conto).forEach((id) => { ids[id] = 1; });
+  const items = {};
+  Object.keys(ids).forEach((id) => {
+    const sab = catalogo[id];
+    if (!sab) return;
+    const e = debe[id] ? debe[id].v : 0, c = conto[id] ? conto[id].v : 0;
+    items[id] = { esperado: Math.round(e * 100) / 100, cam: Math.round(c * 100) / 100, dif: Math.round((c - e) * 100) / 100, kg: _invEsKg(sab) };
+  });
+  return items;
+}
+
+function _pct(dif, base) { return base > 0 ? Math.round(dif / base * 1000) / 10 : null; }
+
+/** Control de stock (solo supervisión): por local, el conteo inicial (base), los parciales y el cierre, y la diferencia de la cámara del último conteo. */
 function controlStock(empleado) {
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
   _hojaInventarios(); _hojaPedidosConteo();
@@ -2790,42 +2826,97 @@ function controlStock(empleado) {
   const invs = _leerCrudo("Inventarios");
   const pedidos = _leerCrudo("PedidosConteo");
   const sabores = _leerCrudo("Sabores");
+  const regs = _leerCrudo("Registros");
   const filas = [];
   locales.forEach((l) => {
     const nombre = String(l.nombre).trim();
     const pais = _paisDeLocal(l);
     const catalogo = {};
     sabores.forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
-    const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(b.ts) - Number(a.ts));
+    const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(a.ts) - Number(b.ts));
     const pend = pedidos.filter((q) => String(q.local).trim() === nombre && String(q.estado) === "pendiente")[0];
     if (!mios.length && !pend) return;
-    // Lo comparado es el último conteo parcial o final; la base, el último conteo inicial o final ANTERIOR a ese (un final es el inicial del mes siguiente).
-    const parcial = mios.filter((r) => String(r.tipo) === "parcial" || String(r.tipo) === "final")[0] || null;
-    const inicial = mios.filter((r) => String(r.tipo) !== "parcial" && (!parcial || Number(r.ts) < Number(parcial.ts)))[0] || null;
-    const fila = { local: nombre, pedido: _pedidoPublico(pend), inicial: inicial ? _inventarioPublico(inicial, false) : null, parcial: parcial ? _inventarioPublico(parcial, false) : null, estado: "", debia: 0, conto: 0, diferencia: 0, detalle: [] };
-    if (parcial && inicial) {
-      const debe = _deberiaHaber(inicial, Number(parcial.ts) || 0, nombre, catalogo);
-      const conto = _totalContado(parcial, catalogo);
-      const ids = {}; Object.keys(debe).forEach((id) => { ids[id] = 1; }); Object.keys(conto).forEach((id) => { ids[id] = 1; });
-      let dk = 0, ck = 0, du = 0, cu = 0;
-      Object.keys(ids).forEach((id) => {
-        const sab = catalogo[id]; if (!sab) return;
-        const d = debe[id] ? debe[id].v : 0, c = conto[id] ? conto[id].v : 0;
-        const esKg = _invEsKg(sab);
-        if (esKg) { dk += d; ck += c; } else { du += d; cu += c; }
-        const dif = Math.round((c - d) * 100) / 100;
-        if (dif !== 0) fila.detalle.push({ id: id, nombre: sab.nombre, kg: esKg, debia: Math.round(d * 100) / 100, conto: Math.round(c * 100) / 100, dif: dif });
-      });
-      fila.debia = Math.round(dk * 100) / 100; fila.conto = Math.round(ck * 100) / 100; fila.diferencia = Math.round((ck - dk) * 100) / 100;
-      fila.debiaU = du; fila.contoU = cu; fila.difU = cu - du;
-      fila.detalle.sort((a, b) => Math.abs(b.dif) - Math.abs(a.dif));
+    // base = el último conteo inicial o cierre (un cierre es el inicial del mes siguiente); lo comparado = los parciales y cierres posteriores a esa base
+    const comparados = mios.filter((r) => String(r.tipo) === "parcial" || String(r.tipo) === "final");
+    const ultimoCmp = comparados.length ? comparados[comparados.length - 1] : null;
+    const base = mios.filter((r) => String(r.tipo) !== "parcial" && (!ultimoCmp || Number(r.ts) < Number(ultimoCmp.ts))).pop() || null;
+    const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "" }, _resumenConteo(r, catalogo));
+    const posteriores = base ? comparados.filter((r) => Number(r.ts) > Number(base.ts)) : [];
+    const fila = { local: nombre, pedido: _pedidoPublico(pend), base: base ? resumenDe(base) : null, conteos: posteriores.map(resumenDe), estado: "", difKg: 0, difU: 0, pctKg: null, pctU: null };
+    if (base && posteriores.length) {
+      const ult = posteriores[posteriores.length - 1];
+      const cmp = _compararConteo(base, ult, nombre, catalogo, regs);
+      let dk = 0, du = 0;
+      Object.keys(cmp).forEach((id) => { if (cmp[id].kg) dk += cmp[id].dif; else du += cmp[id].dif; });
+      fila.difKg = Math.round(dk * 100) / 100; fila.difU = du;
+      fila.pctKg = _pct(fila.difKg, fila.base.camKg); fila.pctU = _pct(fila.difU, fila.base.camU);
       fila.estado = pend ? "pedido" : "controlado";
     } else {
-      fila.estado = pend ? "pedido" : (inicial ? "sin_pedir" : "sin_inicial");
+      fila.estado = pend ? "pedido" : (base ? "sin_pedir" : "sin_inicial");
     }
     filas.push(fila);
   });
   return { ok: true, locales: filas };
+}
+
+/** Detalle de un conteo de un local (solo supervisión): cámara + local = total por rubro y por producto, y la diferencia de la cámara contra el inicial. */
+function controlDetalle(local, inventarioId, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  _hojaInventarios();
+  const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  if (!filaLocal) return { ok: false, error: "No se encontró ese local." };
+  const pais = _paisDeLocal(filaLocal);
+  const catalogo = {};
+  _leerCrudo("Sabores").forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
+  const mios = _leerCrudo("Inventarios").filter((r) => String(r.local || "").trim() === String(local).trim()).sort((a, b) => Number(a.ts) - Number(b.ts));
+  if (!mios.length) return { ok: true, conteos: [], grupos: [] };
+  const elegido = inventarioId ? mios.filter((r) => String(r.id) === String(inventarioId))[0] : mios[mios.length - 1];
+  if (!elegido) return { ok: false, error: "No se encontró ese conteo." };
+  const esCmp = String(elegido.tipo) === "parcial" || String(elegido.tipo) === "final";
+  const base = esCmp ? (mios.filter((r) => String(r.tipo) !== "parcial" && Number(r.ts) < Number(elegido.ts)).pop() || null) : null;
+  const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "", fijo: _inventarioPublico(r, false).fijo, desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0 }, _resumenConteo(r, catalogo));
+  const cmp = base ? _compararConteo(base, elegido, local, catalogo, _leerCrudo("Registros")) : null;
+  const items = _jsonObj(elegido.items, {}), camara = _jsonObj(elegido.camara, {});
+  const baseCam = base ? _camaraPorProducto(base, catalogo) : {};
+  const grupos = {};
+  const ids = {};
+  Object.keys(items).forEach((id) => { ids[id] = 1; });
+  Object.keys(camara).forEach((id) => { ids[id] = 1; });
+  if (cmp) Object.keys(cmp).forEach((id) => { ids[id] = 1; });
+  Object.keys(ids).forEach((id) => {
+    const sab = catalogo[id];
+    if (!sab) return;
+    const esKg = _invEsKg(sab), g = _rubroDeSabor(sab);
+    const cam = esKg ? Number((camara[id] || {}).k) || 0 : Number((camara[id] || {}).u) || 0, loc = Number(items[id]) || 0;
+    if (!cam && !loc && !(cmp && cmp[id] && (cmp[id].esperado || cmp[id].dif))) return;
+    const gr = grupos[g] || (grupos[g] = { g: g, kg: false, cam: 0, loc: 0, esperado: 0, dif: 0, baseV: 0, productos: [] });
+    if (esKg) gr.kg = true;
+    const e = cmp && cmp[id] ? cmp[id].esperado : null, d = cmp && cmp[id] ? cmp[id].dif : null;
+    gr.cam += cam; gr.loc += loc;
+    if (cmp) { gr.esperado += e || 0; gr.dif += d || 0; }
+    gr.baseV += baseCam[id] ? baseCam[id].v : 0;
+    gr.productos.push({ id: id, nombre: sab.nombre, kg: esKg, cam: Math.round(cam * 100) / 100, loc: Math.round(loc * 100) / 100, tot: Math.round((cam + loc) * 100) / 100, esperado: e, dif: d });
+  });
+  const lista = Object.keys(grupos).map((g) => {
+    const x = grupos[g];
+    x.cam = Math.round(x.cam * 100) / 100; x.loc = Math.round(x.loc * 100) / 100; x.tot = Math.round((x.cam + x.loc) * 100) / 100;
+    x.esperado = cmp ? Math.round(x.esperado * 100) / 100 : null; x.dif = cmp ? Math.round(x.dif * 100) / 100 : null;
+    x.pct = cmp ? _pct(x.dif, x.baseV) : null;
+    x.productos.sort((a, b) => Math.abs(b.dif || 0) - Math.abs(a.dif || 0) || String(a.nombre).localeCompare(String(b.nombre)));
+    return x;
+  });
+  const sel = resumenDe(elegido);
+  const bsel = base ? resumenDe(base) : null;
+  let dk = 0, du = 0;
+  if (cmp) Object.keys(cmp).forEach((id) => { if (cmp[id].kg) dk += cmp[id].dif; else du += cmp[id].dif; });
+  return {
+    ok: true, local: local,
+    conteos: mios.map(resumenDe),
+    conteo: sel, base: bsel, grupos: lista,
+    dif: cmp ? { kg: Math.round(dk * 100) / 100, u: du, pctKg: _pct(Math.round(dk * 100) / 100, bsel.camKg), pctU: _pct(du, bsel.camU) } : null,
+    pedido: _pedidoPublico(_pedidoPendiente(local)),
+  };
 }
 
 /* ============================================================

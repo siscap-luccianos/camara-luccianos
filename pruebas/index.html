@@ -1373,11 +1373,31 @@ tr.gvdRub td{font-weight:700;border-top:1px solid var(--line)}tr.gvdProd td{back
 .ctlDif.neg{background:#FDE8E6;color:#B42318}.ctlDif.pos{background:#FFF1CC;color:#8A5A00}.ctlDif.ok{background:#E3EFE0;color:#2F5A2A}
 .ctlDetalle{padding:6px 4px 16px;display:flex;flex-direction:column;gap:10px}
 .ctlInv{font-size:.85rem}.ctlLock{color:#2F5A2A;font-weight:800}.ctlUnlock{color:#8A5A00;font-weight:800}
+.ctlHead,.ctlRow{grid-template-columns:2.2fr 1.2fr 1.2fr 1.2fr 1.6fr 1fr}
+.ctlRow .v{font-family:var(--display);font-weight:600;font-size:1.05rem}.ctlRow .f{font-size:.7rem;color:var(--muted)}
+.ctlLey{margin-left:auto;font-size:.78rem;color:var(--muted)}
+.ctlTitulo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:2px 0 6px}.ctlTitulo h1{margin:0}
+.ctlLockTag{padding:5px 12px;border-radius:99px;background:#E3EFE0;color:#2F5A2A;font-weight:800;font-size:.72rem;letter-spacing:.05em}.ctlLockTag.abierto{background:#FFF1CC;color:#8A5A00}
+.ctlSub{font-size:.84rem;color:var(--muted);margin-bottom:10px}
+.ctlCandado{display:flex;align-items:center;gap:12px;border-radius:16px;background:var(--surface);border:1px solid var(--line);padding:12px 16px;margin:0 0 12px;font-size:.84rem;line-height:1.45}.ctlCandado>span{font-size:1.2rem}.ctlCandado>div{flex:1}
+.ctlSel small{display:block;font-size:.68rem;font-weight:800;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}.ctlSel{margin-bottom:12px}
+.ctlFranja{display:flex;gap:18px;align-items:center;flex-wrap:wrap;border-radius:20px;background:#2A201A;color:#F8F1E6;padding:16px 22px;margin:0 0 12px}
+.ctlTot{text-align:center}.ctlTot small{display:block;font-size:.68rem;letter-spacing:.1em;color:#E7DAC6}.ctlTot b{font-family:var(--display);font-size:2rem}.ctlTot span{display:block;font-size:.78rem;color:#E7DAC6}
+.ctlKpis{flex:1;display:flex;gap:8px;min-width:280px}.ctlKpi{flex:1;border-radius:14px;background:#3E342C;padding:8px 6px;text-align:center}.ctlKpi small{display:block;font-size:.64rem;letter-spacing:.08em;color:#C9A961;font-weight:800}.ctlKpi b{font-family:var(--display);font-size:1.15rem;font-weight:600}.ctlKpi i{display:block;font-size:.68rem;font-style:normal;opacity:.8}
+.ctlKpi.dif.ok{background:#E3EFE0;color:#2F5A2A}.ctlKpi.dif.warn{background:#FFF1CC;color:#8A5A00}.ctlKpi.dif.bad{background:#FDE8E6;color:#B42318}.ctlKpi.dif small{color:inherit}
+.ctlRubro{border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:14px 18px;margin:0 0 10px}
+.ctlRubroTit{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.ctlRubroTit b{font-family:var(--display);font-size:1.15rem}
+.ctlEq{display:flex;align-items:center;gap:10px;text-align:center;flex-wrap:wrap}.ctlEq>div{flex:1;min-width:90px;padding:8px 4px;border-radius:12px}.ctlEq small{display:block;font-size:.64rem;letter-spacing:.08em;color:var(--muted);font-weight:800}.ctlEq b{font-size:1.05rem}.ctlEq>span{color:var(--muted);font-size:1.1rem}.ctlEq .t{background:#2A201A;color:#F8F1E6}.ctlEq .t small{color:#E7DAC6}
+.ctlEq .d{font-weight:800}.ctlEq .d i{display:block;font-style:normal;font-size:.72rem}.ctlEq .d.ok{background:#E3EFE0;color:#2F5A2A}.ctlEq .d.warn{background:#FFF1CC;color:#8A5A00}.ctlEq .d.bad{background:#FDE8E6;color:#B42318}.ctlEq .d small{color:inherit}
+.ctlProds{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
+.ctlPedir{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:16px;background:#FFF8E6;border:1px solid #E7C873;padding:12px 18px;margin:12px 0 8px}
+.ctlNota{font-size:.78rem;color:var(--muted)}
+@media (max-width:700px){.ctlPr{grid-template-columns:1.6fr 1fr 1fr 1fr}.ctlPr span:nth-child(5),.ctlPr span:nth-child(6){display:none}}
 .ctlRes{display:none;gap:26px;flex-wrap:wrap}.ctlRes small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}.ctlRes b{font-family:Fraunces,serif;font-size:1.3rem}
 .ctlTbl td,.ctlTbl th{text-align:center}
 .ctlPrint{display:none}
 @media (max-width:700px){.ctlHead{display:none}.ctlRow{grid-template-columns:1fr 1fr;text-align:left}}
-@media print{.ctlRes{display:flex}.ctl .noPrint{display:none!important}.ctlPrint{display:block}.ctlTabla{display:none}}
+@media print{.ctl .noPrint{display:none!important}.ctlPrint{display:block}.ctlTabla{display:none}.ctlFranja{background:#fff!important;color:#000!important;border:1px solid #000}.ctlKpi{background:#fff!important;border:1px solid #999;color:#000!important}.ctlTot,.ctlTot small,.ctlTot span,.ctlKpi small{color:#000!important}.ctlEq .t{background:#fff!important;color:#000!important;border:1px solid #000}}
 </style>
 </head>
 <body>
@@ -1399,7 +1419,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.165.2";
+const FRONTEND_VERSION = "1.167.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3277,42 +3297,94 @@ async function cargarControl(){
   if(!S.local && S.tab==="control") renderApp();
 }
 function ctlKg(n){ return (Math.round((+n||0)*100)/100).toLocaleString("es-AR",{maximumFractionDigits:2}) }
-function ctlFecha(ts){ return ts? new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+" "+new Date(ts).toLocaleTimeString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}) : "—" }
-function ctlDifHTML(f){
-  if(f.estado!=="controlado") return "—";
-  const partes=[];
-  if(f.diferencia!==0) partes.push(`<span class="ctlDif ${f.diferencia<0?"neg":"pos"}">${f.diferencia<0?"faltan ":"sobran "}${ctlKg(Math.abs(f.diferencia))} kg</span>`);
-  if(f.difU) partes.push(`<span class="ctlDif ${f.difU<0?"neg":"pos"}">${f.difU<0?"faltan ":"sobran "}${Math.abs(f.difU)} u.</span>`);
-  return partes.length?partes.join(" "):`<span class="ctlDif ok">Sin diferencia</span>`;
+function ctlV(v,kg){ return kg?ctlKg(v)+" kg":Math.round(+v||0).toLocaleString("es-AR")+" u." }
+function ctlFecha(ts){ return ts? new Date(ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"}) : "—" }
+function ctlFechaHora(ts){ return ts? ctlFecha(ts)+" "+new Date(ts).toLocaleTimeString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",hour:"2-digit",minute:"2-digit",hour12:false}) : "—" }
+/** Semáforo de la diferencia, sobre el inicial: verde hasta 1 %, amarillo hasta 3 %, rojo más. */
+function ctlSem(dif,pct){ if(!dif) return "ok"; const a=Math.abs(pct===null||pct===undefined?100:pct); return a<=1?"ok":a<=3?"warn":"bad" }
+function ctlPill(dif,pct,kg){
+  if(dif===null||dif===undefined) return "—";
+  if(!dif) return `<span class="ctlDif ok">Sin diferencia</span>`;
+  const signo=dif<0?"−":"+";
+  return `<span class="ctlDif ${ctlSem(dif,pct)}">${signo}${ctlV(Math.abs(dif),kg)}${pct!==null&&pct!==undefined?" · "+(pct<0?"−":"+")+String(Math.abs(pct)).replace(".",",")+" %":""}</span>`;
 }
-function ctlDetalleHTML(f){
-  const bloque=(x,t)=>x?`<div class="ctlInv"><b>${t}</b> · ${esc(ctlFecha(x.ts))} · ${esc(x.empleado||"")}${x.fijo?` · <span class="ctlLock">🔒 bloqueado</span>`:(x.desbloqueado_hasta>Date.now()?` · <span class="ctlUnlock">🔓 desbloqueado hasta ${esc(ctlFecha(x.desbloqueado_hasta))}</span>`:"")}${x.con_original?` · <span class="meta">corregido (se conserva el original)</span>`:""}${x.fijo?` <button type="button" class="rlvBtn noPrint" data-ctl-desb="${esc(x.id)}" data-ctl-local="${esc(f.local)}">Desbloquear</button>`:""}</div>`:"";
-  const filas=(f.detalle||[]).map(d=>`<tr><td>${esc(d.nombre)}</td><td>${ctlKg(d.debia)}${d.kg?" kg":""}</td><td>${ctlKg(d.conto)}${d.kg?" kg":""}</td><td><span class="ctlDif ${d.dif<0?"neg":"pos"}">${d.dif>0?"+":""}${ctlKg(d.dif)}${d.kg?" kg":""}</span></td></tr>`).join("");
-  return `<div class="ctlDetalle" data-ctl-local="${esc(f.local)}">
-    ${bloque(f.inicial,f.inicial&&f.inicial.tipo==="final"?"Conteo final del mes anterior (base)":"Conteo inicial (base)")}${bloque(f.parcial,f.parcial&&f.parcial.tipo==="final"?"Conteo final (cierre)":"Conteo parcial")}
-    ${f.estado==="controlado"?`<div class="ctlRes"><div><small>Debería haber</small><b>${ctlKg(f.debia)} kg</b>${f.debiaU?`<span>+ ${f.debiaU} u.</span>`:""}</div><div><small>Contado</small><b>${ctlKg(f.conto)} kg</b>${f.contoU?`<span>+ ${f.contoU} u.</span>`:""}</div><div><small>Diferencia</small><b>${ctlDifHTML(f)}</b></div></div>
-    ${filas?`<table class="tbl ctlTbl"><thead><tr><th>Producto</th><th>Debería</th><th>Contado</th><th>Diferencia</th></tr></thead><tbody>${filas}</tbody></table>`:`<div class="meta">No hay diferencias por producto.</div>`}
-    <div class="meta">Una diferencia que no se detecta es merma. Para corregir un conteo, desbloquealo (vale 24 horas, queda registrado con tu nombre y el motivo).</div>
-    <div class="noPrint"><button type="button" class="rlvBtn" data-ctl-print="${esc(f.local)}">📄 PDF de este local</button></div>`
-    :`<div class="meta">Todavía no hay un conteo parcial para comparar.</div>`}
+function ctlDifFila(f){
+  if(f.estado!=="controlado") return "—";
+  const a=ctlPill(f.difKg,f.pctKg,true), b=f.difU?ctlPill(f.difU,f.pctU,false):"";
+  return (f.difKg||!f.difU?a:"")+(f.difKg&&f.difU?" ":"")+b;
+}
+async function cargarControlDetalle(local,id){
+  const C=controlEstado(); C.detError=null;
+  const r=await api("controlDetalle",{local, inventarioId:id||undefined});
+  if(C.det!==local) return;
+  if(r&&r.ok){ C.detData=r; C.detId=r.conteo?String(r.conteo.id):"" }
+  else { C.detData=undefined; C.detError=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver el detalle.":(r&&r.error)||"No se pudo conectar. Probá de nuevo." }
+  if(!S.local && S.tab==="control") renderApp();
+}
+function ctlRefrescar(){ const C=controlEstado(); cargarControl(); if(C.det) cargarControlDetalle(C.det,C.detId) }
+const CTL_TIPO={inicial:"Inicial",parcial:"Parcial",final:"Cierre"};
+function ctlDetalleHTML(){
+  const C=controlEstado(), D=C.detData;
+  const volver=`<div class="noPrint"><button type="button" class="btn volver" data-ctl-volver style="margin-bottom:12px">‹ Volver a Control</button></div>`;
+  if(C.detError) return `<div class="rlv ctl">${volver}<div class="note">${esc(C.detError)}</div></div>`;
+  if(D===undefined||D===null) return `<div class="rlv ctl">${volver}<div class="note">Cargando…</div></div>`;
+  if(!D.conteo) return `<div class="rlv ctl">${volver}<div class="note">Este local todavía no tiene conteos guardados.</div></div>`;
+  const c=D.conteo, base=D.base, desb=c.desbloqueado_hasta>Date.now(), fijo=c.fijo;
+  const tipoTxt=CTL_TIPO[c.tipo]||"Conteo", esCmp=c.tipo!=="inicial"&&!!D.dif;
+  const chips=D.conteos.map(x=>`<button type="button" class="chip" data-ctl-sel="${esc(x.id)}" aria-pressed="${String(x.id)===String(c.id)}">${x.fijo?"🔒 ":""}${CTL_TIPO[x.tipo]||x.tipo} · ${ctlFecha(x.ts)}</button>`).join("");
+  const ult=t=>{ const l=D.conteos.filter(x=>x.tipo===t); return l.length?l[l.length-1]:null };
+  const ini=D.conteos.filter(x=>x.tipo!=="parcial")[0]||null, par=ult("parcial"), cie=ult("final");
+  const bloque=(tit,x)=>`<div class="ctlKpi"><small>${tit}</small><b>${x?ctlKg(x.camKg)+" kg":"—"}</b>${x?`<i>${ctlFecha(x.ts)}</i>`:""}</div>`;
+  const totKg=Math.round((c.camKg+c.locKg)*100)/100, totU=c.camU+c.locU;
+  const franja=`<div class="ctlFranja"><div class="ctlTot"><small>HELADO EN EL LOCAL</small><b>${ctlKg(totKg)} kg</b><span>Cámara ${ctlKg(c.camKg)} kg + local ${ctlKg(c.locKg)} kg</span>${totU?`<span>Otros rubros: ${Math.round(totU).toLocaleString("es-AR")} u.</span>`:""}</div>
+    <div class="ctlKpis">${bloque("INICIAL",ini)}${bloque("PARCIAL",par)}${bloque("CIERRE",cie)}<div class="ctlKpi dif ${esCmp?ctlSem(D.dif.kg,D.dif.pctKg):""}"><small>DIFERENCIA</small><b>${esCmp?(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg":"—"}</b>${esCmp&&D.dif.pctKg!==null?`<i>${D.dif.pctKg<0?"−":"+"}${String(Math.abs(D.dif.pctKg)).replace(".",",")} % del inicial</i>`:""}</div></div></div>`;
+  const grp=D.grupos.slice().sort((a,b)=>(GRUPO_PRODUCTO_ORDEN.indexOf(a.g)+1||99)-(GRUPO_PRODUCTO_ORDEN.indexOf(b.g)+1||99));
+  const filaProd=(x)=>`<div class="ctlPr"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.cam,x.kg)}</span><span>${ctlV(x.loc,x.kg)}</span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>${x.esperado===null?"—":ctlV(x.esperado,x.kg)}</span><span>${x.dif===null?"—":ctlPill(x.dif,null,x.kg).replace(/ · [^<]*%/,"")}</span></div>`;
+  const cabProd=`<div class="ctlPr cab"><span class="n">Producto</span><span>Cámara</span><span>Local</span><span>Total</span><span>Esperado</span><span>Diferencia</span></div>`;
+  let cuerpo;
+  if(C.vista==="producto"){
+    const todos=[].concat.apply([],grp.map(g=>g.productos)).sort((a,b)=>Math.abs(b.dif||0)-Math.abs(a.dif||0)||String(a.nombre).localeCompare(String(b.nombre)));
+    cuerpo=`<div class="ctlProds">${cabProd}${todos.map(filaProd).join("")||`<div class="note">Sin productos.</div>`}</div>`;
+  } else {
+    cuerpo=grp.map(g=>`<div class="ctlRubro"><div class="ctlRubroTit"><b>${esc(GRUPO_PRODUCTO_LABEL[g.g]||g.g)}</b><button type="button" class="invLnk noPrint" data-ctl-verg="${esc(g.g)}">${C.verG&&C.verG[g.g]?"Ocultar sabores":"Ver sabores"}</button></div>
+      <div class="ctlEq"><div><small>CÁMARA</small><b>${ctlV(g.cam,g.kg)}</b></div><span>+</span><div><small>LOCAL</small><b>${ctlV(g.loc,g.kg)}</b></div><span>=</span><div class="t"><small>TOTAL</small><b>${ctlV(g.tot,g.kg)}</b></div>${g.dif!==null?`<div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div>`:""}</div>
+      ${C.verG&&C.verG[g.g]?`<div class="ctlProds">${cabProd}${g.productos.map(filaProd).join("")}</div>`:""}</div>`).join("")||`<div class="note">Sin productos en este conteo.</div>`;
+  }
+  const pend=D.pedido;
+  const pedir=pend?`<span><b>Hay un pedido de ${pend.tipo==="final"?"cierre":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Cancelar pedido</button>`:`<span><b>Pedir un conteo nuevo a este local:</b></span><button type="button" class="rlvBtn" data-ctl-pedir="${esc(C.det)}">Pedir parcial</button><button type="button" class="rlvBtn" data-ctl-pedirfinal="${esc(C.det)}">Pedir cierre</button>`;
+  return `<div class="rlv ctl" data-ctl-n="${esc(C.det)}">
+    ${volver}
+    <div class="noPrint"><div class="cntKick">CONTROL › ${esc(String(C.det).toUpperCase())}</div></div>
+    <div class="ctlTitulo"><h1>Total del local</h1><span class="invBadgeDef">${tipoTxt==="Cierre"?"Conteo de cierre":"Conteo "+tipoTxt.toLowerCase()}</span>${fijo&&!desb?`<span class="ctlLockTag">🔒 BLOQUEADO</span>`:desb?`<span class="ctlLockTag abierto">🔓 hasta ${esc(ctlFechaHora(c.desbloqueado_hasta))}</span>`:""}<button type="button" class="rlvBtn noPrint" data-ctl-print="${esc(C.det)}" style="margin-left:auto">📄 PDF</button></div>
+    <div class="ctlSub">${esc(ctlFechaHora(c.ts))} · hecho por ${esc(c.empleado||"")}${base&&esCmp?` · se compara contra el ${(CTL_TIPO[base.tipo]||"inicial").toLowerCase()} del ${esc(ctlFecha(base.ts))} (cámara, más ingresos y menos salidas)`:""}</div>
+    ${fijo?`<div class="ctlCandado noPrint"><span>🔒</span><div><b>Todo conteo guardado queda con candado.</b> No se corrige ni se borra. Solo supervisión lo desbloquea, con su PIN y un motivo, por 24 horas; el original se conserva.</div>${desb?"":`<button type="button" class="btn" data-ctl-desb="${esc(c.id)}" data-ctl-local="${esc(C.det)}">Desbloquear (PIN)</button>`}</div>`:""}
+    <div class="noPrint ctlSel"><small>ELEGÍ UN CONTEO YA CARGADO (no pide nada nuevo)</small><div class="invPills">${chips}</div></div>
+    ${franja}
+    <div class="noPrint invPills" style="margin:6px 0 10px"><button type="button" class="chip" data-ctl-vista="rubro" aria-pressed="${C.vista!=="producto"}">Por rubro</button><button type="button" class="chip" data-ctl-vista="producto" aria-pressed="${C.vista==="producto"}">Por producto</button></div>
+    ${cuerpo}
+    <div class="ctlPedir noPrint">${pedir}</div>
+    <div class="ctlNota">La diferencia es de la <b>cámara</b> y se mide siempre contra el <b>inicial</b>. El local se cuenta aparte y suma al total. Una diferencia que no se detecta es merma.</div>
+    <div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Total del local",sub:C.det,lineaHTML:esc(tipoTxt)+" · "+esc(ctlFechaHora(c.ts))+" · generado por "+esc(S.empleado.nombre)})}${informePieHTML("Control de stock · "+C.det)}</div>
   </div>`;
 }
 function controlView(){
   const C=controlEstado();
+  if(C.det) return ctlDetalleHTML();
   if(C.datos===undefined && !C.error) cargarControl();
   if(C.error) return `<div class="rlv ctl"><h1>Control de stock</h1><div class="note">${esc(C.error)}</div><button class="rlvBtn" data-ctl-refresh>Reintentar</button></div>`;
   if(C.datos===null || C.datos===undefined) return `<div class="rlv ctl"><h1>Control de stock</h1><div class="note">Cargando…</div></div>`;
-  const pill=(f)=>f.estado==="controlado"?`<span class="ctlPill ok">${f.parcial&&f.parcial.tipo==="final"?"Cierre controlado":"Controlado"}</span>`:f.estado==="pedido"?`<span class="ctlPill warn">Pedido ${f.pedido&&f.pedido.tipo==="final"?"final":"parcial"} · sin contar</span>`:f.estado==="sin_pedir"?`<span class="ctlPill">Sin pedir</span>`:`<span class="ctlPill">Sin conteo inicial</span>`;
-  const accion=(f)=>f.pedido?`<button type="button" class="rlvBtn" data-ctl-cancel="${esc(f.local)}">Cancelar pedido</button>`:(f.inicial?`<button type="button" class="rlvBtn" data-ctl-pedir="${esc(f.local)}">Pedir parcial</button> <button type="button" class="rlvBtn" data-ctl-pedirfinal="${esc(f.local)}">Pedir final</button>`:"");
-  const filas=C.datos.map(f=>`<div class="ctlFila${C.abierto===f.local?" abierta":""}"><div class="ctlRow"><div class="ctlLoc"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${C.abierto===f.local?"▾":"▸"} ${esc(f.local)}</button></div><div>${pill(f)}</div><div>${f.estado==="controlado"?ctlKg(f.debia):"—"}</div><div>${f.estado==="controlado"?ctlKg(f.conto):"—"}</div><div>${ctlDifHTML(f)}</div><div class="noPrint">${accion(f)}</div></div>${C.abierto===f.local?ctlDetalleHTML(f):""}</div>`).join("");
-  const abierto=C.datos.filter(f=>f.local===C.abierto)[0];
-  const print=abierto?`<div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Control de stock",sub:abierto.local,lineaHTML:"Generado por "+esc(S.empleado.nombre)})}${ctlDetalleHTML(abierto)}${informePieHTML("Control de stock · "+abierto.local)}</div>`:"";
-  return `<div class="rlv ctl" ${abierto?`data-ctl-n="${esc(abierto.local)}"`:""}>
+  const cel=(x)=>x?`<div class="v">${ctlKg(x.camKg)} kg</div><div class="f">${ctlFecha(x.ts)}</div>`:`<div class="f">—</div>`;
+  const filas=C.datos.map(f=>{
+    const par=f.conteos.filter(x=>x.tipo==="parcial"), cie=f.conteos.filter(x=>x.tipo==="final");
+    const ultP=par.length?par[par.length-1]:null, ultC=cie.length?cie[cie.length-1]:null;
+    const pill=f.pedido?`<span class="ctlPill warn">Pedido ${f.pedido.tipo==="final"?"de cierre":"parcial"} · sin contar</span>`:!f.base?`<span class="ctlPill">Sin conteo inicial</span>`:"";
+    return `<div class="ctlRow"><div class="ctlLoc"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button>${pill?`<div>${pill}</div>`:""}</div><div>${cel(f.base)}</div><div>${cel(ultP)}${par.length>1?`<div class="f">+${par.length-1} más</div>`:""}</div><div>${cel(ultC)}</div><div>${ctlDifFila(f)}</div><div class="noPrint"><button type="button" class="rlvBtn" data-ctl-ver="${esc(f.local)}">Abrir</button></div></div>`;
+  }).join("");
+  return `<div class="rlv ctl">
     <div class="noPrint"><div class="cntKick">OPERACIONES · SUPERVISIÓN</div><h1>Control de stock por local</h1>
-    <p class="sub"><b>Debería haber</b> = conteo inicial + ingresos − salidas (vasquetas en kilos). Se compara con el conteo parcial o final que hace el responsable del local (cámara + local). El <b>conteo final</b> es el cierre del mes: deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene (el mes arranca con ese arrastre). El responsable solo cuenta: las diferencias las ve supervisión.</p>
-    <div class="ctlBarra"><button type="button" class="rlvBtn" data-ctl-refresh>↻ Actualizar</button></div></div>
-    <div class="ctlTabla"><div class="ctlHead"><div>Local</div><div>Estado</div><div>Debería haber (kg)</div><div>Contado (kg)</div><div>Diferencia</div><div class="noPrint"></div></div>${filas||`<div class="note">Todavía ningún local hizo su conteo inicial.</div>`}</div>
-    ${print}
+    <p class="sub">Se controla la <b>cámara</b>: <b>Inicial + ingresos − salidas</b> es lo esperado, y la <b>diferencia</b> es lo contado contra eso, siempre sobre el inicial (con su porcentaje). El conteo de <b>cierre</b> es el inicial del mes que viene. Tocá un local para abrir su detalle, elegir entre los conteos ya cargados y pedir uno nuevo.</p>
+    <div class="ctlBarra"><button type="button" class="rlvBtn" data-ctl-refresh>↻ Actualizar</button><span class="ctlLey">Semáforo: verde hasta 1 % · amarillo hasta 3 % · rojo más de 3 %</span></div></div>
+    <div class="ctlTabla"><div class="ctlHead"><div>Local</div><div>Inicial</div><div>Parcial</div><div>Cierre</div><div>Diferencia</div><div class="noPrint"></div></div>${filas||`<div class="note">Todavía ningún local hizo su conteo inicial.</div>`}</div>
   </div>`;
 }
 function ctlDesbloquear(inventarioId, local){
@@ -3334,7 +3406,7 @@ function ctlDesbloquear(inventarioId, local){
       if(motivo.length<3){ err("Escribí el motivo."); return }
       if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
       const r=await api("desbloquearInventario",{local, inventarioId, pin, motivo});
-      if(r && r.ok){ ov.remove(); toast("Conteo desbloqueado por 24 horas"); cargarControl() }
+      if(r && r.ok){ ov.remove(); toast("Conteo desbloqueado por 24 horas"); ctlRefrescar() }
       else err((r&&r.error)||"No se pudo desbloquear.");
     }
   });
@@ -3344,10 +3416,14 @@ function ctlDesbloquear(inventarioId, local){
 function controlClick(t){
   const C=controlEstado();
   if(t.dataset.ctlRefresh!==undefined){ C.datos=null; C.error=null; renderApp(); cargarControl(); return true }
-  if(t.dataset.ctlVer!==undefined){ C.abierto = C.abierto===t.dataset.ctlVer ? "" : t.dataset.ctlVer; renderApp(); return true }
-  if(t.dataset.ctlPedir){ const l=t.dataset.ctlPedir; (async()=>{ const r=await api("pedirConteoParcial",{local:l}); toast(r&&r.ok?"Pedido enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); cargarControl() })(); return true }
-  if(t.dataset.ctlPedirfinal){ const l=t.dataset.ctlPedirfinal; if(!confirm("¿Pedir el conteo FINAL de "+l+"? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.")) return true; (async()=>{ const r=await api("pedirConteoFinal",{local:l}); toast(r&&r.ok?"Pedido final enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); cargarControl() })(); return true }
-  if(t.dataset.ctlCancel){ const l=t.dataset.ctlCancel; if(!confirm("¿Cancelar el pedido de conteo de "+l+"?")) return true; (async()=>{ const r=await api("cancelarPedidoConteo",{local:l}); toast(r&&r.ok?"Pedido cancelado":(r&&r.error)||"No se pudo cancelar."); cargarControl() })(); return true }
+  if(t.dataset.ctlVer!==undefined){ C.det=t.dataset.ctlVer; C.detData=null; C.detId=""; C.detError=null; C.vista="rubro"; C.verG={}; renderApp(); window.scrollTo(0,0); cargarControlDetalle(C.det,""); return true }
+  if(t.dataset.ctlVolver!==undefined){ C.det=null; C.detData=null; renderApp(); cargarControl(); return true }
+  if(t.dataset.ctlSel){ C.detId=t.dataset.ctlSel; C.detData=null; renderApp(); cargarControlDetalle(C.det,C.detId); return true }
+  if(t.dataset.ctlVista){ C.vista=t.dataset.ctlVista; renderApp(); return true }
+  if(t.dataset.ctlVerg){ C.verG=C.verG||{}; C.verG[t.dataset.ctlVerg]=!C.verG[t.dataset.ctlVerg]; renderApp(); return true }
+  if(t.dataset.ctlPedir){ const l=t.dataset.ctlPedir; (async()=>{ const r=await api("pedirConteoParcial",{local:l}); toast(r&&r.ok?"Pedido enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
+  if(t.dataset.ctlPedirfinal){ const l=t.dataset.ctlPedirfinal; if(!confirm("¿Pedir el conteo de CIERRE de "+l+"? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.")) return true; (async()=>{ const r=await api("pedirConteoFinal",{local:l}); toast(r&&r.ok?"Pedido de cierre enviado: el responsable de "+l+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar() })(); return true }
+  if(t.dataset.ctlCancel){ const l=t.dataset.ctlCancel; if(!confirm("¿Cancelar el pedido de conteo de "+l+"?")) return true; (async()=>{ const r=await api("cancelarPedidoConteo",{local:l}); toast(r&&r.ok?"Pedido cancelado":(r&&r.error)||"No se pudo cancelar."); ctlRefrescar() })(); return true }
   if(t.dataset.ctlDesb){ ctlDesbloquear(t.dataset.ctlDesb, t.dataset.ctlLocal); return true }
   if(t.dataset.ctlPrint){ window.print(); return true }
   return false;
@@ -3364,7 +3440,7 @@ async function cargarPedidoConteo(){
 function pedidoConteoBannerHTML(){
   if(!S.pedidoConteo || !S.empleado || ["encargado","turno","produccion"].indexOf(S.empleado.rol)===-1) return "";
   const fin=S.pedidoConteo.tipo==="final";
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo final (cierre del mes)":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene.":"Supervisión pidió un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo de cierre del mes":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene.":"Supervisión pidió un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
 }
 
 function relevarClick(t){
@@ -4238,9 +4314,9 @@ function conteoInicialHubHTML(){
   return `<button class="btn volver" type="button" id="hubVolver" style="margin-bottom:12px">‹ Volver a Stock</button>
   <div class="pdEyebrow">Stock › Conteo inicial</div>
   <h2 class="pdH1">Conteo inicial</h2>
-  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Este mes arranca con el conteo final del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+".":"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")."}</b> ${S.cobertura.tipo==="final"?"Ese conteo ES el conteo inicial: no hace falta hacer otro.":"No se hace otro."} Durante el mes la cámara se controla con el conteo parcial o final que pide supervisión.</div>`:`<p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>`}
+  ${S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Este mes arranca con el conteo de cierre del "+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+".":"Este mes ya tiene su conteo inicial ("+new Date(S.cobertura.ts).toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit"})+")."}</b> ${S.cobertura.tipo==="final"?"Ese conteo ES el conteo inicial: no hace falta hacer otro.":"No se hace otro."} Durante el mes la cámara se controla con el conteo parcial o de cierre que pide supervisión.</div>`:`<p class="invHint" style="margin:0 0 12px">Hacé los dos conteos: se suman y queda el conteo inicial del mes. Desde el 1/12 queda fijo al guardarse.</p>`}
   <div class="stkFisico"><div class="stkPasos">
-    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o final.</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
+    ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">1</span></span><span class="stkPasoTx"><b>Conteo cámara</b><span>Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o de cierre.</span></span></div>`:paso(1,"conteoBtn","Conteo cámara","Contá lo que hay en la cámara.",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',false,"Conteo cámara")}
     <span class="stkSep">+</span>
     ${S.conteoBloqueado?`<div class="stkPaso stkOff" aria-disabled="true"><span class="stkPasoTop"><span class="stkNum">2</span></span><span class="stkPasoTx"><b>Conteo local</b><span>El conteo inicial de este mes ya está.</span></span></div>`:paso(2,"invBtn","Conteo local",invHayBorrador()?"Tenés uno sin terminar.":"Contá lo que hay afuera de la cámara.",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',false,"Conteo local")}
     <span class="stkSep">=</span>
@@ -4667,7 +4743,7 @@ function invContarHTML(){
       <div class="invStep"><button type="button" class="m" data-inv-dec="${s.id}" aria-label="Restar">−</button><input type="text" inputmode="decimal" autocomplete="off" data-inv-in="${s.id}" value="${t?esc(String(v).replace(".",",")):""}" placeholder="–" aria-label="Inventario local de ${esc(s.nombre)}"><button type="button" class="p" data-inv-inc="${s.id}" aria-label="Sumar">+</button>${t?`<button type="button" class="r" data-inv-reset="${s.id}" aria-label="Deshacer lo cargado de ${esc(s.nombre)}" title="Deshacer">↺</button>`:""}</div></div>`;
   };
   const parc=!!I.pedidoId, enCam=parc&&I.fase==="camara";
-  const nomP=I.pedidoTipo==="final"?"Conteo final":"Conteo parcial";
+  const nomP=I.pedidoTipo==="final"?"Conteo de cierre":"Conteo parcial";
   const titulo=parc?(enCam?nomP+" · Cámara":nomP+" · Local"):"Conteo local";
   const acla=parc
     ? (enCam?"Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ":"Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ")+(I.pedidoTipo==="final"?"Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene.":"Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara.")
@@ -4698,14 +4774,14 @@ function invBar(inn){
     const t=invResumenCargado(), partes=invGrupos().filter(g=>t[g]).map(g=>`<b>${invTxtG(g,t[g])}</b> ${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())}`);
     if(I.pedidoId){
       const enCam=I.fase==="camara";
-      inn.innerHTML=`<div class="sum">${I.pedidoTipo==="final"?"Conteo final":"Conteo parcial"} · ${enCam?"cámara":"local"}: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div>${enCam?`<button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invFaseLocal">Seguir con el local</button>`:`<button class="btn ghost" id="invFaseCam">Volver a la cámara</button><button class="btn" id="invResBtn">Ver resultado</button>`}`;
+      inn.innerHTML=`<div class="sum">${I.pedidoTipo==="final"?"Conteo de cierre":"Conteo parcial"} · ${enCam?"cámara":"local"}: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div>${enCam?`<button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invFaseLocal">Seguir con el local</button>`:`<button class="btn ghost" id="invFaseCam">Volver a la cámara</button><button class="btn" id="invResBtn">Ver resultado</button>`}`;
       return true;
     }
     inn.innerHTML=`<div class="sum">Inventario local: ${partes.length?partes.join(" · "):"todavía nada cargado"}</div><button class="btn ghost" id="invSalir">Salir</button><button class="btn" id="invResBtn">Ver resultado</button>`;
     return true;
   }
   if(I.paso==="resultado"){
-    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":(I.pedidoId?(I.pedidoTipo==="final"?"Guardar conteo final":"Guardar conteo parcial"):"Guardar conteo inicial")}</button>`;
+    inn.innerHTML=`<div class="sum">${navigator.onLine===false?`<div class="warn">Sin conexión: para guardar el inventario necesitás señal.</div>`:"Revisá el total y guardá."}</div><button class="btn ghost" id="invVolver" ${I.guardando?"disabled":""}>Volver a contar</button><button class="btn" id="invGuardar" ${(I.guardando||navigator.onLine===false)?"disabled":""}>${I.guardando?"Guardando…":(I.pedidoId?(I.pedidoTipo==="final"?"Guardar conteo de cierre":"Guardar conteo parcial"):"Guardar conteo inicial")}</button>`;
     return true;
   }
   return false;
@@ -4765,7 +4841,7 @@ function invResultadoHTML(){
     ${d.cambios.length?`<p class="invNotaP">Corregido ${d.cambios.length} ${d.cambios.length===1?"vez":"veces"} después de guardar (queda registrado en LogiStock).</p>`:""}
   </div>
   <div class="noPrint">
-  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">${d.x&&d.x.tipo==="parcial"?"Conteo parcial":d.x&&d.x.tipo==="final"?"Conteo final":"Conteo inicial"}</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
+  <div class="invHead"><b>Total del local${d.guardado?`<span class="invBadgeDef">${d.x&&d.x.tipo==="parcial"?"Conteo parcial":d.x&&d.x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span>`:""}</b>${d.guardado?`<button type="button" class="chip" data-inv-guardados>Guardados</button>`:""}</div>
   <p class="invHint">${esc(fechaTxt)} · <b>Cámara</b> (stock de LogiStock) + <b>Local</b> (inventario) = <b>Total</b>.${d.guardado?` Guardado por ${esc(quien)}.`:""}</p>
   <div class="invTot">${helado?`<small>Helado en el local</small><b>${invTxtG("vasquetas",helado.tot,helado.ap)}</b><span>Cámara ${invTxtG("vasquetas",helado.camQ,helado.ap)} + local ${invTxtG("vasquetas",helado.loc)}</span>`:`<small>Total del local</small><span style="font-size:.9rem;color:inherit">${otrosTxt||"Todavía no hay nada cargado."}</span>`}${helado&&otrosTxt?`<span style="display:block;margin-top:6px">${otrosTxt}</span>`:""}</div>
   <div class="invPills"><button type="button" class="chip" data-inv-res="rubro" aria-pressed="${I.res==="rubro"}">Por rubro</button><button type="button" class="chip" data-inv-res="prod" aria-pressed="${I.res==="prod"}">Por producto</button></div>
@@ -4783,9 +4859,9 @@ function invGuardadosHTML(){
   const lista=I.lista;
   const resumen=x=>{ const filas=invFilas({items:x.items,camara:x.camara,precios:null}), t=invTotales(filas); return {t, kg:t.vasquetas?t.vasquetas.tot:0, ap:!!x.aprox && t.vasquetas && t.vasquetas.ap} };
   const items=lista.map((x,i)=>{
-    const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=prev?r.kg-prev.kg:null;
+    const r=resumen(x), prev=lista[i+1]?resumen(lista[i+1]):null, dif=(prev&&I.verDif!==false)?r.kg-prev.kg:null;
     const otros=GRUPO_PRODUCTO_ORDEN.filter(g=>g!=="vasquetas" && r.t[g]).map(g=>`${esc((GRUPO_PRODUCTO_LABEL[g]||g).toLowerCase())} ${invTxtG(g,r.t[g].tot)}`).join(" · ");
-    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">${x.tipo==="parcial"?"Conteo parcial":x.tipo==="final"?"Conteo final":"Conteo inicial"}</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
+    return `<button type="button" class="invHist" data-inv-abrir="${x.id}"><b>${esc(invFecha(x.ts))}<span class="invBadgeDef">${x.tipo==="parcial"?"Conteo parcial":x.tipo==="final"?"Conteo de cierre":"Conteo inicial"}</span></b><span class="big">${invTxtG("vasquetas",r.kg,r.ap)}</span><small>${esc(x.empleado||"")}${otros?" · "+otros:""}</small>${x.cambios&&x.cambios.length?`<small><span class="invTag">Corregido ×${x.cambios.length}</span></small>`:""}${dif===null?"":`<span class="d ${dif>=0?"up":"down"}">${dif>=0?"+":""}${dif.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:1})} kg vs. anterior</span>`}</button>`;
   }).join("");
   return cab+`<p class="invHint">Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF.</p>`+(items||`<div class="note">Todavía no hay conteos guardados en este local.</div>`)+`<div class="tools" style="justify-content:center;margin-top:14px"><button type="button" class="btn" id="invNuevo">Hacer el conteo inicial</button></div>`;
 }
@@ -4794,7 +4870,7 @@ async function invCargarLista(){
   I.lista=null; I.errorLista=null;
   const r=await api("inventarios",{local:S.local});
   if(!S.inv) return;
-  if(r && r.ok){ S.inv.lista=r.inventarios||[]; }
+  if(r && r.ok){ S.inv.lista=r.inventarios||[]; S.inv.verDif=r.verDiferencias!==false; }
   else S.inv.errorLista=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para ver los inventarios.":(r&&r.error)||"No se pudo conectar. Probá de nuevo.";
   if(S.inv.paso==="guardados") renderApp();
 }
@@ -4811,7 +4887,7 @@ async function invGuardarServidor(){
     try{ ls.del(invClaveBorrador()) }catch(e){}
     S.inv.guardando=false; S.inv.ver=r.inventario; S.inv.paso="ver"; S.inv.lista=null; S.inv.res="rubro"; S.inv.det=null; S.inv.busca="";
     if(I.pedidoId) S.pedidoConteo=null;
-    toast(I.pedidoId?(I.pedidoTipo==="final"?(r.avisoStock?"Conteo final guardado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo final guardado: el stock de la cámara quedó igual a lo contado"):"Conteo parcial guardado"):"Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
+    toast(I.pedidoId?(I.pedidoTipo==="final"?(r.avisoStock?"Conteo de cierre guardado, pero no se pudo actualizar el stock: "+r.avisoStock:"Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado"):"Conteo parcial guardado"):"Conteo inicial guardado"); renderApp(); window.scrollTo(0,0);
   } else {
     S.inv.guardando=false;
     toast((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para guardar inventarios.":(r&&r.offline)?"Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal.":(r&&r.error)||"No se pudo guardar el inventario.");
@@ -4824,10 +4900,10 @@ function invConfirmarGuardar(){
   const ov=document.createElement("div"); ov.id="invConfOv"; ov.className="mantenerOv";
   const hoy=new Date().toLocaleDateString("es-AR",{timeZone:"America/Argentina/Buenos_Aires",day:"2-digit",month:"2-digit",year:"numeric"});
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="invConfTit">
-    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"final":"parcial"):"inicial"}?</p>
-    <p class="mantSub" style="margin:0">Vas a guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"final":"parcial"):"inicial"} del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
-    <p class="mantSub" style="margin:0">${S.inv.pedidoTipo==="final"?"Es el conteo FINAL: el stock de la cámara pasa a ser lo que contaste y es el conteo inicial del mes que viene. Queda bloqueado; solo supervisión lo puede desbloquear.":"Después solo se puede corregir dejando un motivo, y queda registrado."}</p>
-    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"final":"parcial"):"inicial"}</button></div></div>`;
+    <p class="mantTit" id="invConfTit" style="margin:0">¿Guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"de cierre":"parcial"):"inicial"}?</p>
+    <p class="mantSub" style="margin:0">Vas a guardar el conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"de cierre":"parcial"):"inicial"} del <b>${esc(hoy)}</b>: cámara + local = total del local.</p>
+    <p class="mantSub" style="margin:0">${S.inv.pedidoTipo==="final"?"Es el conteo de CIERRE: el stock de la cámara pasa a ser lo que contaste y es el conteo inicial del mes que viene. Queda bloqueado; solo supervisión lo puede desbloquear.":"Después solo se puede corregir dejando un motivo, y queda registrado."}</p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-inv-conf-no>Seguir revisando</button><button type="button" class="btn" data-inv-conf-si>Sí, guardar conteo ${S.inv.pedidoId?(S.inv.pedidoTipo==="final"?"de cierre":"parcial"):"inicial"}</button></div></div>`;
   ov.addEventListener("click", e=>{
     if(e.target===ov || e.target.closest("[data-inv-conf-no]")){ ov.remove(); return }
     if(e.target.closest("[data-inv-conf-si]")){ ov.remove(); invGuardarServidor() }
@@ -6821,7 +6897,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="avisoConteoOk"){ try{ ls.set("avisoConteoInicial","1") }catch(e){} renderApp(); return }
   if(t.id==="conteoInicialBtn"){ S.hubInicial=true; renderApp(); window.scrollTo(0,0); cargarConteoBloqueado(); return }
   if(t.id==="hubVolver"){ S.hubInicial=false; renderApp(); return }
-  if(t.id==="conteoBtn" && S.conteoBloqueado){ toast("Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o final."); return }
+  if(t.id==="conteoBtn" && S.conteoBloqueado){ toast("Ya hay un conteo inicial de este mes: la cámara la controla supervisión con el conteo parcial o de cierre."); return }
   if(t.id==="conteoBtn"){ if(borradorConteo() && !confirm("Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo?")) return; iniciarConteo(false,"todo"); return }
   if(t.dataset.loteAgregar){ const k=t.dataset.loteAgregar; (S.lotesExtra[k]=S.lotesExtra[k]||[]).push({f:"", c:0}); renderApp(); return }
   if(t.dataset.loteQuitar){ const [k,i]=t.dataset.loteQuitar.split("|"); if(S.lotesExtra[k]) S.lotesExtra[k].splice(+i,1); renderApp(); return }
