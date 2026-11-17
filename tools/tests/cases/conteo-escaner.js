@@ -30,7 +30,7 @@ const { chromium } = require("playwright");
   ok(await S_(() => parseCodigoRotulo("98" + "0".repeat(26))) === null, "28 dígitos que no empiezan con 99 se rechazan");
 
   const antes20 = await S_(() => stockMap()["20"] || 0);
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForSelector("#contOv"); await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
+  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); await page.waitForTimeout(400);
   ok(await page.$("#escConteoBtn") !== null, "la tarjeta «Contar escaneando» aparece en Vasquetas (local piloto)");
   await page.click("#escConteoBtn"); await page.waitForSelector("#escanerOv");
   ok(/Contar escaneando/.test(await page.innerText("#escanerOv")), "se abre el diálogo de conteo");
@@ -82,7 +82,7 @@ const { chromium } = require("playwright");
   await page.click("#escConteoBtn"); await page.waitForSelector("#escanerOv");
   const n20 = await S_(() => ceItemsDe("20")[0].n);
   await page.click(`[data-esc-quitar="${n20}"]`); await page.waitForTimeout(100);
-  ok(await S_(() => S.conteo["20"]) === antes20 && await S_(() => !S.conteoTocado["20"]), "al quitar la única lectura vuelve el número del sistema y «sin contar»");
+  ok(await S_(() => S.conteo["20"]) === 0 && await S_(() => !S.conteoTocado["20"]), "al quitar la única lectura vuelve a 0 (el conteo arranca de cero) y «sin contar»");
   await page.click("[data-esc-cerrar]"); await page.waitForTimeout(150);
   // 10) guardar: mezcla de escaneado y a mano
   await page.fill('[data-kc="4"]', "19,4"); await page.dispatchEvent('[data-kc="4"]', "input");
