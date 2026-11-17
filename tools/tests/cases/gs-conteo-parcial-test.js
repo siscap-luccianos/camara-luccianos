@@ -58,9 +58,9 @@ E("encargado"); r=run(`controlStock(emp)`); ok(!r.ok,"el responsable no ve el co
 E("supervisor"); r=run(`controlStock(emp)`);
 const g=r.locales.filter(x=>x.local==="Galerías")[0], rc=r.locales.filter(x=>x.local==="Recoleta")[0];
 ok(g&&g.estado==="controlado","Galerías aparece controlada");
-ok(Math.abs(g.debia-15.7)<0.01&&Math.abs(g.conto-14.7)<0.01&&Math.abs(g.diferencia+1)<0.01,"vasquetas: debía 15,7 kg, contó 14,7 kg (cámara 11,2 + local 3,5), faltan 1 kg: "+JSON.stringify([g.debia,g.conto,g.diferencia]));
-ok(g.debiaU===17&&g.contoU===17&&g.difU===0,"icepops: sin diferencia (17 u): "+JSON.stringify([g.debiaU,g.contoU]));
-ok(g.detalle.length===1&&g.detalle[0].nombre==="Banana Split","el detalle lista solo lo que difiere");
+ok(Math.abs(g.difKg+2.5)<0.01&&g.pctKg===-25,"cámara en kg: esperado 13,7 (10 + 7,2 − 3,5) y contó 11,2: faltan 2,5 kg = −25 % del inicial: "+JSON.stringify([g.difKg,g.pctKg]));
+ok(g.difU===4,"cámara en unidades (icepops): esperado 13, contó 17: sobran 4: "+g.difU);
+ok(g.conteos.length===1&&g.base.camKg===10&&g.base.tipo==="inicial","la base es el inicial (cámara 10 kg) y hay 1 conteo posterior");
 ok(rc&&rc.estado==="sin_pedir","Recoleta tiene inicial y nada pedido");
 // 4) candado
 const idInv=inv[1].id; E("encargado");
@@ -100,14 +100,20 @@ r=run(`corregirInventario("Galerías","${r.inventario.id}","49",5,"motivo largo"
 ok(CONTEOS.length===1,"un conteo parcial NO toca el stock (solo el final lo hace)");
 E("supervisor"); r=run(`controlStock(emp)`);
 let gg=r.locales.filter(x=>x.local==="Galerías")[0];
-ok(gg.estado==="controlado"&&gg.parcial.tipo==="final"&&gg.inicial.tipo==="inicial","el control compara el final contra el inicial del mes");
-ok(Math.abs(gg.debia-6.5)<0.01&&Math.abs(gg.conto-6)<0.01,"cierre: debía 6,5 kg (10 − 3,5), contó 6 kg: "+JSON.stringify([gg.debia,gg.conto]));
+ok(gg.estado==="controlado"&&gg.conteos[gg.conteos.length-1].tipo==="final"&&gg.base.tipo==="inicial","el control compara el cierre contra el inicial del mes");
+ok(Math.abs(gg.difKg+0.5)<0.01&&gg.pctKg===-5,"cierre: esperado 6,5 kg (10 − 3,5), contó 6: −0,5 kg = −5 % del inicial: "+JSON.stringify([gg.difKg,gg.pctKg]));
 // mes siguiente: un parcial se compara contra el final
 E("supervisor"); r=run(`pedirConteo("Galerías","parcial",emp)`); const idP2=r.pedido.id;
 NOW=Date.parse("2027-01-15T10:00:00-03:00"); E("encargado"); sb._stockActualLocal=()=>({"4":4,"49":10});
 regs.push({local:"Galerías",tipo:"salida",ts:Date.parse("2027-01-05T10:00:00-03:00"),items:'{"4":1}',pesos:'{"4":[3]}'});
 r=run(`guardarInventario("f-p","Galerías",{},{},emp,"${idP2}",{"4":{u:1,k:3},"49":{u:10}})`);
 E("supervisor"); r=run(`controlStock(emp)`); gg=r.locales.filter(x=>x.local==="Galerías")[0];
-ok(gg.inicial.tipo==="final"&&gg.parcial.tipo==="parcial","el mes siguiente, la base es el conteo final del mes anterior");
-ok(Math.abs(gg.debia-3)<0.01,"debería haber: 6 kg del final − 3 kg de la salida = 3 kg: "+gg.debia);
+ok(gg.base.tipo==="final"&&gg.conteos[gg.conteos.length-1].tipo==="parcial","el mes siguiente, la base es el conteo de cierre del mes anterior");
+ok(Math.abs(gg.difKg)<0.01,"esperado: 6 kg del cierre − 3 kg de la salida = 3 kg; contó 3: sin diferencia: "+gg.difKg);
+// detalle por conteo: cámara + local = total y la diferencia es de la cámara
+r=run(`controlDetalle("Galerías","",emp)`); const gv=r.grupos.filter(x=>x.g==="vasquetas")[0];
+ok(r.ok&&r.conteo.tipo==="parcial"&&r.base.tipo==="final"&&gv&&gv.kg===true&&Math.abs(gv.cam-3)<0.01&&Math.abs(gv.esperado-3)<0.01&&gv.dif===0,"controlDetalle: cámara contada 3 kg, esperado 3 kg, dif 0: "+JSON.stringify(gv&&[gv.cam,gv.esperado,gv.dif]));
+ok(r.conteos.length===3&&r.conteos.every(x=>x.id!==undefined),"el selector trae todos los conteos ya cargados (inicial, cierre, parcial)");
+E("encargado"); r=run(`controlDetalle("Galerías","",emp)`); ok(!r.ok,"el responsable no ve el detalle de control");
+E("supervisor");
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);
