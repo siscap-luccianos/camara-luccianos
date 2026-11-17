@@ -1353,7 +1353,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.159.1";
+const FRONTEND_VERSION = "1.159.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3898,7 +3898,7 @@ function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
   if(soloEsc) return t.length?accGridHTML(t):"";
   if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
   if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
-  if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor cambiado?","swap"));
+  if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor mal rotulado?","swap"));
   return t.length?accGridHTML(t):"";
 }
 /** Menú «¿Qué vas a hacer?»: primero se elige la acción, recién después aparece la lista de sabores. */
@@ -3908,7 +3908,7 @@ function menuIngresoHTML(){
   if(rol!=="colaborador") t.push(tile("merc","📦","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito."));
   t.push(tile("dev","↩️","Devolución","Algo que sacaste y volvés a guardar."));
   if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
-  if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor cambiado","Cambio de sabor: figura uno y era otro."));
+  if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor mal rotulado","Cambio de sabor: figura uno y era otro."));
   if(S.produccionLocal) t.push(tile("prod","🏭","Producción","Lo que fabricás en el local (kilos y vasquetas)."));
   if(resp) t.push(tile("compa","↩️","Devolver por un compañero","Se fue y dejó algo pendiente: lo devolvés a su nombre."));
   return `<p class="sec">Ingreso</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
@@ -7763,8 +7763,8 @@ function ayudaTemas(){
     <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después."}</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
-  if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor cambiado", sub:"La caja decía un sabor y era otro", html:li([
-    "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor cambiado?</b>.",
+  if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
+    "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor mal rotulado?</b>.",
     "Elegí el sabor que figura en la caja y el que era en realidad.",
     "Poné cuántas vasquetas eran"+(S.kilosReales?" y sus kilos":"")+", y el motivo.",
     "Revisá «Cómo queda» y tocá <b>Registrar cambio de sabor</b>."])+nota("No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular."+(S.kilosReales?"":""))});
