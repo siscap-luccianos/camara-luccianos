@@ -17,7 +17,7 @@ const { chromium } = require("playwright");
   ok(!!(await page.$("#conteoBtn")), "sin conteo inicial este mes: «Conteo cámara» se puede usar");
   await page.evaluate(() => { S.conteoBloqueado = true; S.cobertura = { tipo: "final", ts: Date.parse("2026-12-31T22:00:00-03:00") }; renderApp(); });
   ok(!(await page.$("#conteoBtn")) && !!(await page.$(".stkOff")), "con un conteo inicial de este mes: «Conteo cámara» queda apagado");
-  ok(/Ya hecho/.test(await page.innerText(".stkOff")), "y dice «Ya hecho 🔒»");
+  ok(/🔒/.test(await page.innerText(".stkOff")), "y muestra el candado 🔒");
   const hub = (await page.innerText("#main")).replace(/\s+/g, " ");
   ok(/Arranca con el cierre del 31\/12/.test(hub), "el hub avisa que el mes arranca con el conteo final: no hace falta otro inicial");
   ok(!(await page.$("#invBtn")) && !!(await page.$("#invGuardadosBtn")), "Conteo local también queda apagado y Guardados sigue disponible");
