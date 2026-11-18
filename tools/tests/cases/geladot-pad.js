@@ -45,16 +45,16 @@ const { chromium } = require("playwright");
   await page.click('[data-rep-tecla="2"]'); await page.waitForTimeout(100);
   const top1 = await page.evaluate(() => document.querySelector("#repOv .mantenerBox").scrollTop);
   ok(!!(await page.$("#repOv")) && Math.abs(top1 - top0) < 3 && top0 > 0, "Reposición: al tipear un número no salta ni se cierra (scroll " + top0 + " → " + top1 + ")");
-  await page.click('[data-rep-tecla="C"]');
-  for (const d of "2500") await page.click(`[data-rep-tecla="${d}"]`);
+  await page.click('[data-rep-tecla="⌫"]');
+  for (const d of ["2", ",", "5", "0", "0"]) await page.click(`[data-rep-tecla="${d}"]`);
   ok(/no puede pesar más de 2\.000 g/.test(await txt("#repOv")), "Reposición: la abierta no puede pesar más de lo que tenía");
-  await page.click('[data-rep-tecla="C"]');
-  await page.keyboard.press("1"); await page.keyboard.press("5"); await page.keyboard.press("Backspace"); await page.keyboard.press("3"); await page.keyboard.press("0"); await page.keyboard.press("0");
-  ok((await page.inputValue("#repNum")) === "1300", "Reposición: el teclado físico escribe en el pad (1,5,⌫,3,0,0 → " + await page.inputValue("#repNum") + ")");
+  for (let i = 0; i < 6; i++) await page.click('[data-rep-tecla="⌫"]');
+  for (const k of ["1", ",", "5", "Backspace", "3", "0", "0"]) await page.keyboard.press(k);
+  ok((await page.inputValue("#repNum")) === "1,300", "Reposición: el teclado físico escribe kilos con coma (1,5,⌫,3,0,0 → " + await page.inputValue("#repNum") + ")");
 
   ov = await txt("#repOv");
   ok(/Usaste 700 g/.test(ov) && /2 cajas \+ 1300 g/.test(ov), "Reposición: la app calcula «Usaste 700 g» y lo que queda — " + ov.replace(/\s+/g, " ").slice(-200));
-  ok(/1\.300 g = 1,30 kg/.test(await txt("#repOv")) && /Usaste 700 g \(0,70 kg\)/.test(await txt("#repOv")), "Reposición: muestra el equivalente en kilos (1.300 g = 1,30 kg · usaste 0,70 kg)");
+  ok(/1,300 kg = 1\.300 g/.test(await txt("#repOv")) && /Usaste 700 g \(0,70 kg\)/.test(await txt("#repOv")), "Reposición: escribe 1,300 kg y muestra 1.300 g · usaste 0,70 kg");
   await page.click("[data-rep-ok]"); await page.waitForTimeout(900);
   const rp = posts.filter(x => x.accion === "registrar" && x.subtipo === "reposicion")[0];
   ok(rp && rp.tipo === "salida" && rp.items["194"] === 700, "Reposición: manda salida subtipo reposicion con 700 g: " + JSON.stringify(rp));
@@ -64,11 +64,15 @@ const { chromium } = require("playwright");
   await page.click("#volverSalidaMenu"); await page.waitForTimeout(200); await page.click('[data-sal-menu="desp"]'); await page.waitForTimeout(300); await abrirGeladot();
   await page.click('[data-add="195"], [data-wadd="195"]'); await page.waitForSelector("#cantOv");
   ov = await txt("#cantOv");
-  ok(/¿Cuántos gramos\?/.test(ov) && /Pesá lo que sacás/.test(ov), "Desperdicio: pad de gramos con aviso");
-  for (const d of "99999") await page.click(`[data-cant-tecla="${d}"]`);
+  ok(/¿Cuántos kilos\?/.test(ov) && /Pesá lo que sacás/.test(ov), "Desperdicio: pad de kilos con aviso");
+  for (const d of ["9", ",", "9", "9", "9"]) await page.click(`[data-cant-tecla="${d}"]`);
   ok(/Solo hay 2 cajas \+ 2000 g para marcar como desperdicio/.test(await txt("#cantMsg")), "Desperdicio: «Solo hay …» — " + await txt("#cantMsg"));
-  await page.click('[data-cant-tecla="C"]'); await page.click("[data-cant-caja]");
-  ok((await page.inputValue("#cantNum")) === "2500", "Desperdicio: +1 caja = 2500");
+  await page.click('[data-cant-tecla="⌫"]'); await page.click('[data-cant-tecla="⌫"]'); await page.click('[data-cant-tecla="⌫"]'); await page.click('[data-cant-tecla="⌫"]'); await page.click('[data-cant-tecla="⌫"]');
+  await page.click('[data-cant-tecla="0"]'); await page.click('[data-cant-tecla=","]'); await page.click('[data-cant-tecla="0"]'); await page.click('[data-cant-tecla="3"]'); await page.click('[data-cant-tecla="0"]');
+  ok((await page.inputValue("#cantNum")) === "0,030" && /30 g/.test(await txt("#cantKg")), "Desperdicio: 0,030 kg = 30 g — " + await txt("#cantKg"));
+  for (let i = 0; i < 5; i++) await page.click('[data-cant-tecla="⌫"]');
+  await page.click("[data-cant-caja]");
+  ok((await page.inputValue("#cantNum")) === "2,500", "Desperdicio: +1 caja = 2,500 kg: " + await page.inputValue("#cantNum"));
   await page.click("[data-cant-listo]"); await page.waitForTimeout(200);
   ok(await page.evaluate(() => S.cart.desperdicio["195"]) === 2500, "carrito de desperdicio: 2500 g");
 
@@ -76,7 +80,7 @@ const { chromium } = require("playwright");
   await page.click("#ayudaBtn"); await page.waitForSelector("#ayudaOv");
   const tema = await page.$('[data-ay-tema="geladot"]');
   ok(!!tema && /Geladot: cómo se retira/.test(await tema.innerText()), "«?» tiene el tema «Geladot: cómo se retira»");
-  if (tema) { await tema.click(); await page.waitForTimeout(150); ok(/2\.500 g/.test(await txt("#ayudaOv")) && /ABIERTA/.test(await txt("#ayudaOv")) && /fibrón/.test(await txt("#ayudaOv")), "el tema explica la caja abierta, el fibrón y pesar") }
+  if (tema) { await tema.click(); await page.waitForTimeout(150); ok(/2,500 kg/.test(await txt("#ayudaOv")) && /ABIERTA/.test(await txt("#ayudaOv")) && /fibrón/.test(await txt("#ayudaOv")), "el tema explica la caja abierta, el fibrón y pesar") }
 
   // 5b) conteo en gramos con helper
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1500);
@@ -86,9 +90,9 @@ const { chromium } = require("playwright");
   const pillI = await page.$('[data-familia="geladot"]'); if (pillI) { await pillI.click(); await page.waitForTimeout(300) }
   const ci = await page.$('input[data-cant-input="194"]');
   ok(!!ci, "Ingreso: Geladot tiene campo para escribir gramos");
-  if (ci) { await ci.fill("1300"); await ci.dispatchEvent("input"); await page.waitForTimeout(150);
+  if (ci) { await ci.fill("1,300"); await ci.dispatchEvent("input"); await page.waitForTimeout(150);
     
-    ok(/1\.300|1300/.test(await page.inputValue('input[data-cant-input="194"]')) && /1,30 kg/.test(await txt("#main")), "Ingreso: 1300 g quedan cargados y dice 1,3 kg"); }
+    ok(/1,300/.test(await page.inputValue('input[data-cant-input="194"]')) && /1\.300 g/.test(await txt("#main")), "Ingreso: 1,300 kg quedan cargados y dice 1.300 g"); }
   await page.evaluate(() => document.querySelector("#tabs [data-t='stock']").click()); await page.waitForTimeout(500);
   await page.evaluate(() => abrirElegirConteo()); await page.waitForSelector("#contOv");
   await page.evaluate(() => { document.querySelector("#contOv [data-ce=\"todo\"]").click(); document.querySelector("#contOv [data-ce-empezar]").click() }); await page.waitForTimeout(700);
@@ -96,10 +100,10 @@ const { chromium } = require("playwright");
   const campo = await page.$('input[data-c="194"]');
   ok(!!campo, "Conteo: hay campo de Geladot");
   if (campo) {
-    ok(/gramos/i.test(await page.innerText('[data-gelhelp="194"]')), "helper explica que se cuenta en gramos");
-    await campo.fill("3000"); await campo.dispatchEvent("input"); await page.waitForTimeout(150);
+    ok(/kilos/i.test(await page.innerText('[data-gelhelp="194"]')), "helper explica que se escribe en kilos");
+    await campo.fill("3,000"); await campo.dispatchEvent("input"); await page.waitForTimeout(150);
     const h = (await page.innerText('[data-gelhelp="194"]')).replace(/\s+/g, " ");
-    ok(/1 caja \+ 500 g/.test(h) && /3,00 kg/.test(h), "helper: 3000 g = 1 caja + 500 g · 3,0 kg → " + h);
+    ok(/3\.000 g/.test(h) && /1 caja \+ 500 g/.test(h), "helper: 3,000 kg = 3.000 g = 1 caja + 500 g → " + h);
   }
 
   // 6) recarga

@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.181.3";
+const FRONTEND_VERSION = "1.182.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1709,13 +1709,23 @@ function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
 const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"], k:["kilo","kilos"], g:["gramo","gramos"] };
 const GEL_CAJA=2500;
 function esGel(id){ return tipoDe(id)==="g" }
+/** Geladot: se escribe en KILOS con coma (como la balanza: 0,030) y la app guarda gramos. */
+function gDeKgStr(v){ const n=parseFloat(String(v==null?"":v).replace(",",".")); return isFinite(n)&&n>0?Math.round(n*1000):0 }
+function kgStrDeG(g){ g=Math.round(+g||0); return g>0?(g/1000).toFixed(3).replace(".",","):"" }
+/** Acepta solo dígitos y una coma (el punto cuenta como coma), hasta 3 decimales. */
+function limpiarKgStr(v){ v=String(v||"").replace(/\./g,",").replace(/[^0-9,]/g,""); const i=v.indexOf(","); if(i>=0) v=v.slice(0,i+1)+v.slice(i+1).replace(/,/g,"").slice(0,3); return v.slice(0,i>=0?i+4:2) }
+function pasoKgStr(cur,tecla){
+  if(tecla==="C") return ""; if(tecla==="⌫") return cur.slice(0,-1);
+  if(tecla===","){ if(cur.includes(",")) return cur; return (cur||"0")+"," }
+  if(cur.includes(",")){ return cur.split(",")[1].length>=3?cur:cur+tecla }
+  if(cur.length>=2) return cur; return (cur==="0"?"":cur)+tecla }
 /** Geladot: el stock va en gramos; se muestra "3 cajas + 900 g". */
 function fmtGel(g){ g=Math.round(Number(g)||0); const c=Math.floor(g/GEL_CAJA), r=g-c*GEL_CAJA; return c?(c+(c===1?" caja":" cajas")+(r?" + "+r+" g":"")):r+" g" }
 /** Total del carrito para la barra: si todo es Geladot (gramos) se dice en kilos. */
 function totalBarTxt(ent,cart,tot){ const g=(ent||[]).filter(x=>esGel(x)), r=(ent||[]).filter(x=>!esGel(x)); const gg=g.reduce((a,x)=>a+(+cart[x]||0),0), rr=r.reduce((a,x)=>a+(+cart[x]||0),0); const kg=fmtKg(gg/1000)+" kg"; if(!g.length) return tot+" "+(tot===1?"unidad":"unidades"); if(!r.length) return kg; return rr+" "+(rr===1?"unidad":"unidades")+" + "+kg }
 /** Ayuda del conteo de Geladot: lo que se escribe son gramos; acá se ve cuánto es en cajas y en kilos. */
-function gelAyudaTxt(g){ g=Math.round(Number(g)||0); return g>0?`Contás <b>gramos</b>. = ${fmtGel(g)} · ${fmtKg(g/1000)} kg`:`Contás en <b>gramos</b> (1 caja = 2.500 g). Pesá lo que hay y escribilo.` }
-document.addEventListener("input",e=>{ const i=e.target; if(!i||!i.matches||!i.matches("input[data-c]")) return; const h=document.querySelector(`[data-gelhelp="${i.dataset.c}"]`); if(h) h.innerHTML=gelAyudaTxt(i.value) });
+function gelAyudaTxt(g){ g=Math.round(Number(g)||0); return g>0?`= <b>${g.toLocaleString("es-AR")} g</b> · ${fmtGel(g)}`:`Escribí los <b>kilos</b> como los marca la balanza. Ej.: 0,030 = 30 g · 2,500 = 1 caja.` }
+document.addEventListener("input",e=>{ const i=e.target; if(!i||!i.matches||!i.matches("input[data-c]")) return; const h=document.querySelector(`[data-gelhelp="${i.dataset.c}"]`); if(h) h.innerHTML=gelAyudaTxt(gDeKgStr(i.value)) });
 function pstockHTML(id,n){ return esGel(id)?`<b>${fmtGel(n)}</b>`:`<b>${n}</b><span>${unidad(id,n)}</span>` }
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
 const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)", k:"Kilos (granella, crumble: el stock es la cantidad de kilos)" };
@@ -4382,13 +4392,13 @@ function gridIngreso(st){
     return `<div class="row">
       ${plateHTML(s.id)}
       <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${esGel(s.id)?fmtGel(st[s.id]):st[s.id]+" "+unidad(s.id,st[s.id])}</div></div>
-      ${(esChocolateria(s.id)||esGel(s.id))?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${esGel(s.id)?"2,5 kg":s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q||""}" placeholder="${esGel(s.id)?"gramos":"–"}"${esGel(s.id)?' style="width:96px"':""} aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      ${(esChocolateria(s.id)||esGel(s.id))?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${esGel(s.id)?"2,5 kg":s.cantidad_maestra})</button>`:""}<input type="${esGel(s.id)?"text":"number"}" ${esGel(s.id)?'inputmode="decimal"':'min="0" inputmode="numeric"'} data-cant-input="${s.id}" value="${esGel(s.id)?kgStrDeG(q):(q||"")}" placeholder="${esGel(s.id)?"0,000 kg":"–"}"${esGel(s.id)?' style="width:96px"':""} aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
         ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${esGel(s.id)?"2,5 kg":s.cantidad_maestra})</button>`:""}
         ${kilosInlineHTML(s.id)}
         <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n"${esGel(s.id)?' style="min-width:5.5em;font-size:1.05rem;white-space:nowrap"':""}>${esGel(s.id)?fmtKg(q/1000)+" kg":q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
     ${usaLotes(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
-    ${esGel(s.id)&&q>0?`<div class="gelAyuda" style="grid-column:1/-1;text-align:right">= ${fmtGel(q)} · ${fmtKg(q/1000)} kg</div>`:esGel(s.id)?`<div class="gelAyuda" style="grid-column:1/-1;text-align:right">Escribí los <b>gramos</b> (1 caja = 2.500 g) o tocá «+1 caja».</div>`:""}
+    ${esGel(s.id)&&q>0?`<div class="gelAyuda" style="grid-column:1/-1;text-align:right">= <b>${q.toLocaleString("es-AR")} g</b> · ${fmtGel(q)}</div>`:esGel(s.id)?`<div class="gelAyuda" style="grid-column:1/-1;text-align:right">Escribí los <b>kilos</b> como los marca la balanza (ej. 0,030 = 30 g) o tocá «+1 caja».</div>`:""}
     ${kilosAvisoHTML(s.id,q)}
     </div>`};
   const puedeRemito = S.empleado.rol!=="colaborador";
@@ -4836,7 +4846,7 @@ function stockViewConteo(){
   const cont=S.conteo, st0=stockMap(), parcial=conteoParcialActivo();
   const list=listaFiltrada(st0);
   const row=s=>`<div class="row${esVasquetaKilos(s.id)?" cwRow":""}" data-cestado="${conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0)}">${plateHTML(s.id)}<div class="nm">${esc(s.nombre)}<div class="meta">Contá en ${unidad(s.id,2)}${s.tipo==="m"?" (la caja entera, no sueltos)":""}</div>${(()=>{const e=conteoEstadoDe(s.id,Math.max(0,st0[s.id]||0),cont[s.id]||0);return `<span class="cBadge c-${e}" data-cbadge="${s.id}" ${CONTEO_BADGE[e]?"":"hidden"}>${CONTEO_BADGE[e]||""}</span>`})()}${ceTagHTML(s.id)}</div>
-    ${esVasquetaKilos(s.id)?`<div class="right cwTot"><span class="cwN" data-cwn="${s.id}">${cwCuenta(s.id)?cwCuenta(s.id)+(cwCuenta(s.id)===1?" vasqueta":" vasquetas"):""}</span><div class="invTotW"><small>Total</small><b data-cwtot="${s.id}">${cwSuma(s.id)?cwSuma(s.id).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:2})+" kg":"–"}</b></div></div><span class="cwHide"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}"><input type="text" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}"></span>${cwPillsHTML(s)}`:`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${esGel(s.id)?"2,5 kg":s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}" placeholder="–"><button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>`}${esGel(s.id)?`<div class="gelAyuda" data-gelhelp="${s.id}">${gelAyudaTxt(cont[s.id])}</div>`:""}${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
+    ${esVasquetaKilos(s.id)?`<div class="right cwTot"><span class="cwN" data-cwn="${s.id}">${cwCuenta(s.id)?cwCuenta(s.id)+(cwCuenta(s.id)===1?" vasqueta":" vasquetas"):""}</span><div class="invTotW"><small>Total</small><b data-cwtot="${s.id}">${cwSuma(s.id)?cwSuma(s.id).toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:2})+" kg":"–"}</b></div></div><span class="cwHide"><input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}"><input type="text" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}"></span>${cwPillsHTML(s)}`:`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-ccaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${esGel(s.id)?"2,5 kg":s.cantidad_maestra})</button>`:""}<span class="cStep"><button type="button" class="cM" data-cdec="${s.id}" aria-label="Restar">−</button>${esGel(s.id)?`<input type="text" inputmode="decimal" data-c="${s.id}" value="${kgStrDeG(cont[s.id])}" placeholder="0,000 kg" style="width:96px">`:`<input type="number" min="0" inputmode="numeric" data-c="${s.id}" value="${cont[s.id]||""}" placeholder="–">`}<button type="button" class="cP" data-cinc="${s.id}" aria-label="Sumar">+</button></span>${esVasquetaKilos(s.id)?`<input type="text" class="kgIn" inputmode="decimal" data-kc="${s.id}" value="${esc(S.kilosConteo[s.id]||"")}" placeholder="kg" aria-label="Kilos totales de ${esc(s.nombre)}">`:""}</div>`}${esGel(s.id)?`<div class="gelAyuda" data-gelhelp="${s.id}">${gelAyudaTxt(cont[s.id])}</div>`:""}${usaLotes(s.id)&&cont[s.id]>0&&!parcial?`<div class="lotesFull">${lotesPanelHTML("conteo:"+s.id,s.id,cont[s.id])}</div>`:""}</div>`;
   const gA=S.filtroFamilia||"vasquetas", rub=(GRUPO_PRODUCTO_LABEL[gA]||gA)+(S.filtroCategoria!=="todas"?" · "+S.filtroCategoria:""), nTodo=saboresDelLocal().length, soloTodo=S.conteoAplicar==="todo"&&!parcial;
   const tEsc=conteoEscVisible()?(()=>{ const E=ceEsc(), n=E.items.length; return accTileHTML("escConteoBtn","Activar escáner",n?`${n} ${n===1?"escaneada":"escaneadas"}`:"Vasquetas o cajas de vasquetas","scan","m") })():"";
   return `<div class="cntTit"><div class="cntKick">CUENTA: ${esc(S.empleado.nombre).toUpperCase()}</div><h1>Conteo cámara</h1><p class="cntAcla">Contá por rubro: cuando termines uno (por ejemplo Vasquetas), tocá «Revisar y guardar» y elegí «Guardar y seguir contando»; después seguí con el siguiente. Lo que no toques no se modifica.</p></div>
@@ -7255,7 +7265,7 @@ document.addEventListener("click", async e=>{
     clearTimeout(_borradorTimer); descartarBorradorConteo(); S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:"); S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; renderApp(); return }
   if(t.dataset.cdec||t.dataset.cinc){
     const id=t.dataset.cdec||t.dataset.cinc, inp=document.querySelector(`input[data-c="${id}"]`); if(!inp) return;
-    inp.value=Math.max(0,(parseInt(inp.value,10)||0)+(t.dataset.cinc?1:-1)*(esGel(id)?GEL_CAJA:1)); inp.dispatchEvent(new Event("input",{bubbles:true})); return;
+    inp.value=esGel(id)?kgStrDeG(Math.max(0,gDeKgStr(inp.value)+(t.dataset.cinc?1:-1)*GEL_CAJA)):Math.max(0,(parseInt(inp.value,10)||0)+(t.dataset.cinc?1:-1)); inp.dispatchEvent(new Event("input",{bubbles:true})); return;
   }
   if(t.id==="aplicarAbrir"){ S.conteoAplicarAbierto=!S.conteoAplicarAbierto; renderApp(); return }
   if(t.dataset.cwmas){ const id=t.dataset.cwmas; S.conteoPesos=S.conteoPesos||{}; const w=(S.conteoPesos[id]=S.conteoPesos[id]||[]); while(w.length<3) w.push(""); w.push(""); renderApp(); setTimeout(()=>{ const c=document.querySelectorAll(`[data-cw^="${id}|"]`); const u=c[c.length-1]; if(u) u.focus() },30); return }
@@ -7378,7 +7388,8 @@ document.addEventListener("input", e=>{
   if(e.target.id==="authClave"){ S.auth.clave=e.target.value }
   if(e.target.id==="bloqueoClaveInput"){ S.bloqueoClave=e.target.value }
   if(e.target.dataset.c){
-    const n=Math.max(0,parseInt(e.target.value,10)||0);
+    if(esGel(e.target.dataset.c)){ const v=limpiarKgStr(e.target.value); if(v!==e.target.value) e.target.value=v }
+    const n=esGel(e.target.dataset.c)?gDeKgStr(e.target.value):Math.max(0,parseInt(e.target.value,10)||0);
     if(ceMano(e.target.dataset.c)){ const tg=e.target.closest(".row"), tag=tg&&tg.querySelector(".cEscTag"); if(tag) tag.remove() }
     S.conteo[e.target.dataset.c]=n;
     S.conteoTocado[e.target.dataset.c]=true; delete S.conteoAck[e.target.dataset.c];
@@ -7394,9 +7405,10 @@ document.addEventListener("input", e=>{
     S.confirm=false; renderBar();
   }
   if(e.target.dataset.cantInput){
-    const n=Math.max(0,Math.floor(+e.target.value||0));
+    if(esGel(e.target.dataset.cantInput)){ const v=limpiarKgStr(e.target.value); if(v!==e.target.value) e.target.value=v }
+    const n=esGel(e.target.dataset.cantInput)?gDeKgStr(e.target.value):Math.max(0,Math.floor(+e.target.value||0));
     if(n) S.cart.ingreso[e.target.dataset.cantInput]=n; else delete S.cart.ingreso[e.target.dataset.cantInput];
-    if(esGel(e.target.dataset.cantInput)){ const h=e.target.closest(".row")&&e.target.closest(".row").querySelector(".gelAyuda"); if(h) h.innerHTML=n?`= ${fmtGel(n)} · ${fmtKg(n/1000)} kg`:"Escribí los <b>gramos</b> (1 caja = 2.500 g) o tocá «+1 caja»." }
+    if(esGel(e.target.dataset.cantInput)){ const h=e.target.closest(".row")&&e.target.closest(".row").querySelector(".gelAyuda"); if(h) h.innerHTML=n?`= <b>${n.toLocaleString("es-AR")} g</b> · ${fmtGel(n)}`:"Escribí los <b>kilos</b> como los marca la balanza (ej. 0,030 = 30 g) o tocá «+1 caja»." }
     mostrarVencRenglon(e.target, e.target.dataset.cantInput, "ing:", "data-venc", n);
     renderBar();
   }
@@ -7745,12 +7757,12 @@ function abrirCantidad(id,c){
   S.cantDlg={id:String(id), c, fresco:true, actual};
   const ov=document.createElement("div"); ov.id="cantOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="cantTit">
-    <p class="mantTit" id="cantTit">${esGel(id)?"¿Cuántos gramos?":"¿Cuántas unidades?"}</p>
-    ${esGel(id)?`<div class="ayNota" style="margin:0 0 8px;text-align:left"><b>Pesá lo que sacás</b> y escribí los gramos que marca la balanza. Caja entera: tocá «+1 caja».</div>`:""}<p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
-    <input type="text" id="cantNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" value="${actual||1}" aria-label="Cantidad de unidades">
+    <p class="mantTit" id="cantTit">${esGel(id)?"¿Cuántos kilos?":"¿Cuántas unidades?"}</p>
+    ${esGel(id)?`<div class="ayNota" style="margin:0 0 8px;text-align:left"><b>Pesá lo que sacás</b> y escribí los kilos que marca la balanza (ej. 0,030 = 30 g). Caja entera: tocá «+1 caja».</div>`:""}<p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
+    <input type="text" id="cantNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" value="${esGel(id)?kgStrDeG(actual):(actual||1)}" placeholder="${esGel(id)?"0,000 kg":""}" aria-label="${esGel(id)?"Kilos":"Cantidad de unidades"}">
     ${esGel(id)?'<div class="gelAyuda" id="cantKg" style="text-align:center;margin:0 0 6px"></div>':""}<div class="escMsg err" id="cantMsg" role="status" aria-live="polite" hidden></div>
     <div class="kgPad" role="group" aria-label="Teclado numérico">
-      ${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-cant-tecla="${k}" aria-label="${k==="C"?"borrar todo":k==="⌫"?"borrar":k}">${k==="C"?"Borrar":k}</button>`).join("")}
+      ${["1","2","3","4","5","6","7","8","9",esGel(id)?",":"C","0","⌫"].map(k=>`<button type="button" data-cant-tecla="${k}" aria-label="${k==="C"?"borrar todo":k===","?"coma":k==="⌫"?"borrar":k}">${k==="C"?"Borrar":k}</button>`).join("")}
     </div>
     ${caja&&caja<=max?`<button type="button" class="btn ghost" data-cant-caja style="margin:8px 0 0;width:100%">+1 caja · ${caja} ${esGel(id)?"g (caja entera)":"unidades"}</button>`:""}
     <div class="mantAcc" style="margin-top:10px">
@@ -7771,6 +7783,7 @@ function abrirCantidad(id,c){
   ov.addEventListener("keydown", e=>{
     if(e.key==="Enter"){ e.preventDefault(); listoCantidad(); return }
     if(/^[0-9]$/.test(e.key)){ e.preventDefault(); teclaCantidad(e.key) }
+    else if(S.cantDlg&&esGel(S.cantDlg.id)&&(e.key===","||e.key===".")){ e.preventDefault(); teclaCantidad(",") }
     else if(e.key==="Backspace"||e.key==="Delete"){ e.preventDefault(); teclaCantidad("⌫") }
   });
   document.body.appendChild(ov);
@@ -7792,7 +7805,7 @@ function abrirReposicion(id){
   const ov=document.createElement("div"); ov.id="repOv"; ov.className="mantenerOv";
   document.body.appendChild(ov);
   const cuenta=()=>{ // consumo según la caja elegida y lo que quedó
-    const q=parseInt(d.val||"",10);
+    const q=gDeKgStr(d.val);
     if(d.caja==="entera") return {consumo:GEL_CAJA, listo:d.cajas>0, resto:d.st-GEL_CAJA, formula:`1 caja entera = ${GEL_CAJA.toLocaleString("es-AR")} g`};
     if(!d.caja||d.val==="") return null;
     const base=d.caja==="abierta"?d.ab:d.caja==="nueva"?GEL_CAJA:d.ab+GEL_CAJA, max=d.caja==="abierta"?d.ab:GEL_CAJA;
@@ -7818,10 +7831,10 @@ function abrirReposicion(id){
       ${d.ab>0?'<div class="repRegla">☝ <b>Siempre usá primero la caja ABIERTA.</b> Si no hay abierta, abrí una cerrada.</div>':""}
       ${pedirQuedo?`<div class="repPaso"><i>3</i> Fraccioná y pesá la caja</div>
         <p class="repTx"><b>1.</b> Sacá las bolitas que necesitás.<br><b>2.</b> Volvé a poner la caja sobre la balanza.<br><b>3.</b> Mirá el número que marca la balanza.<br><b>4.</b> Escribí <b>ABIERTA</b> en la caja con fibrón y volvela a la cámara.</p>
-        <div class="repPaso"><i>4</i> Escribí cuánto quedó (en gramos)</div>
-        <input type="text" id="repNum" class="escCampo kgPeso" readonly inputmode="none" value="${esc(d.val)}" placeholder="0" aria-label="Gramos que marca la balanza">
-        <div class="gelAyuda" style="text-align:center;margin:4px 0 8px">${d.val?`${parseInt(d.val,10).toLocaleString("es-AR")} g = <b>${fmtKg(parseInt(d.val,10)/1000)} kg</b>`:"Escribí en gramos. Ej.: 30 g = 0,03 kg · 300 g = 0,30 kg"}</div>
-        <div class="kgPad" role="group" aria-label="Teclado numérico">${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-rep-tecla="${k}">${k==="C"?"Borrar":k}</button>`).join("")}</div>`:""}
+        <div class="repPaso"><i>4</i> Escribí cuánto quedó (en kilos, como marca la balanza)</div>
+        <input type="text" id="repNum" class="escCampo kgPeso" readonly inputmode="none" value="${esc(d.val)}" placeholder="0,000 kg" aria-label="Kilos que marca la balanza">
+        <div class="gelAyuda" style="text-align:center;margin:4px 0 8px">${d.val?`${d.val} kg = <b>${gDeKgStr(d.val).toLocaleString("es-AR")} g</b>`:"Escribí los kilos como los marca la balanza. Ej.: 0,030 kg = 30 g · 1,800 kg = 1.800 g"}</div>
+        <div class="kgPad" role="group" aria-label="Teclado numérico">${["1","2","3","4","5","6","7","8","9",",","0","⌫"].map(k=>`<button type="button" data-rep-tecla="${k}" aria-label="${k===","?"coma":k==="⌫"?"borrar":k}">${k}</button>`).join("")}</div>`:""}
       ${c&&c.pasa?`<div class="escMsg err" role="status">Esa caja no puede pesar más de ${maxQ.toLocaleString("es-AR")} g. Revisá el número.</div>`:""}
       ${c&&c.cero?`<div class="escMsg err" role="status">Con ese número no se usó nada. Revisá el peso.</div>`:""}
       ${c&&c.listo?`<div class="repCuenta"><small>La app hace la cuenta</small><b>Usaste ${c.consumo.toLocaleString("es-AR")} g (${fmtKg(c.consumo/1000)} kg)</b><br>En la cámara queda: <b>${fmtGel(c.resto)}</b> (${c.resto.toLocaleString("es-AR")} g · ${fmtKg(c.resto/1000)} kg en total)<br>${c.formula}</div>`:""}
@@ -7833,7 +7846,7 @@ function abrirReposicion(id){
   const onKey=e=>{
     if(!S.repDlg||e.ctrlKey||e.metaKey||e.altKey) return;
     const k=e.key;
-    if(/^[0-9]$/.test(k)){ e.preventDefault(); const b=ov.querySelector(`[data-rep-tecla="${k}"]`); if(b) b.click(); }
+    if(/^[0-9]$/.test(k)||k===","||k==="."){ e.preventDefault(); const b=ov.querySelector(`[data-rep-tecla="${k==="."?",":k}"]`); if(b) b.click(); }
     else if(k==="Backspace"||k==="Delete"){ e.preventDefault(); const b=ov.querySelector('[data-rep-tecla="⌫"]'); if(b) b.click(); }
     else if(k==="Enter"){ const b=ov.querySelector("[data-rep-ok]"); if(b&&!b.disabled){ e.preventDefault(); b.click() } }
     else if(k==="Escape"){ const b=ov.querySelector("[data-rep-cancel]"); if(b&&!d.busy) b.click() }
@@ -7845,11 +7858,11 @@ function abrirReposicion(id){
     const b=e.target.closest("button"); if(!b||b.disabled) return;
     if(b.dataset.repCancel!==undefined){ cerrar(); return }
     if(b.dataset.repCaja){ d.caja=b.dataset.repCaja; d.val=""; render(); return }
-    if(b.dataset.repTecla!==undefined){ const k=b.dataset.repTecla; d.val=k==="C"?"":k==="⌫"?d.val.slice(0,-1):(d.val.length<4?(d.val==="0"?"":d.val)+k:d.val); render(); return }
+    if(b.dataset.repTecla!==undefined){ const k=b.dataset.repTecla; d.val=pasoKgStr(d.val,k); render(); return }
     if(b.dataset.repOk!==undefined){
       const c=cuenta(); if(!c||!c.listo||d.busy) return;
       d.busy=true; render();
-      const payload={clienteId:uuid(), tipo:"salida", local:S.local, items:{[d.id]:c.consumo}, subtipo:"reposicion", motivo:d.caja==="entera"?"Caja entera sin pesar":"Reposición: quedó "+(parseInt(d.val,10)||0)+" g"};
+      const payload={clienteId:uuid(), tipo:"salida", local:S.local, items:{[d.id]:c.consumo}, subtipo:"reposicion", motivo:d.caja==="entera"?"Caja entera sin pesar":"Reposición: quedó "+gDeKgStr(d.val)+" g"};
       const r=await api("registrar",payload);
       if(r&&r.ok){ cerrar(); toast("Reposición registrada: "+sb.nombre+", usaste "+c.consumo.toLocaleString("es-AR")+" g. En cámara: "+fmtGel(c.resto)+"."); await cargarDatos(); renderApp(); return }
       if(r&&r.offline){ colaAgregar("registrar",payload); agregarRegistroOptimista(payload); cerrar(); toast("Sin conexión: se guardó y se va a enviar solo."); renderApp(); return }
@@ -7864,6 +7877,11 @@ function cerrarCantidad(){ const ov=document.getElementById("cantOv"); if(ov) ov
 function teclaCantidad(k){
   const inp=document.getElementById("cantNum"), d=S.cantDlg; if(!inp||!d) return;
   let v=inp.value;
+  if(esGel(d.id)){
+    if(k==="+caja") v=kgStrDeG(Math.min(99000,(d.fresco?0:gDeKgStr(v))+GEL_CAJA));
+    else v=pasoKgStr(d.fresco&&k!=="⌫"&&k!=="C"?"":(d.fresco?"":v),k);
+    d.fresco=false; inp.value=v; validarCantidad(); return;
+  }
   if(k==="⌫") v=d.fresco?"":v.slice(0,-1);
   else if(k==="C") v="";
   else if(k==="+caja"){ const caja=Number((S.saboresPorId[d.id]||{}).cantidad_maestra)||0; v=String(Math.min(99999,(d.fresco&&!d.actual?0:parseInt(v||"0",10)||0)+caja)) }
@@ -7873,15 +7891,15 @@ function teclaCantidad(k){
 }
 function validarCantidad(){
   const inp=document.getElementById("cantNum"), d=S.cantDlg; if(!inp||!d) return;
-  const n=parseInt(inp.value||"0",10)||0, max=maxPad(d.id,d.c), pasa=n>max;
+  const n=esGel(d.id)?gDeKgStr(inp.value):(parseInt(inp.value||"0",10)||0), max=maxPad(d.id,d.c), pasa=n>max;
   const msg=document.getElementById("cantMsg"), ok=document.querySelector("[data-cant-listo]");
-  const ck=document.getElementById("cantKg"); if(ck) ck.innerHTML=n>0?`${n.toLocaleString("es-AR")} g = <b>${fmtKg(n/1000)} kg</b>`:"Escribí en gramos. Ej.: 30 g = 0,03 kg";
+  const ck=document.getElementById("cantKg"); if(ck) ck.innerHTML=n>0?`${inp.value} kg = <b>${n.toLocaleString("es-AR")} g</b>`:"Escribí los kilos como los marca la balanza. Ej.: 0,030 kg = 30 g";
   msg.hidden=!pasa; msg.textContent=pasa?`Solo hay ${esGel(d.id)?fmtGel(max):max} para ${d.c==="desperdicio"?"marcar como desperdicio":"sacar"}.`:"";
   ok.disabled=pasa||n<1;
 }
 function listoCantidad(quitar){
   const inp=document.getElementById("cantNum"), d=S.cantDlg; if(!inp||!d) return;
-  const n=quitar?0:(parseInt(inp.value||"0",10)||0), c=S.cart[d.c];
+  const n=quitar?0:(esGel(d.id)?gDeKgStr(inp.value):(parseInt(inp.value||"0",10)||0)), c=S.cart[d.c];
   if(!quitar&&(n<1||n>maxPad(d.id,d.c))) return;
   if(n>0) c[d.id]=n; else delete c[d.id];
   S.confirm=false;
@@ -8579,14 +8597,14 @@ function ayudaTemas(){
     "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
     "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])});
   if((S.sabores||[]).some(x=>x.tipo==="g")) T.push({id:"geladot", titulo:"Geladot: cómo se retira", sub:"Paso a paso, con la balanza", html:li([
-    "<b>1 caja cerrada = 2.500 g.</b> La app hace todas las cuentas: vos solo pesás.",
+    "<b>1 caja cerrada = 2,500 kg.</b> La app hace todas las cuentas: vos solo pesás.",
     "En <b>Salida › Retiro de cámara</b> andá a la pestaña <b>Geladot</b> y tocá el sabor. Se abre «Reposición de Geladot».",
     "<b>Paso 1:</b> mirá cuántas cajas hay y si hay una <b>ABIERTA</b>.",
     "<b>Paso 2:</b> elegí qué caja usás. <b>Siempre primero la caja ABIERTA.</b> Si no hay abierta, abrí una cerrada.",
     "<b>Paso 3:</b> sacá las bolitas que necesitás y volvé a poner la caja sobre la balanza.",
-    "<b>Paso 4:</b> escribí en el pad los <b>gramos que marca la balanza</b> (cuánto <b>quedó</b>, no cuánto sacaste).",
+    "<b>Paso 4:</b> escribí en el pad los <b>kilos que marca la balanza</b>, con coma (ej. <b>1,800</b>). Es cuánto <b>quedó</b>, no cuánto sacaste. Abajo la app te muestra los gramos: 0,030 kg = 30 g.",
     "Escribí <b>ABIERTA</b> con fibrón en la caja y <b>volvela a la cámara</b>.",
-    "Mirá el cuadro verde: «Usaste … g». Si está bien, tocá <b>Confirmar reposición</b>. Queda guardado en ese momento."])+nota("<b>Pesá la caja al terminar, una sola vez por caja usada.</b> Si no se pesa, el sistema no sabe cuánto se consumió y el Control marca una diferencia. Si la abierta se termina y abrís otra, elegí «La abierta se terminó y abro una nueva». Una rotura va en Desperdicio, en gramos.")});
+    "Mirá el cuadro verde: «Usaste … g». Si está bien, tocá <b>Confirmar reposición</b>. Queda guardado en ese momento."])+nota("<b>Pesá la caja al terminar, una sola vez por caja usada.</b> Si no se pesa, el sistema no sabe cuánto se consumió y el Control marca una diferencia. Si la abierta se termina y abrís otra, elegí «La abierta se terminó y abro una nueva». Una rotura va en Desperdicio, también en kilos con coma.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
