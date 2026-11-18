@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.98.0";
+const BACKEND_VERSION = "1.99.0";
 
 function doPost(e) {
   let resultado;
@@ -1226,6 +1226,7 @@ function _vencFaltante(v) {
  *  cliente (grupoProductoDe): Baldes por tipo "b", el resto por familia. */
 function _grupoProducto(sab) {
   if (String(sab.tipo || "") === "b") return "baldes";
+  if (String(sab.tipo || "") === "g") return "geladot"; // Geladot: se mueve en GRAMOS (la unidad del stock es el gramo; 1 caja = 2500 g)
   const f = String(sab.familia || "vasquetas");
   if (f === "icepops" || f === "chocolateria" || f === "glutenfree") return f;
   return "vasquetas";
@@ -1360,6 +1361,12 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+  // Reposición de Geladot: una salida en GRAMOS (lo que se consumió de la caja), solo de sabores Geladot.
+  if (subtipo === "reposicion") {
+    if (tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+    const noGel = Object.keys(items).filter((id) => { const sb = catalogoVenc.filter((x) => String(x.id) === String(id))[0]; return !sb || String(sb.tipo || "") !== "g"; });
+    if (noGel.length) return { ok: false, error: "La reposición es solo para Geladot." };
+  }
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   // Local que solo fabrica (Locales.ingreso_solo_produccion=SI + produccion=SI, ej. Marruecos): el helado
   // entra únicamente por Producción. Un ingreso común (sin subtipo) de helado se rechaza aunque el cliente
@@ -1396,7 +1403,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     if (empleado.rol === "colaborador") return { ok: false, error: "Esta carga la hace un responsable." };
     if (!String(motivo || "").trim()) return { ok: false, error: "Falta el local de origen de la transferencia." };
   }
-  if (subtipo && ["devolucion", "desperdicio", "produccion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo && ["devolucion", "desperdicio", "produccion", "reposicion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
   // Solo en un local con Locales.venta_dia=SI, solo productos de chocolatería y no
   // los carga el colaborador (el que mira la caja es el responsable). La fecha solo
   // vale para la venta y la gift card (para el día que se olvidaron de cargarlas): hasta 7 días atrás.
@@ -2169,6 +2176,7 @@ function registrarMerma(clienteId, local, saborId, kilos, lugar, motivo, emplead
   const catalogo = _leerCrudo("Sabores");
   const sab = catalogo.filter((x) => String(x.id) === id)[0];
   if (!sab) return { ok: false, error: "No se encontró el sabor." };
+  if (String(sab.tipo || "") === "g") return { ok: false, error: "Para Geladot cargá el desperdicio en gramos (Salida › Desperdicio)." };
   if (!_invEsKg(sab)) return { ok: false, error: "La merma en kilos es solo para helado en vasquetas y productos por kilo." };
   const errPais = _errorPaisItems(local, { [id]: 1 }, catalogo);
   if (errPais) return { ok: false, error: errPais };
@@ -2553,7 +2561,7 @@ function _jsonObj(texto, porDefecto) {
 
 /** ¿Este sabor se cuenta en kilos? Vasquetas (tipo v) y Crumble/Granella (tipo k). */
 function _invEsKg(sab) {
-  return String(sab.tipo || "v") === "k" || (String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas");
+  return String(sab.tipo || "v") === "k" || String(sab.tipo || "") === "g" || (String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas");
 }
 
 /** Valida y normaliza un valor contado: kilos con hasta 2 decimales, unidades enteras. null si es inválido. */
@@ -2990,6 +2998,7 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
       const n = Number(items[id]) || 0;
       if (!base[id]) base[id] = { kg: _invEsKg(sab), v: 0 };
       if (!base[id].kg) { base[id].v += signo * n; return; }
+      if (String(sab.tipo || "") === "g") { base[id].v = Math.round((base[id].v + signo * Math.abs(n) / 1000) * 100) / 100; return; } // Geladot: el stock está en gramos
       let kg;
       if (r.tipo === "salida") { const pp = pesos[id]; kg = Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0); }
       else if (kilos[id] !== undefined && kilos[id] !== "") kg = Math.abs(Number(kilos[id]) || 0) * (r.tipo === "cambio" ? (n < 0 ? -1 : 1) : 1);
@@ -3023,6 +3032,7 @@ function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
       if (!sab) return;
       const n = Number(items[id]) || 0;
       if (!_invEsKg(sab)) { u += n; return; }
+      if (String(sab.tipo || "") === "g") { kg += Math.abs(n) / 1000; return; } // Geladot: gramos -> kilos
       if (r.tipo === "salida") { const pp = pesos[id]; kg += Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0); }
       else if (kilos[id] !== undefined && kilos[id] !== "") kg += Math.abs(Number(kilos[id]) || 0);
       else kg += Math.abs(n) * (Number(sab.peso) || 0);
@@ -3094,6 +3104,7 @@ function _esperadoTotal(inicial, tsHasta, local, catalogo, regs) {
       const n = Number(items[id]) || 0, o = slot(id, sab);
       const dest = r.tipo === "salida" && String(r.subtipo) === "desperdicio" ? "merma" : "sal"; // el desperdicio (de cualquier rubro) se cuenta como merma
       if (!o.kg) { if (r.tipo === "salida") o[dest] += n; else o.ing += n; return; }
+      if (String(sab.tipo || "") === "g") { const kgG = Math.abs(n) / 1000; if (r.tipo === "salida") o[dest] = red(o[dest] + kgG); else o.ing = red(o.ing + kgG); return; } // Geladot: gramos -> kilos
       if (r.tipo === "salida") { const pp = pesos[id]; o[dest] = red(o[dest] + (Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0))); return; }
       let kg;
       if (kilos[id] !== undefined && kilos[id] !== "") kg = Math.abs(Number(kilos[id]) || 0) * (r.tipo === "cambio" ? (n < 0 ? -1 : 1) : 1);
@@ -3948,8 +3959,8 @@ function _leerCrudoCache(hoja) {
 
 /** Rubros que un local puede apagar entero: una columna Locales.lleva_<rubro> por rubro.
  *  Vacío = lo lleva (como siempre); NO = no lo lleva y desaparece de ese local. Baldes son tipo "b" (familia vasquetas). */
-const RUBROS_LOCAL = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria"];
-function _rubroDeSabor(s) { return String(s.tipo || "v") === "b" ? "baldes" : String(s.familia || "vasquetas"); }
+const RUBROS_LOCAL = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria", "geladot"];
+function _rubroDeSabor(s) { const t = String(s.tipo || "v"); return t === "b" ? "baldes" : t === "g" ? "geladot" : String(s.familia || "vasquetas"); }
 function _rubrosApagados(fila) { return fila ? RUBROS_LOCAL.filter((r) => _esVerdadero(fila["lleva_" + r]) === false) : []; }
 /** Ids que el local no ve: los de sabores_excluidos (a mano o desde la app) + todos los de los rubros apagados. */
 function _excluidosDelLocal(fila, sabores) {
