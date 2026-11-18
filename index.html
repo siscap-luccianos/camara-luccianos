@@ -1510,7 +1510,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.180.0";
+const FRONTEND_VERSION = "1.180.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7729,7 +7729,7 @@ function abrirCantidad(id,c){
   const ov=document.createElement("div"); ov.id="cantOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="cantTit">
     <p class="mantTit" id="cantTit">${esGel(id)?"¿Cuántos gramos?":"¿Cuántas unidades?"}</p>
-    <p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
+    ${esGel(id)?`<div class="ayNota" style="margin:0 0 8px;text-align:left"><b>Pesá lo que sacás</b> y escribí los gramos que marca la balanza. Caja entera: tocá «+1 caja».</div>`:""}<p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
     <input type="text" id="cantNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" value="${actual||1}" aria-label="Cantidad de unidades">
     <div class="escMsg err" id="cantMsg" role="status" aria-live="polite" hidden></div>
     <div class="kgPad" role="group" aria-label="Teclado numérico">
@@ -8478,6 +8478,13 @@ function ayudaTemas(){
     "Contá la <b>cámara</b> y después el <b>local</b>.",
     "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
     "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])});
+  if((S.sabores||[]).some(x=>x.tipo==="g")) T.push({id:"geladot", titulo:"Cómo retirar Geladot", sub:"Siempre en gramos, con la balanza", html:li([
+    "El Geladot se cuenta en <b>gramos</b>. Una caja entera son <b>2.500 g</b>.",
+    "En Salida tocá el sabor. Se abre «¿Cuántos gramos?».",
+    "<b>Pesá en la balanza lo que sacás</b> y escribí en el pad <b>los gramos que marca</b>.",
+    "Si sacás la <b>caja entera</b>, tocá <b>+1 caja</b> (2.500 g) sin pesar.",
+    "Si la caja ya estaba abierta y la volvés a cámara, pesala y cargá solo lo que <b>faltó</b>: la diferencia es lo que se consumió.",
+    "Tocá «Listo» y confirmá la salida. Las roturas van en Desperdicio, también en gramos."])});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",
