@@ -12,17 +12,15 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click("[data-tecla='" + d + "']"); }
   await page.waitForSelector("header"); await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1800);
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
-  ok(!!(await page.$("[data-sal-menu='merma']")), "el menú de Salida tiene la tarjeta «Merma en kilos»");
-  await page.click("[data-sal-menu='merma']"); await page.waitForSelector("#mermaOv");
-  ok(true, "la tarjeta abre el diálogo de merma"); await page.click("#mermaCancel"); await page.waitForTimeout(200);
+  ok(!(await page.$("[data-sal-menu='merma']")), "el menú de Salida ya no tiene una tarjeta de merma aparte");
   await page.click("[data-sal-menu='desp']"); await page.waitForTimeout(500);
-  ok(!!(await page.$("#irMerma")), "en Desperdicio, el responsable ve «Merma en kilos»");
-  ok(/Merma en kilos/.test(await page.innerText("#main")), "y el texto de Desperdicio lo menciona");
-  await page.click("#irMerma"); await page.waitForSelector("#mermaOv");
+  ok(!(await page.$("#irMerma")), "dentro de Desperdicio ya no hay un botón de merma aparte");
+  ok(!/Merma en kilos/.test(await page.innerText("#main")) && /Una parte/.test(await page.innerText("#main")), "el texto de Desperdicio explica «Una parte» y no manda a otra pantalla");
+  await page.click("[data-wadd='4']"); await page.waitForSelector("#eopOv");
+  ok(/La vasqueta entera/.test(await page.innerText("#eopOv")) && /Una parte/.test(await page.innerText("#eopOv")), "al tocar una vasqueta, el responsable elige: entera o una parte");
+  await page.click("[data-eop='parte']"); await page.waitForSelector("#mermaOv");
+  ok(/Banana Split/.test(await page.innerText("#mermaOv")) && !/usá Desperdicio/.test(await page.innerText("#mermaOv")), "el diálogo ya trae el sabor y no manda a Desperdicio");
   ok(await page.isDisabled("#mermaOk"), "«Registrar merma» arranca apagado");
-  const opciones = await page.$$eval("#mermaSabor option", o => o.map(x => x.textContent));
-  ok(opciones.some(t => /Banana Split/.test(t)) && !opciones.some(t => /icepop/i.test(t)), "el selector trae vasquetas (no icepops): " + opciones.join(", "));
-  await page.selectOption("#mermaSabor", { label: opciones.find(t => /Banana Split/.test(t)) });
   await page.click("[data-merma-lugar='local']");
   await page.fill("#mermaKg", "0,19");
   ok(await page.isDisabled("#mermaOk"), "sin motivo sigue apagado");
@@ -33,8 +31,8 @@ const { chromium } = require("playwright");
   const p = posts.filter(x => x.accion === "registrarMerma")[0];
   ok(p && p.kilos === 0.19 && p.lugar === "local" && p.motivo === "Se cayó un cucurucho" && p.local === "Local prueba", "manda saborId, 0,19 kg, lugar y motivo al servidor: " + JSON.stringify(p));
   ok(!(await page.$("#mermaOv")), "el diálogo se cierra");
-  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); if (!(await page.$("#irMerma"))) { await page.click("[data-sal-menu='desp']"); await page.waitForTimeout(400); }
-  await page.click("#irMerma"); await page.waitForSelector("#mermaOv");
+  await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400); if (!(await page.$("[data-wadd='4']"))) { await page.click("[data-sal-menu='desp']"); await page.waitForTimeout(400); }
+  await page.click("[data-wadd='4']"); await page.waitForSelector("#eopOv"); await page.click("[data-eop='parte']"); await page.waitForSelector("#mermaOv");
   ok((await page.$$eval("[data-merma-motivo]", e => e.map(x => x.textContent))).join() === "Se cayó un cucurucho", "el motivo usado queda guardado para repetir");
   await page.click("[data-merma-motivo]");
   ok((await page.inputValue("#mermaOtro")) === "Se cayó un cucurucho", "tocar el motivo guardado lo completa");
