@@ -21,6 +21,7 @@ regs.push({id:"10",local:"Galerías",tipo:"ingreso",subtipo:"",ts:t0+1e6,items:J
 regs.push({id:"11",local:"Galerías",tipo:"salida",subtipo:"",ts:t0+2e6,items:JSON.stringify({"4":10,"49":15}),kilos:"",pesos:JSON.stringify({"4":[3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6,3.6]}),anulado_ts:""});
 regs.push({id:"12",local:"Galerías",tipo:"salida",subtipo:"merma_local",ts:t0+3e6,items:"{}",kilos:JSON.stringify({"4":0.19}),pesos:"",anulado_ts:""});
 regs.push({id:"13",local:"Galerías",tipo:"salida",subtipo:"merma_camara",ts:t0+4e6,items:"{}",kilos:JSON.stringify({"4":2}),pesos:"",anulado_ts:""});
+regs.push({id:"15",local:"Galerías",tipo:"salida",subtipo:"desperdicio",ts:t0+3.5e6,items:JSON.stringify({"49":3}),kilos:"",pesos:"",motivo:"se cayeron",anulado_ts:""}); // desperdicio de icepops: cuenta como merma, no como salida
 regs.push({id:"14",local:"Galerías",tipo:"salida",subtipo:"merma_local",ts:t0+5e6,items:"{}",kilos:JSON.stringify({"4":5}),pesos:"",anulado_ts:"1"}); // anulada: no cuenta
 sb._hojaInventarios=()=>({}); sb._hojaPedidosConteo=()=>({});
 sb._leerCrudo=h=>h==="Locales"?locales:h==="Sabores"?sabores:h==="Inventarios"?filas:h==="Registros"?regs:[];
@@ -42,12 +43,12 @@ ok(p4&&p4.esperado===88.81&&p4.tot===73&&p4.dif===-15.81,"esperado 88,81 · cont
 ok(p4&&p4.difCam!==null&&p4.difCam!==p4.dif,"queda la diferencia solo de cámara como dato aparte: "+(p4&&p4.difCam));
 // icepops: inicial 50 + ingreso 20 − salida 15 = 55 · contado 38 · dif −17
 const ice=(r.grupos||[]).filter(g=>g.g==="icepops")[0]; const p49=ice&&ice.productos[0];
-ok(p49&&p49.ini===50&&p49.ing===20&&p49.sal===15&&p49.esperado===55&&p49.tot===38&&p49.dif===-17,"icepops en unidades: 50 + 20 − 15 = 55 contra 38 → −17");
+ok(p49&&p49.ini===50&&p49.ing===20&&p49.sal===15&&p49.merma===3&&p49.esperado===52&&p49.tot===38&&p49.dif===-14,"icepops en unidades: 50 + 20 − 15 − 3 (desperdicio como merma) = 52 contra 38 → −14");
 ok(r.varLocal&&r.varLocal.kg===1&&r.varLocal.u===-2,"variación del local: +1 kg (13 − 12) y −2 u (8 − 10): "+JSON.stringify(r.varLocal));
-ok(r.dif&&r.dif.kg===-15.81&&r.dif.u===-17,"diferencia total del encabezado: "+JSON.stringify(r.dif));
-ok(r.mov&&r.mov.merma&&r.mov.merma.n===2&&r.mov.merma.kg===2.19&&r.mov.sal.n===1,"el resumen del período trae la merma aparte (2 mermas, 2,19 kg) y no la cuenta como salida: "+JSON.stringify(r.mov&&[r.mov.merma.n,r.mov.merma.kg,r.mov.sal.n]));
+ok(r.dif&&r.dif.kg===-15.81&&r.dif.u===-14,"diferencia total del encabezado: "+JSON.stringify(r.dif));
+ok(r.mov&&r.mov.merma&&r.mov.merma.n===3&&r.mov.merma.kg===2.19&&r.mov.merma.u===3&&r.mov.sal.n===1,"el resumen trae la merma aparte (2 en kilos + el desperdicio de 3 icepops) y no la cuenta como salida: "+JSON.stringify(r.mov&&[r.mov.merma.n,r.mov.merma.kg,r.mov.merma.u,r.mov.sal.n]));
 r=run(`controlStock(sup)`);
-ok(r.ok&&r.locales[0].difKg===-15.81&&r.locales[0].difU===-17,"controlStock (lista de locales) usa la diferencia del total: "+JSON.stringify(r.locales&&[r.locales[0].difKg,r.locales[0].difU]));
+ok(r.ok&&r.locales[0].difKg===-15.81&&r.locales[0].difU===-14,"controlStock (lista de locales) usa la diferencia del total: "+JSON.stringify(r.locales&&[r.locales[0].difKg,r.locales[0].difU]));
 // ---- registrarMerma
 const N=regs.length;
 sb.emp={id:"1",nombre:"Resp",rol:"encargado"};

@@ -3003,7 +3003,7 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
 /** Lo que mueve el Esperado entre el inicial y un conteo: ingresos y salidas del período (en kg de cámara y unidades de otros rubros), por semana las salidas, y los anulados. */
 function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
   const t0 = Number(inicial.ts) || 0;
-  const ing = { n: 0, kg: 0, u: 0, lista: [] }, sal = { n: 0, kg: 0, u: 0, semanas: {} }, merma = { n: 0, kg: 0, lista: [] }, anulados = [];
+  const ing = { n: 0, kg: 0, u: 0, lista: [] }, sal = { n: 0, kg: 0, u: 0, semanas: {} }, merma = { n: 0, kg: 0, u: 0, lista: [] }, anulados = [];
   (regs || _leerCrudo("Registros")).forEach((r) => {
     if (String(r.local).trim() !== String(local).trim()) return;
     const ts = Number(r.ts) || 0;
@@ -3029,6 +3029,11 @@ function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
     });
     kg = Math.round(kg * 100) / 100;
     if (r.anulado_ts) { anulados.push({ ts: ts, tipo: r.tipo, kg: kg, u: u, empleado: r.empleado || "", anulado_por: r.anulado_por || "", motivo: r.motivo || "" }); return; }
+    if (r.tipo === "salida" && String(r.subtipo) === "desperdicio") { // desperdicio de cualquier rubro: va a la línea de Merma
+      merma.n++; merma.kg += kg; merma.u += u;
+      merma.lista.push({ ts: ts, kg: Math.round(kg * 100) / 100, u: u, lugar: "desperdicio", motivo: r.motivo || "", empleado: r.empleado || "" });
+      return;
+    }
     if (r.tipo === "ingreso") {
       ing.n++; ing.kg += kg; ing.u += u;
       ing.lista.push({ ts: ts, remito: String(r.remito || ""), kg: kg, u: u, empleado: r.empleado || "", sub: String(r.subtipo || "") });
@@ -3087,8 +3092,9 @@ function _esperadoTotal(inicial, tsHasta, local, catalogo, regs) {
       const sab = catalogo[id];
       if (!sab) return;
       const n = Number(items[id]) || 0, o = slot(id, sab);
-      if (!o.kg) { if (r.tipo === "salida") o.sal += n; else o.ing += n; return; }
-      if (r.tipo === "salida") { const pp = pesos[id]; o.sal = red(o.sal + (Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0))); return; }
+      const dest = r.tipo === "salida" && String(r.subtipo) === "desperdicio" ? "merma" : "sal"; // el desperdicio (de cualquier rubro) se cuenta como merma
+      if (!o.kg) { if (r.tipo === "salida") o[dest] += n; else o.ing += n; return; }
+      if (r.tipo === "salida") { const pp = pesos[id]; o[dest] = red(o[dest] + (Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0))); return; }
       let kg;
       if (kilos[id] !== undefined && kilos[id] !== "") kg = Math.abs(Number(kilos[id]) || 0) * (r.tipo === "cambio" ? (n < 0 ? -1 : 1) : 1);
       else kg = Math.abs(n) * (Number(sab.peso) || 0) * (n < 0 ? -1 : 1);
