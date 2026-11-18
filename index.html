@@ -1509,7 +1509,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.10";
+const FRONTEND_VERSION = "1.178.12";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -8366,7 +8366,7 @@ function ayudaTemas(){
   if(supervision){
     const ps=(id,titulo,sub,pasos,nt)=>SUP.push({id,grupo:"sup",titulo,sub,html:li(pasos)+(nt?nota(nt):"")});
     ps("control","Control de stock","La tabla y el semáforo",["Cada fila es un local: <b>Inicial · Parcial · Cierre · Diferencia</b>.","La diferencia se mide siempre contra el <b>inicial</b>, con su porcentaje.","Semáforo: <b>verde</b> hasta 1 %, <b>amarillo</b> hasta 3 %, <b>rojo</b> más de 3 %.","Tocá un local para abrir su detalle."]);
-    ps("pedir","Pedir un conteo","Parcial o cierre",["Abrí el detalle del local y tocá <b>Pedir parcial</b> o <b>Pedir cierre</b>.","El responsable ve un aviso en Stock y cuenta cámara y local desde cero, sin ver el número del sistema.","Al guardar ve «enviado ✓», sin totales ni diferencias.","El <b>cierre</b> deja la cámara igual a lo contado y es el inicial del mes siguiente."]);
+    ps("pedir","Pedir un conteo","Parcial o cierre",["Abrí el detalle del local y tocá <b>Pedir parcial</b> o <b>Pedir cierre</b>.","El responsable ve un aviso en Stock y cuenta cámara y local.","Al guardar ve «enviado ✓», sin totales ni diferencias.","El <b>cierre</b> deja la cámara igual a lo contado y es el inicial del mes siguiente."]);
     ps("detalle","Leer el detalle","De dónde sale la diferencia",["<b>Inicial + Ingresos − Salidas = Debería haber</b>.","Debajo ves lo que contó y la diferencia en kg y %.","«ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana.","Los movimientos <b>anulados</b> del período aparecen aparte."]);
     ps("mostrar","Mostrar al responsable","Qué ve y cuándo",["El responsable ve solo su inicial. Parcial y cierre quedan ocultos.","Para mostrarlos tocá <b>Mostrar al responsable (PIN)</b>.","El <b>cierre</b> se muestra solo a las 12:00; el <b>parcial</b> nunca se muestra solo.","Con <b>ver_diferencias=SI</b> en un local, ese local lo ve todo."]);
     ps("candados","Candados","Corregir un conteo guardado",["Todo conteo guardado queda con 🔒.","<b>Desbloquear</b> pide tu PIN y un motivo. Vale para <b>una</b> corrección (24 h máximo).","Al guardar la corrección el candado se cierra solo y el original se conserva.","El <b>Conteo cámara</b> tiene su propio candado: lo desbloqueás igual para que el responsable recuente una vez."]);
@@ -8375,7 +8375,7 @@ function ayudaTemas(){
   }
   const T=[];
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
-    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."}</p></div>
+    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."} Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «Anulados».</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
   if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
@@ -8390,7 +8390,7 @@ function ayudaTemas(){
     "Tocá <b>Ver resultado</b> y después <b>Guardar conteo inicial</b>."])});
   if(!colab) T.push({id:"parcial", titulo:"Conteo parcial y de cierre", sub:"Cuando supervisión lo pide", html:li([
     "Supervisión pide el conteo y te aparece un aviso en Stock: <b>Hacer el conteo</b>.",
-    "Contá la <b>cámara</b> y después el <b>local</b>, desde cero, <b>sin ver el número del sistema</b>.",
+    "Contá la <b>cámara</b> y después el <b>local</b>.",
     "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
     "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
@@ -8422,7 +8422,6 @@ function ayudaTemas(){
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b>; en uno con fecha, <b>Cambiar fecha</b> (fecha y unidades)."])+nota("Las latas no tienen vencimiento.")});
   if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo contar sin errores", html:li([
     "Entrá a Stock › <b>Conteo inicial › Conteo cámara</b>.",
-    "Arranca <b>desde cero</b>, sin ver el número del sistema.",
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>."+(S.kilosReales?" En las vasquetas cargá el peso de cada una.":""),
     escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
     "Tocá <b>Revisar y guardar</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
@@ -8435,10 +8434,11 @@ function ayudaTemas(){
     S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
     "Tocá <b>Cargar al carrito de ingreso</b> y después <b>Confirmar ingreso</b>."])+nota("Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo».")});
   if(!colab) T.push({id:"pedido", titulo:"Pedido sugerido", sub:"Cuánto pedir y cómo mandarlo", html:li([
-    "Entrá a Stock › <b>Pedido sugerido</b>.",
-    "Marcá <b>qué día hiciste el último pedido</b> (si pedís siempre el mismo día, ya viene marcado) y <b>qué día te llega la mercadería</b>. Lo recuerda para este local.",
-    "Cada rubro muestra qué hay hoy y cuánto pedir: lo que salió desde tu último pedido, proyectado día por día hasta que llega. Tocá un sabor para ver de dónde sale. Con − y + ajustás la cantidad.",
-    "Tocá <b>Ver resumen para enviar</b>: ahí copiás el pedido por rubro, mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
+    "Entrá a Stock y tocá la tarjeta verde <b>Pedido sugerido y tendencia de retiros</b>.",
+    "Elegí el rubro (Vasquetas, Icepops, etc.). Cada sabor muestra lo que <b>hay hoy</b> y la <b>tendencia de las últimas 3 semanas</b>: lo que salió cada semana y si viene subiendo, bajando o estable.",
+    "Tocá <b>Ver detalle</b> para ver lo que salió en la última semana, día por día.",
+    "Escribí cuánto pedir o usá <b>−</b> y <b>+</b> (de a 2 en vasquetas; de a caja si el producto tiene). La app no calcula el pedido por vos: lo decidís mirando el stock y la tendencia.",
+    "Tocá <b>Copiar o mandar por WhatsApp</b>: ahí copiás el pedido por rubro, lo mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
   return SUP.concat(T);
 }
 function renderAyuda(){
