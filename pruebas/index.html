@@ -1522,7 +1522,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.180.2";
+const FRONTEND_VERSION = "1.180.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1718,6 +1718,8 @@ const GEL_CAJA=2500;
 function esGel(id){ return tipoDe(id)==="g" }
 /** Geladot: el stock va en gramos; se muestra "3 cajas + 900 g". */
 function fmtGel(g){ g=Math.round(Number(g)||0); const c=Math.floor(g/GEL_CAJA), r=g-c*GEL_CAJA; return c?(c+(c===1?" caja":" cajas")+(r?" + "+r+" g":"")):r+" g" }
+/** Total del carrito para la barra: si todo es Geladot (gramos) se dice en kilos. */
+function totalBarTxt(ent,cart,tot){ const g=(ent||[]).filter(x=>esGel(x)), r=(ent||[]).filter(x=>!esGel(x)); const gg=g.reduce((a,x)=>a+(+cart[x]||0),0), rr=r.reduce((a,x)=>a+(+cart[x]||0),0); const kg=fmtKg(gg/1000)+" kg"; if(!g.length) return tot+" "+(tot===1?"unidad":"unidades"); if(!r.length) return kg; return rr+" "+(rr===1?"unidad":"unidades")+" + "+kg }
 function pstockHTML(id,n){ return esGel(id)?`<b>${fmtGel(n)}</b>`:`<b>${n}</b><span>${unidad(id,n)}</span>` }
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
 const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)", k:"Kilos (granella, crumble: el stock es la cantidad de kilos)" };
@@ -4383,11 +4385,11 @@ function gridIngreso(st){
     const q=cart[s.id]||0;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${st[s.id]} ${unidad(s.id,st[s.id])}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">En cámara: ${esGel(s.id)?fmtGel(st[s.id]):st[s.id]+" "+unidad(s.id,st[s.id])}</div></div>
       ${esChocolateria(s.id)?`<div class="right">${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}<input type="number" min="0" inputmode="numeric" data-cant-input="${s.id}" value="${q||""}" placeholder="–" aria-label="Cantidad de ${esc(s.nombre)}"></div>`:`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-        ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${s.cantidad_maestra})</button>`:""}
+        ${s.cantidad_maestra?`<button type="button" class="chip" data-icaja="${s.id}" data-cant="${s.cantidad_maestra}">+1 caja (${esGel(s.id)?"2,5 kg":s.cantidad_maestra})</button>`:""}
         ${kilosInlineHTML(s.id)}
-        <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
+        <div class="stepper"><button type="button" data-idec="${s.id}" aria-label="Restar">−</button><span class="n"${esGel(s.id)?' style="min-width:5.5em;font-size:1.05rem;white-space:nowrap"':""}>${esGel(s.id)?fmtKg(q/1000)+" kg":q}</span><button type="button" data-iinc="${s.id}" aria-label="Sumar">+</button></div>
       </div>`}
     ${usaLotes(s.id)&&q>0?`<div class="lotesFull">${lotesPanelHTML("ing:"+s.id,s.id,q)}</div>`:""}
     ${kilosAvisoHTML(s.id,q)}
@@ -4588,6 +4590,7 @@ function stockViewGeneral(st){
     const cov = (s7[s.id]||0)>0 ? (st[s.id]/((s7[s.id]||0)/7)) : (st[s.id]>0?99:0);
     const ed=estadoSabor(s.id,st);
     if(km && s.id in km){ if(km[s.id]===null){ if((st[s.id]||0)>0) sinKilos++ } else kgReal+=km[s.id] }
+    else if(esGel(s.id)) kgTotal += (st[s.id]||0)/1000;
     else if(s.peso) kgTotal += (st[s.id]||0)*s.peso;
     return {s, cov, ed};
   });
@@ -4601,7 +4604,7 @@ function stockViewGeneral(st){
   const listaVisible = listaFiltrada(st);
 
   const desgloseCajas=s=>{
-    if(!s.cantidad_maestra) return "";
+    if(!s.cantidad_maestra||esGel(s.id)) return "";
     const total=st[s.id]||0, cajas=Math.floor(total/s.cantidad_maestra), sueltas=total%s.cantidad_maestra;
     if(!cajas) return ` · ${sueltas} suelta${sueltas===1?"":"s"}`;
     return ` · ${cajas} caja${cajas===1?"":"s"}${sueltas?" + "+sueltas+" suelta"+(sueltas===1?"":"s"):""}`;
@@ -4610,8 +4613,8 @@ function stockViewGeneral(st){
     const {s,cov,ed}=f;
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${(km&&s.id in km)?(km[s.id]===null?` · <b style="color:var(--warn)">sin kilos cargados</b>`:` · <b>${fmtKg(km[s.id])} kg</b>`):s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}</div>${ed?`<div style="margin-top:5px"><span class="badge ${ed.cls}" style="margin:0;display:inline-block;white-space:nowrap">${ed.label}</span></div>`:""}</div>
-      <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${st[s.id]}</div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Stock ${esGel(s.id)?fmtGel(st[s.id]):st[s.id]} · consumo ${( (s7[s.id]||0)/7 ).toFixed(1)}/día · cobertura ${cov>90?"—":Math.max(0,cov).toFixed(1)+" días"}${(km&&s.id in km)?(km[s.id]===null?` · <b style="color:var(--warn)">sin kilos cargados</b>`:` · <b>${fmtKg(km[s.id])} kg</b>`):esGel(s.id)?` · ${fmtKg((st[s.id]||0)/1000)} kg`:s.peso?` · ${((st[s.id]||0)*s.peso).toFixed(1)} kg promedio`:""}${desgloseCajas(s)}</div>${ed?`<div style="margin-top:5px"><span class="badge ${ed.cls}" style="margin:0;display:inline-block;white-space:nowrap">${ed.label}</span></div>`:""}</div>
+      <div class="big${ed?" "+(ed.tier==="critico"||ed.tier==="sinstock"?"crit":"low"):""}">${esGel(s.id)?fmtGel(st[s.id]):st[s.id]}</div>
     </div>`};
 
   return `<div class="kpis">
@@ -6522,7 +6525,7 @@ function renderBar(){
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>${cartKey==="salida"?"Seguir cargando":"Volver"}</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
-        inn.innerHTML = `<div class="sum"><b>${tot} ${tot===1?"unidad":"unidades"}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">${enTransfOut?"Escribí a qué local va para poder registrarla.":enTransfIn?"Escribí de qué local viene para poder registrarla.":"Escribí el motivo arriba para poder registrarlo."}</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
+        inn.innerHTML = `<div class="sum"><b>${totalBarTxt(ent.map(x=>x[0]),cart,tot)}</b> · ${ent.length} ${ent.length===1?"sabor":"sabores"}${enProduccion&&kilosTotal>0?` · ${kilosTotal.toLocaleString("es-AR",{maximumFractionDigits:1})} kg`:""}${kgEscan>0?` · ${fmtKg(kgEscan)} kg`:""}${(S.kilosReales&&!conPeso&&ent.some(([id])=>esVasquetaKilos(id)))?` · ${fmtKg(ent.reduce((a,[id])=>a+(esVasquetaKilos(id)?kilosNum(S.kilosProduccion[id]):0),0))} kg`:""}${avisoKilos}${faltaMotivo?`<div class="warn">${enTransfOut?"Escribí a qué local va para poder registrarla.":enTransfIn?"Escribí de qué local viene para poder registrarla.":"Escribí el motivo arriba para poder registrarlo."}</div>`:""}${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta.</div>`:""}${faltaVenc.length?`<div class="warn">Revisá el vencimiento de ${faltaVenc.length} ${faltaVenc.length===1?"producto":"productos"} para confirmar.</div>`:""}</div>
           <button class="btn ghost" id="limpiar">Borrar</button><button class="btn" id="go" ${(faltaMotivo||faltaVenc.length||faltaKilos.length||kgMalos.length||fechaAntesConteo)?"disabled":""}>Registrar ${verbo}</button>`;
       }
     }
@@ -7028,8 +7031,8 @@ document.addEventListener("click", async e=>{
   if(t.id==="escConteoBtn"){ abrirEscanerConteo(); return }
   if(t.dataset.cescMano){ ceMano(t.dataset.cescMano); if(!ceInv()) programarBorradorConteo(); renderApp(); return }
   if(t.dataset.ccaja){ const id=t.dataset.ccaja; ceMano(id); S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
-  if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+1; S.confirm=false; scheduleRender(); return }
-  if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-1); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+(esGel(t.dataset.iinc)?GEL_CAJA:1); S.confirm=false; scheduleRender(); return }
+  if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-(esGel(t.dataset.idec)?GEL_CAJA:1)); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
   if(t.dataset.devchip){ const [did,di]=t.dataset.devchip.split(":"); const a=S.devSel[did]||(S.devSel[did]=[]); const k=a.indexOf(+di); if(k>=0) a.splice(k,1); else a.push(+di); syncDevolucion(); S.confirm=false; scheduleRender(); return }
   if(t.dataset.escRevisar!==undefined){ abrirEscaner(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; scheduleRender(); return }
