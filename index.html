@@ -1509,7 +1509,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.10";
+const FRONTEND_VERSION = "1.178.11";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -8375,7 +8375,7 @@ function ayudaTemas(){
   }
   const T=[];
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
-    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."}</p></div>
+    <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."} Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «Anulados».</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
   if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
@@ -8435,10 +8435,11 @@ function ayudaTemas(){
     S.kilosReales?"En las vasquetas revisá también los <b>kilos</b> de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar.":"Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado.",
     "Tocá <b>Cargar al carrito de ingreso</b> y después <b>Confirmar ingreso</b>."])+nota("Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo».")});
   if(!colab) T.push({id:"pedido", titulo:"Pedido sugerido", sub:"Cuánto pedir y cómo mandarlo", html:li([
-    "Entrá a Stock › <b>Pedido sugerido</b>.",
-    "Marcá <b>qué día hiciste el último pedido</b> (si pedís siempre el mismo día, ya viene marcado) y <b>qué día te llega la mercadería</b>. Lo recuerda para este local.",
-    "Cada rubro muestra qué hay hoy y cuánto pedir: lo que salió desde tu último pedido, proyectado día por día hasta que llega. Tocá un sabor para ver de dónde sale. Con − y + ajustás la cantidad.",
-    "Tocá <b>Ver resumen para enviar</b>: ahí copiás el pedido por rubro, mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
+    "Entrá a Stock y tocá la tarjeta verde <b>Pedido sugerido y tendencia de retiros</b>.",
+    "Elegí el rubro (Vasquetas, Icepops, etc.). Cada sabor muestra lo que <b>hay hoy</b> y la <b>tendencia de las últimas 3 semanas</b>: lo que salió cada semana y si viene subiendo, bajando o estable.",
+    "Tocá <b>Ver detalle</b> para ver lo que salió en la última semana, día por día.",
+    "Escribí cuánto pedir o usá <b>−</b> y <b>+</b> (de a 2 en vasquetas; de a caja si el producto tiene). La app no calcula el pedido por vos: lo decidís mirando el stock y la tendencia.",
+    "Tocá <b>Copiar o mandar por WhatsApp</b>: ahí copiás el pedido por rubro, lo mandás por WhatsApp o copiás todo junto."])+nota("El pedido no se guarda en ningún lado: copialo o mandalo antes de salir.")});
   return SUP.concat(T);
 }
 function renderAyuda(){
