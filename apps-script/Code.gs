@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.101.0";
+const BACKEND_VERSION = "1.102.0";
 
 function doPost(e) {
   let resultado;
@@ -2187,14 +2187,19 @@ function registrarMerma(clienteId, local, saborId, kilos, lugar, motivo, emplead
   if (!isFinite(kg) || !(kg > 0)) return { ok: false, error: "Escribí cuántos kilos se perdieron." };
   const motivoTxt = String(motivo || "").trim().slice(0, 120);
   if (!motivoTxt) return { ok: false, error: "Escribí el motivo de la merma." };
-  const id = String(saborId || "");
-  const catalogo = _leerCrudo("Sabores");
-  const sab = catalogo.filter((x) => String(x.id) === id)[0];
-  if (!sab) return { ok: false, error: "No se encontró el sabor." };
-  if (String(sab.tipo || "") === "g") return { ok: false, error: "Para Geladot cargá el desperdicio en gramos (Salida › Desperdicio)." };
-  if (!_invEsKg(sab)) return { ok: false, error: "La merma en kilos es solo para helado en vasquetas y productos por kilo." };
-  const errPais = _errorPaisItems(local, { [id]: 1 }, catalogo);
-  if (errPais) return { ok: false, error: errPais };
+  // El sabor es OPCIONAL: una merma (un cucurucho que se cayó, un derrame) no tiene por qué venir de una vasqueta puntual.
+  // Sin sabor se guarda bajo el id "0" y cuenta en el total del helado.
+  const id = String(saborId || "") || "0";
+  let sab = { nombre: "sin sabor específico" };
+  if (id !== "0") {
+    const catalogo = _leerCrudo("Sabores");
+    sab = catalogo.filter((x) => String(x.id) === id)[0];
+    if (!sab) return { ok: false, error: "No se encontró el sabor." };
+    if (String(sab.tipo || "") === "g") return { ok: false, error: "Para Geladot cargá el desperdicio en gramos (Salida › Desperdicio)." };
+    if (!_invEsKg(sab)) return { ok: false, error: "La merma en kilos es solo para helado en vasquetas y productos por kilo." };
+    const errPais = _errorPaisItems(local, { [id]: 1 }, catalogo);
+    if (errPais) return { ok: false, error: errPais };
+  }
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
   try {
@@ -3185,6 +3190,7 @@ function controlStock(empleado) {
     const pais = _paisDeLocal(l);
     const catalogo = {};
     sabores.forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
+    catalogo["0"] = { id: "0", nombre: "Sin sabor específico", tipo: "v", familia: "vasquetas", peso: 0 }; // merma sin sabor: cuenta en el total del helado
     const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(a.ts) - Number(b.ts));
     const pend = pedidos.filter((q) => String(q.local).trim() === nombre && String(q.estado) === "pendiente")[0];
     if (!mios.length && !pend) return;
@@ -3221,6 +3227,7 @@ function controlDetalle(local, inventarioId, empleado) {
   const pais = _paisDeLocal(filaLocal);
   const catalogo = {};
   _leerCrudo("Sabores").forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
+  catalogo["0"] = { id: "0", nombre: "Sin sabor específico", tipo: "v", familia: "vasquetas", peso: 0 }; // merma sin sabor: cuenta en el total del helado
   const mios = _leerCrudo("Inventarios").filter((r) => String(r.local || "").trim() === String(local).trim()).sort((a, b) => Number(a.ts) - Number(b.ts));
   if (!mios.length) return { ok: true, conteos: [], grupos: [] };
   const elegido = inventarioId ? mios.filter((r) => String(r.id) === String(inventarioId))[0] : mios[mios.length - 1];
