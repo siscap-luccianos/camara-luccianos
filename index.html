@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.184.0";
+const FRONTEND_VERSION = "1.185.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1631,6 +1631,36 @@ function guardarSesionPC(){
   ls.set("sesionEsGestion", S.esGestion?"1":"0"); ls.set("sesionGestionLocal", S.gestionLocal||"");
   ls.set("sesionCodigo", S.sesionCodigo?"1":"0");
 }
+/* ============================================================
+   ACCESO SIN SEÑAL (pedido de Gabi 18/11/2026: una tablet sin internet no podía volver a entrar con el PIN y los chicos
+   no pudieron registrar la devolución). Quien ingresó con su PIN en este dispositivo guarda, SOLO en este dispositivo,
+   una huella del PIN (PBKDF2, nunca el PIN) y la sesión de esa persona. Sin señal puede volver a entrar tipeando su PIN,
+   que se comprueba acá. Vale hasta el cierre de la jornada (03:00) y solo para quien tiene local (no admin/supervisor).
+   Lo que cargue queda en la cola y se manda solo cuando vuelve la señal.
+   ============================================================ */
+const OFFLINE_ITER=60000, OFFLINE_ROLES=["encargado","turno","colaborador","produccion"];
+function _hexBuf(b){ return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("") }
+async function _pbkdf2Pin(pin,salt){
+  const enc=new TextEncoder(), k=await crypto.subtle.importKey("raw",enc.encode(String(pin)),"PBKDF2",false,["deriveBits"]);
+  return _hexBuf(await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:enc.encode(salt),iterations:OFFLINE_ITER},k,256));
+}
+function credMapa(){ try{ const m=JSON.parse(ls.get("offlineCred","{}"))||{}; Object.keys(m).forEach(k=>{ if(!m[k]||m[k].exp<Date.now()) delete m[k] }); return m }catch(e){ return {} } }
+function credFinJornada(){ const d=new Date(), f=Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),6,0,0); return f>Date.now()+60000?f:f+86400000 } // 03:00 de Argentina = 06:00 UTC
+async function credGuardar(pin,r,local){
+  try{
+    if(!r||!r.empleado||!r.token||!window.crypto||!crypto.subtle||!OFFLINE_ROLES.includes(r.empleado.rol)||!/^\d{4}$/.test(String(pin||""))) return;
+    const salt=uuid(), hash=await _pbkdf2Pin(pin,salt), m=credMapa();
+    m[r.empleado.id]={local:local||r.empleado.local||S.local, salt, hash, token:r.token, empleado:r.empleado, exp:credFinJornada()};
+    ls.set("offlineCred",JSON.stringify(m));
+  }catch(e){}
+}
+/** null = no hay huella guardada de esa persona; false = PIN incorrecto; objeto = la huella (PIN correcto). */
+async function credVerificar(empleadoId,pin){
+  const c=credMapa()[empleadoId]; if(!c) return null;
+  try{ return (await _pbkdf2Pin(pin,c.salt))===c.hash?c:false }catch(e){ return null }
+}
+function credNomina(local){ const m=credMapa(); return Object.keys(m).map(k=>m[k]).filter(c=>c.local===local).map(c=>c.empleado) }
+function credBorrar(id){ try{ const m=credMapa(); delete m[id]; ls.set("offlineCred",JSON.stringify(m)) }catch(e){} }
 function limpiarSesion(){
   S.token=null; S.empleado=null; S.esGestion=false; S.gestionLocal=null; S.sesionCodigo=false;
   ls.del("preciosCache"); ls.del("sesionCodigo"); ls.del("sesionToken"); ls.del("sesionEmpleado"); ls.del("sesionEsGestion"); ls.del("sesionGestionLocal");
@@ -1657,7 +1687,7 @@ async function api(accion, payload={}, timeoutMs=30000){
       const data = await res.json();
       S.offline = false;
       if(data && data.backendVersion) S.backendVersion = data.backendVersion;
-      if(data && data.sesionInvalida){ cerrarSesion(true); }
+      if(data && data.sesionInvalida){ if(S.empleado) credBorrar(S.empleado.id); cerrarSesion(true); }
       return data;
     }catch(err){
       clearTimeout(t);
@@ -2182,6 +2212,9 @@ async function cargarEmpleadosDeAuth(){
     S.auth.empleados = r.empleados;
     S.auth.errorCarga = "";
     if(!conControl){ try{ ls.set(key, JSON.stringify(r.empleados)); }catch(e){} }
+  } else if(r && r.offline && !esGestion && credNomina(local).length){
+    // sin señal: pueden entrar los que ya ingresaron hoy en este dispositivo
+    S.auth.empleados = credNomina(local); S.auth.sinSenal=true; S.auth.errorCarga="";
   } else if(!pintadoDeCache){
     S.auth.errorCarga = (r&&r.error)||"No se pudo conectar. Probá de nuevo.";
   }
@@ -2370,7 +2403,13 @@ async function authSubmit(){
       ? await api(a.codigoAdmin?"loginAdminLocal":"loginGestion", a.codigoAdmin ? { empleadoId:a.elegido.id, codigo:a.clave, local:a.local, pin:a.pin } : { empleadoId:a.elegido.id, clave:a.clave, local:a.local, pin:a.pin })
       : await api("login", { empleadoId:a.elegido.id, pin:a.pin, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
     a.cargando=false;
-    if(r && r.ok){ S.loginMs = Date.now()-t0; aplicarLogin(r); return }
+    if(r && r.ok){ S.loginMs = Date.now()-t0; if(!a.pinGestion) credGuardar(a.pin,r,a.local); aplicarLogin(r); return }
+    if(r && r.offline && !a.pinGestion){
+      const c=await credVerificar(a.elegido.id,a.pin);
+      if(c){ aplicarLogin({ok:true,token:c.token,empleado:c.empleado}); toast("Sin señal: entraste con tu PIN. Lo que cargues se envía solo cuando vuelva internet."); return }
+      a.error = c===false ? "PIN incorrecto." : "Sin señal: solo pueden entrar sin internet quienes ya ingresaron hoy en este dispositivo.";
+      a.pin=""; renderApp(); return;
+    }
     if(a.pinGestion){ a.error=(r&&r.error)||"No se pudo validar el PIN."; a.pin=""; renderApp(); return }
     if(r && r.equipo){ authEquipoBloqueado(r); return }
     if(r && r.primeraVez){ a.paso="pinConfirm"; a.pin1=""; renderApp(); return }
@@ -2382,7 +2421,7 @@ async function authSubmit(){
     a.cargando=true; a.error=""; renderApp();
     const r = await api("login", { empleadoId:a.elegido.id, pin:a.pin, pinConfirm:a.pin1, local:a.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
     a.cargando=false;
-    if(r && r.ok){ aplicarLogin(r); return }
+    if(r && r.ok){ credGuardar(a.pin,r,a.local); aplicarLogin(r); return }
     if(r && r.equipo){ authEquipoBloqueado(r); return }
     a.error = (r&&r.error) || "Los PIN no coinciden. Probá de nuevo.";
     a.paso="pin"; a.pin=""; a.pin1=""; renderApp();
@@ -2505,7 +2544,13 @@ async function desbloquearPC(){
     ? await api("loginGestion", { empleadoId:S.empleado.id, clave:S.bloqueoClave, local:S.gestionLocal })
     : await api("login", { empleadoId:S.empleado.id, pin:S.bloqueoPin, local:S.local, equipoId:equipoId(), equipoNombre:nombreEquipoDetectado() });
   S.bloqueoCargando = false;
+  if(r && r.offline && !S.esGestion){
+    const c=await credVerificar(S.empleado.id,S.bloqueoPin);
+    if(c){ S.bloqueado=false; S.bloqueoPin=""; S.bloqueoClave=""; reiniciarInactividad(); renderApp(); toast("Sin señal: desbloqueado. Lo que cargues se envía solo cuando vuelva internet."); return }
+    S.bloqueoError = c===false ? "PIN incorrecto." : "Sin señal: no se puede comprobar el PIN."; S.bloqueoPin=""; renderApp(); return;
+  }
   if(r && r.ok){
+    if(!S.esGestion) credGuardar(S.bloqueoPin,r,S.local);
     S.token = r.token; guardarSesionPC();
     S.bloqueado = false; S.bloqueoPin = ""; S.bloqueoClave = "";
     reiniciarInactividad();
@@ -3163,6 +3208,7 @@ function renderAuth(){
     cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">‹ Volver</button>`}
       <div class="quienHead"><div><h1 ${!a.esGestion?'data-secreto-otro="1"':""}>Elegí tu perfil</h1>
       <p>${a.esGestion?"Tocá tu tarjeta para continuar.":`<span class="soloMovil">Local: <b>${esc(a.local||"")}</b>. </span>Tocá tu tarjeta para continuar.`}</p></div></div>
+      ${a.sinSenal?`<div class="note" style="background:#FBF3DF;color:#6B521C">Sin señal. Pueden entrar quienes <b>ya ingresaron hoy</b> en este dispositivo, con su PIN. Lo que cargues se envía solo cuando vuelva internet.</div>`:""}
       ${a.error?`<div class="warn">${esc(a.error)}</div>`:""}
       ${a.cargando?`<div class="note">Cargando…</div>`:
         a.errorCarga?`<div class="warn">${esc(a.errorCarga)}</div><button class="btn ghost" type="button" id="authReintentar" style="width:100%;margin-top:10px">Reintentar</button>`:
