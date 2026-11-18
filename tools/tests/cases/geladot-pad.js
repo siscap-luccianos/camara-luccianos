@@ -48,7 +48,10 @@ const { chromium } = require("playwright");
   await page.click('[data-rep-tecla="C"]');
   for (const d of "2500") await page.click(`[data-rep-tecla="${d}"]`);
   ok(/no puede pesar más de 2\.000 g/.test(await txt("#repOv")), "Reposición: la abierta no puede pesar más de lo que tenía");
-  await page.click('[data-rep-tecla="C"]'); for (const d of "1300") await page.click(`[data-rep-tecla="${d}"]`);
+  await page.click('[data-rep-tecla="C"]');
+  await page.keyboard.press("1"); await page.keyboard.press("5"); await page.keyboard.press("Backspace"); await page.keyboard.press("3"); await page.keyboard.press("0"); await page.keyboard.press("0");
+  ok((await page.inputValue("#repNum")) === "1300", "Reposición: el teclado físico escribe en el pad (1,5,⌫,3,0,0 → " + await page.inputValue("#repNum") + ")");
+
   ov = await txt("#repOv");
   ok(/Usaste 700 g/.test(ov) && /2 cajas \+ 1300 g/.test(ov), "Reposición: la app calcula «Usaste 700 g» y lo que queda — " + ov.replace(/\s+/g, " ").slice(-200));
   await page.click("[data-rep-ok]"); await page.waitForTimeout(900);
