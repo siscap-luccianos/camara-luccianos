@@ -1510,10 +1510,10 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.179.0";
+const FRONTEND_VERSION = "1.180.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
-const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
+const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1701,7 +1701,12 @@ window.addEventListener("online", colaFlush);
 function nombre(id){ return (S.saboresPorId[id]||{}).nombre || ("Sabor "+id) }
 function minimoDe(id){ return (S.saboresPorId[id]||{}).minimo ?? 6 }
 function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
-const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"], k:["kilo","kilos"] };
+const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"], k:["kilo","kilos"], g:["gramo","gramos"] };
+const GEL_CAJA=2500;
+function esGel(id){ return tipoDe(id)==="g" }
+/** Geladot: el stock va en gramos; se muestra "3 cajas + 900 g". */
+function fmtGel(g){ g=Math.round(Number(g)||0); const c=Math.floor(g/GEL_CAJA), r=g-c*GEL_CAJA; return c?(c+(c===1?" caja":" cajas")+(r?" + "+r+" g":"")):r+" g" }
+function pstockHTML(id,n){ return esGel(id)?`<b>${fmtGel(n)}</b>`:`<b>${n}</b><span>${unidad(id,n)}</span>` }
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
 const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)", k:"Kilos (granella, crumble: el stock es la cantidad de kilos)" };
 
@@ -3735,7 +3740,7 @@ function renderMain(){
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
 const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Classiques","Enrobés","Prestige","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas","Bombones","Tortas","Pastelería Fresca","Bollería","Geladot"];
-const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
+const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", geladot:"Geladot", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","chocolateria","glutenfree","pasteleria","bolleria"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
 /** Grupos con al menos un sabor cargado en este local — si solo hay
@@ -3875,7 +3880,7 @@ function gridSalida(st){
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${info||(sinFecha?`<span class="loteInfo"><span class="semDot"></span>Sin fecha todavía</span>`:"")}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
-        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </div></div>`};
   if(consulta){
     return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
@@ -3894,7 +3899,7 @@ function gridSalida(st){
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${loteInfoSpan(s.id,false)}${loteElegirBtn(s.id,false)}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
-        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
@@ -3962,7 +3967,7 @@ function gridDesperdicio(st){
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${loteInfoSpan(s.id,true)}${loteElegirBtn(s.id,true)}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
-        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button class="btn volver" type="button" id="volverSalida">Volver a Salida</button>${puedeCambioSabor()?`<button class="btn" type="button" id="irMerma" style="background:var(--warn,#F5A300);color:#1B1511;border:0">Merma en kilos</button>`:""}</div>
@@ -4838,7 +4843,7 @@ function stockViewConteo(){
    Corregir uno ya guardado pide motivo y deja registrado qué había, qué quedó, quién y cuándo.
    El valor en pesos usa los precios de Gestión y solo lo ve quien ve la solapa Gestión.
 ============================================================ */
-function invEsKg(s){ return !!s && (s.tipo==="k" || (s.tipo==="v" && grupoProductoDe(s)==="vasquetas")) }
+function invEsKg(s){ return !!s && (s.tipo==="k" || s.tipo==="g" || (s.tipo==="v" && grupoProductoDe(s)==="vasquetas")) }
 function invSabores(){ return saboresDelLocalBase() }
 function invGrupos(){ const sab=invSabores(); return GRUPO_PRODUCTO_ORDEN.filter(g=>sab.some(s=>grupoProductoDe(s)===g)) }
 function invClaveBorrador(){ return "inventarioBorrador:"+S.local }
@@ -4860,6 +4865,7 @@ function invCamaraLive(){
       const q=+I0.cam.items[id]||0; if(!(q>0)) return;
       if(!invEsKg(s)){ o[id]={u:q}; return }
       if(s.tipo==="k"){ o[id]={u:Math.round(q),k:q}; return }
+      if(s.tipo==="g"){ o[id]={u:Math.round(q*1000),k:q}; return }
       const w=(I0.cam.pesos[id]||[]).filter(x=>x!==""&&x!==null&&+x>0).length;
       o[id]={u:w||1,k:q};
     });
@@ -4871,6 +4877,7 @@ function invCamaraLive(){
     if(!invEsKg(s)){ if(u>0) out[s.id]={u}; return }
     let k, ap=false;
     if(s.tipo==="k") k=u;
+    else if(s.tipo==="g"){ k=Math.round(u)/1000; out[s.id]={u,k}; return }
     else if(S.kilosReales && km[s.id]!==null && km[s.id]!==undefined) k=km[s.id];
     else { k=Math.round(u*(+s.peso||0)*100)/100; ap=u>0; }
     if(u>0 || k>0) out[s.id]=ap?{u,k,ap:1}:{u,k};
@@ -5904,10 +5911,11 @@ async function cargarGestion(){
  *  venían `vasquetas`/`icepops`/`glutenfree`) para no romper nada que
  *  dependa de esos valores; `GRUPO_PRODUCTO_LABEL` tiene el texto para
  *  mostrar. */
-const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","chocolateria","glutenfree","pasteleria","bolleria"];
+const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","geladot","chocolateria","glutenfree","pasteleria","bolleria"];
 const GRUPO_PRODUCTO_LABEL = { vasquetas:"Vasquetas", baldes:"Baldes", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
 function grupoProductoDe(s){
   if(s.tipo==="b") return "baldes";
+  if(s.tipo==="g") return "geladot";
   const familia=s.familia||"vasquetas";
   if(familia==="icepops") return "icepops";
   if(familia==="chocolateria") return "chocolateria";
@@ -7720,14 +7728,14 @@ function abrirCantidad(id,c){
   S.cantDlg={id:String(id), c, fresco:true, actual};
   const ov=document.createElement("div"); ov.id="cantOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="cantTit">
-    <p class="mantTit" id="cantTit">¿Cuántas unidades?</p>
-    <p class="mantSub">${esc(s.nombre)} · hay ${stockMap()[id]||0} en stock${caja?` · caja de ${caja}`:""}</p>
+    <p class="mantTit" id="cantTit">${esGel(id)?"¿Cuántos gramos?":"¿Cuántas unidades?"}</p>
+    <p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
     <input type="text" id="cantNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" value="${actual||1}" aria-label="Cantidad de unidades">
     <div class="escMsg err" id="cantMsg" role="status" aria-live="polite" hidden></div>
     <div class="kgPad" role="group" aria-label="Teclado numérico">
       ${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-cant-tecla="${k}" aria-label="${k==="C"?"borrar todo":k==="⌫"?"borrar":k}">${k==="C"?"Borrar":k}</button>`).join("")}
     </div>
-    ${caja&&caja<=max?`<button type="button" class="btn ghost" data-cant-caja style="margin:8px 0 0;width:100%">+1 caja · ${caja} unidades</button>`:""}
+    ${caja&&caja<=max?`<button type="button" class="btn ghost" data-cant-caja style="margin:8px 0 0;width:100%">+1 caja · ${caja} ${esGel(id)?"g (caja entera)":"unidades"}</button>`:""}
     <div class="mantAcc" style="margin-top:10px">
       <button type="button" class="btn ghost" data-cant-cancel>Cancelar</button>
       <button type="button" class="btn" data-cant-listo>Listo</button>
@@ -7759,16 +7767,16 @@ function teclaCantidad(k){
   let v=inp.value;
   if(k==="⌫") v=d.fresco?"":v.slice(0,-1);
   else if(k==="C") v="";
-  else if(k==="+caja"){ const caja=Number((S.saboresPorId[d.id]||{}).cantidad_maestra)||0; v=String(Math.min(9999,(d.fresco&&!d.actual?0:parseInt(v||"0",10)||0)+caja)) }
+  else if(k==="+caja"){ const caja=Number((S.saboresPorId[d.id]||{}).cantidad_maestra)||0; v=String(Math.min(99999,(d.fresco&&!d.actual?0:parseInt(v||"0",10)||0)+caja)) }
   else if(d.fresco) v=k;
-  else if(v.length<4) v=(v==="0"?"":v)+k;
+  else if(v.length<(esGel(d.id)?5:4)) v=(v==="0"?"":v)+k;
   d.fresco=false; inp.value=v; validarCantidad();
 }
 function validarCantidad(){
   const inp=document.getElementById("cantNum"), d=S.cantDlg; if(!inp||!d) return;
   const n=parseInt(inp.value||"0",10)||0, max=maxPad(d.id,d.c), pasa=n>max;
   const msg=document.getElementById("cantMsg"), ok=document.querySelector("[data-cant-listo]");
-  msg.hidden=!pasa; msg.textContent=pasa?`Solo hay ${max} para ${d.c==="desperdicio"?"marcar como desperdicio":"sacar"}.`:"";
+  msg.hidden=!pasa; msg.textContent=pasa?`Solo hay ${esGel(d.id)?fmtGel(max):max} para ${d.c==="desperdicio"?"marcar como desperdicio":"sacar"}.`:"";
   ok.disabled=pasa||n<1;
 }
 function listoCantidad(quitar){
