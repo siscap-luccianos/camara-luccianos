@@ -22,6 +22,8 @@ function resp(b){
   const a=b.accion, l=locales.find(x=>x.nombre===b.local)||{};
   if(a==="localesActivos") return {ok:true,locales:locales.map(x=>({nombre:x.nombre,grupo:x.grupo,pais:x.pais,tieneClave:!!x.clave,esGestion:!!x.operaciones,controlEquipos:false}))};
   if(a==="verificarClaveLocal") return {ok:true};
+  if(a==="empleadosLocal") return {ok:true,empleados:[{id:"11",nombre:"Lucía Benítez",rol:"colaborador",local:"Local prueba",tienePin:true},{id:"12",nombre:"Sofía Ramirez",rol:"encargado",local:"Local prueba",tienePin:true}]};
+  if(a==="login"){ const e={"11":{id:"11",nombre:"Lucía Benítez",rol:"colaborador",local:"Local prueba",tienePin:true},"12":{id:"12",nombre:"Sofía Ramirez",rol:"encargado",local:"Local prueba",tienePin:true}}[String(b.empleadoId)]; if(!e) return {ok:false,error:"Empleado inexistente."}; if(b.pin!=="1234") return {ok:false,error:"PIN incorrecto."}; return {ok:true,token:"tk"+e.id,empleado:e}; }
   if(a==="empleadosGestion") return {ok:true,empleados:[{id:"1",nombre:"Gabi Busquets",rol:"admin"}]};
   if(a==="cambiarMiPin") return (b.pinActual==="1234" && /^\d{4}$/.test(b.pinNuevo||"")) ? {ok:true,token:"t2"} : {ok:false,error:"PIN incorrecto (1/5)."};
   if(a==="loginGestion") return {ok:true,token:"t",empleado:{id:"1",nombre:"Gabi Busquets",rol:"admin",local:""}};
