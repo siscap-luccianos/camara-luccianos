@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.189.3";
+const FRONTEND_VERSION = "1.190.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -5643,7 +5643,7 @@ function detalleMovHTML(r){
     if(r.subtipo==="desperdicio"&&r.motivo&&!r.anulado) cuerpo+=`<div class="hNota">Motivo: ${esc(r.motivo)}</div>`;
     if(r.subtipo==="transferencia"&&!r.anulado&&destinoDeTransf(r)) cuerpo+=`<div class="hNota">${r.tipo==="ingreso"?"Viene de":"Va a"}: <b>${esc(destinoDeTransf(r))}</b></div>`;
   }
-  const pie=esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:"";
+  const pie=esPendienteSync(r)?`<div class="pendienteTag">Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal.</div>`:r.anulado?`<div class="anulTag">Anulado por ${esc(r.anulado_por)}${r.motivo?": "+esc(r.motivo):""}</div>`:puedeAnular(r)?`${esCorregible(r)?`<button type="button" class="anularBtn" data-corregir="${r.id}">Corregir</button>`:""}<button type="button" class="anularBtn" data-anular="${r.id}">Anular</button>`:"";
   const elim=!esPendienteSync(r)&&S.empleado.rol==="admin"?`<button type="button" class="anularBtn" style="color:var(--alert);border-color:var(--alert)" data-eliminar-reg="${r.id}" data-tipo-reg="${r.tipo}">Eliminar</button>`:"";
   return `<div class="hDet">${cuerpo}<div class="hPie"><span>${textoJornada(r.ts)}${r.remito?" · Remito "+esc(r.remito):""}</span><span class="hBtns">${pie}${elim}</span></div></div>`;
 }
@@ -6866,6 +6866,56 @@ async function conBoton(btn, fn){
   try{ return await fn(); }
   finally{ btn.disabled=false; btn.textContent=original; }
 }
+/** «Corregir» = anular el movimiento y abrir la misma carga con todo ya puesto para cambiar solo lo que estaba mal. */
+function esCorregible(r){
+  if(esPendienteSync(r)||r.anulado) return false;
+  const st=String(r.subtipo||"");
+  if(r.tipo==="salida") return st===""||st==="desperdicio"||st==="merma_camara"||st==="merma_local";
+  if(r.tipo==="ingreso") return st===""||st==="devolucion";
+  return false;
+}
+async function corregirMovimiento(id, btn){
+  const r=S.regs.find(x=>String(x.id)===String(id)); if(!r||!esCorregible(r)) return;
+  if(!confirm("Corregir: se anula este movimiento y se abre la carga con lo mismo para que cambies lo que está mal. ¿Seguimos?")) return;
+  let motivo=prompt("¿Qué estaba mal? (opcional)"); if(motivo===null) return;
+  const orig=JSON.parse(JSON.stringify(r)); // se guarda lo original: al anular, el motivo del registro se pisa con el de la anulación
+  await conBoton(btn, async ()=>{
+    let a=await api("anular",{registroId:id,motivo:"Corregido: "+(motivo||"se vuelve a cargar")});
+    if(a && !a.ok && a.pideMotivo){ const m2=prompt(a.error||"Escribí el motivo."); if(m2===null) return; a=await api("anular",{registroId:id,motivo:"Corregido: "+m2}) }
+    if(a && !a.ok && a.pidePin){ const pin=prompt(a.error||"Confirmá con tu PIN."); if(pin===null) return; a=await api("anular",{registroId:id,motivo:"Corregido: "+(motivo||"se vuelve a cargar"),pin:String(pin).trim()}) }
+    if(!(a&&a.ok)){ toast((a&&a.error)||"No se pudo anular el movimiento para corregirlo."); return }
+    await cargarDatos();
+    cargarParaCorregir(orig);
+  });
+}
+function cargarParaCorregir(r){
+  const st=String(r.subtipo||""), items=Object.assign({},r.items||{}), pesos=JSON.parse(JSON.stringify(r.pesos||{}));
+  S.confirm=false; S.q=""; S.catAbierta=false;
+  const mermaKg=(st==="merma_camara"||st==="merma_local");
+  if(mermaKg){
+    const kg=Object.keys(r.kilos||{}); const sid=kg.length&&kg[0]!=="0"?kg[0]:"";
+    S.tab="salida"; S.salidaElegida=true; S.modoDesperdicio=true;
+    renderApp();
+    abrirMerma(sid,{kg:kg.length?r.kilos[kg[0]]:"",lugar:st==="merma_local"?"local":"camara",motivo:r.motivo||""});
+    toast("Corregí lo que esté mal y registrá el descarte."); return;
+  }
+  if(r.tipo==="salida"&&st===""){
+    S.tab="salida"; resetSalidaMenu(); S.salidaElegida=true; S.modoDesperdicio=false;
+    S.cart.salida=items; S.pesos.salida=pesos;
+  } else if(r.tipo==="salida"&&st==="desperdicio"){
+    S.tab="salida"; resetSalidaMenu(); S.salidaElegida=true; S.modoDesperdicio=true;
+    S.cart.desperdicio=items; S.pesos.desperdicio=pesos; S.motivoDesperdicio=r.motivo||"";
+  } else if(r.tipo==="ingreso"&&st===""){
+    S.tab="ingreso"; resetIngresoMenu(); S.ingresoElegido=true; S.modoDevolucion=false;
+    S.cart.ingreso=items; S.remito=r.remito||""; S.fotoRemitoUrl=r.foto_remito||"";
+    S.kilosProduccion={}; Object.keys(r.kilos||{}).forEach(k=>{ S.kilosProduccion[k]=String(r.kilos[k]).replace(".",",") });
+  } else if(r.tipo==="ingreso"&&st==="devolucion"){
+    S.tab="ingreso"; resetIngresoMenu(); S.ingresoElegido=true; S.modoDevolucion=true;
+    S.cart.devolucion=items;
+  }
+  renderApp();
+  toast("Movimiento anulado. Corregí lo que esté mal y confirmá.");
+}
 async function anularMovimiento(id, btn){
   let motivo = prompt("Motivo (opcional):"); if(motivo===null) return;
   await conBoton(btn, async ()=>{
@@ -7176,6 +7226,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="calCancelar"){ S.calHist=null; renderApp(); return }
   if(t.id==="calAplicar"){ const c=S.calHist; if(c&&c.d){ S.rangoHist=`c${c.d}|${c.h||c.d}`; S.calHist=null; renderApp() } return }
   if(t.id==="exportarHist" || t.id==="exportarGestion"){ window.print(); return }
+  if(t.dataset.corregir){ await corregirMovimiento(t.dataset.corregir, t); return }
   if(t.dataset.anular){ await anularMovimiento(t.dataset.anular, t); return }
   if(t.dataset.eliminarReg){ await eliminarRegistroDef(t.dataset.eliminarReg, t.dataset.tipoReg, t); return }
   if(t.dataset.baja){ await darDeBaja(t.dataset.baja, t); return }
@@ -7826,10 +7877,11 @@ function abrirEnteraOMerma(id){
 }
 function mermaGuardarMotivo(m){ m=String(m||"").trim(); if(!m) return; try{ const a=mermaMotivosGuardados().filter(x=>x.toLowerCase()!==m.toLowerCase()); a.unshift(m); localStorage.setItem("mermaMotivos:"+S.local,JSON.stringify(a.slice(0,8))) }catch(_){} }
 function esSaborKg(s){ const t=s.tipo||"v"; return t==="k" || (t==="v" && grupoProductoDe(s)==="vasquetas") }
-function abrirMerma(preId){
+function abrirMerma(preId,pre){
   if(document.getElementById("mermaOv")||!puedeCambioSabor()) return;
   const sabs=(saboresDelLocal()||[]).filter(esSaborKg).slice().sort((a,b)=>claveNombre(a.nombre).localeCompare(claveNombre(b.nombre)));
   const e={saborId:preId?String(preId):"",lugar:"",motivo:"",busy:false};
+  if(pre&&pre.lugar) e.lugar=pre.lugar;
   const ov=document.createElement("div"); ov.id="mermaOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="mermaTit">
     <p class="mantTit" id="mermaTit">Descarte</p>
@@ -7837,11 +7889,11 @@ function abrirMerma(preId){
     <label class="mermaLbl" for="mermaSabor">Sabor (opcional)</label>
     <select id="mermaSabor" class="mermaCtl"><option value="">Sin sabor específico / no sé</option>${sabs.map(s=>`<option value="${esc(s.id)}"${String(s.id)===String(preId||"")?" selected":""}>${esc(s.nombre)}</option>`).join("")}</select>
     <div class="mermaLbl">¿De dónde sale?</div>
-    <div class="cmbChips"><button type="button" class="chip" data-merma-lugar="camara" aria-pressed="false">Cámara</button><button type="button" class="chip" data-merma-lugar="local" aria-pressed="false">Local</button></div>
+    <div class="cmbChips"><button type="button" class="chip" data-merma-lugar="camara" aria-pressed="${!!pre&&pre.lugar==="camara"}">Cámara</button><button type="button" class="chip" data-merma-lugar="local" aria-pressed="${!!pre&&pre.lugar==="local"}">Local</button></div>
     <label class="mermaLbl" for="mermaKg">Kilos perdidos</label>
-    <div class="kgFila"><input type="text" id="mermaKg" class="mermaCtl" inputmode="decimal" autocomplete="off" placeholder="0,19"> kg</div>
+    <div class="kgFila"><input type="text" id="mermaKg" class="mermaCtl" inputmode="decimal" autocomplete="off" placeholder="0,19" value="${pre&&pre.kg?String(pre.kg).replace(".",","):""}"> kg</div>
     <div class="mermaLbl">Detalle</div>
-    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Ej.: capacitación, pote caído, cucurucho mal hecho" maxlength="120" autocomplete="off">
+    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Ej.: capacitación, pote caído, cucurucho mal hecho" maxlength="120" autocomplete="off" value="${esc(pre&&pre.motivo||"")}">
     ${mermaMotivosGuardados().length?`<div class="mermaLbl" style="margin-top:8px">Usados antes · tocá para repetir</div><div class="cmbChips">${mermaMotivosGuardados().map(m=>`<button type="button" class="chip" data-merma-motivo="${esc(m)}">${esc(m)}</button>`).join("")}</div>`:""}
     <div class="escMsg err" id="mermaMsg" role="status" aria-live="polite" hidden></div>
     <div class="cmbBtns"><button type="button" class="btn volver" id="mermaCancel">Cancelar</button><button type="button" class="btn" id="mermaOk" disabled>Registrar descarte</button></div>
@@ -7869,7 +7921,7 @@ function abrirMerma(preId){
   });
   ov.addEventListener("input",upd);
   ov.addEventListener("change",ev=>{ if(ev.target.id==="mermaSabor"){ e.saborId=ev.target.value; upd() } });
-  const l0=ov.querySelector("[data-merma-lugar]"); if(l0) l0.focus();
+  upd(); const l0=ov.querySelector("[data-merma-lugar]"); if(l0) l0.focus();
 }
 function usaPad(id){ const s=S.saboresPorId[String(id)]; return !!s && GRUPOS_PAD.includes(grupoProductoDe(s)) }
 function maxPad(id,c){ return c==="desperdicio" ? (stockMap()[id]||0) : vendibleDe(id) }
