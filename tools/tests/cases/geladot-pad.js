@@ -68,6 +68,30 @@ const { chromium } = require("playwright");
   ok(!!tema && /Cómo retirar Geladot/.test(await tema.innerText()), "«?» tiene el tema «Cómo retirar Geladot»");
   if (tema) { await tema.click(); await page.waitForTimeout(150); ok(/2\.500 g/.test(await txt("#ayudaOv")) && /\+1 caja/.test(await txt("#ayudaOv")), "el tema explica gramos y caja") }
 
+  // 5b) conteo en gramos con helper
+  await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1500);
+  // Ingreso: gramos escritos a mano
+  await page.click("#tabs [data-t='ingreso']"); await page.waitForTimeout(400);
+  if (await page.$('[data-ing-menu="merc"]')) { await page.click('[data-ing-menu="merc"]'); await page.waitForTimeout(300) }
+  const pillI = await page.$('[data-familia="geladot"]'); if (pillI) { await pillI.click(); await page.waitForTimeout(300) }
+  const ci = await page.$('input[data-cant-input="194"]');
+  ok(!!ci, "Ingreso: Geladot tiene campo para escribir gramos");
+  if (ci) { await ci.fill("1300"); await ci.dispatchEvent("input"); await page.waitForTimeout(150);
+    
+    ok(/1\.300|1300/.test(await page.inputValue('input[data-cant-input="194"]')) && /1,30 kg/.test(await txt("#main")), "Ingreso: 1300 g quedan cargados y dice 1,3 kg"); }
+  await page.evaluate(() => document.querySelector("#tabs [data-t='stock']").click()); await page.waitForTimeout(500);
+  await page.evaluate(() => abrirElegirConteo()); await page.waitForSelector("#contOv");
+  await page.evaluate(() => { document.querySelector("#contOv [data-ce=\"todo\"]").click(); document.querySelector("#contOv [data-ce-empezar]").click() }); await page.waitForTimeout(700);
+  const pill = await page.$('[data-familia="geladot"]'); if (pill) { await pill.click(); await page.waitForTimeout(300) }
+  const campo = await page.$('input[data-c="194"]');
+  ok(!!campo, "Conteo: hay campo de Geladot");
+  if (campo) {
+    ok(/gramos/i.test(await page.innerText('[data-gelhelp="194"]')), "helper explica que se cuenta en gramos");
+    await campo.fill("3000"); await campo.dispatchEvent("input"); await page.waitForTimeout(150);
+    const h = (await page.innerText('[data-gelhelp="194"]')).replace(/\s+/g, " ");
+    ok(/1 caja \+ 500 g/.test(h) && /3,00 kg/.test(h), "helper: 3000 g = 1 caja + 500 g · 3,0 kg → " + h);
+  }
+
   // 6) recarga
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1500);
   ok(!!(await page.$("#tabs")), "recarga con sesión: la app abre");
