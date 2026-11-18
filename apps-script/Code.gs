@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.99.0";
+const BACKEND_VERSION = "1.100.0";
 
 function doPost(e) {
   let resultado;
@@ -1509,11 +1509,11 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     }
 
     // Una Devolución no puede superar lo que ESA persona sacó (salidas comunes, no desperdicio ni ventas) y todavía
-    // no devolvió, desde el último conteo y como mucho en las últimas 24 hs. Si no, el stock quedaría de más sin
+    // no devolvió, desde el último conteo y como mucho en las últimas 48 hs. Si no, el stock quedaría de más sin
     // ninguna salida que lo justifique. El cliente ya lo valida; esta es la red de seguridad del servidor.
     if (tipo === "ingreso" && subtipo === "devolucion") {
       const infoDev = _datosSinCache(local);
-      const desdeDev = Math.max(infoDev.stock ? Number(infoDev.stock.ts) || 0 : 0, Date.now() - 24 * 36e5);
+      const desdeDev = Math.max(infoDev.stock ? Number(infoDev.stock.ts) || 0 : 0, Date.now() - 48 * 36e5);
       const saco = {};
       infoDev.registros.forEach((rg) => {
         if (rg.anulado || rg.ts <= desdeDev || String(rg.empleadoId) !== String(empleado.id)) return;
