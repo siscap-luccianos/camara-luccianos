@@ -1481,7 +1481,12 @@ tr.gvdRub td{font-weight:700;border-top:1px solid var(--line)}tr.gvdProd td{back
 .ctlEq{display:flex;align-items:center;gap:10px;text-align:center;flex-wrap:wrap}.ctlEq>div{flex:1;min-width:90px;padding:8px 4px;border-radius:12px}.ctlEq small{display:block;font-size:.64rem;letter-spacing:.08em;color:var(--muted);font-weight:800}.ctlEq b{font-size:1.05rem}.ctlEq>span{color:var(--muted);font-size:1.1rem}.ctlEq .t{background:#2A201A;color:#F8F1E6}.ctlEq .t small{color:#E7DAC6}
 .ctlEq .d{font-weight:800}.ctlEq .d i{display:block;font-style:normal;font-size:.72rem}.ctlEq .d.ok{background:#E3EFE0;color:#2F5A2A}.ctlEq .d.warn{background:#FFF1CC;color:#8A5A00}.ctlEq .d.bad{background:#FDE8E6;color:#B42318}.ctlEq .d small{color:inherit}
 .ctlProds{margin-top:8px}.ctlPr.cmp{grid-template-columns:2fr repeat(7,1fr)}.ctlPrGrp{margin:18px 0 2px;padding:6px 0 4px;border-top:2px solid var(--ink);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#7A3E1D)}.ctlPrGrp:first-of-type{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
-.gelAyuda{grid-column:1/-1;font-size:.82rem;color:var(--muted);margin:2px 0 0;text-align:right}.mermaLbl{display:block;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}.mermaCtl{width:100%;box-sizing:border-box;min-height:42px;border-radius:12px;border:1px solid var(--line);padding:8px 12px;font:inherit;background:#fff;color:var(--ink)}#mermaKg{width:140px}#mermaOtro{margin-top:8px}
+.gelAyuda{grid-column:1/-1;font-size:.82rem;color:var(--muted);margin:2px 0 0;text-align:right}.repPaso{display:flex;align-items:center;gap:8px;background:#F3E3B8;color:#4a3410;border-radius:12px;padding:7px 10px;font-weight:800;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;margin:12px 0 8px}.repPaso i{font-style:normal;background:#4a3410;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
+.repTx{margin:0 0 8px;font-size:.98rem;line-height:1.4;color:var(--ink)}.repTx b{font-weight:800}
+.repOp{display:block;width:100%;text-align:left;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:11px 13px;margin:0 0 8px;font:inherit}.repOp b{display:block;font-size:1rem}.repOp span{font-size:.85rem;color:var(--muted)}.repOp[aria-pressed="true"]{border-color:var(--accent);background:rgba(var(--accent-rgb),.10)}.repOp:disabled{opacity:.45}
+.repCuenta{background:#E4F2E4;border:1px solid #9CC79C;border-radius:14px;padding:10px 12px;margin:10px 0;color:#1d4a1d;font-size:.95rem;line-height:1.45}.repCuenta small{display:block;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:.7rem;margin-bottom:3px}.repCuenta b{font-size:1.05rem}
+.repRegla{background:#FFF4D6;border:1px dashed #C9A24A;border-radius:12px;padding:9px 11px;margin:8px 0;font-size:.92rem;color:#4a3410}
+.mermaLbl{display:block;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}.mermaCtl{width:100%;box-sizing:border-box;min-height:42px;border-radius:12px;border:1px solid var(--line);padding:8px 12px;font:inherit;background:#fff;color:var(--ink)}#mermaKg{width:140px}#mermaOtro{margin-top:8px}
 .ctlPedir{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:16px;background:#FFF8E6;border:1px solid #E7C873;padding:12px 18px;margin:12px 0 8px}
 .ctlNota{font-size:.78rem;color:var(--muted)}
 @media (max-width:700px){.ctlPr{grid-template-columns:1.6fr 1fr 1fr 1fr}.ctlPr span:nth-child(5),.ctlPr span:nth-child(6){display:none}.ctlPr.cmp{grid-template-columns:1.5fr repeat(7,.8fr);min-width:640px}.ctlPr.cmp span:nth-child(5),.ctlPr.cmp span:nth-child(6){display:block}.ctlProds{overflow-x:auto}}
@@ -1510,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.180.6";
+const FRONTEND_VERSION = "1.181.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7004,6 +7009,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; S.hubInicial=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);
+    if(esGel(id)){ abrirReposicion(id); return }
     if(esPesable(id)){ abrirKilos(id,"salida"); return }
     if(usaPad(id)){ abrirCantidad(id,"salida"); return }
     if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para sacar."); return }
@@ -7771,6 +7777,75 @@ function abrirCantidad(id,c){
   validarCantidad();
   setTimeout(()=>{ const i=document.getElementById("cantNum"); if(i) i.focus() },50);
 }
+/* ============================================================
+   REPOSICIÓN DE GELADOT (paso a paso, mock aprobado por Gabi 14/11/2026).
+   El Geladot viene en cajas de 2.500 g. La caja ABIERTA vuelve a la cámara marcada con fibrón.
+   Cada vez que se usa: se pesa la caja al terminar y se escribe cuánto QUEDÓ; la app calcula lo consumido
+   y lo registra como una salida en gramos (subtipo "reposicion"). Registra al toque, no va al carrito.
+   ============================================================ */
+function abrirReposicion(id){
+  if(S.repDlg) return;
+  const sb=S.saboresPorId[String(id)]; if(!sb) return;
+  const st=Math.max(0,Math.round(stockMap()[id]||0)), cajas=Math.floor(st/GEL_CAJA), ab=st-cajas*GEL_CAJA;
+  if(st<=0){ toast("No hay stock de ese sabor."); return }
+  const d=S.repDlg={id:String(id), st, cajas, ab, caja:(ab>0&&cajas===0)?"abierta":(ab===0&&cajas>0)?"nueva":null, val:"", busy:false};
+  const ov=document.createElement("div"); ov.id="repOv"; ov.className="mantenerOv";
+  document.body.appendChild(ov);
+  const cuenta=()=>{ // consumo según la caja elegida y lo que quedó
+    const q=parseInt(d.val||"",10);
+    if(d.caja==="entera") return {consumo:GEL_CAJA, listo:d.cajas>0, resto:d.st-GEL_CAJA, formula:`1 caja entera = ${GEL_CAJA.toLocaleString("es-AR")} g`};
+    if(!d.caja||d.val==="") return null;
+    const base=d.caja==="abierta"?d.ab:d.caja==="nueva"?GEL_CAJA:d.ab+GEL_CAJA, max=d.caja==="abierta"?d.ab:GEL_CAJA;
+    const consumo=base-q, f=d.caja==="ambas"?`${d.ab.toLocaleString("es-AR")} + (${GEL_CAJA.toLocaleString("es-AR")} − ${q.toLocaleString("es-AR")}) = ${consumo.toLocaleString("es-AR")} g de consumo`:`${base.toLocaleString("es-AR")} − ${q.toLocaleString("es-AR")} = ${consumo.toLocaleString("es-AR")} g de consumo`;
+    return {consumo, listo:q<=max&&consumo>0, pasa:q>max, cero:consumo<=0&&q<=max, resto:d.st-consumo, formula:f, max};
+  };
+  const render=()=>{
+    const c=cuenta(), nombre=esc(sb.nombre), op=(k,tit,sub,dis)=>`<button type="button" class="repOp" data-rep-caja="${k}" aria-pressed="${d.caja===k}" ${dis?"disabled":""}><b>${tit}</b><span>${sub}</span></button>`;
+    const resumenCajas=d.cajas?`<b>${d.cajas} ${d.cajas===1?"caja cerrada":"cajas cerradas"}</b>`:"<b>ninguna caja cerrada</b>";
+    const abierta=d.ab>0?` y <b>1 caja ABIERTA de ${d.ab.toLocaleString("es-AR")} g</b>`:". No hay ninguna caja abierta.";
+    const pedirQuedo=d.caja&&d.caja!=="entera";
+    const maxQ=d.caja==="abierta"?d.ab:GEL_CAJA;
+    ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="repTit">
+      <p class="mantTit" id="repTit">Reposición de Geladot · ${nombre}</p>
+      <div class="repPaso"><i>1</i> Mirá cuántas cajas hay</div>
+      <p class="repTx">Hoy en la cámara hay ${resumenCajas}${abierta} (${fmtGel(d.st)} · ${d.st.toLocaleString("es-AR")} g en total).</p>
+      <div class="repPaso"><i>2</i> ¿Qué caja usás?</div>
+      ${op("abierta","La caja abierta",d.ab>0?`La que dice ABIERTA · pesa ${d.ab.toLocaleString("es-AR")} g`:"No hay ninguna abierta",d.ab<=0)}
+      ${op("nueva","Una caja nueva",d.cajas>0?`Abro una cerrada · ${GEL_CAJA.toLocaleString("es-AR")} g`:"No hay cajas cerradas",d.cajas<=0)}
+      ${d.ab>0&&d.cajas>0?op("ambas","La abierta se terminó y abro una nueva","Usé toda la abierta y además abrí una cerrada",false):""}
+      ${d.cajas>0?op("entera","Saqué una caja entera y no la pesé",`Se anotan ${GEL_CAJA.toLocaleString("es-AR")} g de consumo. Mejor pesar siempre.`,false):""}
+      ${d.ab>0?'<div class="repRegla">☝ <b>Siempre usá primero la caja ABIERTA.</b> Si no hay abierta, abrí una cerrada.</div>':""}
+      ${pedirQuedo?`<div class="repPaso"><i>3</i> Fraccioná y pesá la caja</div>
+        <p class="repTx"><b>1.</b> Sacá las bolitas que necesitás.<br><b>2.</b> Volvé a poner la caja sobre la balanza.<br><b>3.</b> Mirá el número que marca la balanza.<br><b>4.</b> Escribí <b>ABIERTA</b> en la caja con fibrón y volvela a la cámara.</p>
+        <div class="repPaso"><i>4</i> Escribí cuánto quedó (en gramos)</div>
+        <input type="text" id="repNum" class="escCampo kgPeso" readonly inputmode="none" value="${esc(d.val)}" placeholder="0" aria-label="Gramos que marca la balanza">
+        <div class="kgPad" role="group" aria-label="Teclado numérico">${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-rep-tecla="${k}">${k==="C"?"Borrar":k}</button>`).join("")}</div>`:""}
+      ${c&&c.pasa?`<div class="escMsg err" role="status">Esa caja no puede pesar más de ${maxQ.toLocaleString("es-AR")} g. Revisá el número.</div>`:""}
+      ${c&&c.cero?`<div class="escMsg err" role="status">Con ese número no se usó nada. Revisá el peso.</div>`:""}
+      ${c&&c.listo?`<div class="repCuenta"><small>La app hace la cuenta</small><b>Usaste ${c.consumo.toLocaleString("es-AR")} g</b><br>En la cámara queda: <b>${fmtGel(c.resto)}</b> (${c.resto.toLocaleString("es-AR")} g en total)<br>${c.formula}</div>`:""}
+      <div class="mantAcc" style="margin-top:10px"><button type="button" class="btn ghost" data-rep-cancel>Cancelar</button><button type="button" class="btn" data-rep-ok ${(c&&c.listo&&!d.busy)?"":"disabled"}>${d.busy?"Guardando…":"Confirmar reposición"}</button></div>
+    </div>`;
+  };
+  const cerrar=()=>{ ov.remove(); S.repDlg=null };
+  ov.addEventListener("click",async e=>{
+    if(e.target===ov){ if(!d.busy) cerrar(); return }
+    const b=e.target.closest("button"); if(!b||b.disabled) return;
+    if(b.dataset.repCancel!==undefined){ cerrar(); return }
+    if(b.dataset.repCaja){ d.caja=b.dataset.repCaja; d.val=""; render(); return }
+    if(b.dataset.repTecla!==undefined){ const k=b.dataset.repTecla; d.val=k==="C"?"":k==="⌫"?d.val.slice(0,-1):(d.val.length<4?(d.val==="0"?"":d.val)+k:d.val); render(); return }
+    if(b.dataset.repOk!==undefined){
+      const c=cuenta(); if(!c||!c.listo||d.busy) return;
+      d.busy=true; render();
+      const payload={clienteId:uuid(), tipo:"salida", local:S.local, items:{[d.id]:c.consumo}, subtipo:"reposicion", motivo:d.caja==="entera"?"Caja entera sin pesar":"Reposición: quedó "+(parseInt(d.val,10)||0)+" g"};
+      const r=await api("registrar",payload);
+      if(r&&r.ok){ cerrar(); toast("Reposición registrada: "+sb.nombre+", usaste "+c.consumo.toLocaleString("es-AR")+" g. En cámara: "+fmtGel(c.resto)+"."); await cargarDatos(); renderApp(); return }
+      if(r&&r.offline){ colaAgregar("registrar",payload); agregarRegistroOptimista(payload); cerrar(); toast("Sin conexión: se guardó y se va a enviar solo."); renderApp(); return }
+      d.busy=false; render(); toast((r&&r.error)||"No se pudo guardar. Probá de nuevo.");
+    }
+  });
+  render();
+}
+
 function cerrarCantidad(){ const ov=document.getElementById("cantOv"); if(ov) ov.remove(); S.cantDlg=null }
 /** Solo enteros, hasta 4 cifras. El primer número que se toca reemplaza al que venía puesto. */
 function teclaCantidad(k){
@@ -8489,13 +8564,15 @@ function ayudaTemas(){
     "Contá la <b>cámara</b> y después el <b>local</b>.",
     "Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias.",
     "El <b>cierre</b> de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere."])});
-  if((S.sabores||[]).some(x=>x.tipo==="g")) T.push({id:"geladot", titulo:"Cómo retirar Geladot", sub:"Siempre en gramos, con la balanza", html:li([
-    "El Geladot se cuenta en <b>gramos</b>. Una caja entera son <b>2.500 g</b>.",
-    "En Salida tocá el sabor. Se abre «¿Cuántos gramos?».",
-    "<b>Pesá en la balanza lo que sacás</b> y escribí en el pad <b>los gramos que marca</b>.",
-    "Si sacás la <b>caja entera</b>, tocá <b>+1 caja</b> (2.500 g) sin pesar.",
-    "Si la caja ya estaba abierta y la volvés a cámara, pesala y cargá solo lo que <b>faltó</b>: la diferencia es lo que se consumió.",
-    "Tocá «Listo» y confirmá la salida. Las roturas van en Desperdicio, también en gramos."])});
+  if((S.sabores||[]).some(x=>x.tipo==="g")) T.push({id:"geladot", titulo:"Geladot: cómo se retira", sub:"Paso a paso, con la balanza", html:li([
+    "<b>1 caja cerrada = 2.500 g.</b> La app hace todas las cuentas: vos solo pesás.",
+    "En <b>Salida › Retiro de cámara</b> andá a la pestaña <b>Geladot</b> y tocá el sabor. Se abre «Reposición de Geladot».",
+    "<b>Paso 1:</b> mirá cuántas cajas hay y si hay una <b>ABIERTA</b>.",
+    "<b>Paso 2:</b> elegí qué caja usás. <b>Siempre primero la caja ABIERTA.</b> Si no hay abierta, abrí una cerrada.",
+    "<b>Paso 3:</b> sacá las bolitas que necesitás y volvé a poner la caja sobre la balanza.",
+    "<b>Paso 4:</b> escribí en el pad los <b>gramos que marca la balanza</b> (cuánto <b>quedó</b>, no cuánto sacaste).",
+    "Escribí <b>ABIERTA</b> con fibrón en la caja y <b>volvela a la cámara</b>.",
+    "Mirá el cuadro verde: «Usaste … g». Si está bien, tocá <b>Confirmar reposición</b>. Queda guardado en ese momento."])+nota("<b>Pesá la caja al terminar, una sola vez por caja usada.</b> Si no se pesa, el sistema no sabe cuánto se consumió y el Control marca una diferencia. Si la abierta se termina y abrís otra, elegí «La abierta se terminó y abro una nueva». Una rotura va en Desperdicio, en gramos.")});
   if(S.escanerPeso && S.sinEscaner) T.push({id:"pesar", titulo:"Cómo sacar vasquetas con su peso", sub:"Se pesa cada vasqueta con el pad", html:li([
     "En Salida tocá el sabor de la vasqueta que sacás.",
     "Se abre <b>¿Cuánto pesa?</b>: escribí el peso de la etiqueta con coma (ej. 3,55).",

@@ -31,24 +31,24 @@ const { chromium } = require("playwright");
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(300);
   if (await page.$('[data-sal-menu="comun"]')) { await page.click('[data-sal-menu="comun"]'); await page.waitForTimeout(300) }
   await abrirGeladot();
-  await page.click('[data-add="194"]'); await page.waitForSelector("#cantOv");
-  let ov = await txt("#cantOv");
-  ok(/¿Cuántos gramos\?/.test(ov), "Salida: «¿Cuántos gramos?»");
-  ok(/Pesá lo que sacás/.test(ov), "Salida: aviso «Pesá lo que sacás…»");
-  ok(/\+1 caja · 2500 g \(caja entera\)/.test(ov), "Salida: botón «+1 caja · 2500 g (caja entera)»");
-  for (const d of "12345") await page.click(`[data-cant-tecla="${d}"]`);
-  ok((await page.inputValue("#cantNum")) === "12345", "pad acepta 5 dígitos: " + await page.inputValue("#cantNum"));
-  ok(/Solo hay 2 cajas \+ 2000 g/.test(await txt("#cantMsg")) && await page.$eval("[data-cant-listo]", e => e.disabled), "pasarse del stock avisa «Solo hay …» y apaga Listo — " + await txt("#cantMsg"));
-  await page.click('[data-cant-tecla="C"]'); await page.click("[data-cant-caja]");
-  ok((await page.inputValue("#cantNum")) === "2500", "+1 caja suma 2500: " + await page.inputValue("#cantNum"));
-  await page.click("[data-cant-listo]"); await page.waitForTimeout(200);
-  ok(!(await page.$("#cantOv")), "Listo cierra el pad");
-  ok(await page.evaluate(() => S.cart.salida["194"]) === 2500, "carrito de salida: 2500 g");
-  // reabrir: arranca con lo cargado
-  await page.click('[data-add="194"]'); await page.waitForSelector("#cantOv");
-  ok((await page.inputValue("#cantNum")) === "2500", "reabrir arranca con lo ya cargado");
-  await page.click("[data-cant-quitar]"); await page.waitForTimeout(200);
-  ok(!(await page.evaluate(() => S.cart.salida["194"])), "«Quitar de la salida» saca el Geladot");
+  const posts = []; page.on("request", r => { if (r.method() === "POST") { try { posts.push(JSON.parse(r.postData())) } catch (e) {} } });
+  await page.click('[data-add="194"]'); await page.waitForSelector("#repOv");
+  let ov = await txt("#repOv");
+  ok(/Reposición de Geladot/.test(ov) && /2 cajas cerradas/.test(ov) && /1 caja ABIERTA de 2\.000 g/.test(ov), "Reposición: paso 1 muestra cajas cerradas y la abierta — " + ov.replace(/\s+/g, " ").slice(0, 160));
+  ok(/Siempre usá primero la caja ABIERTA/.test(ov), "Reposición: regla «siempre primero la abierta»");
+  ok(await page.$eval("[data-rep-ok]", e => e.disabled), "Reposición: Confirmar apagado sin elegir caja");
+  await page.click('[data-rep-caja="abierta"]');
+  ov = await txt("#repOv");
+  ok(/ABIERTA/.test(ov) && /fibrón/.test(ov) && /balanza/.test(ov), "Reposición: instrucciones de fraccionar, pesar y fibrón");
+  for (const d of "2500") await page.click(`[data-rep-tecla="${d}"]`);
+  ok(/no puede pesar más de 2\.000 g/.test(await txt("#repOv")), "Reposición: la abierta no puede pesar más de lo que tenía");
+  await page.click('[data-rep-tecla="C"]'); for (const d of "1300") await page.click(`[data-rep-tecla="${d}"]`);
+  ov = await txt("#repOv");
+  ok(/Usaste 700 g/.test(ov) && /2 cajas \+ 1300 g/.test(ov), "Reposición: la app calcula «Usaste 700 g» y lo que queda — " + ov.replace(/\s+/g, " ").slice(-200));
+  await page.click("[data-rep-ok]"); await page.waitForTimeout(900);
+  const rp = posts.filter(x => x.accion === "registrar" && x.subtipo === "reposicion")[0];
+  ok(rp && rp.tipo === "salida" && rp.items["194"] === 700, "Reposición: manda salida subtipo reposicion con 700 g: " + JSON.stringify(rp));
+  ok(!(await page.$("#repOv")), "Reposición: se cierra al confirmar");
 
   // 4) Desperdicio
   await page.click("#volverSalidaMenu"); await page.waitForTimeout(200); await page.click('[data-sal-menu="desp"]'); await page.waitForTimeout(300); await abrirGeladot();
@@ -65,8 +65,8 @@ const { chromium } = require("playwright");
   // 5) ayuda
   await page.click("#ayudaBtn"); await page.waitForSelector("#ayudaOv");
   const tema = await page.$('[data-ay-tema="geladot"]');
-  ok(!!tema && /Cómo retirar Geladot/.test(await tema.innerText()), "«?» tiene el tema «Cómo retirar Geladot»");
-  if (tema) { await tema.click(); await page.waitForTimeout(150); ok(/2\.500 g/.test(await txt("#ayudaOv")) && /\+1 caja/.test(await txt("#ayudaOv")), "el tema explica gramos y caja") }
+  ok(!!tema && /Geladot: cómo se retira/.test(await tema.innerText()), "«?» tiene el tema «Geladot: cómo se retira»");
+  if (tema) { await tema.click(); await page.waitForTimeout(150); ok(/2\.500 g/.test(await txt("#ayudaOv")) && /ABIERTA/.test(await txt("#ayudaOv")) && /fibrón/.test(await txt("#ayudaOv")), "el tema explica la caja abierta, el fibrón y pesar") }
 
   // 5b) conteo en gramos con helper
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1500);
