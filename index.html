@@ -1510,7 +1510,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.180.1";
+const FRONTEND_VERSION = "1.180.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7670,7 +7670,9 @@ let _renderProgramado=false;
    van en total, Enter y queda en la salida. Vasquetas, baldes y gluten free siguen sumando
    de a una al tocar; cuando se carguen por kilo van a usar el mismo pad. */
 /* ---- Merma en kilos (responsables): una parte de una vasqueta que se pierde, sin sacar la vasqueta entera ---- */
-const MERMA_MOTIVOS=["Se cayó","Vasqueta rota o defectuosa","Corte de luz","Degustación o prueba","Otro"];
+/** Motivos de merma ya usados en este equipo/local: se ofrecen para repetir; uno nuevo se escribe y queda guardado. */
+function mermaMotivosGuardados(){ try{ const a=JSON.parse(localStorage.getItem("mermaMotivos:"+S.local)||"[]"); return Array.isArray(a)?a.slice(0,8):[] }catch(_){ return [] } }
+function mermaGuardarMotivo(m){ m=String(m||"").trim(); if(!m) return; try{ const a=mermaMotivosGuardados().filter(x=>x.toLowerCase()!==m.toLowerCase()); a.unshift(m); localStorage.setItem("mermaMotivos:"+S.local,JSON.stringify(a.slice(0,8))) }catch(_){} }
 function esSaborKg(s){ const t=s.tipo||"v"; return t==="k" || (t==="v" && grupoProductoDe(s)==="vasquetas") }
 function abrirMerma(){
   if(document.getElementById("mermaOv")||!puedeCambioSabor()) return;
@@ -7688,27 +7690,28 @@ function abrirMerma(){
     <label class="mermaLbl" for="mermaKg">Kilos perdidos</label>
     <div class="kgFila"><input type="text" id="mermaKg" class="mermaCtl" inputmode="decimal" autocomplete="off" placeholder="0,19"> kg</div>
     <div class="mermaLbl">Motivo</div>
-    <div class="cmbChips">${MERMA_MOTIVOS.map(m=>`<button type="button" class="chip" data-merma-motivo="${esc(m)}" aria-pressed="false">${esc(m)}</button>`).join("")}</div>
-    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Escribí el motivo" maxlength="120" hidden>
+    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Escribí el motivo (ej. corte de luz)" maxlength="120" autocomplete="off">
+    ${mermaMotivosGuardados().length?`<div class="mermaLbl" style="margin-top:8px">Usados antes · tocá para repetir</div><div class="cmbChips">${mermaMotivosGuardados().map(m=>`<button type="button" class="chip" data-merma-motivo="${esc(m)}">${esc(m)}</button>`).join("")}</div>`:""}
     <div class="escMsg err" id="mermaMsg" role="status" aria-live="polite" hidden></div>
     <div class="cmbBtns"><button type="button" class="btn volver" id="mermaCancel">Cancelar</button><button type="button" class="btn" id="mermaOk" disabled>Registrar merma</button></div>
   </div>`;
   document.body.appendChild(ov);
   const $=sel=>ov.querySelector(sel);
   const kgVal=()=>{ const n=Number(String($("#mermaKg").value).replace(",",".")); return isFinite(n)?Math.round(n*100)/100:0 };
-  const motivoTxt=()=>e.motivo==="Otro"?String($("#mermaOtro").value||"").trim():e.motivo;
+  const motivoTxt=()=>String($("#mermaOtro").value||"").trim();
   const upd=()=>{ $("#mermaOk").disabled=e.busy||!(e.saborId&&e.lugar&&kgVal()>0&&motivoTxt()) };
+  $("#mermaOtro").addEventListener("input",upd);
   const msg=t=>{ const m=$("#mermaMsg"); m.textContent=t||""; m.hidden=!t };
   const cerrar=()=>ov.remove();
   ov.addEventListener("click",async ev=>{
     const t=ev.target;
     if(t===ov||t.closest("#mermaCancel")){ cerrar(); return }
     const l=t.closest("[data-merma-lugar]"); if(l){ e.lugar=l.dataset.mermaLugar; ov.querySelectorAll("[data-merma-lugar]").forEach(b=>b.setAttribute("aria-pressed",String(b===l))); upd(); return }
-    const m=t.closest("[data-merma-motivo]"); if(m){ e.motivo=m.dataset.mermaMotivo; ov.querySelectorAll("[data-merma-motivo]").forEach(b=>b.setAttribute("aria-pressed",String(b===m))); $("#mermaOtro").hidden=e.motivo!=="Otro"; if(e.motivo==="Otro") $("#mermaOtro").focus(); upd(); return }
+    const m=t.closest("[data-merma-motivo]"); if(m){ $("#mermaOtro").value=m.dataset.mermaMotivo; upd(); return }
     if(t.closest("#mermaOk")){
       if(e.busy) return; e.busy=true; upd(); msg("");
       const r=await api("registrarMerma",{clienteId:uuid(), local:S.local, saborId:e.saborId, kilos:kgVal(), lugar:e.lugar, motivo:motivoTxt()});
-      if(r&&r.ok){ cerrar(); toast("Merma registrada: "+fmtKg(kgVal())+" kg de "+nombre(e.saborId)+"."); await cargarDatos(); renderApp(); return }
+      if(r&&r.ok){ mermaGuardarMotivo(motivoTxt()); cerrar(); toast("Merma registrada: "+fmtKg(kgVal())+" kg de "+nombre(e.saborId)+"."); await cargarDatos(); renderApp(); return }
       e.busy=false; upd();
       msg(r&&r.offline?"Sin conexión: la merma necesita señal. Probá de nuevo cuando vuelva.":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para cargar mermas.":(r&&r.error)||"No se pudo guardar. Probá de nuevo.");
     }

@@ -1,6 +1,6 @@
 const http=require("http"),fs=require("fs"),path=require("path");
 const ROOT=require("path").join(__dirname,"..","..","..");
-const db={inv:[],regs:[{id:"900",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"5":1},kilos:{},pesos:{},total:1,ts:Date.now()}],stock:{"Local prueba":{local:"Local prueba",base:{"4":20,"5":3,"20":6,"107":0,"49":0},ts:Date.now()-3600000,empleado:"Gabi Busquets"}},nextId:1000};
+const db={inv:[],regs:[{id:"900",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"5":1},kilos:{},pesos:{},total:1,ts:Date.now()}],stock:{"Local prueba":{local:"Local prueba",base:{"4":20,"5":3,"20":6,"107":0,"49":0,"194":7000,"195":7000},ts:Date.now()-3600000,empleado:"Gabi Busquets"}},nextId:1000};
 const locales=[{nombre:"Local prueba",grupo:"Propios",pais:"Argentina",kilosReales:true,sv:true},{nombre:"Obelisco CABA",grupo:"Propios",pais:"Argentina"},{nombre:"Operaciones",grupo:"Gestion",pais:"",operaciones:true,clave:"op2024"}];
 db.regs.push({id:"800",tipo:"conteo",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"4":20,"5":3,"20":6},kilos:{"4":80.4,"5":12.6,"20":24},total:0,ts:db.stock["Local prueba"].ts});
 db.regs.push({id:"802",tipo:"ingreso",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"117":15},kilos:{},pesos:{},total:15,ts:Date.now()-500});
@@ -15,6 +15,7 @@ sabores.push({id:"117",nombre:"Alfajor Semiamargo",tipo:"c",familia:"chocolateri
 sabores.push({id:"118",nombre:"Alfajor Blanco",tipo:"c",familia:"chocolateria",categoria:"Alfajores",minimo:6,orden:118,peso:0,cantidad_maestra:60,vida_util_dias:70});
 (function(){ const f=d=>new Date(Date.now()+d*864e5).toISOString().slice(0,10); const ts=Date.now()-1800000;
   db.regs.push({id:"801",tipo:"ingreso",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"117":30,"118":20},kilos:{},pesos:{},vencimientos:{"117":[{f:f(3),c:10},{f:f(30),c:20}]},total:50,ts}); })();
+sabores.push({id:"194",nombre:"Geladot Frutilla",tipo:"g",familia:"icepops",categoria:"Geladot",minimo:5000,orden:194,peso:2.5,cantidad_maestra:2500},{id:"195",nombre:"Geladot Pistacchio",tipo:"g",familia:"icepops",categoria:"Geladot",minimo:5000,orden:195,peso:2.5,cantidad_maestra:2500});
 const vasq=id=>{const s=sabores.find(x=>x.id===String(id));return s&&s.tipo==="v"&&s.familia==="vasquetas"};
 const nom=id=>(sabores.find(x=>x.id===String(id))||{}).nombre;
 function resp(b){
