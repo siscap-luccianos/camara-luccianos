@@ -21,6 +21,8 @@ const { chromium } = require("playwright");
   ok(await page.evaluate(() => !Object.entries(localStorage).filter(([k]) => /offlineCred/.test(k)).some(([k, v]) => /1234/.test(v))), "el PIN no queda guardado en texto");
   // salir y quedarse sin señal
   await page.evaluate(() => cerrarSesion && cerrarSesion(false)); await page.waitForTimeout(500);
+  // como si la página se hubiera reabierto: la memoria arranca vacía y solo queda lo guardado en el dispositivo
+  await page.evaluate(() => { S.sabores = []; S.saboresPorId = {}; S.regs = []; S.stock = null });
   await ctx.setOffline(true);
   await page.waitForSelector("#authLocal", { timeout: 4000 }).catch(() => {});
   if (await page.$("#authLocal")) { await page.fill("#authLocal", "Local prueba"); await page.click("#authLocalOk"); if (await page.$("#authClave")) { await page.fill("#authClave", "x"); await page.click("#authClaveOk").catch(() => {}); } }
@@ -34,6 +36,8 @@ const { chromium } = require("playwright");
     ok(/PIN incorrecto/.test((await page.innerText("body")).replace(/\s+/g, " ")), "con PIN equivocado no entra");
     await tipear("1234"); await page.waitForSelector("header", { timeout: 8000 }); await page.waitForTimeout(500);
     ok(await page.evaluate(() => !!S.empleado && S.empleado.id) == id, "con su PIN entra sin internet");
+    await page.waitForTimeout(1500);
+    ok(await page.evaluate(() => S.sabores.length) > 0 && !/Cargando datos/.test((await page.innerText("body")).replace(/\s+/g, " ")), "al entrar sin señal se ve la app con los datos guardados del local, no vacía: " + await page.evaluate(() => S.sabores.length) + " sabores");
   } else console.log("(el primer perfil no es de local: se prueba con el de otro rol en la suite larga)");
   // pantalla bloqueada sin señal: también se desbloquea con el PIN
   await page.evaluate(() => { S.bloqueado = true; S.bloqueoPin = ""; renderApp() }); await page.waitForSelector("[data-tecla-bloqueo]");

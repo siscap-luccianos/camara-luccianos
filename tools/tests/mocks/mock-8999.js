@@ -22,6 +22,7 @@ function resp(b){
   const a=b.accion, l=locales.find(x=>x.nombre===b.local)||{};
   if(a==="localesActivos") return {ok:true,locales:locales.map(x=>({nombre:x.nombre,grupo:x.grupo,pais:x.pais,tieneClave:!!x.clave,esGestion:!!x.operaciones,controlEquipos:false}))};
   if(a==="verificarClaveLocal") return {ok:true};
+  if(a==="anular"){ const x=db.regs.find(r=>String(r.id)===String(b.registroId)); if(!x) return {ok:false,error:"No existe ese movimiento."}; x.anulado=true; x.anulado_por="Gabi Busquets"; x.anulado_ts=Date.now(); x.motivo=b.motivo||""; return {ok:true}; }
   if(a==="empleadosLocal") return {ok:true,empleados:[{id:"11",nombre:"Lucía Benítez",rol:"colaborador",local:"Local prueba",tienePin:true},{id:"12",nombre:"Sofía Ramirez",rol:"encargado",local:"Local prueba",tienePin:true}]};
   if(a==="login"){ const e={"11":{id:"11",nombre:"Lucía Benítez",rol:"colaborador",local:"Local prueba",tienePin:true},"12":{id:"12",nombre:"Sofía Ramirez",rol:"encargado",local:"Local prueba",tienePin:true}}[String(b.empleadoId)]; if(!e) return {ok:false,error:"Empleado inexistente."}; if(b.pin!=="1234") return {ok:false,error:"PIN incorrecto."}; return {ok:true,token:"tk"+e.id,empleado:e}; }
   if(a==="empleadosGestion") return {ok:true,empleados:[{id:"1",nombre:"Gabi Busquets",rol:"admin"}]};
