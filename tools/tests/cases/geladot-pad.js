@@ -54,6 +54,7 @@ const { chromium } = require("playwright");
 
   ov = await txt("#repOv");
   ok(/Usaste 700 g/.test(ov) && /2 cajas \+ 1300 g/.test(ov), "Reposición: la app calcula «Usaste 700 g» y lo que queda — " + ov.replace(/\s+/g, " ").slice(-200));
+  ok(/1\.300 g = 1,30 kg/.test(await txt("#repOv")) && /Usaste 700 g \(0,70 kg\)/.test(await txt("#repOv")), "Reposición: muestra el equivalente en kilos (1.300 g = 1,30 kg · usaste 0,70 kg)");
   await page.click("[data-rep-ok]"); await page.waitForTimeout(900);
   const rp = posts.filter(x => x.accion === "registrar" && x.subtipo === "reposicion")[0];
   ok(rp && rp.tipo === "salida" && rp.items["194"] === 700, "Reposición: manda salida subtipo reposicion con 700 g: " + JSON.stringify(rp));

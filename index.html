@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.181.2";
+const FRONTEND_VERSION = "1.181.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7748,7 +7748,7 @@ function abrirCantidad(id,c){
     <p class="mantTit" id="cantTit">${esGel(id)?"¿Cuántos gramos?":"¿Cuántas unidades?"}</p>
     ${esGel(id)?`<div class="ayNota" style="margin:0 0 8px;text-align:left"><b>Pesá lo que sacás</b> y escribí los gramos que marca la balanza. Caja entera: tocá «+1 caja».</div>`:""}<p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
     <input type="text" id="cantNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" value="${actual||1}" aria-label="Cantidad de unidades">
-    <div class="escMsg err" id="cantMsg" role="status" aria-live="polite" hidden></div>
+    ${esGel(id)?'<div class="gelAyuda" id="cantKg" style="text-align:center;margin:0 0 6px"></div>':""}<div class="escMsg err" id="cantMsg" role="status" aria-live="polite" hidden></div>
     <div class="kgPad" role="group" aria-label="Teclado numérico">
       ${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-cant-tecla="${k}" aria-label="${k==="C"?"borrar todo":k==="⌫"?"borrar":k}">${k==="C"?"Borrar":k}</button>`).join("")}
     </div>
@@ -7820,10 +7820,11 @@ function abrirReposicion(id){
         <p class="repTx"><b>1.</b> Sacá las bolitas que necesitás.<br><b>2.</b> Volvé a poner la caja sobre la balanza.<br><b>3.</b> Mirá el número que marca la balanza.<br><b>4.</b> Escribí <b>ABIERTA</b> en la caja con fibrón y volvela a la cámara.</p>
         <div class="repPaso"><i>4</i> Escribí cuánto quedó (en gramos)</div>
         <input type="text" id="repNum" class="escCampo kgPeso" readonly inputmode="none" value="${esc(d.val)}" placeholder="0" aria-label="Gramos que marca la balanza">
+        <div class="gelAyuda" style="text-align:center;margin:4px 0 8px">${d.val?`${parseInt(d.val,10).toLocaleString("es-AR")} g = <b>${fmtKg(parseInt(d.val,10)/1000)} kg</b>`:"Escribí en gramos. Ej.: 30 g = 0,03 kg · 300 g = 0,30 kg"}</div>
         <div class="kgPad" role="group" aria-label="Teclado numérico">${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-rep-tecla="${k}">${k==="C"?"Borrar":k}</button>`).join("")}</div>`:""}
       ${c&&c.pasa?`<div class="escMsg err" role="status">Esa caja no puede pesar más de ${maxQ.toLocaleString("es-AR")} g. Revisá el número.</div>`:""}
       ${c&&c.cero?`<div class="escMsg err" role="status">Con ese número no se usó nada. Revisá el peso.</div>`:""}
-      ${c&&c.listo?`<div class="repCuenta"><small>La app hace la cuenta</small><b>Usaste ${c.consumo.toLocaleString("es-AR")} g</b><br>En la cámara queda: <b>${fmtGel(c.resto)}</b> (${c.resto.toLocaleString("es-AR")} g en total)<br>${c.formula}</div>`:""}
+      ${c&&c.listo?`<div class="repCuenta"><small>La app hace la cuenta</small><b>Usaste ${c.consumo.toLocaleString("es-AR")} g (${fmtKg(c.consumo/1000)} kg)</b><br>En la cámara queda: <b>${fmtGel(c.resto)}</b> (${c.resto.toLocaleString("es-AR")} g · ${fmtKg(c.resto/1000)} kg en total)<br>${c.formula}</div>`:""}
       <div class="mantAcc" style="margin-top:10px"><button type="button" class="btn ghost" data-rep-cancel>Cancelar</button><button type="button" class="btn" data-rep-ok ${(c&&c.listo&&!d.busy)?"":"disabled"}>${d.busy?"Guardando…":"Confirmar reposición"}</button></div>
     </div>`;
     const nb=ov.querySelector(".mantenerBox"); if(nb&&prevTop) nb.scrollTop=prevTop;
@@ -7874,6 +7875,7 @@ function validarCantidad(){
   const inp=document.getElementById("cantNum"), d=S.cantDlg; if(!inp||!d) return;
   const n=parseInt(inp.value||"0",10)||0, max=maxPad(d.id,d.c), pasa=n>max;
   const msg=document.getElementById("cantMsg"), ok=document.querySelector("[data-cant-listo]");
+  const ck=document.getElementById("cantKg"); if(ck) ck.innerHTML=n>0?`${n.toLocaleString("es-AR")} g = <b>${fmtKg(n/1000)} kg</b>`:"Escribí en gramos. Ej.: 30 g = 0,03 kg";
   msg.hidden=!pasa; msg.textContent=pasa?`Solo hay ${esGel(d.id)?fmtGel(max):max} para ${d.c==="desperdicio"?"marcar como desperdicio":"sacar"}.`:"";
   ok.disabled=pasa||n<1;
 }
