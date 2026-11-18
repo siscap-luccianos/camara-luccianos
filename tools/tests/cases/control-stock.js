@@ -36,6 +36,7 @@ const { chromium } = require("playwright");
   const eq=(await page.innerText(".ctlEq")).replace(/\s+/g," ");
   ok(/INICIAL/i.test(eq)&&/MERMA/i.test(eq)&&/ESPERADO/i.test(eq)&&/CONTEO/i.test(eq)&&/DIFERENCIA/i.test(eq),"el rubro muestra Inicial + Ingresos − Salidas − Merma = Esperado · Conteo · Diferencia");
   const cuenta=(await page.innerText("#main")).replace(/\s+/g," ");
+  ok(/Diferencia real/.test(cuenta),"el resumen muestra la «Diferencia real» (solo la cámara)");
   ok(/Merma y desperdicio · 2/.test(cuenta)&&/−2,19 kg/.test(cuenta)&&/cámara \+ local/.test(cuenta),"el resumen suma la línea de Merma y habla de cámara + local");
   ok(/El local cambió/.test(cuenta),"avisa cuánto cambió el local respecto del inicial");
   await page.click("[data-ctl-mov='merma']"); await page.waitForTimeout(200);

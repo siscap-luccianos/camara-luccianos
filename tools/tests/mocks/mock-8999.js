@@ -106,7 +106,7 @@ function resp(b){
     const mk=(id,tipo,dias,cam,fijo)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",fijo:fijo!==false&&!db.desb,desbloqueado_hasta:db.desb?T+864e5:0,visible_resp_ts:(db.vis&&db.vis[id])||0,libera_ts:tipo==="final"?T+36e5:0,camKg:cam,camU:1240,locKg:26.5,locU:96});
     const conteos=[mk("7","inicial",20,201.3),mk("8","parcial",5,188.9),mk("9","final",1,170)];
     const c=conteos.find(x=>x.id===sel)||conteos[2]; const esCmp=c.tipo!=="inicial";
-    const prod=(id,n,cam,loc,e,ini,ing,sal,mer)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam+loc-e)*100)/100:null,ini:esCmp?ini:null,ing:esCmp?ing:null,sal:esCmp?sal:null,merma:esCmp?mer:null,locIni:esCmp?1:null});
+    const prod=(id,n,cam,loc,e,ini,ing,sal,mer)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam+loc-e)*100)/100:null,ini:esCmp?ini:null,ing:esCmp?ing:null,sal:esCmp?sal:null,merma:esCmp?mer:null,difCam:esCmp?Math.round((cam-(e-1))*100)/100:null,locIni:esCmp?1:null});
     return {ok:true,local:b.local,conteos,conteo:c,base:esCmp?conteos[0]:null,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null,
       dif:esCmp?{kg:-18.9,u:0,pctKg:-9.4,pctU:null}:null,
       camaraCont:{ts:T-10*864e5,empleado:"Laura",desbloqueado_hasta:db.camDesb?T+864e5:0},
