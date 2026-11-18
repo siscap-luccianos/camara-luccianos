@@ -1491,10 +1491,11 @@ tr.gvdRub td{font-weight:700;border-top:1px solid var(--line)}tr.gvdProd td{back
 .ctlRubroTit{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.ctlRubroTit b{font-family:var(--display);font-size:1.15rem}
 .ctlEq{display:flex;align-items:center;gap:10px;text-align:center;flex-wrap:wrap}.ctlEq>div{flex:1;min-width:90px;padding:8px 4px;border-radius:12px}.ctlEq small{display:block;font-size:.64rem;letter-spacing:.08em;color:var(--muted);font-weight:800}.ctlEq b{font-size:1.05rem}.ctlEq>span{color:var(--muted);font-size:1.1rem}.ctlEq .t{background:#2A201A;color:#F8F1E6}.ctlEq .t small{color:#E7DAC6}
 .ctlEq .d{font-weight:800}.ctlEq .d i{display:block;font-style:normal;font-size:.72rem}.ctlEq .d.ok{background:#E3EFE0;color:#2F5A2A}.ctlEq .d.warn{background:#FFF1CC;color:#8A5A00}.ctlEq .d.bad{background:#FDE8E6;color:#B42318}.ctlEq .d small{color:inherit}
-.ctlProds{margin-top:8px}.ctlPrGrp{margin:18px 0 2px;padding:6px 0 4px;border-top:2px solid var(--ink);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#7A3E1D)}.ctlPrGrp:first-of-type{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
+.ctlProds{margin-top:8px}.ctlPr.cmp{grid-template-columns:2fr repeat(7,1fr)}.ctlPrGrp{margin:18px 0 2px;padding:6px 0 4px;border-top:2px solid var(--ink);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#7A3E1D)}.ctlPrGrp:first-of-type{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
+.mermaLbl{display:block;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:12px 0 6px}.mermaCtl{width:100%;box-sizing:border-box;min-height:42px;border-radius:12px;border:1px solid var(--line);padding:8px 12px;font:inherit;background:#fff;color:var(--ink)}#mermaKg{width:140px}#mermaOtro{margin-top:8px}
 .ctlPedir{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:16px;background:#FFF8E6;border:1px solid #E7C873;padding:12px 18px;margin:12px 0 8px}
 .ctlNota{font-size:.78rem;color:var(--muted)}
-@media (max-width:700px){.ctlPr{grid-template-columns:1.6fr 1fr 1fr 1fr}.ctlPr span:nth-child(5),.ctlPr span:nth-child(6){display:none}}
+@media (max-width:700px){.ctlPr{grid-template-columns:1.6fr 1fr 1fr 1fr}.ctlPr span:nth-child(5),.ctlPr span:nth-child(6){display:none}.ctlPr.cmp{grid-template-columns:1.5fr repeat(7,.8fr);min-width:640px}.ctlPr.cmp span:nth-child(5),.ctlPr.cmp span:nth-child(6){display:block}.ctlProds{overflow-x:auto}}
 .ctlRes{display:none;gap:26px;flex-wrap:wrap}.ctlRes small{display:block;color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.08em}.ctlRes b{font-family:Fraunces,serif;font-size:1.3rem}
 .ctlTbl td,.ctlTbl th{text-align:center}
 .ctlPrint{display:none}
@@ -1521,10 +1522,10 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.13";
+const FRONTEND_VERSION = "1.180.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
-const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
+const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
 
 const POLL_MS = 30000;
 const INACTIVIDAD_COLABORADOR_MS = 5 * 60 * 1000;
@@ -1712,7 +1713,12 @@ window.addEventListener("online", colaFlush);
 function nombre(id){ return (S.saboresPorId[id]||{}).nombre || ("Sabor "+id) }
 function minimoDe(id){ return (S.saboresPorId[id]||{}).minimo ?? 6 }
 function tipoDe(id){ return (S.saboresPorId[id]||{}).tipo || "v" }
-const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"], k:["kilo","kilos"] };
+const UNIDAD_LABEL = { b:["balde","baldes"], i:["icepop","icepops"], m:["caja","cajas"], p:["pote","potes"], v:["vasqueta","vasquetas"], c:["unidad","unidades"], k:["kilo","kilos"], g:["gramo","gramos"] };
+const GEL_CAJA=2500;
+function esGel(id){ return tipoDe(id)==="g" }
+/** Geladot: el stock va en gramos; se muestra "3 cajas + 900 g". */
+function fmtGel(g){ g=Math.round(Number(g)||0); const c=Math.floor(g/GEL_CAJA), r=g-c*GEL_CAJA; return c?(c+(c===1?" caja":" cajas")+(r?" + "+r+" g":"")):r+" g" }
+function pstockHTML(id,n){ return esGel(id)?`<b>${fmtGel(n)}</b>`:`<b>${n}</b><span>${unidad(id,n)}</span>` }
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
 const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)", k:"Kilos (granella, crumble: el stock es la cantidad de kilos)" };
 
@@ -1762,6 +1768,7 @@ function kilosMap(hasta){
     out[s.id] = !bts ? 0 : (+kb[s.id]>0 ? +kb[s.id] : (+base[s.id]>0 ? null : 0)); });
   for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts || r.ts>hasta) continue;
     if(r.tipo==="cambio"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]+=(+k||0) } continue }
+    if(r.subtipo==="merma_camara"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]-=(+k||0) } continue } // merma en kilos de la cámara: resta kilos, no vasquetas
     if(r.tipo!=="ingreso" && r.tipo!=="salida") continue;
     for(const [id,q] of Object.entries(r.items||{})){ if(!(id in out) || out[id]===null || !(+q>0)) continue;
       if(r.tipo==="ingreso"){ const k=+((r.kilos||{})[id])||0; out[id] = k>0 ? out[id]+k : null }
@@ -3472,14 +3479,20 @@ function ctlCuentaHTML(D,c,base){
   const ver=(k,txt)=>`<button type="button" class="invLnk noPrint" data-ctl-mov="${k}">${C.verMov&&C.verMov[k]?"ocultar":"ver"}</button>`;
   const listaIng=C.verMov&&C.verMov.ing?`<div class="ctlProds">${m.ing.lista.map(x=>`<div class="ctlCl"><span>${f(x.ts)} · ${esc(x.remito||(x.sub==="devolucion"?"devolución":"—"))} · ${esc(x.empleado)}</span><b>${ctlKg(x.kg)} kg${u(x.u)}</b></div>`).join("")||`<div class="note">Sin ingresos.</div>`}</div>`:"";
   const listaSal=C.verMov&&C.verMov.sal?`<div class="ctlProds">${m.sal.semanas.map(x=>`<div class="ctlCl"><span>Semana del ${f(x.ts)} · ${x.n} mov.</span><b>${ctlKg(x.kg)} kg${u(x.u)}</b></div>`).join("")||`<div class="note">Sin salidas.</div>`}</div>`:"";
-  const anu=m.anulados.length?`<div class="ctlCuentaAnu"><b>Anulados en el período · ${m.anulados.length}</b>${m.anulados.map(x=>`<div class="mut">${f(x.ts)} · ${x.tipo==="ingreso"?"Ingreso":"Salida"} ${ctlKg(x.kg)} kg${u(x.u)} · ${esc(x.anulado_por||x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</div>`).join("")}</div>`:"";
+  const mm=m.merma||{n:0,kg:0,lista:[]};
+  const listaMer=C.verMov&&C.verMov.merma?`<div class="ctlProds">${mm.lista.map(x=>`<div class="ctlCl"><span>${f(x.ts)} · ${esc(x.lugar)} · ${esc(x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</span><b>${(x.kg||!x.u?ctlKg(x.kg)+" kg":"")+u(-(x.u||0)).replace(/^ · /,x.kg?" · ":"")}</b></div>`).join("")||`<div class="note">Sin merma.</div>`}</div>`:"";
+  const anu=m.anulados.length?`<div class="ctlCuentaAnu"><b>Anulados en el período · ${m.anulados.length}</b>${m.anulados.map(x=>`<div class="mut">${f(x.ts)} · ${x.tipo==="ingreso"?"Ingreso":"Salida"} ${ctlKg(x.kg)} kg${u(x.u)} · ${esc(x.anulado_por||x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</div>`).join("")}</div>`:""
+  const vl=D.varLocal, varTxt=vl&&(vl.kg||vl.u)?`<div class="mut" style="margin-top:6px">El local cambió ${vl.kg?(vl.kg>0?"+":"−")+ctlKg(Math.abs(vl.kg))+" kg":""}${vl.kg&&vl.u?" y ":""}${vl.u?(vl.u>0?"+":"−")+Math.abs(Math.round(vl.u)).toLocaleString("es-AR")+" u.":""} respecto del inicial: esa parte de la diferencia es movimiento normal del local, no necesariamente un error.</div>`:"";
+  const iniKg=Math.round((base.camKg+base.locKg)*100)/100, contKg=Math.round((c.camKg+c.locKg)*100)/100;
   return `<div class="ctlCuenta">
-    ${lin("Inicial (cámara) · "+f(base.ts),ctlKg(base.camKg)+" kg")}
+    ${lin("Inicial (cámara + local) · "+f(base.ts),ctlKg(iniKg)+" kg")}
     ${lin(`+ Ingresos · ${m.ing.n} ${ver("ing")}`,"+"+ctlKg(m.ing.kg)+" kg"+u(m.ing.u),"pos")}${listaIng}
     ${lin(`− Salidas · ${m.sal.n} ${ver("sal")}`,"−"+ctlKg(m.sal.kg)+" kg"+u(-m.sal.u),"neg")}${listaSal}
+    ${mm.n?lin(`− Merma y desperdicio · ${mm.n} ${ver("merma")}`,(mm.kg||!mm.u?"−"+ctlKg(mm.kg)+" kg":"")+u(-(mm.u||0)).replace(/^ · /,mm.kg?" · ":""),"neg"):""}${listaMer}
     ${lin("Debería haber",ctlKg(esperado)+" kg","tot")}
-    ${lin("Contó",ctlKg(c.camKg)+" kg")}
+    ${lin("Contó (cámara + local)",ctlKg(contKg)+" kg")}
     ${lin("Diferencia",(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg"+(D.dif.pctKg===null||D.dif.pctKg===undefined?"":" · "+(D.dif.pctKg<0?"−":D.dif.pctKg>0?"+":"")+String(Math.abs(D.dif.pctKg)).replace(".",",")+" %"),"dif")}
+    ${varTxt}
     ${anu}</div>`;
 }
 function ctlDetalleHTML(){
@@ -3498,8 +3511,13 @@ function ctlDetalleHTML(){
   const franja=`<div class="ctlFranja"><div class="ctlTot"><small>HELADO EN EL LOCAL</small><b>${ctlKg(totKg)} kg</b><span>Cámara ${ctlKg(c.camKg)} kg + local ${ctlKg(c.locKg)} kg</span>${totU?`<span>Otros rubros: ${Math.round(totU).toLocaleString("es-AR")} u.</span>`:""}</div>
     <div class="ctlKpis">${bloque("INICIAL",ini)}${bloque("PARCIAL",par)}${bloque("CIERRE",cie)}<div class="ctlKpi dif ${esCmp?ctlSem(D.dif.kg,D.dif.pctKg):""}"><small>DIFERENCIA</small><b>${esCmp?(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg":"—"}</b>${esCmp&&D.dif.pctKg!==null?`<i>${D.dif.pctKg<0?"−":"+"}${String(Math.abs(D.dif.pctKg)).replace(".",",")} % del inicial</i>`:""}</div></div></div>`;
   const grp=D.grupos.slice().sort((a,b)=>(GRUPO_PRODUCTO_ORDEN.indexOf(a.g)+1||99)-(GRUPO_PRODUCTO_ORDEN.indexOf(b.g)+1||99));
-  const filaProd=(x)=>`<div class="ctlPr"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.cam,x.kg)}</span><span>${ctlV(x.loc,x.kg)}</span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>${x.esperado===null?"—":ctlV(x.esperado,x.kg)}</span><span>${x.dif===null?"—":ctlPill(x.dif,null,x.kg).replace(/ · [^<]*%/,"")}</span></div>`;
-  const cabProd=`<div class="ctlPr cab"><span class="n">Producto</span><span>Cámara</span><span>Local</span><span>Total</span><span>Esperado</span><span>Diferencia</span></div>`;
+  const sgn=(v,kg,sig)=>!v?"—":sig+ctlV(v,kg);
+  const filaProd=(x)=>x.ini!==null&&x.ini!==undefined
+    ? `<div class="ctlPr cmp"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.ini,x.kg)}</span><span>${sgn(x.ing,x.kg,"+")}</span><span>${sgn(x.sal,x.kg,"−")}</span><span>${sgn(x.merma,x.kg,"−")}</span><span><b>${ctlV(x.esperado,x.kg)}</b></span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>${ctlPill(x.dif,null,x.kg).replace(/ · [^<]*%/,"")}</span></div>`
+    : `<div class="ctlPr"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.cam,x.kg)}</span><span>${ctlV(x.loc,x.kg)}</span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>—</span><span>—</span></div>`;
+  const cabProd=esCmp
+    ? `<div class="ctlPr cmp cab"><span class="n">Producto</span><span>Inicial</span><span>Ingresos</span><span>Salidas</span><span>Merma</span><span>Esperado</span><span>Conteo</span><span>Diferencia</span></div>`
+    : `<div class="ctlPr cab"><span class="n">Producto</span><span>Cámara</span><span>Local</span><span>Total</span><span>Esperado</span><span>Diferencia</span></div>`;
   let cuerpo;
   if(C.vista==="producto"){
     // Por producto: separado por rubro (mismo orden que «Por rubro»: vasquetas, baldes, icepops…) y alfabético dentro de cada uno.
@@ -3508,7 +3526,9 @@ function ctlDetalleHTML(){
     cuerpo=`<div class="ctlProds">${cabProd}${bloques||`<div class="note">Sin productos.</div>`}</div>`;
   } else {
     cuerpo=grp.map(g=>`<div class="ctlRubro"><div class="ctlRubroTit"><b>${esc(GRUPO_PRODUCTO_LABEL[g.g]||g.g)}</b><button type="button" class="invLnk noPrint" data-ctl-verg="${esc(g.g)}">${C.verG&&C.verG[g.g]?"Ocultar sabores":"Ver sabores"}</button></div>
-      <div class="ctlEq"><div><small>CÁMARA</small><b>${ctlV(g.cam,g.kg)}</b></div><span>+</span><div><small>LOCAL</small><b>${ctlV(g.loc,g.kg)}</b></div><span>=</span><div class="t"><small>TOTAL</small><b>${ctlV(g.tot,g.kg)}</b></div>${g.dif!==null?`<div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div>`:""}</div>
+      ${esCmp&&g.ini!==null&&g.ini!==undefined
+        ? `<div class="ctlEq"><div><small>INICIAL</small><b>${ctlV(g.ini,g.kg)}</b></div><span>+</span><div><small>INGRESOS</small><b>${ctlV(g.ing,g.kg)}</b></div><span>−</span><div><small>SALIDAS</small><b>${ctlV(g.sal,g.kg)}</b></div>${g.merma?`<span>−</span><div><small>MERMA</small><b>${ctlV(g.merma,g.kg)}</b></div>`:""}<span>=</span><div class="t"><small>ESPERADO</small><b>${ctlV(g.esperado,g.kg)}</b></div><div><small>CONTEO</small><b>${ctlV(g.tot,g.kg)}</b></div><div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div></div>`
+        : `<div class="ctlEq"><div><small>CÁMARA</small><b>${ctlV(g.cam,g.kg)}</b></div><span>+</span><div><small>LOCAL</small><b>${ctlV(g.loc,g.kg)}</b></div><span>=</span><div class="t"><small>TOTAL</small><b>${ctlV(g.tot,g.kg)}</b></div></div>`}
       ${C.verG&&C.verG[g.g]?`<div class="ctlProds">${cabProd}${g.productos.map(filaProd).join("")}</div>`:""}</div>`).join("")||`<div class="note">Sin productos en este conteo.</div>`;
   }
   const pend=D.pedido;
@@ -3517,7 +3537,7 @@ function ctlDetalleHTML(){
     ${volver}
     <div class="noPrint"><div class="cntKick">CONTROL › ${esc(String(C.det).toUpperCase())}</div></div>
     <div class="ctlTitulo"><h1>Total del local</h1><span class="invBadgeDef">${tipoTxt==="Cierre"?"Conteo de cierre":"Conteo "+tipoTxt.toLowerCase()}</span>${fijo&&!desb?`<span class="ctlLockTag">🔒 BLOQUEADO</span>`:desb?`<span class="ctlLockTag abierto">🔓 hasta ${esc(ctlFechaHora(c.desbloqueado_hasta))}</span>`:""}<button type="button" class="rlvBtn noPrint" data-ctl-print="${esc(C.det)}" style="margin-left:auto">📄 PDF</button></div>
-    <div class="ctlSub">${esc(ctlFechaHora(c.ts))} · hecho por ${esc(c.empleado||"")}${base&&esCmp?` · se compara contra el ${(CTL_TIPO[base.tipo]||"inicial").toLowerCase()} del ${esc(ctlFecha(base.ts))} (cámara, más ingresos y menos salidas)`:""}</div>
+    <div class="ctlSub">${esc(ctlFechaHora(c.ts))} · hecho por ${esc(c.empleado||"")}${base&&esCmp?` · se compara contra el ${(CTL_TIPO[base.tipo]||"inicial").toLowerCase()} del ${esc(ctlFecha(base.ts))} (cámara + local, más ingresos, menos salidas y merma)`:""}</div>
     ${fijo?`<div class="ctlCandado noPrint"><span>🔒</span><div><b>Todo conteo guardado queda con candado.</b> No se corrige ni se borra. Solo supervisión lo desbloquea, con su PIN y un motivo, para una corrección (vale 24 horas); el original se conserva.</div>${desb?"":`<button type="button" class="btn" data-ctl-desb="${esc(c.id)}" data-ctl-local="${esc(C.det)}">Desbloquear (PIN)</button>`}</div>`:""}
     ${visRespHTML(c)}
     ${camaraCardHTML(D)}
@@ -3527,7 +3547,7 @@ function ctlDetalleHTML(){
     <div class="noPrint invPills" style="margin:6px 0 10px"><button type="button" class="chip" data-ctl-vista="rubro" aria-pressed="${C.vista!=="producto"}">Por rubro</button><button type="button" class="chip" data-ctl-vista="producto" aria-pressed="${C.vista==="producto"}">Por producto</button></div>
     ${cuerpo}
     <div class="ctlPedir noPrint">${pedir}</div>
-    <div class="ctlNota">La diferencia es de la <b>cámara</b> y se mide siempre contra el <b>inicial</b>. El local se cuenta aparte y suma al total. Una diferencia que no se detecta es merma.</div>
+    <div class="ctlNota">La diferencia se mide sobre el <b>total</b> (cámara + local) y siempre contra el <b>inicial</b>: Inicial + Ingresos − Salidas − Merma = Esperado. La <b>merma</b> incluye el desperdicio de cualquier rubro y la merma en kilos que cargan los responsables; una diferencia que nadie explica sigue siendo merma sin registrar.</div>
     <div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Total del local",sub:C.det,lineaHTML:esc(tipoTxt)+" · "+esc(ctlFechaHora(c.ts))+" · generado por "+esc(S.empleado.nombre)})}${informePieHTML("Control de stock · "+C.det)}</div>
   </div>`;
 }
@@ -3732,7 +3752,7 @@ function renderMain(){
 
 const CATEGORIA_COLOR = { "Chocolates":"#5C3A25", "Cremas":"#C9A46B", "Frutales":"#D9546B", "Dulces de leche":"#B5762E" };
 const CATEGORIAS_ORDEN = ["Chocolates","Cremas","Frutales","Dulces de leche","Fruta","Crema","Bañados","Luxury","Cannoli","Mini Icepops","Classiques","Enrobés","Prestige","Gluten Free","Alfajores","Conitos","Tabletas","Avella","Latas","Bombones","Tortas","Pastelería Fresca","Bollería","Geladot"];
-const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
+const FAMILIA_LABEL = { vasquetas:"Vasquetas", icepops:"Icepops", geladot:"Geladot", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
 const FAMILIA_ORDEN = ["vasquetas","icepops","chocolateria","glutenfree","pasteleria","bolleria"];
 function colorCategoria(cat){ return CATEGORIA_COLOR[cat] || "#8A7A6B" }
 /** Grupos con al menos un sabor cargado en este local — si solo hay
@@ -3872,7 +3892,7 @@ function gridSalida(st){
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${info||(sinFecha?`<span class="loteInfo"><span class="semDot"></span>Sin fecha todavía</span>`:"")}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
-        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </div></div>`};
   if(consulta){
     return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
@@ -3891,7 +3911,7 @@ function gridSalida(st){
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${loteInfoSpan(s.id,false)}${loteElegirBtn(s.id,false)}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
-        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-sub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
   return `<p class="sec">Retira: <b>${esc(emp)}</b></p>
@@ -3959,12 +3979,12 @@ function gridDesperdicio(st){
         <span class="strip" style="background:${colorCategoria(s.categoria)}"></span>
         <span class="cardTop">${plateHTML(s.id)}<span class="pnombre">${esc(s.nombre)}</span>${loteInfoSpan(s.id,true)}${loteElegirBtn(s.id,true)}</span>
         ${ed?`<span class="badge ${ed.cls}">${ed.label}</span>`:`<span class="badge" style="visibility:hidden">&nbsp;</span>`}
-        <span class="pstock"><b>${st[s.id]}</b><span>${unidad(s.id,st[s.id])}</span></span>
+        <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
-  return `<button class="btn volver" type="button" id="volverSalida" style="margin-bottom:12px">Volver a Salida</button>
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button class="btn volver" type="button" id="volverSalida">Volver a Salida</button>${puedeCambioSabor()?`<button class="btn" type="button" id="irMerma" style="background:var(--warn,#F5A300);color:#1B1511;border:0">Merma en kilos</button>`:""}</div>
   <p class="sec" style="margin-top:6px">Desperdicio</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.${puedeCambioSabor()?" Si se perdió solo una parte (un cucurucho, un pote), usá <b>Merma en kilos</b>.":""}</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
   ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("desperdicio"):""}
   ${chipFiltros()}
@@ -4835,7 +4855,7 @@ function stockViewConteo(){
    Corregir uno ya guardado pide motivo y deja registrado qué había, qué quedó, quién y cuándo.
    El valor en pesos usa los precios de Gestión y solo lo ve quien ve la solapa Gestión.
 ============================================================ */
-function invEsKg(s){ return !!s && (s.tipo==="k" || (s.tipo==="v" && grupoProductoDe(s)==="vasquetas")) }
+function invEsKg(s){ return !!s && (s.tipo==="k" || s.tipo==="g" || (s.tipo==="v" && grupoProductoDe(s)==="vasquetas")) }
 function invSabores(){ return saboresDelLocalBase() }
 function invGrupos(){ const sab=invSabores(); return GRUPO_PRODUCTO_ORDEN.filter(g=>sab.some(s=>grupoProductoDe(s)===g)) }
 function invClaveBorrador(){ return "inventarioBorrador:"+S.local }
@@ -4857,6 +4877,7 @@ function invCamaraLive(){
       const q=+I0.cam.items[id]||0; if(!(q>0)) return;
       if(!invEsKg(s)){ o[id]={u:q}; return }
       if(s.tipo==="k"){ o[id]={u:Math.round(q),k:q}; return }
+      if(s.tipo==="g"){ o[id]={u:Math.round(q*1000),k:q}; return }
       const w=(I0.cam.pesos[id]||[]).filter(x=>x!==""&&x!==null&&+x>0).length;
       o[id]={u:w||1,k:q};
     });
@@ -4868,6 +4889,7 @@ function invCamaraLive(){
     if(!invEsKg(s)){ if(u>0) out[s.id]={u}; return }
     let k, ap=false;
     if(s.tipo==="k") k=u;
+    else if(s.tipo==="g"){ k=Math.round(u)/1000; out[s.id]={u,k}; return }
     else if(S.kilosReales && km[s.id]!==null && km[s.id]!==undefined) k=km[s.id];
     else { k=Math.round(u*(+s.peso||0)*100)/100; ap=u>0; }
     if(u>0 || k>0) out[s.id]=ap?{u,k,ap:1}:{u,k};
@@ -5414,6 +5436,7 @@ function etiquetaMov(r){
     return {clase:"transf", label:r.tipo==="ingreso" ? "transferencia"+(d?" ← "+d:" recibida") : "transferencia"+(d?" → "+d:" enviada")};
   }
   if(r.subtipo==="devolucion") return {clase:"devolucion", label:"devolución"};
+  if(esMermaReg(r)) return {clase:"desperdicio", label:"merma"};
   if(r.subtipo==="desperdicio") return {clase:"desperdicio", label:"desperdicio"};
   if(r.subtipo==="produccion") return {clase:"produccion", label:"producción"};
   if(CLASES_CHOCO.includes(r.subtipo)) return {clase:"venta", label:etiquetaSubtipoChoco(r)};
@@ -5430,6 +5453,7 @@ function kgSabor(r,id){ const P=pesosEntradas(r,id); return P.lista.length?P.kg:
 function resumenMov(r){
   const parcial=r.tipo==="cambio" && r.subtipo==="conteo_parcial";
   if(r.tipo==="conteo"||parcial){ const c=contadosDe(r); return Object.entries(c.items).sort((x,y)=>claveNombre(nombre(x[0])).localeCompare(claveNombre(nombre(y[0])))).map(([id,q])=>{ const k=kgSabor(c.pesos&&Object.keys(c.pesos).length?{pesos:c.pesos,kilos:c.kilos}:{kilos:c.kilos},id); return `${nombre(id)} ×${q}${k>0?" · "+fmtKg(k)+" kg":""}` }).join(", ")||"Sin sabores con stock" }
+  if(esMermaReg(r)){ const m=mermaInfo(r); return `${nombre(m.id)} −${fmtKg(m.kg)} kg · del ${m.lugar}${r.motivo&&!r.anulado?" · "+r.motivo:""}` }
   const en=entradasMov(r);
   if(r.tipo==="cambio" && !parcial){ const de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0); return `${de?nombre(de[0]):"?"} → ${ha?nombre(ha[0]):"?"}` }
   const nombres=en.slice().sort((a,b)=>claveNombre(nombre(a[0])).localeCompare(claveNombre(nombre(b[0])))).map(([id,q])=>{ if(parcial) return `${nombre(id)} ${+q>0?"+":"−"}${Math.abs(+q)}`; const k=r.tipo==="cambio"?0:kgSabor(r,id); return `${nombre(id)} ×${q}${k>0?" · "+fmtKg(k)+" kg":""}` });
@@ -5442,6 +5466,7 @@ function totalMov(r){
     const kgC=Object.keys(c.items).reduce((a,id)=>a+kgSabor(c.pesos&&Object.keys(c.pesos).length?{pesos:c.pesos,kilos:c.kilos}:{kilos:c.kilos},id),0);
     return kgC>0?fmtKg(kgC)+" kg":(n?`${n} ${soloV?"vasq.":"u."}`:"") }
   if(r.tipo==="cambio") return "";
+  if(esMermaReg(r)) return "−"+fmtKg(mermaInfo(r).kg)+" kg";
   const en=entradasMov(r), n=en.reduce((a,[,q])=>a+(+q||0),0);
   const soloVasq=en.length && en.every(([id])=>esVasquetaKilos(id)||(S.saboresPorId[id]&&S.saboresPorId[id].tipo==="v"&&grupoProductoDe(S.saboresPorId[id])==="vasquetas"));
   const kgT=en.reduce((a,[id])=>a+kgSabor(r,id),0);
@@ -5509,6 +5534,9 @@ function detalleMovHTML(r){
     cuerpo=(Object.keys(c.items).length?cuerpoPorSabor(rr):`<div class="hNota">Sin sabores con stock.</div>`)
       +(parcial?`<div class="hNota">Conteo parcial${rub?" de "+rub:""}: dejó cada sabor en lo contado; los demás sabores y rubros no se tocan.${c.exacto?"":" (Hay un conteo completo posterior: se muestran las diferencias de este conteo.)"}</div>`
         :`<div class="hNota">Conteo físico completo: reemplaza el stock de todo el local. Anularlo NO lo revierte; para corregirlo, hacé un conteo nuevo.</div>`);
+  } else if(esMermaReg(r)){
+    const m=mermaInfo(r);
+    cuerpo=`<div class="hLin"><span class="n">${esc(nombre(m.id))}</span><span class="q">−${fmtKg(m.kg)} kg</span><span class="d">del ${m.lugar}</span><span class="v">${fmtKg(m.kg)} kg</span></div>${r.motivo&&!r.anulado?`<div class="hNota">Motivo: ${esc(r.motivo)}</div>`:""}<div class="hNota">Merma en kilos: descuenta kilos del ${m.lugar}, no cambia la cantidad de vasquetas.</div>`;
   } else if(r.tipo==="cambio"){
     const en=Object.entries(r.items||{}), de=en.find(([,q])=>+q<0), ha=en.find(([,q])=>+q>0), n=ha?+ha[1]:0, kg=ha&&r.kilos?Math.abs(+r.kilos[ha[0]]||0):0;
     cuerpo=`<div class="hLin"><span class="n">${de?esc(nombre(de[0])):"?"} <b>−${n}</b> → ${ha?esc(nombre(ha[0])):"?"} <b>+${n}</b></span><span class="q"></span><span class="d">${r.motivo&&!r.anulado?esc(r.motivo):""}</span><span class="v">${kg?fmtKg(kg)+" kg":""}</span></div>`;
@@ -5692,8 +5720,12 @@ function histView(){
  *  (sin desperdicio) con algún sabor de ese grupo; si una salida mezcla
  *  los dos, aparece entera en ambos filtros. Chocolatería suma ingresos. */
 /** Tipo de movimiento para el filtro de la lista de Historial (pedido de Gabi 08/11/2026, para encontrar un conteo, un ingreso, etc. sin depender del día). */
-const TIPOS_HIST=[["salida","Salidas"],["venta","Venta del día"],["giftcard","Gift card"],["sincargo","Sin cargo"],["baja","Bajas"],["transferencia","Transferencia enviada"],["ingreso","Ingresos"],["transf_in","Transferencia recibida"],["conteo","Conteos"],["devolucion","Devoluciones"],["desperdicio","Desperdicio"],["produccion","Producción"],["cambio","Cambios de sabor"]];
+const TIPOS_HIST=[["salida","Salidas"],["venta","Venta del día"],["giftcard","Gift card"],["sincargo","Sin cargo"],["baja","Bajas"],["transferencia","Transferencia enviada"],["ingreso","Ingresos"],["transf_in","Transferencia recibida"],["conteo","Conteos"],["devolucion","Devoluciones"],["desperdicio","Desperdicio"],["merma","Merma"],["produccion","Producción"],["cambio","Cambios de sabor"]];
+/** Merma en kilos (Desperdicio › Merma): una salida sin sabores, solo con kilos, de la cámara o del local. */
+function esMermaReg(r){ return r.tipo==="salida" && (r.subtipo==="merma_camara"||r.subtipo==="merma_local") }
+function mermaInfo(r){ const e=Object.entries(r.kilos||{})[0]||[]; return {id:e[0], kg:+e[1]||0, lugar:r.subtipo==="merma_local"?"local":"cámara"} }
 function tipoMovHist(r){
+  if(esMermaReg(r)) return "merma";
   if(r.tipo==="conteo" || (r.tipo==="cambio" && r.subtipo==="conteo_parcial")) return "conteo";
   if(r.tipo==="cambio") return "cambio";
   // La salida de chocolatería (venta del día, gift card, sin cargo, baja, transferencia) es una salida, pero se filtra aparte para que quede bien ubicada.
@@ -5703,6 +5735,7 @@ function tipoMovHist(r){
 }
 function movimientoEnCategoria(r, cat){
   if(cat==="todas") return true;
+  if(esMermaReg(r)) return cat==="desperdicio" || cat==="vasquetas";
   if(cat==="desperdicio") return r.tipo==="salida" && r.subtipo==="desperdicio";
   if(cat==="produccion") return r.subtipo==="produccion";
   // Chocolatería: también los ingresos, porque ahí es donde se carga el vencimiento
@@ -5890,10 +5923,11 @@ async function cargarGestion(){
  *  venían `vasquetas`/`icepops`/`glutenfree`) para no romper nada que
  *  dependa de esos valores; `GRUPO_PRODUCTO_LABEL` tiene el texto para
  *  mostrar. */
-const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","chocolateria","glutenfree","pasteleria","bolleria"];
+const GRUPO_PRODUCTO_ORDEN = ["vasquetas","baldes","icepops","geladot","chocolateria","glutenfree","pasteleria","bolleria"];
 const GRUPO_PRODUCTO_LABEL = { vasquetas:"Vasquetas", baldes:"Baldes", icepops:"Icepops", chocolateria:"Chocolatería", glutenfree:"Gluten Free", pasteleria:"Pastelería", bolleria:"Bollería" };
 function grupoProductoDe(s){
   if(s.tipo==="b") return "baldes";
+  if(s.tipo==="g") return "geladot";
   const familia=s.familia||"vasquetas";
   if(familia==="icepops") return "icepops";
   if(familia==="chocolateria") return "chocolateria";
@@ -7141,6 +7175,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.tipoChoco){ S.tipoChoco=t.dataset.tipoChoco; S.confirm=false; renderApp(); return }
   if(t.dataset.bajaMotivo){ S.bajaMotivo=t.dataset.bajaMotivo; S.confirm=false; renderApp(); return }
   if(t.id==="volverVenta"){ S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.confirm=false; renderApp(); return }
+  if(t.id==="irMerma"){ abrirMerma(); return }
   if(t.id==="volverSalida"){ S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); resetSalidaMenu(); S.confirm=false; renderApp(); return }
   if(t.id==="btnLeerRemitoFoto"){ $("#inputRemitoFoto").click(); return }
   if(t.id==="remitoCancelar"){ S.lectorRemito=null; reiniciarInactividad(); renderApp(); return }
@@ -7646,6 +7681,54 @@ let _renderProgramado=false;
    Tocar el producto abre el pad (a pedido de Gabi 30/10/2026): se escribe cuántas unidades
    van en total, Enter y queda en la salida. Vasquetas, baldes y gluten free siguen sumando
    de a una al tocar; cuando se carguen por kilo van a usar el mismo pad. */
+/* ---- Merma en kilos (responsables): una parte de una vasqueta que se pierde, sin sacar la vasqueta entera ---- */
+const MERMA_MOTIVOS=["Se cayó","Vasqueta rota o defectuosa","Corte de luz","Degustación o prueba","Otro"];
+function esSaborKg(s){ const t=s.tipo||"v"; return t==="k" || (t==="v" && grupoProductoDe(s)==="vasquetas") }
+function abrirMerma(){
+  if(document.getElementById("mermaOv")||!puedeCambioSabor()) return;
+  const sabs=(saboresDelLocal()||[]).filter(esSaborKg).slice().sort((a,b)=>claveNombre(a.nombre).localeCompare(claveNombre(b.nombre)));
+  if(!sabs.length){ toast("Este local no tiene helado en vasquetas para cargar una merma."); return }
+  const e={saborId:"",lugar:"",motivo:"",busy:false};
+  const ov=document.createElement("div"); ov.id="mermaOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="mermaTit">
+    <p class="mantTit" id="mermaTit">Merma en kilos</p>
+    <p class="mantSub">Para una parte que se pierde: un cucurucho que se cayó, un pote mal hecho, un derrame, un corte de luz. Si se pierde una vasqueta entera, usá Desperdicio.</p>
+    <label class="mermaLbl" for="mermaSabor">Sabor</label>
+    <select id="mermaSabor" class="mermaCtl"><option value="">Elegí el sabor…</option>${sabs.map(s=>`<option value="${esc(s.id)}">${esc(s.nombre)}</option>`).join("")}</select>
+    <div class="mermaLbl">¿De dónde sale?</div>
+    <div class="cmbChips"><button type="button" class="chip" data-merma-lugar="camara" aria-pressed="false">Cámara</button><button type="button" class="chip" data-merma-lugar="local" aria-pressed="false">Local</button></div>
+    <label class="mermaLbl" for="mermaKg">Kilos perdidos</label>
+    <div class="kgFila"><input type="text" id="mermaKg" class="mermaCtl" inputmode="decimal" autocomplete="off" placeholder="0,19"> kg</div>
+    <div class="mermaLbl">Motivo</div>
+    <div class="cmbChips">${MERMA_MOTIVOS.map(m=>`<button type="button" class="chip" data-merma-motivo="${esc(m)}" aria-pressed="false">${esc(m)}</button>`).join("")}</div>
+    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Escribí el motivo" maxlength="120" hidden>
+    <div class="escMsg err" id="mermaMsg" role="status" aria-live="polite" hidden></div>
+    <div class="cmbBtns"><button type="button" class="btn volver" id="mermaCancel">Cancelar</button><button type="button" class="btn" id="mermaOk" disabled>Registrar merma</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const $=sel=>ov.querySelector(sel);
+  const kgVal=()=>{ const n=Number(String($("#mermaKg").value).replace(",",".")); return isFinite(n)?Math.round(n*100)/100:0 };
+  const motivoTxt=()=>e.motivo==="Otro"?String($("#mermaOtro").value||"").trim():e.motivo;
+  const upd=()=>{ $("#mermaOk").disabled=e.busy||!(e.saborId&&e.lugar&&kgVal()>0&&motivoTxt()) };
+  const msg=t=>{ const m=$("#mermaMsg"); m.textContent=t||""; m.hidden=!t };
+  const cerrar=()=>ov.remove();
+  ov.addEventListener("click",async ev=>{
+    const t=ev.target;
+    if(t===ov||t.closest("#mermaCancel")){ cerrar(); return }
+    const l=t.closest("[data-merma-lugar]"); if(l){ e.lugar=l.dataset.mermaLugar; ov.querySelectorAll("[data-merma-lugar]").forEach(b=>b.setAttribute("aria-pressed",String(b===l))); upd(); return }
+    const m=t.closest("[data-merma-motivo]"); if(m){ e.motivo=m.dataset.mermaMotivo; ov.querySelectorAll("[data-merma-motivo]").forEach(b=>b.setAttribute("aria-pressed",String(b===m))); $("#mermaOtro").hidden=e.motivo!=="Otro"; if(e.motivo==="Otro") $("#mermaOtro").focus(); upd(); return }
+    if(t.closest("#mermaOk")){
+      if(e.busy) return; e.busy=true; upd(); msg("");
+      const r=await api("registrarMerma",{clienteId:uuid(), local:S.local, saborId:e.saborId, kilos:kgVal(), lugar:e.lugar, motivo:motivoTxt()});
+      if(r&&r.ok){ cerrar(); toast("Merma registrada: "+fmtKg(kgVal())+" kg de "+nombre(e.saborId)+"."); await cargarDatos(); renderApp(); return }
+      e.busy=false; upd();
+      msg(r&&r.offline?"Sin conexión: la merma necesita señal. Probá de nuevo cuando vuelva.":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para cargar mermas.":(r&&r.error)||"No se pudo guardar. Probá de nuevo.");
+    }
+  });
+  ov.addEventListener("input",upd);
+  ov.addEventListener("change",ev=>{ if(ev.target.id==="mermaSabor"){ e.saborId=ev.target.value; upd() } });
+  $("#mermaSabor").focus();
+}
 function usaPad(id){ const s=S.saboresPorId[String(id)]; return !!s && GRUPOS_PAD.includes(grupoProductoDe(s)) }
 function maxPad(id,c){ return c==="desperdicio" ? (stockMap()[id]||0) : vendibleDe(id) }
 function abrirCantidad(id,c){
@@ -7657,14 +7740,14 @@ function abrirCantidad(id,c){
   S.cantDlg={id:String(id), c, fresco:true, actual};
   const ov=document.createElement("div"); ov.id="cantOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="cantTit">
-    <p class="mantTit" id="cantTit">¿Cuántas unidades?</p>
-    <p class="mantSub">${esc(s.nombre)} · hay ${stockMap()[id]||0} en stock${caja?` · caja de ${caja}`:""}</p>
+    <p class="mantTit" id="cantTit">${esGel(id)?"¿Cuántos gramos?":"¿Cuántas unidades?"}</p>
+    <p class="mantSub">${esc(s.nombre)} · hay ${esGel(id)?fmtGel(stockMap()[id]||0):(stockMap()[id]||0)} en stock${caja?` · caja de ${caja}${esGel(id)?" g":""}`:""}</p>
     <input type="text" id="cantNum" class="escCampo kgPeso" readonly inputmode="none" autocomplete="off" value="${actual||1}" aria-label="Cantidad de unidades">
     <div class="escMsg err" id="cantMsg" role="status" aria-live="polite" hidden></div>
     <div class="kgPad" role="group" aria-label="Teclado numérico">
       ${["1","2","3","4","5","6","7","8","9","C","0","⌫"].map(k=>`<button type="button" data-cant-tecla="${k}" aria-label="${k==="C"?"borrar todo":k==="⌫"?"borrar":k}">${k==="C"?"Borrar":k}</button>`).join("")}
     </div>
-    ${caja&&caja<=max?`<button type="button" class="btn ghost" data-cant-caja style="margin:8px 0 0;width:100%">+1 caja · ${caja} unidades</button>`:""}
+    ${caja&&caja<=max?`<button type="button" class="btn ghost" data-cant-caja style="margin:8px 0 0;width:100%">+1 caja · ${caja} ${esGel(id)?"g (caja entera)":"unidades"}</button>`:""}
     <div class="mantAcc" style="margin-top:10px">
       <button type="button" class="btn ghost" data-cant-cancel>Cancelar</button>
       <button type="button" class="btn" data-cant-listo>Listo</button>
@@ -7696,16 +7779,16 @@ function teclaCantidad(k){
   let v=inp.value;
   if(k==="⌫") v=d.fresco?"":v.slice(0,-1);
   else if(k==="C") v="";
-  else if(k==="+caja"){ const caja=Number((S.saboresPorId[d.id]||{}).cantidad_maestra)||0; v=String(Math.min(9999,(d.fresco&&!d.actual?0:parseInt(v||"0",10)||0)+caja)) }
+  else if(k==="+caja"){ const caja=Number((S.saboresPorId[d.id]||{}).cantidad_maestra)||0; v=String(Math.min(99999,(d.fresco&&!d.actual?0:parseInt(v||"0",10)||0)+caja)) }
   else if(d.fresco) v=k;
-  else if(v.length<4) v=(v==="0"?"":v)+k;
+  else if(v.length<(esGel(d.id)?5:4)) v=(v==="0"?"":v)+k;
   d.fresco=false; inp.value=v; validarCantidad();
 }
 function validarCantidad(){
   const inp=document.getElementById("cantNum"), d=S.cantDlg; if(!inp||!d) return;
   const n=parseInt(inp.value||"0",10)||0, max=maxPad(d.id,d.c), pasa=n>max;
   const msg=document.getElementById("cantMsg"), ok=document.querySelector("[data-cant-listo]");
-  msg.hidden=!pasa; msg.textContent=pasa?`Solo hay ${max} para ${d.c==="desperdicio"?"marcar como desperdicio":"sacar"}.`:"";
+  msg.hidden=!pasa; msg.textContent=pasa?`Solo hay ${esGel(d.id)?fmtGel(max):max} para ${d.c==="desperdicio"?"marcar como desperdicio":"sacar"}.`:"";
   ok.disabled=pasa||n<1;
 }
 function listoCantidad(quitar){
@@ -8379,9 +8462,9 @@ function ayudaTemas(){
   const supervision=rol==="admin"||rol==="supervisor", SUP=[];
   if(supervision){
     const ps=(id,titulo,sub,pasos,nt)=>SUP.push({id,grupo:"sup",titulo,sub,html:li(pasos)+(nt?nota(nt):"")});
-    ps("control","Control de stock","La tabla y el semáforo",["Cada fila es un local: <b>Inicial · Parcial · Cierre · Diferencia</b>.","La diferencia se mide siempre contra el <b>inicial</b>, con su porcentaje.","Semáforo: <b>verde</b> hasta 1 %, <b>amarillo</b> hasta 3 %, <b>rojo</b> más de 3 %.","Tocá un local para abrir su detalle."]);
+    ps("control","Control de stock","La tabla y el semáforo",["Cada fila es un local: <b>Inicial · Parcial · Cierre · Diferencia</b>.","La diferencia se mide sobre el <b>total</b> (cámara + local), siempre contra el <b>inicial</b>, con su porcentaje.","Semáforo: <b>verde</b> hasta 1 %, <b>amarillo</b> hasta 3 %, <b>rojo</b> más de 3 %.","Tocá un local para abrir su detalle."]);
     ps("pedir","Pedir un conteo","Parcial o cierre",["Abrí el detalle del local y tocá <b>Pedir parcial</b> o <b>Pedir cierre</b>.","El responsable ve un aviso en Stock y cuenta cámara y local.","Al guardar ve «enviado ✓», sin totales ni diferencias.","El <b>cierre</b> deja la cámara igual a lo contado y es el inicial del mes siguiente."]);
-    ps("detalle","Leer el detalle","De dónde sale la diferencia",["<b>Inicial + Ingresos − Salidas = Debería haber</b>.","Debajo ves lo que contó y la diferencia en kg y %.","«ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana.","Los movimientos <b>anulados</b> del período aparecen aparte."]);
+    ps("detalle","Leer el detalle","De dónde sale la diferencia",["<b>Inicial + Ingresos − Salidas − Merma = Esperado</b>, todo sobre el <b>total</b> (cámara + local).","Al lado ves el <b>conteo</b> y la <b>diferencia</b> en kg y %, por producto y por rubro.","«ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana.","Los movimientos <b>anulados</b> del período aparecen aparte."]);
     ps("mostrar","Mostrar al responsable","Qué ve y cuándo",["El responsable ve solo su inicial. Parcial y cierre quedan ocultos.","Para mostrarlos tocá <b>Mostrar al responsable (PIN)</b>.","El <b>cierre</b> se muestra solo a las 12:00; el <b>parcial</b> nunca se muestra solo.","Con <b>ver_diferencias=SI</b> en un local, ese local lo ve todo."]);
     ps("candados","Candados","Corregir un conteo guardado",["Todo conteo guardado queda con 🔒.","<b>Desbloquear</b> pide tu PIN y un motivo. Vale para <b>una</b> corrección (24 h máximo).","Al guardar la corrección el candado se cierra solo y el original se conserva.","El <b>Conteo cámara</b> tiene su propio candado: lo desbloqueás igual para que el responsable recuente una vez."]);
     ps("anular","Anular antes del conteo","Solo supervisión",["Un movimiento anterior al último conteo no lo anula el responsable.","Vos lo anulás en Historial con <b>motivo</b> y <b>PIN</b>.","Queda en Auditoría con tu nombre."]);
@@ -8390,7 +8473,7 @@ function ayudaTemas(){
   const T=[];
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
     <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."} Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «Anulados».</p></div>
-    <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga.</p></div>
+    <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga. Si se pierde solo una parte (un cucurucho, un pote), el responsable usa <b>Merma en kilos</b> dentro de Desperdicio.</p></div>
     <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
   if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
     "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor mal rotulado?</b>.",

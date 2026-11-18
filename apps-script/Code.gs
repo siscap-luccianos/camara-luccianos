@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.97.0";
+const BACKEND_VERSION = "1.99.0";
 
 function doPost(e) {
   let resultado;
@@ -131,6 +131,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "controlDetalle": return controlDetalle(body.local, body.inventarioId, empleado);
     case "etiquetar": return etiquetar(body.clienteId, body.local, body.items, body.vencimientos, empleado);
     case "cambiarVencimiento": return cambiarVencimiento(body.clienteId, body.local, body.id, body.de, body.f, body.k, body.c, empleado);
+    case "registrarMerma": return registrarMerma(body.clienteId, body.local, body.saborId, body.kilos, body.lugar, body.motivo, empleado);
     case "cambioSabor": return cambioSabor(body.clienteId, body.local, body.desde, body.hacia, body.cantidad, body.kilos, body.motivo, empleado);
     case "anular": return anular(body.registroId, body.motivo, empleado, body.pin);
     case "eliminarRegistro": return eliminarRegistro(body.registroId, empleado);
@@ -1225,6 +1226,7 @@ function _vencFaltante(v) {
  *  cliente (grupoProductoDe): Baldes por tipo "b", el resto por familia. */
 function _grupoProducto(sab) {
   if (String(sab.tipo || "") === "b") return "baldes";
+  if (String(sab.tipo || "") === "g") return "geladot"; // Geladot: se mueve en GRAMOS (la unidad del stock es el gramo; 1 caja = 2500 g)
   const f = String(sab.familia || "vasquetas");
   if (f === "icepops" || f === "chocolateria" || f === "glutenfree") return f;
   return "vasquetas";
@@ -1359,6 +1361,12 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   }
   if (subtipo === "devolucion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   if (subtipo === "desperdicio" && tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+  // Reposición de Geladot: una salida en GRAMOS (lo que se consumió de la caja), solo de sabores Geladot.
+  if (subtipo === "reposicion") {
+    if (tipo !== "salida") return { ok: false, error: "Subtipo de movimiento inválido." };
+    const noGel = Object.keys(items).filter((id) => { const sb = catalogoVenc.filter((x) => String(x.id) === String(id))[0]; return !sb || String(sb.tipo || "") !== "g"; });
+    if (noGel.length) return { ok: false, error: "La reposición es solo para Geladot." };
+  }
   if (subtipo === "produccion" && tipo !== "ingreso") return { ok: false, error: "Subtipo de movimiento inválido." };
   // Local que solo fabrica (Locales.ingreso_solo_produccion=SI + produccion=SI, ej. Marruecos): el helado
   // entra únicamente por Producción. Un ingreso común (sin subtipo) de helado se rechaza aunque el cliente
@@ -1395,7 +1403,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     if (empleado.rol === "colaborador") return { ok: false, error: "Esta carga la hace un responsable." };
     if (!String(motivo || "").trim()) return { ok: false, error: "Falta el local de origen de la transferencia." };
   }
-  if (subtipo && ["devolucion", "desperdicio", "produccion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
+  if (subtipo && ["devolucion", "desperdicio", "produccion", "reposicion"].concat(SUBTIPOS_CHOCO).indexOf(subtipo) === -1) return { ok: false, error: "Subtipo de movimiento inválido." };
   // Solo en un local con Locales.venta_dia=SI, solo productos de chocolatería y no
   // los carga el colaborador (el que mira la caja es el responsable). La fecha solo
   // vale para la venta y la gift card (para el día que se olvidaron de cargarlas): hasta 7 días atrás.
@@ -2150,6 +2158,50 @@ function _negativosSiSeQuita(local, tipoReg, items, tsReg) {
  *  `hacia` sin tocar el total. Se guarda UN movimiento tipo "cambio" con items firmados ({desde:-N, hacia:+N})
  *  y, en locales con kilos reales, kilos firmados. No cuenta como consumo (no es salida ni ingreso).
  *  Solo admin, supervisor, responsable de local y de turno. Solo vasquetas, baldes, icepops y gluten free (no chocolatería, pastelería ni bollería). */
+/** Merma en kilos (Gabi 18/11/2026): una parte de una vasqueta que se pierde (un cucurucho que se cae, un pote mal hecho, un derrame,
+ *  un corte de luz) sin sacar la vasqueta entera. Solo responsables (admin, supervisor, encargado, turno). No cambia las unidades: descuenta KILOS,
+ *  de la cámara («merma_camara») o del local («merma_local»). Sin tope: cualquier cantidad vale, con motivo. Se guarda como una salida
+ *  sin items con los kilos en «kilos» y no cuenta como consumo; el Control la resta del Esperado. Solo sabores que se miden en kilos. */
+function registrarMerma(clienteId, local, saborId, kilos, lugar, motivo, empleado) {
+  if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "La merma la carga un responsable." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  const sub = String(lugar) === "local" ? "merma_local" : String(lugar) === "camara" ? "merma_camara" : "";
+  if (!sub) return { ok: false, error: "Elegí de dónde sale la merma: cámara o local." };
+  const kg = Math.round(Number(kilos) * 100) / 100;
+  if (!isFinite(kg) || !(kg > 0)) return { ok: false, error: "Escribí cuántos kilos se perdieron." };
+  const motivoTxt = String(motivo || "").trim().slice(0, 120);
+  if (!motivoTxt) return { ok: false, error: "Escribí el motivo de la merma." };
+  const id = String(saborId || "");
+  const catalogo = _leerCrudo("Sabores");
+  const sab = catalogo.filter((x) => String(x.id) === id)[0];
+  if (!sab) return { ok: false, error: "No se encontró el sabor." };
+  if (String(sab.tipo || "") === "g") return { ok: false, error: "Para Geladot cargá el desperdicio en gramos (Salida › Desperdicio)." };
+  if (!_invEsKg(sab)) return { ok: false, error: "La merma en kilos es solo para helado en vasquetas y productos por kilo." };
+  const errPais = _errorPaisItems(local, { [id]: 1 }, catalogo);
+  if (errPais) return { ok: false, error: errPais };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    if (clienteId) {
+      const existente = _leerUltimasFilas("Registros", 500).filter((r) => r.clienteId && String(r.clienteId) === String(clienteId))[0];
+      if (existente) return { ok: true, id: existente.id, repetido: true };
+    }
+    const kil = {}; kil[id] = kg;
+    const ts = Date.now();
+    const r = _escribirCrudo("Registros", {
+      clienteId: clienteId || "", tipo: "salida", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
+      items: "{}", total: 0, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: motivoTxt,
+      foto_remito: "", subtipo: sub, kilos: JSON.stringify(kil), vencimientos: "", pesos: "",
+    });
+    _auditar("merma", empleado.id, empleado.nombre, local + ": " + kg + " kg de " + sab.nombre + " (" + (sub === "merma_local" ? "local" : "cámara") + ") · " + motivoTxt);
+    _invalidarCacheDatos(local);
+    return { ok: true, id: r.id, ts: ts };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, empleado) {
   if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo el responsable de local o de turno puede cambiar el sabor." };
   if (!local) return { ok: false, error: "Falta el local." };
@@ -2509,7 +2561,7 @@ function _jsonObj(texto, porDefecto) {
 
 /** ¿Este sabor se cuenta en kilos? Vasquetas (tipo v) y Crumble/Granella (tipo k). */
 function _invEsKg(sab) {
-  return String(sab.tipo || "v") === "k" || (String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas");
+  return String(sab.tipo || "v") === "k" || String(sab.tipo || "") === "g" || (String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas");
 }
 
 /** Valida y normaliza un valor contado: kilos con hasta 2 decimales, unidades enteras. null si es inválido. */
@@ -2933,6 +2985,12 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
     if (r.tipo === "cambio" && String(r.subtipo) === "conteo_parcial") return; // el ajuste de un conteo no es un movimiento real
     const signo = (r.tipo === "ingreso" || r.tipo === "cambio") ? 1 : r.tipo === "salida" ? -1 : 0;
     if (!signo) return;
+    if (String(r.subtipo) === "merma_camara") { // merma en kilos de la cámara: resta kilos, no unidades
+      const km = _jsonObj(r.kilos, {});
+      Object.keys(km).forEach((id) => { const sb = catalogo[id]; if (!sb || !_invEsKg(sb)) return; if (!base[id]) base[id] = { kg: true, v: 0 }; base[id].v = Math.round((base[id].v - (Number(km[id]) || 0)) * 100) / 100; });
+      return;
+    }
+    if (String(r.subtipo) === "merma_local") return; // la merma del local no toca la cámara
     const items = _jsonObj(r.items, {}), kilos = _jsonObj(r.kilos, {}), pesos = _jsonObj(r.pesos, {});
     Object.keys(items).forEach((id) => {
       const sab = catalogo[id];
@@ -2940,6 +2998,7 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
       const n = Number(items[id]) || 0;
       if (!base[id]) base[id] = { kg: _invEsKg(sab), v: 0 };
       if (!base[id].kg) { base[id].v += signo * n; return; }
+      if (String(sab.tipo || "") === "g") { base[id].v = Math.round((base[id].v + signo * Math.abs(n) / 1000) * 100) / 100; return; } // Geladot: el stock está en gramos
       let kg;
       if (r.tipo === "salida") { const pp = pesos[id]; kg = Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0); }
       else if (kilos[id] !== undefined && kilos[id] !== "") kg = Math.abs(Number(kilos[id]) || 0) * (r.tipo === "cambio" ? (n < 0 ? -1 : 1) : 1);
@@ -2953,12 +3012,19 @@ function _deberiaHaber(inicial, tsHasta, local, catalogo, regs) {
 /** Lo que mueve el Esperado entre el inicial y un conteo: ingresos y salidas del período (en kg de cámara y unidades de otros rubros), por semana las salidas, y los anulados. */
 function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
   const t0 = Number(inicial.ts) || 0;
-  const ing = { n: 0, kg: 0, u: 0, lista: [] }, sal = { n: 0, kg: 0, u: 0, semanas: {} }, anulados = [];
+  const ing = { n: 0, kg: 0, u: 0, lista: [] }, sal = { n: 0, kg: 0, u: 0, semanas: {} }, merma = { n: 0, kg: 0, u: 0, lista: [] }, anulados = [];
   (regs || _leerCrudo("Registros")).forEach((r) => {
     if (String(r.local).trim() !== String(local).trim()) return;
     const ts = Number(r.ts) || 0;
     if (ts <= t0 || ts > tsHasta) return;
     if (r.tipo !== "ingreso" && r.tipo !== "salida") return;
+    if (String(r.subtipo) === "merma_camara" || String(r.subtipo) === "merma_local") { // merma en kilos: línea aparte, no es una salida
+      if (r.anulado_ts) return;
+      const km = _jsonObj(r.kilos, {});
+      let kgm = 0; Object.keys(km).forEach((id) => { const sb = catalogo[id]; if (sb && _invEsKg(sb)) kgm += Number(km[id]) || 0; });
+      merma.n++; merma.kg += kgm; merma.lista.push({ ts: ts, kg: Math.round(kgm * 100) / 100, lugar: String(r.subtipo) === "merma_local" ? "local" : "cámara", motivo: r.motivo || "", empleado: r.empleado || "" });
+      return;
+    }
     const items = _jsonObj(r.items, {}), kilos = _jsonObj(r.kilos, {}), pesos = _jsonObj(r.pesos, {});
     let kg = 0, u = 0;
     Object.keys(items).forEach((id) => {
@@ -2966,12 +3032,18 @@ function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
       if (!sab) return;
       const n = Number(items[id]) || 0;
       if (!_invEsKg(sab)) { u += n; return; }
+      if (String(sab.tipo || "") === "g") { kg += Math.abs(n) / 1000; return; } // Geladot: gramos -> kilos
       if (r.tipo === "salida") { const pp = pesos[id]; kg += Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0); }
       else if (kilos[id] !== undefined && kilos[id] !== "") kg += Math.abs(Number(kilos[id]) || 0);
       else kg += Math.abs(n) * (Number(sab.peso) || 0);
     });
     kg = Math.round(kg * 100) / 100;
     if (r.anulado_ts) { anulados.push({ ts: ts, tipo: r.tipo, kg: kg, u: u, empleado: r.empleado || "", anulado_por: r.anulado_por || "", motivo: r.motivo || "" }); return; }
+    if (r.tipo === "salida" && String(r.subtipo) === "desperdicio") { // desperdicio de cualquier rubro: va a la línea de Merma
+      merma.n++; merma.kg += kg; merma.u += u;
+      merma.lista.push({ ts: ts, kg: Math.round(kg * 100) / 100, u: u, lugar: "desperdicio", motivo: r.motivo || "", empleado: r.empleado || "" });
+      return;
+    }
     if (r.tipo === "ingreso") {
       ing.n++; ing.kg += kg; ing.u += u;
       ing.lista.push({ ts: ts, remito: String(r.remito || ""), kg: kg, u: u, empleado: r.empleado || "", sub: String(r.subtipo || "") });
@@ -2986,7 +3058,82 @@ function _movimientosPeriodo(inicial, tsHasta, local, catalogo, regs) {
   ing.lista.sort((a, b) => a.ts - b.ts); ing.lista = ing.lista.slice(-40);
   const semanas = Object.keys(sal.semanas).map((k) => { const w = sal.semanas[k]; return { ts: w.ts, n: w.n, kg: Math.round(w.kg * 100) / 100, u: w.u }; }).sort((a, b) => a.ts - b.ts);
   anulados.sort((a, b) => a.ts - b.ts);
-  return { ing: ing, sal: { n: sal.n, kg: sal.kg, u: sal.u, semanas: semanas }, anulados: anulados.slice(-20) };
+  merma.kg = Math.round(merma.kg * 100) / 100; merma.lista.sort((a, b) => a.ts - b.ts); merma.lista = merma.lista.slice(-40);
+  return { ing: ing, sal: { n: sal.n, kg: sal.kg, u: sal.u, semanas: semanas }, merma: merma, anulados: anulados.slice(-20) };
+}
+
+/** Lo que hay en la CÁMARA + el LOCAL según un conteo, por sabor (kilos en vasquetas/kilos, unidades en el resto). */
+function _totalPorProducto(inv, catalogo) {
+  const cam = _camaraPorProducto(inv, catalogo), items = _jsonObj(inv.items, {}), out = {};
+  Object.keys(cam).forEach((id) => { out[id] = { kg: cam[id].kg, v: cam[id].v }; });
+  Object.keys(items).forEach((id) => {
+    const sab = catalogo[id];
+    if (!sab) return;
+    const l = Number(items[id]) || 0;
+    if (!out[id]) out[id] = { kg: _invEsKg(sab), v: 0 };
+    out[id].v = Math.round((out[id].v + l) * 100) / 100;
+  });
+  return out;
+}
+
+/** Lo que dice el sistema para el TOTAL del local (cámara + local), por sabor: el inicial total + ingresos − salidas − merma, entre el
+ *  inicial y un conteo. Devuelve, por sabor, cada pieza de la cuenta para mostrarla: {kg, ini, ing, sal, merma, esperado}.
+ *  (Gabi 18/11/2026: el Control compara el total contra el total; los ingresos incluyen los cambios de sabor, con su signo.) */
+function _esperadoTotal(inicial, tsHasta, local, catalogo, regs) {
+  const out = {};
+  const ini = _totalPorProducto(inicial, catalogo);
+  Object.keys(ini).forEach((id) => { out[id] = { kg: ini[id].kg, ini: ini[id].v, ing: 0, sal: 0, merma: 0 }; });
+  const t0 = Number(inicial.ts) || 0;
+  const slot = (id, sab) => out[id] || (out[id] = { kg: _invEsKg(sab), ini: 0, ing: 0, sal: 0, merma: 0 });
+  const red = (x) => Math.round(x * 100) / 100;
+  (regs || _leerCrudo("Registros")).forEach((r) => {
+    if (String(r.local).trim() !== String(local).trim() || r.anulado_ts) return;
+    const ts = Number(r.ts) || 0;
+    if (ts <= t0 || ts > tsHasta) return;
+    if (r.tipo === "cambio" && String(r.subtipo) === "conteo_parcial") return;
+    const kilos = _jsonObj(r.kilos, {});
+    if (String(r.subtipo) === "merma_camara" || String(r.subtipo) === "merma_local") {
+      Object.keys(kilos).forEach((id) => { const sab = catalogo[id]; if (!sab || !_invEsKg(sab)) return; const o = slot(id, sab); o.merma = red(o.merma + (Number(kilos[id]) || 0)); });
+      return;
+    }
+    if (r.tipo !== "ingreso" && r.tipo !== "salida" && r.tipo !== "cambio") return;
+    const items = _jsonObj(r.items, {}), pesos = _jsonObj(r.pesos, {});
+    Object.keys(items).forEach((id) => {
+      const sab = catalogo[id];
+      if (!sab) return;
+      const n = Number(items[id]) || 0, o = slot(id, sab);
+      const dest = r.tipo === "salida" && String(r.subtipo) === "desperdicio" ? "merma" : "sal"; // el desperdicio (de cualquier rubro) se cuenta como merma
+      if (!o.kg) { if (r.tipo === "salida") o[dest] += n; else o.ing += n; return; }
+      if (String(sab.tipo || "") === "g") { const kgG = Math.abs(n) / 1000; if (r.tipo === "salida") o[dest] = red(o[dest] + kgG); else o.ing = red(o.ing + kgG); return; } // Geladot: gramos -> kilos
+      if (r.tipo === "salida") { const pp = pesos[id]; o[dest] = red(o[dest] + (Array.isArray(pp) && pp.length ? pp.reduce((a, x) => a + (Number(x) || 0), 0) : n * (Number(sab.peso) || 0))); return; }
+      let kg;
+      if (kilos[id] !== undefined && kilos[id] !== "") kg = Math.abs(Number(kilos[id]) || 0) * (r.tipo === "cambio" ? (n < 0 ? -1 : 1) : 1);
+      else kg = Math.abs(n) * (Number(sab.peso) || 0) * (n < 0 ? -1 : 1);
+      o.ing = red(o.ing + kg);
+    });
+  });
+  Object.keys(out).forEach((id) => { const o = out[id]; o.esperado = red(o.ini + o.ing - o.sal - o.merma); });
+  return out;
+}
+
+/** Compara el TOTAL (cámara + local) de un conteo parcial o de cierre contra lo esperado desde el inicial total: por sabor,
+ *  {kg, ini, ing, sal, merma, esperado, cont, dif, locIni}. La diferencia incluye la variación del local (locIni sirve para mostrarla). */
+function _compararConteoTotal(base, conteo, local, catalogo, regs) {
+  const esp = _esperadoTotal(base, Number(conteo.ts) || 0, local, catalogo, regs);
+  const cont = _totalPorProducto(conteo, catalogo);
+  const baseLoc = _jsonObj(base.items, {}), contLoc = _jsonObj(conteo.items, {});
+  const ids = {};
+  Object.keys(esp).forEach((id) => { ids[id] = 1; });
+  Object.keys(cont).forEach((id) => { ids[id] = 1; });
+  const out = {};
+  Object.keys(ids).forEach((id) => {
+    const sab = catalogo[id];
+    if (!sab) return;
+    const e = esp[id] || { kg: _invEsKg(sab), ini: 0, ing: 0, sal: 0, merma: 0, esperado: 0 };
+    const c = cont[id] ? cont[id].v : 0;
+    out[id] = { kg: e.kg, ini: e.ini, ing: e.ing, sal: e.sal, merma: e.merma, esperado: e.esperado, cont: c, dif: Math.round((c - e.esperado) * 100) / 100, locIni: Number(baseLoc[id]) || 0, locCont: Number(contLoc[id]) || 0 };
+  });
+  return out;
 }
 
 /** Compara un conteo (parcial o cierre) contra lo esperado desde su base (el inicial). La diferencia es de la CÁMARA y el porcentaje es sobre el inicial. */
@@ -3035,11 +3182,11 @@ function controlStock(empleado) {
     const fila = { local: nombre, pedido: _pedidoPublico(pend), base: base ? resumenDe(base) : null, conteos: posteriores.map(resumenDe), estado: "", difKg: 0, difU: 0, pctKg: null, pctU: null };
     if (base && posteriores.length) {
       const ult = posteriores[posteriores.length - 1];
-      const cmp = _compararConteo(base, ult, nombre, catalogo, regs);
+      const cmp = _compararConteoTotal(base, ult, nombre, catalogo, regs); // el control mide el TOTAL (cámara + local)
       let dk = 0, du = 0;
       Object.keys(cmp).forEach((id) => { if (cmp[id].kg) dk += cmp[id].dif; else du += cmp[id].dif; });
-      fila.difKg = Math.round(dk * 100) / 100; fila.difU = du;
-      fila.pctKg = _pct(fila.difKg, fila.base.camKg); fila.pctU = _pct(fila.difU, fila.base.camU);
+      fila.difKg = Math.round(dk * 100) / 100; fila.difU = Math.round(du * 100) / 100;
+      fila.pctKg = _pct(fila.difKg, fila.base.camKg + fila.base.locKg); fila.pctU = _pct(fila.difU, fila.base.camU + fila.base.locU);
       fila.estado = pend ? "pedido" : "controlado";
     } else {
       fila.estado = pend ? "pedido" : (base ? "sin_pedir" : "sin_inicial");
@@ -3066,7 +3213,9 @@ function controlDetalle(local, inventarioId, empleado) {
   const esCmp = String(elegido.tipo) === "parcial" || String(elegido.tipo) === "final";
   const base = esCmp ? (mios.filter((r) => String(r.tipo) !== "parcial" && Number(r.ts) < Number(elegido.ts)).pop() || null) : null;
   const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "", fijo: _inventarioPublico(r, false).fijo, desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0, visible_resp_ts: Number(r.visible_resp_ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }, _resumenConteo(r, catalogo));
-  const cmp = base ? _compararConteo(base, elegido, local, catalogo, _leerCrudo("Registros")) : null;
+  const regsCtl = base ? _leerCrudo("Registros") : null;
+  const cmp = base ? _compararConteoTotal(base, elegido, local, catalogo, regsCtl) : null;   // TOTAL: cámara + local
+  const cmpCam = base ? _compararConteo(base, elegido, local, catalogo, regsCtl) : null;     // solo cámara (dato secundario)
   const items = _jsonObj(elegido.items, {}), camara = _jsonObj(elegido.camara, {});
   const baseCam = base ? _camaraPorProducto(base, catalogo) : {};
   const grupos = {};
@@ -3080,31 +3229,38 @@ function controlDetalle(local, inventarioId, empleado) {
     const esKg = _invEsKg(sab), g = _rubroDeSabor(sab);
     const cam = esKg ? Number((camara[id] || {}).k) || 0 : Number((camara[id] || {}).u) || 0, loc = Number(items[id]) || 0;
     if (!cam && !loc && !(cmp && cmp[id] && (cmp[id].esperado || cmp[id].dif))) return;
-    const gr = grupos[g] || (grupos[g] = { g: g, kg: false, cam: 0, loc: 0, esperado: 0, dif: 0, baseV: 0, productos: [] });
+    const gr = grupos[g] || (grupos[g] = { g: g, kg: false, cam: 0, loc: 0, esperado: 0, dif: 0, baseV: 0, baseT: 0, ini: 0, ing: 0, sal: 0, merma: 0, locIni: 0, productos: [] });
     if (esKg) gr.kg = true;
-    const e = cmp && cmp[id] ? cmp[id].esperado : null, d = cmp && cmp[id] ? cmp[id].dif : null;
+    const t = cmp && cmp[id] ? cmp[id] : null;
+    const e = t ? t.esperado : null, d = t ? t.dif : null;
     gr.cam += cam; gr.loc += loc;
-    if (cmp) { gr.esperado += e || 0; gr.dif += d || 0; }
+    if (t) { gr.esperado += e || 0; gr.dif += d || 0; gr.ini += t.ini; gr.ing += t.ing; gr.sal += t.sal; gr.merma += t.merma; gr.locIni += t.locIni; }
     gr.baseV += baseCam[id] ? baseCam[id].v : 0;
-    gr.productos.push({ id: id, nombre: sab.nombre, kg: esKg, cam: Math.round(cam * 100) / 100, loc: Math.round(loc * 100) / 100, tot: Math.round((cam + loc) * 100) / 100, esperado: e, dif: d });
+    if (base) gr.baseT += (baseCam[id] ? baseCam[id].v : 0) + (Number(_jsonObj(base.items, {})[id]) || 0);
+    gr.productos.push({ id: id, nombre: sab.nombre, kg: esKg, cam: Math.round(cam * 100) / 100, loc: Math.round(loc * 100) / 100, tot: Math.round((cam + loc) * 100) / 100, esperado: e, dif: d,
+      ini: t ? t.ini : null, ing: t ? t.ing : null, sal: t ? t.sal : null, merma: t ? t.merma : null, locIni: t ? t.locIni : null,
+      difCam: cmpCam && cmpCam[id] ? cmpCam[id].dif : null });
   });
   const lista = Object.keys(grupos).map((g) => {
     const x = grupos[g];
     x.cam = Math.round(x.cam * 100) / 100; x.loc = Math.round(x.loc * 100) / 100; x.tot = Math.round((x.cam + x.loc) * 100) / 100;
     x.esperado = cmp ? Math.round(x.esperado * 100) / 100 : null; x.dif = cmp ? Math.round(x.dif * 100) / 100 : null;
-    x.pct = cmp ? _pct(x.dif, x.baseV) : null;
+    ["ini", "ing", "sal", "merma", "locIni"].forEach((k) => { x[k] = cmp ? Math.round(x[k] * 100) / 100 : null; });
+    x.pct = cmp ? _pct(x.dif, x.baseT) : null;
     x.productos.sort((a, b) => Math.abs(b.dif || 0) - Math.abs(a.dif || 0) || String(a.nombre).localeCompare(String(b.nombre)));
     return x;
   });
   const sel = resumenDe(elegido);
   const bsel = base ? resumenDe(base) : null;
   let dk = 0, du = 0;
-  if (cmp) Object.keys(cmp).forEach((id) => { if (cmp[id].kg) dk += cmp[id].dif; else du += cmp[id].dif; });
+  let lk = 0, lu = 0; // variación del local (cuánto cambió lo que hay en el local entre el inicial y este conteo)
+  if (cmp) Object.keys(cmp).forEach((id) => { if (cmp[id].kg) { dk += cmp[id].dif; lk += cmp[id].locCont - cmp[id].locIni; } else { du += cmp[id].dif; lu += cmp[id].locCont - cmp[id].locIni; } });
   return {
     ok: true, local: local,
     conteos: mios.map(resumenDe),
     conteo: sel, base: bsel, grupos: lista,
-    dif: cmp ? { kg: Math.round(dk * 100) / 100, u: du, pctKg: _pct(Math.round(dk * 100) / 100, bsel.camKg), pctU: _pct(du, bsel.camU) } : null,
+    dif: cmp ? { kg: Math.round(dk * 100) / 100, u: Math.round(du * 100) / 100, pctKg: _pct(Math.round(dk * 100) / 100, bsel.camKg + bsel.locKg), pctU: _pct(Math.round(du * 100) / 100, bsel.camU + bsel.locU) } : null,
+    varLocal: cmp ? { kg: Math.round(lk * 100) / 100, u: Math.round(lu * 100) / 100 } : null,
     camaraCont: (function () { const c = _camaraContadaMes(local); return c ? { ts: c.ts, empleado: c.empleado, desbloqueado_hasta: _camaraDesbloqueadaHasta(local) } : null; })(),
     mov: cmp ? _movimientosPeriodo(base, Number(elegido.ts) || 0, local, catalogo, null) : null,
     pedido: _pedidoPublico(_pedidoPendiente(local)),
@@ -3803,8 +3959,8 @@ function _leerCrudoCache(hoja) {
 
 /** Rubros que un local puede apagar entero: una columna Locales.lleva_<rubro> por rubro.
  *  Vacío = lo lleva (como siempre); NO = no lo lleva y desaparece de ese local. Baldes son tipo "b" (familia vasquetas). */
-const RUBROS_LOCAL = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria"];
-function _rubroDeSabor(s) { return String(s.tipo || "v") === "b" ? "baldes" : String(s.familia || "vasquetas"); }
+const RUBROS_LOCAL = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria", "geladot"];
+function _rubroDeSabor(s) { const t = String(s.tipo || "v"); return t === "b" ? "baldes" : t === "g" ? "geladot" : String(s.familia || "vasquetas"); }
 function _rubrosApagados(fila) { return fila ? RUBROS_LOCAL.filter((r) => _esVerdadero(fila["lleva_" + r]) === false) : []; }
 /** Ids que el local no ve: los de sabores_excluidos (a mano o desde la app) + todos los de los rubros apagados. */
 function _excluidosDelLocal(fila, sabores) {
