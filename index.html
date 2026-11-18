@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.190.1";
+const FRONTEND_VERSION = "1.190.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2395,6 +2395,8 @@ async function authReintentarSinPerfil(){
   renderApp();
 }
 function authVolver(){
+  // Entrando a «otro local» con el código de admin (gesto secreto): volver deja la pantalla de perfiles de siempre, sin quedar encerrado.
+  if(S.auth && S.auth.otroLocal && (S.auth.paso==="local" || S.auth.paso==="clave" || S.auth.paso==="codigo" || S.auth.paso==="quien")){ iniciarAuth(); return }
   if(S.auth.paso==="adminOpcion"){ S.auth.paso="codigo"; S.auth.codigo=""; S.auth.error=""; renderApp(); return }
   if(S.auth.paso==="codigo"){ S.auth.local=null; S.auth.paso="local"; S.auth.codigo=""; S.auth.error=""; renderApp(); return }
   if(S.auth.paso==="equipo" && S.auth.sinPerfil){ S.auth.sinPerfil=false; S.auth.paso="codigo"; S.auth.codigo=""; renderApp(); return }
@@ -3216,7 +3218,7 @@ function renderAuth(){
   if(a.paso==="local"){
     // Mismo lugar en todos los pasos: título, texto y "Volver" ocupan siempre el
     // mismo espacio (ocultos si corresponde), así los campos no se mueven.
-    cuerpo=`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>
+    cuerpo=`${a.otroLocal?`<button class="authBack" type="button" data-authback="1">‹ Volver</button>`:`<button class="authBack" type="button" style="visibility:hidden" tabindex="-1" aria-hidden="true">Volver</button>`}
       ${a.otroLocal?`<h1 style="visibility:hidden" aria-hidden="true">Bienvenido</h1><p style="visibility:hidden" aria-hidden="true">Elegí tu sucursal para empezar.</p>`:`<h1>Bienvenido</h1>
       <p>Elegí tu sucursal para empezar.</p>`}
       <input type="text" class="selectLocal" id="authLocal" list="authLocalList" placeholder="${a.otroLocal?"":"Buscá tu sucursal…"}" autocomplete="off">
@@ -3241,7 +3243,7 @@ function renderAuth(){
     const resp=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)!==-1), equ=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)===-1);
     const conTit=resp.length>0 && equ.length>0;
     const grupo=(tit,lista,pri)=>lista.length?`<section class="authGrupo">${conTit?`<div class="authGrpTit">${tit}</div>`:""}<div class="authList${pri?" pri":""}">${lista.map(e=>tarjeta(e,pri)).join("")}</div></section>`:"";
-    cuerpo=`${S.deviceLocal?"":`<button class="authBack" data-authback="1">‹ Volver</button>`}
+    cuerpo=`${(S.deviceLocal&&!a.otroLocal)?"":`<button class="authBack" data-authback="1">‹ Volver</button>`}
       <div class="quienHead"><div><h1 ${!a.esGestion?'data-secreto-otro="1"':""}>Elegí tu perfil</h1>
       <p>${a.esGestion?"Tocá tu tarjeta para continuar.":`<span class="soloMovil">Local: <b>${esc(a.local||"")}</b>. </span>Tocá tu tarjeta para continuar.`}</p></div></div>
       ${a.sinSenal?`<div class="note" style="background:#FBF3DF;color:#6B521C">Sin señal. Pueden entrar con su PIN los <b>responsables de local y de turno</b>, y quienes ya ingresaron hoy en este dispositivo. Lo que cargues se envía solo cuando vuelva internet.</div>`:""}
