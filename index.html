@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.189.1";
+const FRONTEND_VERSION = "1.189.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4077,9 +4077,9 @@ function gridDesperdicio(st){
         <span class="pstock">${pstockHTML(s.id,st[s.id])}</span>
       </button>
       ${c?`<span class="qty">${c}</span><button class="minus" data-wsub="${s.id}" aria-label="Restar una">−</button>`:""}</div>`};
-  return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button class="btn volver" type="button" id="volverSalida">Volver a Salida</button>${puedeCambioSabor()?`<button class="btn" type="button" id="irMerma" style="background:var(--warn,#F5A300);color:#1B1511;border:0">Merma libre</button>`:""}</div>
+  return `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button class="btn volver" type="button" id="volverSalida">Volver a Salida</button></div>
   <p class="sec" style="margin-top:6px">Desperdicio</p>
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.${puedeCambioSabor()?" Tocá un sabor para descontar la vasqueta entera. Si se perdió solo una parte (un cucurucho, un pote de preparación, kilos de una capacitación), usá <b>Merma libre</b>: kilos y motivo, con el sabor opcional.":""}</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara.${puedeCambioSabor()?" Al tocar una vasqueta podés elegir <b>Merma libre</b> si se perdió solo una parte o fue por otro motivo (capacitación, pote caído, cucurucho mal hecho).":""}</p>
   <div class="remitoRow"><label for="motivoDesperdicio" style="font-weight:700">Motivo</label><input type="text" id="motivoDesperdicio" placeholder="Ej: se cayó, se rompió" value="${esc(S.motivoDesperdicio)}"></div>
   ${(S.escanerPeso||S.escanerSalida)?resumenPesosHTML("desperdicio"):""}
   ${chipFiltros()}
@@ -7120,7 +7120,9 @@ document.addEventListener("click", async e=>{
   if((t.dataset.revX||t.dataset.revMenos||t.dataset.revMas||t.dataset.revQuitar) && revisarAccion(t)) return;
   if(t.dataset.sub){ const c=S.cart.salida; c[t.dataset.sub]=Math.max(0,(c[t.dataset.sub]||0)-1); if(!c[t.dataset.sub]) delete c[t.dataset.sub]; recortarPesos(t.dataset.sub,"salida"); S.confirm=false; scheduleRender(); return }
   if(t.dataset.wadd){
-    sumarDesperdicio(t.dataset.wadd); return;
+    const idW=t.dataset.wadd, sbW=S.saboresPorId[String(idW)];
+    if(puedeCambioSabor() && sbW && esSaborKg(sbW)){ abrirEnteraOMerma(idW); return }
+    sumarDesperdicio(idW); return;
   }
   if(false){
     const id=t.dataset.wadd, c=S.cart.desperdicio, disponible=stockMap()[id]||0;
@@ -7263,7 +7265,6 @@ document.addEventListener("click", async e=>{
     else if(k==="venc"){ S.verVencimientos=true; S.filtroVenc="todos" }
     renderApp(); return }
   if(t.id==="volverSalidaMenu"){ resetSalidaMenu(); S.confirm=false; renderApp(); return }
-  if(t.id==="irMerma"){ abrirMerma(); return }
   if(t.id==="irDesperdicio"){ S.modoDesperdicio=true; S.confirm=false; renderApp(); return }
   if(t.id==="irVentaDia" || t.id==="irVentaDia2"){ S.modoVenta=true; S.modoDesperdicio=false; S.fechaVenta=""; resetTipoChoco(); S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false; S.confirm=false; renderApp(); return }
   if(t.dataset.salTipo){ const quiere=t.dataset.salTipo==="transferencia"; if(quiere!==!!S.salidaTransf){ S.salidaTransf=quiere; S.destinoTransf=""; S.confirm=false; renderApp() } return }
@@ -7802,6 +7803,27 @@ function sumarDesperdicio(id){
   if((c[id]||0)>=disponible){ toast(disponible<=0?"No hay stock de ese sabor.":"No queda más stock para marcar como desperdicio."); return }
   c[id]=(c[id]||0)+1; S.confirm=false; scheduleRender();
 }
+/** Una vasqueta en Desperdicio (responsables): ¿se perdió entera o fue una merma libre? */
+function abrirEnteraOMerma(id){
+  if(document.getElementById("eopOv")) return;
+  const sb=S.saboresPorId[String(id)]; if(!sb) return;
+  const ov=document.createElement("div"); ov.id="eopOv"; ov.className="mantenerOv";
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="eopTit">
+    <p class="mantTit" id="eopTit">${esc(sb.nombre)}</p>
+    <p class="mantSub">¿Qué se perdió?</p>
+    <button type="button" class="repOp" data-eop="entera"><b>La vasqueta entera</b><span>Sale del stock, como un desperdicio común.</span></button>
+    <button type="button" class="repOp" data-eop="merma"><b>Merma libre</b><span>Solo una parte, capacitación, un pote caído… Se anotan los kilos y un detalle.</span></button>
+    <div class="mantAcc" style="margin-top:6px"><button type="button" class="btn ghost" data-eop="cancel">Cancelar</button></div>
+  </div>`;
+  ov.addEventListener("click",e=>{
+    if(e.target===ov){ ov.remove(); return }
+    const b=e.target.closest("[data-eop]"); if(!b) return;
+    ov.remove();
+    if(b.dataset.eop==="entera") sumarDesperdicio(id);
+    else if(b.dataset.eop==="merma") abrirMerma(id);
+  });
+  document.body.appendChild(ov);
+}
 function mermaGuardarMotivo(m){ m=String(m||"").trim(); if(!m) return; try{ const a=mermaMotivosGuardados().filter(x=>x.toLowerCase()!==m.toLowerCase()); a.unshift(m); localStorage.setItem("mermaMotivos:"+S.local,JSON.stringify(a.slice(0,8))) }catch(_){} }
 function esSaborKg(s){ const t=s.tipo||"v"; return t==="k" || (t==="v" && grupoProductoDe(s)==="vasquetas") }
 function abrirMerma(preId){
@@ -7811,15 +7833,15 @@ function abrirMerma(preId){
   const ov=document.createElement("div"); ov.id="mermaOv"; ov.className="mantenerOv";
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="mermaTit">
     <p class="mantTit" id="mermaTit">Merma libre</p>
-    <p class="mantSub">Helado que se perdió y no es una vasqueta entera: un cucurucho que se cayó, un derrame, un corte de luz. Se anotan los kilos; el sabor es opcional.</p>
-    ${preId?`<div class="mermaLbl">Sabor</div><div style="font-weight:800;font-size:1.05rem;margin:0 0 4px">${esc(nombre(preId))}</div><select id="mermaSabor" hidden><option value="${esc(preId)}" selected>${esc(nombre(preId))}</option></select>`:`<label class="mermaLbl" for="mermaSabor">Sabor (opcional)</label>
-    <select id="mermaSabor" class="mermaCtl"><option value="">Sin sabor específico / no sé</option>${sabs.map(s=>`<option value="${esc(s.id)}">${esc(s.nombre)}</option>`).join("")}</select>`}
+    <p class="mantSub">Helado que se perdió y no es una vasqueta entera. Se anotan los kilos y un detalle corto. El sabor es opcional.</p>
+    <label class="mermaLbl" for="mermaSabor">Sabor (opcional)</label>
+    <select id="mermaSabor" class="mermaCtl"><option value="">Sin sabor específico / no sé</option>${sabs.map(s=>`<option value="${esc(s.id)}"${String(s.id)===String(preId||"")?" selected":""}>${esc(s.nombre)}</option>`).join("")}</select>
     <div class="mermaLbl">¿De dónde sale?</div>
     <div class="cmbChips"><button type="button" class="chip" data-merma-lugar="camara" aria-pressed="false">Cámara</button><button type="button" class="chip" data-merma-lugar="local" aria-pressed="false">Local</button></div>
     <label class="mermaLbl" for="mermaKg">Kilos perdidos</label>
     <div class="kgFila"><input type="text" id="mermaKg" class="mermaCtl" inputmode="decimal" autocomplete="off" placeholder="0,19"> kg</div>
-    <div class="mermaLbl">Motivo</div>
-    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Escribí el motivo (ej. corte de luz)" maxlength="120" autocomplete="off">
+    <div class="mermaLbl">Detalle</div>
+    <input type="text" id="mermaOtro" class="mermaCtl" placeholder="Ej.: capacitación, pote caído, cucurucho mal hecho" maxlength="120" autocomplete="off">
     ${mermaMotivosGuardados().length?`<div class="mermaLbl" style="margin-top:8px">Usados antes · tocá para repetir</div><div class="cmbChips">${mermaMotivosGuardados().map(m=>`<button type="button" class="chip" data-merma-motivo="${esc(m)}">${esc(m)}</button>`).join("")}</div>`:""}
     <div class="escMsg err" id="mermaMsg" role="status" aria-live="polite" hidden></div>
     <div class="cmbBtns"><button type="button" class="btn volver" id="mermaCancel">Cancelar</button><button type="button" class="btn" id="mermaOk" disabled>Registrar merma</button></div>
