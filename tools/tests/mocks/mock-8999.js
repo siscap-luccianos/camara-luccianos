@@ -36,6 +36,11 @@ function resp(b){
     db.regs.push({id:String(db.nextId++),tipo:"conteo",subtipo:"",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:b.items,kilos:b.kilos||{},total:0,ts});
     console.log("CONTEO",JSON.stringify({items:b.items,kilos:b.kilos})); return {ok:true,ts};
   }
+  if(a==="registrarMerma"){
+    if(!b.motivo) return {ok:false,error:"Escribí el motivo de la merma."}; if(!(+b.kilos>0)) return {ok:false,error:"Escribí cuántos kilos se perdieron."};
+    const r={id:String(db.nextId=(db.nextId||1000)+1),tipo:"salida",subtipo:b.lugar==="local"?"merma_local":"merma_camara",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:{},kilos:{[b.saborId]:+b.kilos},pesos:{},total:0,motivo:b.motivo,ts:Date.now()};
+    db.regs.push(r); console.log("MERMA",JSON.stringify({saborId:b.saborId,kilos:b.kilos,lugar:b.lugar,motivo:b.motivo})); return {ok:true,id:r.id};
+  }
   if(a==="cambioSabor"){
     const n=Math.floor(+b.cantidad||0); if(!b.motivo) return {ok:false,error:"Escribí el motivo del cambio."};
     if(b.desde===b.hacia) return {ok:false,error:"Elegí dos sabores distintos."};
@@ -100,13 +105,13 @@ function resp(b){
     const mk=(id,tipo,dias,cam,fijo)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",fijo:fijo!==false&&!db.desb,desbloqueado_hasta:db.desb?T+864e5:0,visible_resp_ts:(db.vis&&db.vis[id])||0,libera_ts:tipo==="final"?T+36e5:0,camKg:cam,camU:1240,locKg:26.5,locU:96});
     const conteos=[mk("7","inicial",20,201.3),mk("8","parcial",5,188.9),mk("9","final",1,170)];
     const c=conteos.find(x=>x.id===sel)||conteos[2]; const esCmp=c.tipo!=="inicial";
-    const prod=(id,n,cam,loc,e)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam-e)*100)/100:null});
+    const prod=(id,n,cam,loc,e,ini,ing,sal,mer)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam+loc-e)*100)/100:null,ini:esCmp?ini:null,ing:esCmp?ing:null,sal:esCmp?sal:null,merma:esCmp?mer:null,locIni:esCmp?1:null});
     return {ok:true,local:b.local,conteos,conteo:c,base:esCmp?conteos[0]:null,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null,
       dif:esCmp?{kg:-18.9,u:0,pctKg:-9.4,pctU:null}:null,
       camaraCont:{ts:T-10*864e5,empleado:"Laura",desbloqueado_hasta:db.camDesb?T+864e5:0},
-      mov:esCmp?{ing:{n:2,kg:210,u:0,lista:[{ts:T-4*864e5,remito:"00079-3492",kg:110,u:0,empleado:"Laura",sub:""},{ts:T-2*864e5,remito:"00079-3511",kg:100,u:0,empleado:"Pedro",sub:""}]},sal:{n:9,kg:183.2,u:0,semanas:[{ts:T-6*864e5,n:4,kg:61.4,u:0},{ts:T-1*864e5,n:5,kg:121.8,u:0}]},anulados:[{ts:T-3*864e5,tipo:"ingreso",kg:12,u:0,empleado:"Pedro",anulado_por:"Pedro",motivo:"error de carga"}]}:null,
-      grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7),prod("20","Frutilla",9.8,1,9.5)]},
-        {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null}]}]}; }
+      mov:esCmp?{ing:{n:2,kg:210,u:0,lista:[{ts:T-4*864e5,remito:"00079-3492",kg:110,u:0,empleado:"Laura",sub:""},{ts:T-2*864e5,remito:"00079-3511",kg:100,u:0,empleado:"Pedro",sub:""}]},sal:{n:9,kg:183.2,u:0,semanas:[{ts:T-6*864e5,n:4,kg:61.4,u:0},{ts:T-1*864e5,n:5,kg:121.8,u:0}]},merma:{n:2,kg:2.19,lista:[{ts:T-3*864e5,kg:0.19,lugar:"local",motivo:"Se cayó un cucurucho",empleado:"Pedro"},{ts:T-2*864e5,kg:2,lugar:"cámara",motivo:"Vasqueta rota",empleado:"Laura"}]},anulados:[{ts:T-3*864e5,tipo:"ingreso",kg:12,u:0,empleado:"Pedro",anulado_por:"Pedro",motivo:"error de carga"}]}:null,
+      grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7,25,5,6,0.3),prod("20","Frutilla",9.8,1,9.5,8,4,2,0.5)],ini:33,ing:9,sal:8,merma:0.8,locIni:2},
+        {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1336:null,dif:esCmp?0:null,ini:esCmp?1300:null,ing:esCmp?300:null,sal:esCmp?264:null,merma:esCmp?0:null}],ini:1300,ing:300,sal:264,merma:0}],varLocal:esCmp?{kg:1.5,u:-4}:null}; }
   if(a==="inventarios") return {ok:true,verValor:true,verDiferencias:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};
   if(a==="registrar"){
     if(l.kilosReales && b.subtipo!=="transferencia"){
