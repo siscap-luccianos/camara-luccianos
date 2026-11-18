@@ -1,6 +1,6 @@
 const http=require("http"),fs=require("fs"),path=require("path");
 const ROOT=require("path").join(__dirname,"..","..","..");
-const db={inv:[],regs:[{id:"900",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"5":1},kilos:{},pesos:{},total:1,ts:Date.now()}],stock:{"Local prueba":{local:"Local prueba",base:{"4":20,"5":3,"20":6,"107":0,"49":0},ts:Date.now()-3600000,empleado:"Gabi Busquets"}},nextId:1000};
+const db={inv:[],regs:[{id:"900",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"5":1},kilos:{},pesos:{},total:1,ts:Date.now()}],stock:{"Local prueba":{local:"Local prueba",base:{"4":20,"5":3,"20":6,"107":0,"49":0,"194":7000,"195":7000},ts:Date.now()-3600000,empleado:"Gabi Busquets"}},nextId:1000};
 const locales=[{nombre:"Local prueba",grupo:"Propios",pais:"Argentina",kilosReales:true,sv:true},{nombre:"Obelisco CABA",grupo:"Propios",pais:"Argentina"},{nombre:"Operaciones",grupo:"Gestion",pais:"",operaciones:true,clave:"op2024"}];
 db.regs.push({id:"800",tipo:"conteo",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"4":20,"5":3,"20":6},kilos:{"4":80.4,"5":12.6,"20":24},total:0,ts:db.stock["Local prueba"].ts});
 db.regs.push({id:"802",tipo:"ingreso",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"117":15},kilos:{},pesos:{},total:15,ts:Date.now()-500});
@@ -15,6 +15,7 @@ sabores.push({id:"117",nombre:"Alfajor Semiamargo",tipo:"c",familia:"chocolateri
 sabores.push({id:"118",nombre:"Alfajor Blanco",tipo:"c",familia:"chocolateria",categoria:"Alfajores",minimo:6,orden:118,peso:0,cantidad_maestra:60,vida_util_dias:70});
 (function(){ const f=d=>new Date(Date.now()+d*864e5).toISOString().slice(0,10); const ts=Date.now()-1800000;
   db.regs.push({id:"801",tipo:"ingreso",subtipo:"",local:"Local prueba",empleadoId:"1",empleado:"Gabi Busquets",items:{"117":30,"118":20},kilos:{},pesos:{},vencimientos:{"117":[{f:f(3),c:10},{f:f(30),c:20}]},total:50,ts}); })();
+sabores.push({id:"194",nombre:"Geladot Frutilla",tipo:"g",familia:"icepops",categoria:"Geladot",minimo:5000,orden:194,peso:2.5,cantidad_maestra:2500},{id:"195",nombre:"Geladot Pistacchio",tipo:"g",familia:"icepops",categoria:"Geladot",minimo:5000,orden:195,peso:2.5,cantidad_maestra:2500});
 const vasq=id=>{const s=sabores.find(x=>x.id===String(id));return s&&s.tipo==="v"&&s.familia==="vasquetas"};
 const nom=id=>(sabores.find(x=>x.id===String(id))||{}).nombre;
 function resp(b){
@@ -35,6 +36,11 @@ function resp(b){
     const ts=Date.now(); db.stock[b.local]={local:b.local,base:b.items,ts,empleado:"Gabi Busquets"};
     db.regs.push({id:String(db.nextId++),tipo:"conteo",subtipo:"",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:b.items,kilos:b.kilos||{},total:0,ts});
     console.log("CONTEO",JSON.stringify({items:b.items,kilos:b.kilos})); return {ok:true,ts};
+  }
+  if(a==="registrarMerma"){
+    if(!b.motivo) return {ok:false,error:"Escribí el motivo de la merma."}; if(!(+b.kilos>0)) return {ok:false,error:"Escribí cuántos kilos se perdieron."};
+    const r={id:String(db.nextId=(db.nextId||1000)+1),tipo:"salida",subtipo:b.lugar==="local"?"merma_local":"merma_camara",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:{},kilos:{[b.saborId]:+b.kilos},pesos:{},total:0,motivo:b.motivo,ts:Date.now()};
+    db.regs.push(r); console.log("MERMA",JSON.stringify({saborId:b.saborId,kilos:b.kilos,lugar:b.lugar,motivo:b.motivo})); return {ok:true,id:r.id};
   }
   if(a==="cambioSabor"){
     const n=Math.floor(+b.cantidad||0); if(!b.motivo) return {ok:false,error:"Escribí el motivo del cambio."};
@@ -100,13 +106,13 @@ function resp(b){
     const mk=(id,tipo,dias,cam,fijo)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",fijo:fijo!==false&&!db.desb,desbloqueado_hasta:db.desb?T+864e5:0,visible_resp_ts:(db.vis&&db.vis[id])||0,libera_ts:tipo==="final"?T+36e5:0,camKg:cam,camU:1240,locKg:26.5,locU:96});
     const conteos=[mk("7","inicial",20,201.3),mk("8","parcial",5,188.9),mk("9","final",1,170)];
     const c=conteos.find(x=>x.id===sel)||conteos[2]; const esCmp=c.tipo!=="inicial";
-    const prod=(id,n,cam,loc,e)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam-e)*100)/100:null});
+    const prod=(id,n,cam,loc,e,ini,ing,sal,mer)=>({id,nombre:n,kg:true,cam,loc,tot:cam+loc,esperado:esCmp?e:null,dif:esCmp?Math.round((cam+loc-e)*100)/100:null,ini:esCmp?ini:null,ing:esCmp?ing:null,sal:esCmp?sal:null,merma:esCmp?mer:null,difCam:esCmp?Math.round((cam-(e-1))*100)/100:null,locIni:esCmp?1:null});
     return {ok:true,local:b.local,conteos,conteo:c,base:esCmp?conteos[0]:null,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null,
       dif:esCmp?{kg:-18.9,u:0,pctKg:-9.4,pctU:null}:null,
       camaraCont:{ts:T-10*864e5,empleado:"Laura",desbloqueado_hasta:db.camDesb?T+864e5:0},
-      mov:esCmp?{ing:{n:2,kg:210,u:0,lista:[{ts:T-4*864e5,remito:"00079-3492",kg:110,u:0,empleado:"Laura",sub:""},{ts:T-2*864e5,remito:"00079-3511",kg:100,u:0,empleado:"Pedro",sub:""}]},sal:{n:9,kg:183.2,u:0,semanas:[{ts:T-6*864e5,n:4,kg:61.4,u:0},{ts:T-1*864e5,n:5,kg:121.8,u:0}]},anulados:[{ts:T-3*864e5,tipo:"ingreso",kg:12,u:0,empleado:"Pedro",anulado_por:"Pedro",motivo:"error de carga"}]}:null,
-      grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7),prod("20","Frutilla",9.8,1,9.5)]},
-        {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null}]}]}; }
+      mov:esCmp?{ing:{n:2,kg:210,u:0,lista:[{ts:T-4*864e5,remito:"00079-3492",kg:110,u:0,empleado:"Laura",sub:""},{ts:T-2*864e5,remito:"00079-3511",kg:100,u:0,empleado:"Pedro",sub:""}]},sal:{n:9,kg:183.2,u:0,semanas:[{ts:T-6*864e5,n:4,kg:61.4,u:0},{ts:T-1*864e5,n:5,kg:121.8,u:0}]},merma:{n:2,kg:2.19,lista:[{ts:T-3*864e5,kg:0.19,lugar:"local",motivo:"Se cayó un cucurucho",empleado:"Pedro"},{ts:T-2*864e5,kg:2,lugar:"cámara",motivo:"Vasqueta rota",empleado:"Laura"}]},anulados:[{ts:T-3*864e5,tipo:"ingreso",kg:12,u:0,empleado:"Pedro",anulado_por:"Pedro",motivo:"error de carga"}]}:null,
+      grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7,25,5,6,0.3),prod("20","Frutilla",9.8,1,9.5,8,4,2,0.5)],ini:33,ing:9,sal:8,merma:0.8,locIni:2},
+        {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1336:null,dif:esCmp?0:null,ini:esCmp?1300:null,ing:esCmp?300:null,sal:esCmp?264:null,merma:esCmp?0:null}],ini:1300,ing:300,sal:264,merma:0}],varLocal:esCmp?{kg:1.5,u:-4}:null}; }
   if(a==="inventarios") return {ok:true,verValor:true,verDiferencias:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};
   if(a==="registrar"){
     if(l.kilosReales && b.subtipo!=="transferencia"){

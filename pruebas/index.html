@@ -1527,7 +1527,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.182.0";
+const FRONTEND_VERSION = "1.183.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3503,6 +3503,10 @@ function ctlCuentaHTML(D,c,base){
   const listaMer=C.verMov&&C.verMov.merma?`<div class="ctlProds">${mm.lista.map(x=>`<div class="ctlCl"><span>${f(x.ts)} · ${esc(x.lugar)} · ${esc(x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</span><b>${(x.kg||!x.u?ctlKg(x.kg)+" kg":"")+u(-(x.u||0)).replace(/^ · /,x.kg?" · ":"")}</b></div>`).join("")||`<div class="note">Sin merma.</div>`}</div>`:"";
   const anu=m.anulados.length?`<div class="ctlCuentaAnu"><b>Anulados en el período · ${m.anulados.length}</b>${m.anulados.map(x=>`<div class="mut">${f(x.ts)} · ${x.tipo==="ingreso"?"Ingreso":"Salida"} ${ctlKg(x.kg)} kg${u(x.u)} · ${esc(x.anulado_por||x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</div>`).join("")}</div>`:""
   const vl=D.varLocal, varTxt=vl&&(vl.kg||vl.u)?`<div class="mut" style="margin-top:6px">El local cambió ${vl.kg?(vl.kg>0?"+":"−")+ctlKg(Math.abs(vl.kg))+" kg":""}${vl.kg&&vl.u?" y ":""}${vl.u?(vl.u>0?"+":"−")+Math.abs(Math.round(vl.u)).toLocaleString("es-AR")+" u.":""} respecto del inicial: esa parte de la diferencia es movimiento normal del local, no necesariamente un error.</div>`:"";
+  // «Diferencia real»: solo lo de la cámara (sin lo que quedó en el local en servicio), en kilos
+  const prodsKg=D.grupos.reduce((a,g)=>a.concat((g.productos||[]).filter(x=>x.kg&&x.difCam!==null&&x.difCam!==undefined)),[]);
+  const difRealKg=Math.round(prodsKg.reduce((a,x)=>a+x.difCam,0)*100)/100;
+  const difRealHTML=prodsKg.length?`<div class="ctlCl ${Math.abs(difRealKg)<0.005?"":"dif"}" style="margin-top:8px"><span><b>Diferencia real</b> (solo la cámara, sin lo que está en el local en servicio)</span><b>${Math.abs(difRealKg)<0.005?"Sin diferencia":(difRealKg<0?"−":"+")+ctlKg(Math.abs(difRealKg))+" kg"}</b></div>`:"";
   const iniKg=Math.round((base.camKg+base.locKg)*100)/100, contKg=Math.round((c.camKg+c.locKg)*100)/100;
   return `<div class="ctlCuenta">
     ${lin("Inicial (cámara + local) · "+f(base.ts),ctlKg(iniKg)+" kg")}
@@ -3513,6 +3517,7 @@ function ctlCuentaHTML(D,c,base){
     ${lin("Contó (cámara + local)",ctlKg(contKg)+" kg")}
     ${lin("Diferencia",(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg"+(D.dif.pctKg===null||D.dif.pctKg===undefined?"":" · "+(D.dif.pctKg<0?"−":D.dif.pctKg>0?"+":"")+String(Math.abs(D.dif.pctKg)).replace(".",",")+" %"),"dif")}
     ${varTxt}
+    ${difRealHTML}
     ${anu}</div>`;
 }
 function ctlDetalleHTML(){

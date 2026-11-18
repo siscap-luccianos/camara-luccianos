@@ -58,8 +58,8 @@ E("encargado"); r=run(`controlStock(emp)`); ok(!r.ok,"el responsable no ve el co
 E("supervisor"); r=run(`controlStock(emp)`);
 const g=r.locales.filter(x=>x.local==="Galerías")[0], rc=r.locales.filter(x=>x.local==="Recoleta")[0];
 ok(g&&g.estado==="controlado","Galerías aparece controlada");
-ok(Math.abs(g.difKg+2.5)<0.01&&g.pctKg===-25,"cámara en kg: esperado 13,7 (10 + 7,2 − 3,5) y contó 11,2: faltan 2,5 kg = −25 % del inicial: "+JSON.stringify([g.difKg,g.pctKg]));
-ok(g.difU===4,"cámara en unidades (icepops): esperado 13, contó 17: sobran 4: "+g.difU);
+ok(Math.abs(g.difKg+1)<0.01&&g.pctKg===-8.3,"TOTAL en kg: esperado 15,7 (12 + 7,2 − 3,5) y contó 14,7 (cámara 11,2 + local 3,5): faltan 1 kg = −8,3 % del inicial total: "+JSON.stringify([g.difKg,g.pctKg]));
+ok(g.difU===0,"TOTAL en unidades (icepops): esperado 17 (14 + 6 − 3), contó 17: sin diferencia: "+g.difU);
 ok(g.conteos.length===1&&g.base.camKg===10&&g.base.tipo==="inicial","la base es el inicial (cámara 10 kg) y hay 1 conteo posterior");
 ok(rc&&rc.estado==="sin_pedir","Recoleta tiene inicial y nada pedido");
 // 4) candado
