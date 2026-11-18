@@ -12,6 +12,9 @@ const { chromium } = require("playwright");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click("[data-tecla='" + d + "']"); }
   await page.waitForSelector("header"); await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1800);
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
+  ok(!!(await page.$("[data-sal-menu='merma']")), "el menú de Salida tiene la tarjeta «Merma en kilos»");
+  await page.click("[data-sal-menu='merma']"); await page.waitForSelector("#mermaOv");
+  ok(true, "la tarjeta abre el diálogo de merma"); await page.click("#mermaCancel"); await page.waitForTimeout(200);
   await page.click("[data-sal-menu='desp']"); await page.waitForTimeout(500);
   ok(!!(await page.$("#irMerma")), "en Desperdicio, el responsable ve «Merma en kilos»");
   ok(/Merma en kilos/.test(await page.innerText("#main")), "y el texto de Desperdicio lo menciona");
