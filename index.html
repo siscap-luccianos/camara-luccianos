@@ -1480,7 +1480,7 @@ tr.gvdRub td{font-weight:700;border-top:1px solid var(--line)}tr.gvdProd td{back
 .ctlRubroTit{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.ctlRubroTit b{font-family:var(--display);font-size:1.15rem}
 .ctlEq{display:flex;align-items:center;gap:10px;text-align:center;flex-wrap:wrap}.ctlEq>div{flex:1;min-width:90px;padding:8px 4px;border-radius:12px}.ctlEq small{display:block;font-size:.64rem;letter-spacing:.08em;color:var(--muted);font-weight:800}.ctlEq b{font-size:1.05rem}.ctlEq>span{color:var(--muted);font-size:1.1rem}.ctlEq .t{background:#2A201A;color:#F8F1E6}.ctlEq .t small{color:#E7DAC6}
 .ctlEq .d{font-weight:800}.ctlEq .d i{display:block;font-style:normal;font-size:.72rem}.ctlEq .d.ok{background:#E3EFE0;color:#2F5A2A}.ctlEq .d.warn{background:#FFF1CC;color:#8A5A00}.ctlEq .d.bad{background:#FDE8E6;color:#B42318}.ctlEq .d small{color:inherit}
-.ctlProds{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
+.ctlProds{margin-top:8px}.ctlPrGrp{margin:18px 0 2px;padding:6px 0 4px;border-top:2px solid var(--ink);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#7A3E1D)}.ctlPrGrp:first-of-type{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
 .ctlPedir{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:16px;background:#FFF8E6;border:1px solid #E7C873;padding:12px 18px;margin:12px 0 8px}
 .ctlNota{font-size:.78rem;color:var(--muted)}
 @media (max-width:700px){.ctlPr{grid-template-columns:1.6fr 1fr 1fr 1fr}.ctlPr span:nth-child(5),.ctlPr span:nth-child(6){display:none}}
@@ -1509,7 +1509,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.12";
+const FRONTEND_VERSION = "1.178.13";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3490,8 +3490,10 @@ function ctlDetalleHTML(){
   const cabProd=`<div class="ctlPr cab"><span class="n">Producto</span><span>Cámara</span><span>Local</span><span>Total</span><span>Esperado</span><span>Diferencia</span></div>`;
   let cuerpo;
   if(C.vista==="producto"){
-    const todos=[].concat.apply([],grp.map(g=>g.productos)).sort((a,b)=>Math.abs(b.dif||0)-Math.abs(a.dif||0)||String(a.nombre).localeCompare(String(b.nombre)));
-    cuerpo=`<div class="ctlProds">${cabProd}${todos.map(filaProd).join("")||`<div class="note">Sin productos.</div>`}</div>`;
+    // Por producto: separado por rubro (mismo orden que «Por rubro»: vasquetas, baldes, icepops…) y alfabético dentro de cada uno.
+    const abc=(a,b)=>String(a.nombre).localeCompare(String(b.nombre),"es",{sensitivity:"base"});
+    const bloques=grp.filter(g=>(g.productos||[]).length).map(g=>`<div class="ctlPrGrp">${esc(GRUPO_PRODUCTO_LABEL[g.g]||g.g)}</div>${g.productos.slice().sort(abc).map(filaProd).join("")}`).join("");
+    cuerpo=`<div class="ctlProds">${cabProd}${bloques||`<div class="note">Sin productos.</div>`}</div>`;
   } else {
     cuerpo=grp.map(g=>`<div class="ctlRubro"><div class="ctlRubroTit"><b>${esc(GRUPO_PRODUCTO_LABEL[g.g]||g.g)}</b><button type="button" class="invLnk noPrint" data-ctl-verg="${esc(g.g)}">${C.verG&&C.verG[g.g]?"Ocultar sabores":"Ver sabores"}</button></div>
       <div class="ctlEq"><div><small>CÁMARA</small><b>${ctlV(g.cam,g.kg)}</b></div><span>+</span><div><small>LOCAL</small><b>${ctlV(g.loc,g.kg)}</b></div><span>=</span><div class="t"><small>TOTAL</small><b>${ctlV(g.tot,g.kg)}</b></div>${g.dif!==null?`<div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div>`:""}</div>
