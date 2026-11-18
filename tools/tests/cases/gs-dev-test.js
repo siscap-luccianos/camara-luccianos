@@ -32,4 +32,9 @@ r=run(`registrar("d1","ingreso","Local prueba",{"4":1},"",emp,"","devolucion",un
 ok(JSON.parse(escritos[escritos.length-1].pesos)["4"][0]===3.6,"guarda Registros.pesos de la devolución");
 r=run(`registrar("d2","ingreso","Local prueba",{"4":1},"R9",emp,"","",undefined,{"4":3.6},{},{"4":[3.6]})`); ok(!r.ok,"pesos en un ingreso común se rechazan: "+r.error);
 r=run(`registrar("d3","ingreso","Obelisco CABA",{"4":1},"",emp,"","devolucion",undefined,{},{},{"4":[3.6]})`); ok(!r.ok,"local sin escáner/kilos rechaza pesos: "+r.error);
+// ventana de 48 hs: una salida de ayer (30 h) se puede devolver; una de hace 50 h no
+sb._datosSinCache=()=>({stock:{base:{"4":10},ts:1},registros:[{id:"51",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",items:{"4":2},ts:Date.now()-30*36e5}],sabores:sabores});
+r=run(`registrar("d4","ingreso","Local prueba",{"4":1},"",emp,"","devolucion",undefined,{"4":3.6},{},{"4":[3.6]})`); ok(r.ok,"devolución de lo sacado hace 30 hs pasa (ventana de 48 hs): "+JSON.stringify(r));
+sb._datosSinCache=()=>({stock:{base:{"4":10},ts:1},registros:[{id:"52",tipo:"salida",subtipo:"",local:"Local prueba",empleadoId:"1",items:{"4":2},ts:Date.now()-50*36e5}],sabores:sabores});
+r=run(`registrar("d5","ingreso","Local prueba",{"4":1},"",emp,"","devolucion",undefined,{"4":3.6},{},{"4":[3.6]})`); ok(!r.ok,"devolución de lo sacado hace 50 hs se rechaza: "+r.error);
 console.log(f?"FALLAS "+f:"TODO OK");
