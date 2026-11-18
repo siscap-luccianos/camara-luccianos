@@ -1527,7 +1527,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.182.0";
+const FRONTEND_VERSION = "1.184.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1866,7 +1866,9 @@ function inicioDeHoy(){
  *  en la pantalla de Devolución. Sabores en 0 no aparecen ahí. */
 /** Desde cuándo cuenta lo que se puede devolver: hoy, pero nunca antes del último conteo físico
  *  (un conteo reemplaza el stock: lo que salió antes ya no tiene nada que volver a la cámara). */
-function desdeDevolucion(){ return Math.max(inicioDeHoy(), (S.stock&&+S.stock.ts)||0) }
+/** La devolución vale por lo sacado en las últimas 48 hs (no solo «hoy»): un local sin señal o con un cierre tarde puede devolver al otro día. */
+const VENTANA_DEVOLUCION_MS=48*3600*1000;
+function desdeDevolucion(){ return Math.max(Date.now()-VENTANA_DEVOLUCION_MS, (S.stock&&+S.stock.ts)||0) }
 /** De quién es la devolución que se está cargando: la propia, o la de un compañero (solo responsables). */
 function resetSalidaMenu(){ S.salidaElegida=false; S.salidaTransf=false; S.destinoTransf="" }
 function resetIngresoMenu(){ S.ingresoElegido=false; S.devPor=null; S.devCompa=false; S.devMotivo=""; if(S.cart&&S.cart.devolucion){ S.cart.devolucion={}; } S.devSel={}; S.devTip={} }
@@ -3503,6 +3505,10 @@ function ctlCuentaHTML(D,c,base){
   const listaMer=C.verMov&&C.verMov.merma?`<div class="ctlProds">${mm.lista.map(x=>`<div class="ctlCl"><span>${f(x.ts)} · ${esc(x.lugar)} · ${esc(x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</span><b>${(x.kg||!x.u?ctlKg(x.kg)+" kg":"")+u(-(x.u||0)).replace(/^ · /,x.kg?" · ":"")}</b></div>`).join("")||`<div class="note">Sin merma.</div>`}</div>`:"";
   const anu=m.anulados.length?`<div class="ctlCuentaAnu"><b>Anulados en el período · ${m.anulados.length}</b>${m.anulados.map(x=>`<div class="mut">${f(x.ts)} · ${x.tipo==="ingreso"?"Ingreso":"Salida"} ${ctlKg(x.kg)} kg${u(x.u)} · ${esc(x.anulado_por||x.empleado)}${x.motivo?" · "+esc(x.motivo):""}</div>`).join("")}</div>`:""
   const vl=D.varLocal, varTxt=vl&&(vl.kg||vl.u)?`<div class="mut" style="margin-top:6px">El local cambió ${vl.kg?(vl.kg>0?"+":"−")+ctlKg(Math.abs(vl.kg))+" kg":""}${vl.kg&&vl.u?" y ":""}${vl.u?(vl.u>0?"+":"−")+Math.abs(Math.round(vl.u)).toLocaleString("es-AR")+" u.":""} respecto del inicial: esa parte de la diferencia es movimiento normal del local, no necesariamente un error.</div>`:"";
+  // «Diferencia real»: solo lo de la cámara (sin lo que quedó en el local en servicio), en kilos
+  const prodsKg=D.grupos.reduce((a,g)=>a.concat((g.productos||[]).filter(x=>x.kg&&x.difCam!==null&&x.difCam!==undefined)),[]);
+  const difRealKg=Math.round(prodsKg.reduce((a,x)=>a+x.difCam,0)*100)/100;
+  const difRealHTML=prodsKg.length?`<div class="ctlCl ${Math.abs(difRealKg)<0.005?"":"dif"}" style="margin-top:8px"><span><b>Diferencia real</b> (solo la cámara, sin lo que está en el local en servicio)</span><b>${Math.abs(difRealKg)<0.005?"Sin diferencia":(difRealKg<0?"−":"+")+ctlKg(Math.abs(difRealKg))+" kg"}</b></div>`:"";
   const iniKg=Math.round((base.camKg+base.locKg)*100)/100, contKg=Math.round((c.camKg+c.locKg)*100)/100;
   return `<div class="ctlCuenta">
     ${lin("Inicial (cámara + local) · "+f(base.ts),ctlKg(iniKg)+" kg")}
@@ -3513,6 +3519,7 @@ function ctlCuentaHTML(D,c,base){
     ${lin("Contó (cámara + local)",ctlKg(contKg)+" kg")}
     ${lin("Diferencia",(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg"+(D.dif.pctKg===null||D.dif.pctKg===undefined?"":" · "+(D.dif.pctKg<0?"−":D.dif.pctKg>0?"+":"")+String(Math.abs(D.dif.pctKg)).replace(".",",")+" %"),"dif")}
     ${varTxt}
+    ${difRealHTML}
     ${anu}</div>`;
 }
 function ctlDetalleHTML(){
@@ -4457,7 +4464,7 @@ function gridDevolucion(st){
   return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">${S.devCompa?"Devolver por un compañero":"Devolución"}</p>
   ${S.devCompa?devCompaSelectorHTML():""}
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${S.devCompa?"Se devuelve a nombre de tu compañero y queda marcado como cargado por vos. Solo lo que él sacó y todavía no devolvió.":"Lo que sacaste hoy y todavía no devolviste. No podés devolver más de lo que sacaste."}${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${S.devCompa?"Se devuelve a nombre de tu compañero y queda marcado como cargado por vos. Solo lo que él sacó y todavía no devolvió.":"Lo que sacaste en las últimas 48 hs y todavía no devolviste. No podés devolver más de lo que sacaste."}${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
   ${S.devCompa&&!S.devPor?"":ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">${S.devCompa?"Esa persona no tiene nada pendiente de devolver.":"No tenés nada pendiente de devolver hoy."}</div>`}
   ${S.devCompa&&S.devPor&&ids.length?`<div class="devMotivoBox"><label for="devMotivo">Motivo (obligatorio)</label><div class="cmbChips">${["Se fue y me avisó","Cambio de turno"].map(m=>`<button type="button" class="chip" data-dev-motivo="${esc(m)}" aria-pressed="${S.devMotivo===m}">${esc(m)}</button>`).join("")}</div><input type="text" id="devMotivo" value="${esc(S.devMotivo)}" placeholder="Ej: Manuel se fue, avisó que devolvía 1"></div>`:""}`;
 }
@@ -8592,7 +8599,7 @@ function ayudaTemas(){
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
     <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."} Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «Anulados».</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga. Si se pierde solo una parte (un cucurucho, un pote), el responsable usa <b>Merma en kilos</b> dentro de Desperdicio.</p></div>
-    <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos hoy, después del último conteo, y todavía no devolviste.</p></div></div>`});
+    <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos en las últimas 48 hs, después del último conteo, y todavía no devolviste.</p></div></div>`});
   if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
     "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor mal rotulado?</b>.",
     "Elegí el sabor que figura en la caja y el que era en realidad.",
