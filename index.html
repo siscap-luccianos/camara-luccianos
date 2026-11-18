@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.190.0";
+const FRONTEND_VERSION = "1.190.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2499,6 +2499,9 @@ function aplicarLogin(r){
     // que no se pierda este primer dato ya recibido.
     guardarDatosCache(S.local, {sabores:r.datos.sabores, excluidos:r.datos.excluidos||[], produccion:!!r.datos.produccion, produccionRubros:r.datos.produccionRubros||[], produccionSabores:r.datos.produccionSabores||[], ingresoSoloProduccion:!!r.datos.ingresoSoloProduccion, registros:r.datos.registros, stock:r.datos.stock});
   } else {
+    // Sin señal (acceso con el PIN guardado) o con la respuesta sin datos: primero lo último que se guardó de este local,
+    // para no mostrar la app vacía. Si la página se acababa de reabrir, S.sabores arranca vacío.
+    if(S.local && !S.sabores.length) precargarDatosCache(S.local);
     cargarDatos();
   }
   iniciarPolling();
@@ -6633,7 +6636,14 @@ function renderBar(){
 ============================================================ */
 function _datosCacheKey(local){ return "datosCache_"+local }
 function guardarDatosCache(local, d){
-  try{ ls.set(_datosCacheKey(local), JSON.stringify(d)); }catch(e){}
+  const txt=JSON.stringify(d);
+  try{ ls.set(_datosCacheKey(local), txt); return }catch(e){}
+  // sin lugar (localStorage ~5 MB): se borran las copias de otros locales y se reintenta una vez
+  try{
+    const propia=_datosCacheKey(local);
+    Object.keys(localStorage).filter(k=>/datosCache/.test(k) && k.indexOf(String(propia))===-1).forEach(k=>{ try{ localStorage.removeItem(k) }catch(_){} });
+    ls.set(propia, txt);
+  }catch(e){ S.sinLugarCache=true }
 }
 /** Trae a S lo último que se guardó de este local (si lo hay) — para no
  *  arrancar con las grillas vacías mientras se espera la respuesta real del
