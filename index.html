@@ -1515,7 +1515,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.181.0";
+const FRONTEND_VERSION = "1.181.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7800,6 +7800,7 @@ function abrirReposicion(id){
     return {consumo, listo:q<=max&&consumo>0, pasa:q>max, cero:consumo<=0&&q<=max, resto:d.st-consumo, formula:f, max};
   };
   const render=()=>{
+    const prevBox=ov.querySelector(".mantenerBox"), prevTop=prevBox?prevBox.scrollTop:0;
     const c=cuenta(), nombre=esc(sb.nombre), op=(k,tit,sub,dis)=>`<button type="button" class="repOp" data-rep-caja="${k}" aria-pressed="${d.caja===k}" ${dis?"disabled":""}><b>${tit}</b><span>${sub}</span></button>`;
     const resumenCajas=d.cajas?`<b>${d.cajas} ${d.cajas===1?"caja cerrada":"cajas cerradas"}</b>`:"<b>ninguna caja cerrada</b>";
     const abierta=d.ab>0?` y <b>1 caja ABIERTA de ${d.ab.toLocaleString("es-AR")} g</b>`:". No hay ninguna caja abierta.";
@@ -7825,6 +7826,7 @@ function abrirReposicion(id){
       ${c&&c.listo?`<div class="repCuenta"><small>La app hace la cuenta</small><b>Usaste ${c.consumo.toLocaleString("es-AR")} g</b><br>En la cámara queda: <b>${fmtGel(c.resto)}</b> (${c.resto.toLocaleString("es-AR")} g en total)<br>${c.formula}</div>`:""}
       <div class="mantAcc" style="margin-top:10px"><button type="button" class="btn ghost" data-rep-cancel>Cancelar</button><button type="button" class="btn" data-rep-ok ${(c&&c.listo&&!d.busy)?"":"disabled"}>${d.busy?"Guardando…":"Confirmar reposición"}</button></div>
     </div>`;
+    const nb=ov.querySelector(".mantenerBox"); if(nb&&prevTop) nb.scrollTop=prevTop;
   };
   const cerrar=()=>{ ov.remove(); S.repDlg=null };
   ov.addEventListener("click",async e=>{
