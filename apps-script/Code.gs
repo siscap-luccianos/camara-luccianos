@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.100.0";
+const BACKEND_VERSION = "1.101.0";
 
 function doPost(e) {
   let resultado;
@@ -113,7 +113,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "datos": return datos(body.local, empleado);
     case "relevar": return relevar(empleado);
     case "preciosStock": return preciosStock(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha, body.paraEmpleadoId);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha, body.paraEmpleadoId, body.modoLibre);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos, body.pesos);
     case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta, body.pesos);
@@ -1300,10 +1300,24 @@ function _normalizarPesosConteo(pesos, contados) {
   return out;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos, fecha, paraEmpleadoId) {
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos, fecha, paraEmpleadoId, modoLibre) {
+  // MODO LIBRE (sin señal): un responsable manda lo que se cargó sin PIN por persona. Cada movimiento queda a nombre de quien
+  // lo cargó (paraEmpleadoId, de este local), con «cargado_por» del responsable y la hora real en que se cargó.
+  let tsLibre = 0;
+  if (modoLibre) {
+    if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Los movimientos de modo libre los envía un responsable." };
+    if (!paraEmpleadoId) return { ok: false, error: "Falta quién cargó el movimiento." };
+    const objL = _empleadoPorId(paraEmpleadoId);
+    if (!objL || objL.activo === "NO" || String(objL.local || "").trim() !== String(local || "").trim()) return { ok: false, error: "Quien cargó el movimiento no es de este local." };
+    const tl = Number(modoLibre.ts);
+    if (isFinite(tl) && tl > 0 && tl <= Date.now() + 60000 && tl >= Date.now() - 72 * 36e5) tsLibre = tl;
+    if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+    const quienEnvia = empleado;
+    empleado = { id: objL.id, nombre: objL.nombre, rol: objL.rol, local: objL.local, _cargadoPor: quienEnvia.nombre + " · modo libre", _quien: quienEnvia, _libre: true };
+  }
   // Devolver por un compañero (solo responsables): la devolución queda a nombre de quien sacó y lleva «cargado_por».
-  let cargadoPor = "";
-  if (paraEmpleadoId && String(paraEmpleadoId) !== String(empleado.id)) {
+  let cargadoPor = modoLibre ? empleado._cargadoPor : "";
+  if (!modoLibre && paraEmpleadoId && String(paraEmpleadoId) !== String(empleado.id)) {
     if (tipo !== "ingreso" || subtipo !== "devolucion") return { ok: false, error: "Solo una devolución se puede cargar por otra persona." };
     if (["admin", "supervisor", "encargado", "turno"].indexOf(empleado.rol) === -1) return { ok: false, error: "Solo un responsable puede devolver por un compañero." };
     if (!String(motivo || "").trim()) return { ok: false, error: "Escribí el motivo de la devolución por tu compañero." };
@@ -1530,7 +1544,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
     const kilos2 = {};
     Object.keys(kilos || {}).forEach((id) => { const k = Number(kilos[id]) || 0; if (k > 0) kilos2[id] = k; });
     if (tipo === "ingreso") { const impK = _kgVasqImposible(subtipo, items2, kilos2, _leerCrudo("Sabores")); if (impK) return { ok: false, error: impK }; }
-    const ts = tsVenta || Date.now();
+    const ts = tsVenta || tsLibre || Date.now();
     if (tsVenta) {
       // Un conteo posterior ya incluye esa venta: cargarla de nuevo descontaría dos veces.
       const stockVenta = _datosSinCache(local).stock;
@@ -1546,7 +1560,8 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       pesos: Object.keys(pesos2).length ? JSON.stringify(pesos2) : "",
       cargado_por: cargadoPor,
     });
-    if (cargadoPor) _auditar("devolucion_por_companero", empleado._quien.id, empleado._quien.nombre, "Devolvió por " + empleado.nombre + " en " + local + (motivo ? " — " + motivo : ""));
+    if (modoLibre) _auditar("modo_libre_movimiento", empleado._quien.id, empleado._quien.nombre, "Envió de " + local + " un/a " + tipo + (subtipo ? " (" + subtipo + ")" : "") + " cargado/a por " + empleado.nombre + " el " + new Date(ts).toISOString());
+    else if (cargadoPor) _auditar("devolucion_por_companero", empleado._quien.id, empleado._quien.nombre, "Devolvió por " + empleado.nombre + " en " + local + (motivo ? " — " + motivo : ""));
     _invalidarCacheDatos(local);
     return { ok: true, id: r.id, ts: ts };
   } finally {
