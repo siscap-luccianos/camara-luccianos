@@ -259,29 +259,6 @@ select{max-width:220px}
 .pedNom .nm{min-width:0;display:flex;flex-direction:column;gap:2px;font-weight:700}
 .pedNom .meta{font-size:.78rem;color:var(--muted);font-weight:400}
 .pedTend,.pedCons,.pedTendH,.pedCajas,.pedCajasH{display:none}
-@media(max-width:899px){
-.pedHead{display:none}
-.pedFila{grid-template-columns:auto minmax(0,1fr);gap:8px 12px;padding:14px 0}
-.pedFila>.pedNom{grid-column:1/-1}
-.pedFila>.pedTend{display:flex;flex-direction:column;align-items:center;gap:2px;grid-column:1/-1;padding:6px 0;border-radius:14px;background:rgba(var(--accent-rgb),.05)}
-.pedFila>.pedTend .tl{display:grid;grid-template-columns:repeat(3,1fr);width:160px;text-align:center;font-weight:700;font-size:.9rem;color:var(--muted)}
-.pedFila>.pedTend .tl b{color:var(--ink);font-weight:800}
-.pedFila>.pedTend .tt{font-size:.78rem;font-weight:800}
-.pedFila .pedTendB{display:none}
-.pedFila>.pedHay{text-align:left;align-self:center}
-.pedFila>.pedHay::before{content:"Hay ";font-weight:600;color:var(--muted);font-size:.8rem}
-.pedFila>.pedPedir{justify-self:end}
-}
-@media(min-width:600px) and (max-width:899px){
-.pedFila{grid-template-columns:minmax(0,1fr) 170px 70px 168px;align-items:center}
-.pedFila>.pedNom,.pedFila>.pedTend{grid-column:auto}
-.pedFila>.pedTend{background:none;padding:0}
-.pedFila>.pedHay{text-align:center}
-.pedFila>.pedHay::before{content:none}
-.pedHead{display:grid;grid-template-columns:minmax(0,1fr) 170px 70px 168px}
-.pedHead .pedTendH{display:block;text-align:center}
-.pedHead span:nth-child(n+2){text-align:center}
-}
 .pedLn.sube{color:var(--accent)}.pedLn.baja{color:#3F7A58}.pedLn.igual{color:var(--muted)}
 @media(min-width:900px){
 .pedHead,.pedFila{grid-template-columns:minmax(0,2.1fr) minmax(0,1.9fr) minmax(0,1.1fr) 70px 150px 70px}
@@ -295,6 +272,25 @@ select{max-width:220px}
 .pedTend .tl{display:grid;grid-template-columns:repeat(3,1fr);width:160px;text-align:center;font-weight:700;font-size:.85rem;color:var(--muted)}
 .pedTend .tl b{color:var(--ink);font-weight:800}
 .pedTend .tt{font-size:.74rem;font-weight:800}
+}
+@media(max-width:1099px){
+.pedHead{display:none}
+.pedFila{grid-template-columns:132px 84px minmax(0,1fr);grid-template-areas:"nom nom nom" "tend hay ped";gap:8px 12px;padding:14px 0;align-items:center}
+.pedFila>.pedNom{grid-area:nom;min-width:0}
+.pedFila>.pedCons,.pedFila>.pedCajas{display:none}
+.pedFila>.pedTend{grid-area:tend;display:flex;flex-direction:column;align-items:center;gap:1px;width:132px;padding:5px 0;border-radius:12px;background:rgba(var(--accent-rgb),.05)}
+.pedFila>.pedTend svg{width:104px;height:30px}
+.pedFila>.pedTend .tl{display:grid;grid-template-columns:repeat(3,1fr);width:104px;text-align:center;font-weight:700;font-size:.8rem;color:var(--muted)}
+.pedFila>.pedTend .tl b{color:var(--ink);font-weight:800}
+.pedFila>.pedTend .tt{font-size:.7rem;font-weight:800}
+.pedFila .pedTendB{display:none}
+.pedFila>.pedHay{grid-area:hay;text-align:center;align-self:center;width:auto}
+.pedFila>.pedHay::before{content:"Hay ";font-weight:600;color:var(--muted);font-size:.8rem}
+.pedFila>.pedPedir{grid-area:ped;justify-self:end}
+}
+@media(max-width:520px){
+.pedFila{grid-template-columns:132px minmax(0,1fr);grid-template-areas:"nom nom" "tend ped" "hay ped"}
+.pedFila>.pedHay{text-align:center;width:132px}
 }
 .pedVer{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;margin-top:4px;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:.72rem;font-weight:800;letter-spacing:.01em}
 .pedTip{display:flex;align-items:center;gap:10px;margin:2px 0 12px;padding:11px 14px;border-radius:14px;background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent);font-size:.86rem;font-weight:700;line-height:1.35}
@@ -1514,7 +1510,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.178.8";
+const FRONTEND_VERSION = "1.178.9";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
