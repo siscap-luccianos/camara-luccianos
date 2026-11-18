@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.102.0";
+const BACKEND_VERSION = "1.103.0";
 
 function doPost(e) {
   let resultado;
@@ -1530,14 +1530,14 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       const desdeDev = Math.max(infoDev.stock ? Number(infoDev.stock.ts) || 0 : 0, Date.now() - 48 * 36e5);
       const saco = {};
       infoDev.registros.forEach((rg) => {
-        if (rg.anulado || rg.ts <= desdeDev || String(rg.empleadoId) !== String(empleado.id)) return;
+        if (rg.anulado || rg.ts <= desdeDev) return; // desde 1.103: lo sacado por todo el local, devuelve cualquiera del equipo
         const esSalida = rg.tipo === "salida" && !rg.subtipo;
         const esDevol = rg.tipo === "ingreso" && rg.subtipo === "devolucion";
         if (!esSalida && !esDevol) return;
         Object.keys(rg.items || {}).forEach((id) => { saco[id] = (saco[id] || 0) + (esSalida ? 1 : -1) * (Number(rg.items[id]) || 0); });
       });
       const exceso = Object.keys(items2).filter((id) => items2[id] > Math.max(0, saco[id] || 0)).map((id) => nombreVenc[String(id)] || ("Sabor " + id));
-      if (exceso.length) return { ok: false, error: "No podés devolver más de lo que sacaste y todavía no devolviste: " + exceso.join(", ") + "." };
+      if (exceso.length) return { ok: false, error: "No se puede devolver más de lo que se sacó en el local y todavía no volvió: " + exceso.join(", ") + "." };
     }
 
     const total = _totalItems(items2);
@@ -3352,7 +3352,6 @@ function anular(registroId, motivo, empleado, pin) {
         if (i === 0) return false;
         return fila[col.tipo] === "ingreso" &&
           fila[col.subtipo] === "devolucion" &&
-          String(fila[col.empleadoId]) === empleadoIdDueño &&
           String(fila[col.local]) === String(local) &&
           Number(fila[col.ts]) > ts &&
           !fila[col.anulado_ts];
@@ -3403,7 +3402,7 @@ function eliminarRegistro(registroId, empleado) {
         if (negativos.length) return { ok: false, error: "No se puede borrar: ya se sacó parte de lo que sumó este movimiento y el stock quedaría en negativo (" + negativos.join(", ") + "). Anulá o corregí primero las salidas posteriores, o hacé un conteo físico." };
       }
       if (objetivo.tipo === "salida" && !objetivo.subtipo) {
-        const hayDevol = _leerCrudo("Registros").some((x) => x.tipo === "ingreso" && x.subtipo === "devolucion" && !x.anulado_ts && String(x.empleadoId) === String(objetivo.empleadoId) && String(x.local) === String(objetivo.local) && Number(x.ts) > Number(objetivo.ts));
+        const hayDevol = _leerCrudo("Registros").some((x) => x.tipo === "ingreso" && x.subtipo === "devolucion" && !x.anulado_ts && String(x.local) === String(objetivo.local) && Number(x.ts) > Number(objetivo.ts));
         if (hayDevol) return { ok: false, error: "No se puede borrar: ya hay una devolución cargada después de esta salida. Anulá primero esa devolución." };
       }
     }

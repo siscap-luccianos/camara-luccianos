@@ -38,7 +38,7 @@ const g=sb.T.Registros[sb.T.Registros.length-1];
 ok(g.empleadoId==="e2"&&g.empleado==="Manuel"&&g.cargado_por==="Ana","queda a nombre de Manuel y «cargado por» Ana: "+g.empleadoId+"/"+g.cargado_por);
 ok(sb.AUD.some(a=>a[0]==="devolucion_por_companero"),"queda en Auditoría");
 sb.d3={21:3}; r=run("registrar('p2','ingreso','SR',d3,'',ana,'','devolucion','otra',undefined,undefined,undefined,undefined,'e2')");
-ok(!r.ok&&/No podés devolver más/.test(r.error),"no puede devolver más de lo que Manuel tenía pendiente (2): "+(r.error||"").slice(0,60));
+ok(!r.ok&&/No se puede devolver más/.test(r.error),"no puede devolver más de lo que Manuel tenía pendiente (2): "+(r.error||"").slice(0,60));
 r=run("registrar('p3','ingreso','SR',d1,'',ana,'','devolucion','',undefined,undefined,undefined,undefined,'e2')");
 ok(!r.ok&&/motivo/i.test(r.error),"sin motivo se rechaza");
 r=run("registrar('p4','ingreso','SR',d1,'',colab,'','devolucion','x',undefined,undefined,undefined,undefined,'e1')");
@@ -49,6 +49,7 @@ r=run("registrar('p6','ingreso','SR',d1,'',otroLocal,'','devolucion','x',undefin
 ok(!r.ok,"un responsable de otro local no puede");
 r=run("registrar('p7','salida','SR',d1,'',ana,'','','x',undefined,undefined,undefined,undefined,'e2')");
 ok(!r.ok&&/devoluci/i.test(r.error),"solo una devolución se puede cargar por otra persona");
-r=run("registrar('p8','ingreso','SR',d1,'',ana,'','devolucion','propia')"); ok(!r.ok,"Ana no sacó nada: su propia devolución sigue rechazada");
-r=run("registrar('p9','ingreso','SR',d1,'',colab,'','devolucion')"); ok(r.ok,"Manuel todavía puede devolver 1 por su cuenta (le quedaba 2 menos 1)");
+r=run("registrar('p9','ingreso','SR',d1,'',colab,'','devolucion')"); ok(r.ok,"Alguien del equipo puede devolver lo pendiente del local (queda 1)");
+r=run("registrar('p8','ingreso','SR',d1,'',ana,'','devolucion','propia')"); ok(r.ok,"Ana (que no sacó nada) devuelve lo último que sacó Manuel: queda a su nombre");
+r=run("registrar('p10','ingreso','SR',d1,'',ana,'','devolucion','otra')"); ok(!r.ok,"ya no queda nada pendiente: otra devolución se rechaza");
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);
