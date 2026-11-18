@@ -49,6 +49,14 @@ ok(r.dif&&r.dif.kg===-15.81&&r.dif.u===-14,"diferencia total del encabezado: "+J
 ok(r.mov&&r.mov.merma&&r.mov.merma.n===3&&r.mov.merma.kg===2.19&&r.mov.merma.u===3&&r.mov.sal.n===1,"el resumen trae la merma aparte (2 en kilos + el desperdicio de 3 icepops) y no la cuenta como salida: "+JSON.stringify(r.mov&&[r.mov.merma.n,r.mov.merma.kg,r.mov.merma.u,r.mov.sal.n]));
 r=run(`controlStock(sup)`);
 ok(r.ok&&r.locales[0].difKg===-15.81&&r.locales[0].difU===-14,"controlStock (lista de locales) usa la diferencia del total: "+JSON.stringify(r.locales&&[r.locales[0].difKg,r.locales[0].difU]));
+// ---- merma SIN sabor (un cucurucho que se cayó: no viene de una vasqueta puntual): cuenta en el total del helado
+regs.push({id:"16",local:"Galerías",tipo:"salida",subtipo:"merma_camara",ts:t0+4.5e6,items:"{}",kilos:JSON.stringify({"0":1}),pesos:"",anulado_ts:""});
+let rs=run(`controlDetalle("Galerías","2",sup)`);
+const vas2=(rs.grupos||[]).filter(g=>g.g==="vasquetas")[0];
+ok(vas2&&vas2.productos.some(x=>x.id==="0"&&x.merma===1),"la merma sin sabor aparece como «Sin sabor específico»: "+JSON.stringify(vas2&&vas2.productos.filter(x=>x.id==="0")));
+ok(rs.dif&&rs.dif.kg===-14.81,"y baja lo esperado: la diferencia total pasa de −15,81 a −14,81 (1 kg menos esperado): "+JSON.stringify(rs.dif));
+ok(rs.mov&&rs.mov.merma.kg===3.19&&rs.mov.merma.n===4,"el resumen suma 3,19 kg de merma en 4 movimientos");
+regs.pop(); // vuelve el escenario de antes para el resto
 // ---- registrarMerma
 const N=regs.length;
 sb.emp={id:"1",nombre:"Resp",rol:"encargado"};
@@ -56,6 +64,8 @@ r=run(`registrarMerma("m1","Galerías","4",0.19,"local","Se cayó un cucurucho",
 ok(r.ok&&regs.length===N+1,"el responsable carga una merma de 0,19 kg del local");
 const w=regs[regs.length-1];
 ok(w.tipo==="salida"&&w.subtipo==="merma_local"&&w.items==="{}"&&JSON.parse(w.kilos)["4"]===0.19&&Number(w.total)===0,"se guarda como salida sin items, con los kilos y subtipo merma_local");
+r=run(`registrarMerma("m9","Galerías","",0.5,"camara","Se cayó un cucurucho",emp)`);
+ok(r.ok&&JSON.parse(regs[regs.length-1].kilos)["0"]===0.5,"registrarMerma sin sabor se guarda bajo «0»: "+JSON.stringify(r));
 r=run(`registrarMerma("m2","Galerías","4",120,"camara","Corte de luz",emp)`);
 ok(r.ok,"sin tope: 120 kg por un corte de luz se acepta");
 sb.emp={id:"2",nombre:"Colab",rol:"colaborador"};
