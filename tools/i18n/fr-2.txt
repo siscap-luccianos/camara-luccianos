@@ -94,7 +94,7 @@ Marcá lo que ⇒ Cochez ce que
 Me confundí al tipear ⇒ Je me suis trompé en saisissant
 Me equivoqué al cargar ⇒ Je me suis trompé en saisissant
 Menos ⇒ Moins
-Mercadería que llegó ⇒ Marchandise arrivée
+Mercadería que llegó ⇒ Marchandise reçue
 Merma ⇒ Perte
 Merma en kilos ⇒ Perte en kilos
 Merma en kilos: descuenta kilos del ⇒ Perte en kilos : déduit des kilos du
@@ -357,7 +357,7 @@ Salidas — Chocolatería ⇒ Sorties — Chocolaterie
 Salidas — Icepops ⇒ Sorties — Icepops
 Salidas — Pastelería ⇒ Sorties — Pâtisserie
 Salidas — Vasquetas ⇒ Sorties — Bacs
-Salir ⇒ Quitter
+Salir ⇒ Déconnexion
 Salto grande: de ⇒ Grand écart : de
 Salto raro ⇒ Écart étrange
 Saqué de más y lo volví a guardar ⇒ J'en ai sorti trop et je l'ai remis
