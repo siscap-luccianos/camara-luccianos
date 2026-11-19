@@ -26,7 +26,7 @@ const { chromium } = require("playwright");
   const tt=await page.evaluate(()=>tr("No hay stock de ese sabor."));
   ok(tt==="Pas de stock de ce parfum.","toast traducido: "+tt);
   const t3=await page.evaluate(()=>tr("3 vasquetas"));
-  ok(/3 bacs/.test(t3),"número con unidad: "+t3);
+  ok(/3 gelatos/.test(t3),"número con unidad: "+t3);
   // volver a español
   await page.click("#idiomaBtn"); await page.waitForTimeout(500);
   ok(/Salida/i.test(await page.innerText("#tabs")),"vuelve a español");

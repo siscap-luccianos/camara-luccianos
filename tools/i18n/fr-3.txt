@@ -71,8 +71,8 @@ Transferencias entre locales ⇒ Transferts entre magasins
 Tu PIN ⇒ Votre PIN
 Tus movimientos de hoy ⇒ Vos mouvements d'aujourd'hui
 Un movimiento anterior al último conteo no lo anula el responsable. ⇒ Un mouvement antérieur au dernier inventaire ne peut pas être annulé par le responsable.
-Una vasqueta de más de ⇒ Un bac de plus de
-Una vasqueta pesa ⇒ Un bac pèse
+Una vasqueta de más de ⇒ Un gelato de plus de
+Una vasqueta pesa ⇒ Un gelato pèse
 Una vez al mes: cámara + local ⇒ Une fois par mois : chambre froide + magasin
 Unid. ⇒ Unité
 Unidad (chocolatería, pastelería, bollería) ⇒ Unité (chocolaterie, pâtisserie, viennoiserie)
@@ -90,11 +90,11 @@ Valorizado ⇒ Valorisé
 Vas a dejar de usar " ⇒ Vous allez cesser d'utiliser "
 Vas a fijar " ⇒ Vous allez fixer "
 Vas a guardar el conteo ⇒ Vous allez enregistrer l'inventaire
-Vasqueta ⇒ Bac
-Vasqueta mal rotulada ⇒ Bac mal étiqueté
-Vasquetas ⇒ Bacs
-Vasquetas o cajas de vasquetas ⇒ Bacs ou cartons de bacs
-Vasquetas · Frutales ⇒ Bacs · Fruités
+Vasqueta ⇒ Gelato
+Vasqueta mal rotulada ⇒ Gelato mal étiqueté
+Vasquetas ⇒ Gelatos
+Vasquetas o cajas de vasquetas ⇒ Gelatos ou cartons de gelatos
+Vasquetas · Frutales ⇒ Gelatos · Fruités
 Ve solo cámara + local = total, sin diferencia ni %. ⇒ Voit seulement chambre froide + magasin = total, sans écart ni %.
 Vence ⇒ Périme
 Vence el ⇒ Périme le
@@ -155,8 +155,8 @@ con su PIN, en las tablets donde ya ingresaron antes (valen 30 días). ⇒ avec 
 conteo parcial ⇒ inventaire partiel
 corrección (24 h máximo). ⇒ correction (24 h maximum).
 cámara ⇒ chambre froide
-de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar. ⇒ de chaque ligne : si cela ne concorde pas (ex. 12 bacs avec 12 kg), la saisie est refusée.
-de esa fila para quitar solo esa vasqueta. ⇒ de cette ligne pour retirer seulement ce bac.
+de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar. ⇒ de chaque ligne : si cela ne concorde pas (ex. 12 gelatos avec 12 kg), la saisie est refusée.
+de esa fila para quitar solo esa vasqueta. ⇒ de cette ligne pour retirer seulement ce gelato.
 de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere. ⇒ de fin de mois rend le stock de la chambre froide égal à ce qui a été compté et devient l'initial du mois suivant. Vous le voyez à partir de 12h00 ou quand la supervision le libère.
 de las que están sin fecha (hay ⇒ de celles qui sont sans date (il y en a
 de qué local viene ⇒ de quel magasin il vient
@@ -184,8 +184,8 @@ en stock ⇒ en stock
 en un local, ese local lo ve todo. ⇒ dans un magasin, ce magasin voit tout.
 en «¿Quién carga?» y carga su Salida, Ingreso, Desperdicio o Devolución. ⇒ dans « Qui saisit ? » et saisit sa Sortie, Entrée, Perte ou Retour.
 equipo no aprobado ⇒ appareil non approuvé
-escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema. ⇒ scannez chaque bac, pas le carton. Le premier scan d'un parfum remplace le chiffre du système.
-escaneá la caja (suma 2 vasquetas). ⇒ scannez le carton (ajoute 2 bacs).
+escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema. ⇒ scannez chaque gelato, pas le carton. Le premier scan d'un parfum remplace le chiffre du système.
+escaneá la caja (suma 2 vasquetas). ⇒ scannez le carton (ajoute 2 gelatos).
 escribí en el pad los ⇒ saisissez sur le pavé les
 etiqueta de producción ⇒ étiquette de production
 fabrica. En Producción solo aparece eso, aunque «Lo tenemos» esté apagado. Si no elegís nada, Producción ofrece todo el rubro. Lo que producís no va al pedido a fábrica: sale en «A producir». ⇒ fabrique. Dans Production, seul cela apparaît, même si « Nous l'avons » est désactivé. Si vous ne choisissez rien, Production propose toute la catégorie. Ce que vous produisez ne va pas dans la commande à l'usine : cela sort dans « À produire ».
@@ -205,10 +205,10 @@ igual o la pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ ide
 kg + local ⇒ kg + magasin
 kg = ⇒ kg =
 kg en la caja. ⇒ kg dans le carton.
-kg por vasqueta es raro. ¿Está bien? ⇒ kg par bac, c'est étrange. Est-ce correct ?
-kg por vasqueta — revisá los kilos. ⇒ kg par bac — vérifiez les kilos.
-kg por vasqueta. ¿Cuántas vasquetas trae? ⇒ kg par bac. Combien de bacs contient-il ?
-kg por vasqueta: no cuadra. Podés corregir los kilos (lo escrito manda) y registrar igual. ⇒ kg par bac : cela ne concorde pas. Vous pouvez corriger les kilos (ce qui est écrit fait foi) et enregistrer quand même.
+kg por vasqueta es raro. ¿Está bien? ⇒ kg par gelato, c'est étrange. Est-ce correct ?
+kg por vasqueta — revisá los kilos. ⇒ kg par gelato — vérifiez les kilos.
+kg por vasqueta. ¿Cuántas vasquetas trae? ⇒ kg par gelato. Combien de gelatos contient-il ?
+kg por vasqueta: no cuadra. Podés corregir los kilos (lo escrito manda) y registrar igual. ⇒ kg par gelato : cela ne concorde pas. Vous pouvez corriger les kilos (ce qui est écrit fait foi) et enregistrer quand même.
 kg prom. ⇒ kg moy.
 kg prom. en ⇒ kg moy. en
 kg · del ⇒ kg · du
@@ -240,8 +240,8 @@ más ⇒ plus
 más de 3 %. ⇒ plus de 3 %.
 negro y dorado ⇒ noir et or
 ninguna caja cerrada ⇒ aucun carton fermé
-no es una vasqueta: cargalo a mano (cerrá y tocá el sabor). ⇒ ce n'est pas un bac : saisissez-le à la main (fermez et touchez le parfum).
-no es una vasqueta: contalo a mano. ⇒ ce n'est pas un bac : comptez-le à la main.
+no es una vasqueta: cargalo a mano (cerrá y tocá el sabor). ⇒ ce n'est pas un gelato : saisissez-le à la main (fermez et touchez le parfum).
+no es una vasqueta: contalo a mano. ⇒ ce n'est pas un gelato : comptez-le à la main.
 no está en este conteo. ⇒ n'est pas dans cet inventaire.
 no hay nadie cargado ⇒ personne n'est enregistré
 no llegó respuesta ⇒ aucune réponse reçue
@@ -251,7 +251,7 @@ nunca se muestra solo. ⇒ ne s'affiche jamais tout seul.
 números). Si el rótulo está dañado, cerrá y cargá el sabor a mano. ⇒ chiffres). Si l'étiquette est abîmée, fermez et saisissez le parfum à la main.
 o más. ⇒ ou plus.
 para cambiar el mínimo ⇒ pour changer le minimum
-para cargar la siguiente vasqueta del mismo sabor, y ⇒ pour saisir le bac suivant du même parfum, et
+para cargar la siguiente vasqueta del mismo sabor, y ⇒ pour saisir le gelato suivant du même parfum, et
 para pedir ⇒ pour commander
 para sacar. ⇒ pour sortir.
 para vender ⇒ pour vendre
@@ -301,10 +301,10 @@ transferencia recibida ⇒ transfert reçu
 una sola vez por mes ⇒ une seule fois par mois
 unidades en total ⇒ unités au total
 unidades no puede ser. Revisá el número. ⇒ unités, c'est impossible. Vérifiez le nombre.
-vasquetas de un sabor. ⇒ bacs d'un parfum.
-vasquetas es mucho. ¿Está bien? ⇒ bacs, c'est beaucoup. Est-ce correct ?
-vasquetas no puede ser. ⇒ bacs, c'est impossible.
-vasquetas no puede ser. Revisá el número. ⇒ bacs, c'est impossible. Vérifiez le nombre.
+vasquetas de un sabor. ⇒ gelatos d'un parfum.
+vasquetas es mucho. ¿Está bien? ⇒ gelatos, c'est beaucoup. Est-ce correct ?
+vasquetas no puede ser. ⇒ gelatos, c'est impossible.
+vasquetas no puede ser. Revisá el número. ⇒ gelatos, c'est impossible. Vérifiez le nombre.
 venta del día ⇒ vente du jour
 volvela a la cámara ⇒ remettez-la en chambre froide
 vuelven a «sin fecha» ⇒ repassent en « sans date »
@@ -325,7 +325,7 @@ y tocá el sabor. Se abre «Reposición de Geladot». ⇒ et touchez le parfum. 
 «Desactivar» lo apaga en TODOS los locales y países. ⇒ « Désactiver » l'éteint dans TOUS les magasins et pays.
 «Elegir varios» → marcá los sabores → «Quitar de» ese país. ⇒ « Sélection multiple » → cochez les parfums → « Retirer de » ce pays.
 «ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana. ⇒ « voir » ouvre les entrées (bon de livraison, kg, qui a saisi) et les sorties par semaine.
-· +2 vasquetas ⇒ · +2 bacs
+· +2 vasquetas ⇒ · +2 gelatos
 · Cámara ⇒ · Chambre froide
 · Local ⇒ · Magasin
 · Sacaron: ⇒ · Sorties par :
@@ -386,7 +386,7 @@ y tocá el sabor. Se abre «Reposición de Geladot». ⇒ et touchez le parfum. 
 ¿Resetear TU PIN? Se te va a cerrar la sesión y vas a crear uno nuevo en el próximo ingreso. ⇒ Réinitialiser VOTRE PIN ? Votre session sera fermée et vous en créerez un nouveau à la prochaine connexion.
 ¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso. ⇒ Réinitialiser le PIN ? La personne en créera un nouveau à sa prochaine connexion.
 ¿Solo es esto? Contaste ⇒ C'est tout ? Vous avez compté
-¿Una vasqueta quedó mal rotulada? ⇒ Un bac a-t-il été mal étiqueté ?
+¿Una vasqueta quedó mal rotulada? ⇒ Un gelato a-t-il été mal étiqueté ?
 ¿quién sos? ⇒ qui êtes-vous ?
 Último acceso: ⇒ Dernier accès :
 últimas 3 semanas ⇒ 3 dernières semaines

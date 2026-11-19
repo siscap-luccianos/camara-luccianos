@@ -2,7 +2,7 @@ Hay una versión nueva ( ⇒ Une nouvelle version est disponible (
 Hay varios locales con ese nombre o ninguno: elegí uno de la lista. ⇒ Plusieurs magasins portent ce nom, ou aucun : choisissez-en un dans la liste.
 Hecho ⇒ Fait
 Hecho por ⇒ Fait par
-Helado que se perdió y no es una vasqueta entera. Se anotan los kilos y un detalle corto. El sabor es opcional. ⇒ Glace perdue qui n'est pas un bac entier. On note les kilos et un court détail. Le parfum est facultatif.
+Helado que se perdió y no es una vasqueta entera. Se anotan los kilos y un detalle corto. El sabor es opcional. ⇒ Glace perdue qui n'est pas un gelato entier. On note les kilos et un court détail. Le parfum est facultatif.
 Historial ⇒ Historique
 Hola, ⇒ Bonjour,
 Hoy ⇒ Aujourd'hui
@@ -30,7 +30,7 @@ Kg ⇒ Kg
 Kilos ⇒ Kilos
 Kilos (granella, crumble: el stock es la cantidad de kilos) ⇒ Kilos (granella, crumble : le stock est la quantité de kilos)
 Kilos de helado ⇒ Kilos de glace
-Kilos de la vasqueta ⇒ Kilos du bac
+Kilos de la vasqueta ⇒ Kilos du gelato
 Kilos perdidos ⇒ Kilos perdus
 Kilos totales ⇒ Kilos totaux
 Kilos totales de ⇒ Kilos totaux de
@@ -41,10 +41,10 @@ La app todavía no está conectada. Avisale a Gabi que falta pegar la URL de App
 La chocolatería no se saca acá: se registra con «Registrar consumo». ⇒ La chocolaterie ne se sort pas ici : elle s'enregistre avec « Enregistrer la consommation ».
 La diferencia se mide sobre el ⇒ L'écart se mesure sur le
 La tabla y el semáforo ⇒ Le tableau et le feu tricolore
-La vasqueta entera ⇒ Le bac entier
+La vasqueta entera ⇒ Le gelato entier
 La ✕ quita solo esa lectura y recalcula el sabor. Si un rótulo no se lee, cerrá y escribí el número a mano. ⇒ La ✕ retire seulement cette lecture et recalcule le parfum. Si une étiquette ne se lit pas, fermez et saisissez le numéro à la main.
 La ✕ quita solo esa lectura: baja el sabor y saca ese peso. ⇒ La ✕ retire seulement cette lecture : elle diminue le parfum et retire ce poids.
-La ✕ quita solo esa vasqueta: baja 1 el sabor y saca ese peso. ⇒ La ✕ retire seulement ce bac : elle diminue le parfum de 1 et retire ce poids.
+La ✕ quita solo esa vasqueta: baja 1 el sabor y saca ese peso. ⇒ La ✕ retire seulement ce gelato : elle diminue le parfum de 1 et retire ce poids.
 Las ⇒ Les
 Las latas no tienen vencimiento. ⇒ Les boîtes n'ont pas de date de péremption.
 Lata x5 mix ⇒ Boîte x5 mix
@@ -63,7 +63,7 @@ Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «An
 Lo producimos ⇒ Nous le produisons
 Lo que contaste ⇒ Ce que vous avez compté
 Lo que el sistema no deja guardar ⇒ Ce que le système ne permet pas d'enregistrer
-Lo que fabricás en el local (kilos y vasquetas). ⇒ Ce que vous fabriquez au magasin (kilos et bacs).
+Lo que fabricás en el local (kilos y vasquetas). ⇒ Ce que vous fabriquez au magasin (kilos et gelatos).
 Lo que había al hacer el conteo inicial ⇒ Ce qu'il y avait lors de l'inventaire initial
 Lo que hay hoy en la cámara · costo de lista, no es el precio al público ⇒ Ce qu'il y a aujourd'hui en chambre froide · coût catalogue, pas le prix public
 Lo que no contaste no se toca ⇒ Ce que vous n'avez pas compté n'est pas modifié
@@ -137,7 +137,7 @@ Ninguno ⇒ Aucun
 Ningún producto coincide. ⇒ Aucun produit ne correspond.
 Ningún renglón tiene cantidad — revisá los números antes de cargar ⇒ Aucune ligne n'a de quantité — vérifiez les chiffres avant de saisir
 No alcanza el stock de ⇒ Le stock est insuffisant pour
-No encontramos renglones de Vasquetas, Icepops, Sin Gluten o Cannolis en esta foto ⇒ Nous n'avons trouvé aucune ligne de Bacs, Icepops, Sans gluten ou Cannolis sur cette photo
+No encontramos renglones de Vasquetas, Icepops, Sin Gluten o Cannolis en esta foto ⇒ Nous n'avons trouvé aucune ligne de Gelatos, Icepops, Sans gluten ou Cannolis sur cette photo
 No hay locales con ese nombre. ⇒ Aucun magasin ne porte ce nom.
 No hay nada para producir hoy. ⇒ Rien à produire aujourd'hui.
 No hay productos con ese nombre. ⇒ Aucun produit ne porte ce nom.
@@ -180,7 +180,7 @@ No se pudo guardar. Probá de nuevo. ⇒ Impossible d'enregistrer. Réessayez.
 No se pudo leer el remito. Probá de nuevo. ⇒ Impossible de lire le bon de livraison. Réessayez.
 No se pudo leer ese código ( ⇒ Impossible de lire ce code (
 No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ( ⇒ Impossible de lire ce code : l'étiquette d'usine comporte 20 chiffres et l'étiquette de production 13 (
-No se pudo leer ese código: la vasqueta trae 20 números y la caja 28 ( ⇒ Impossible de lire ce code : le bac comporte 20 chiffres et le carton 28 (
+No se pudo leer ese código: la vasqueta trae 20 números y la caja 28 ( ⇒ Impossible de lire ce code : le gelato comporte 20 chiffres et le carton 28 (
 No se pudo pedir. ⇒ Impossible de demander.
 No se pudo registrar un movimiento pendiente: ⇒ Impossible d'enregistrer un mouvement en attente :
 No se pudo resetear el PIN. ⇒ Impossible de réinitialiser le PIN.
@@ -203,7 +203,7 @@ Ojo: da ⇒ Attention : cela donne
 Omitir ⇒ Ignorer
 Opera ⇒ Opère
 Operaciones ⇒ Opérations
-Otra vasqueta ⇒ Un autre bac
+Otra vasqueta ⇒ Un autre gelato
 Otras cajas ⇒ Autres cartons
 Otro conteo: lo pide supervisión. ⇒ Autre inventaire : demandé par la supervision.
 Otro local ⇒ Autre magasin
@@ -230,7 +230,7 @@ Paso 4: ⇒ Étape 4 :
 Paso a paso, con la balanza ⇒ Pas à pas, avec la balance
 Pastelería ⇒ Pâtisserie
 Pastelería Fresca ⇒ Pâtisserie fraîche
-Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real. ⇒ Passez le lecteur sur chaque étiquette : bip, bip, bip. Chaque bip ajoute 1 bac avec son poids réel.
+Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real. ⇒ Passez le lecteur sur chaque étiquette : bip, bip, bip. Chaque bip ajoute 1 gelato avec son poids réel.
 Pasá las unidades de un sabor al otro: no suma ni resta el total, solo corrige el sabor. ⇒ Passez les unités d'un parfum à l'autre : cela n'ajoute ni ne retire du total, cela corrige seulement le parfum.
 País ⇒ Pays
 Pedido ⇒ Commande
@@ -250,7 +250,7 @@ Pendiente ⇒ En attente
 Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal. ⇒ En attente d'envoi — pas de connexion. L'envoi se fera tout seul dès le retour du réseau.
 Período ⇒ Période
 Pesada a mano ⇒ Pesée manuelle
-Peso de la vasqueta ⇒ Poids du bac
+Peso de la vasqueta ⇒ Poids du gelato
 Peso promedio (kg) ⇒ Poids moyen (kg)
 Pesá la caja al terminar, una sola vez por caja usada. ⇒ Pesez le carton à la fin, une seule fois par carton utilisé.
 Pide motivo ⇒ Demande un motif
@@ -258,7 +258,7 @@ Poner fecha ⇒ Mettre la date
 Poner fecha a ⇒ Mettre la date à
 Poner mínimo ⇒ Mettre le minimum
 Poner vencimiento ⇒ Mettre la date de péremption
-Poné cuántas vasquetas eran ⇒ Indiquez combien de bacs c'était
+Poné cuántas vasquetas eran ⇒ Indiquez combien de gelatos c'était
 Por producto ⇒ Par produit
 Por rubro ⇒ Par catégorie
 Por vencimiento ⇒ Pour péremption
@@ -282,7 +282,7 @@ Quedan sin fecha: ⇒ Restent sans date :
 Quitados de ⇒ Retirés de
 Quitar ⇒ Retirer
 Quitar esta lectura ⇒ Retirer cette lecture
-Quitar esta vasqueta ⇒ Retirer ce bac
+Quitar esta vasqueta ⇒ Retirer ce gelato
 Quitar fecha ⇒ Retirer la date
 Quitaste « ⇒ Vous avez retiré «
 Qué configurás ⇒ Ce que vous configurez
@@ -342,7 +342,7 @@ Sabores ( ⇒ Parfums (
 Sabores en alerta ⇒ Parfums en alerte
 Sabores en tu pedido ⇒ Parfums dans votre commande
 Sacar un sabor solo de ese país: ⇒ Retirer un parfum uniquement de ce pays :
-Sacar vasquetas con su peso real ⇒ Sortir des bacs avec leur poids réel
+Sacar vasquetas con su peso real ⇒ Sortir des gelatos avec leur poids réel
 Sale del stock, como un desperdicio común. ⇒ Sort du stock, comme une perte ordinaire.
 Sale primero el que vence antes ⇒ Sort d'abord celui qui périme en premier
 Salida ⇒ Sortie
@@ -356,7 +356,7 @@ Salidas — Bollería ⇒ Sorties — Viennoiserie
 Salidas — Chocolatería ⇒ Sorties — Chocolaterie
 Salidas — Icepops ⇒ Sorties — Icepops
 Salidas — Pastelería ⇒ Sorties — Pâtisserie
-Salidas — Vasquetas ⇒ Sorties — Bacs
+Salidas — Vasquetas ⇒ Sorties — Gelatos
 Salir ⇒ Déconnexion
 Salto grande: de ⇒ Grand écart : de
 Salto raro ⇒ Écart étrange
@@ -367,7 +367,7 @@ Se fue y dejó algo pendiente: lo devolvés a su nombre. ⇒ Il est parti en lai
 Se guarda el stock de ⇒ Le stock est enregistré pour
 Se guarda tal cual lo ves. Tocá la ✕ para volver un sabor a como estaba. ⇒ C'est enregistré tel que vous le voyez. Touchez la ✕ pour remettre un parfum comme avant.
 Se hace ⇒ Se fait
-Se pesa cada vasqueta con el pad ⇒ Chaque bac se pèse avec le pavé numérique
+Se pesa cada vasqueta con el pad ⇒ Chaque gelato se pèse avec le pavé numérique
 Se rompió, se cayó o venció ⇒ C'est cassé, tombé ou périmé
 Se vende en ⇒ Se vend en
 Seguir revisando ⇒ Continuer à vérifier
@@ -414,7 +414,7 @@ Sin fecha ⇒ Sans date
 Sin identificar ⇒ Non identifié
 Sin nombre ⇒ Sans nom
 Sin país: nadie lo ve ⇒ Sans pays : personne ne le voit
-Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran. ⇒ Sans poids, on ne peut pas sortir un bac : ainsi les kilos en chambre froide concordent toujours.
+Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran. ⇒ Sans poids, on ne peut pas sortir un gelato : ainsi les kilos en chambre froide concordent toujours.
 Sin producción en este período. ⇒ Aucune production sur cette période.
 Sin productos en este conteo. ⇒ Aucun produit dans cet inventaire.
 Sin retiros ⇒ Sans sorties

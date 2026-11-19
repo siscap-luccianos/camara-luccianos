@@ -20,8 +20,8 @@
 . Actualizá la pantalla o sacá menos cantidad. ⇒ . Actualisez l'écran ou sortez une quantité moindre.
 . Los demás rubros no se tocan. ⇒ . Les autres catégories ne sont pas modifiées.
 . Los demás rubros, sus vencimientos y lo que se mueva mientras contás quedan como están. Ideal para recontar un rubro sin arriesgar el resto. ⇒ . Les autres catégories, leurs péremptions et ce qui bouge pendant que vous comptez restent tels quels. Idéal pour recompter une catégorie sans risquer le reste.
-. Pasá el lector por cada rótulo de lo que recibís: pip, pip, pip. Una caja cerrada suma 2 vasquetas. Si un rótulo no se lee, cerrá y cargalo a mano. ⇒ . Passez le lecteur sur chaque étiquette de ce que vous recevez : bip, bip, bip. Un carton fermé ajoute 2 bacs. Si une étiquette ne se lit pas, fermez et saisissez-la à la main.
-. Revisalo: si no es otra vasqueta, quitá esa línea con la ✕. ⇒ . Vérifiez : si ce n'est pas un autre bac, retirez cette ligne avec la ✕.
+. Pasá el lector por cada rótulo de lo que recibís: pip, pip, pip. Una caja cerrada suma 2 vasquetas. Si un rótulo no se lee, cerrá y cargalo a mano. ⇒ . Passez le lecteur sur chaque étiquette de ce que vous recevez : bip, bip, bip. Un carton fermé ajoute 2 gelatos. Si une étiquette ne se lit pas, fermez et saisissez-la à la main.
+. Revisalo: si no es otra vasqueta, quitá esa línea con la ✕. ⇒ . Vérifiez : si ce n'est pas un autre gelato, retirez cette ligne avec la ✕.
 . Sirve una vez y vence en 15 minutos. ⇒ . Utilisable une fois, il expire dans 15 minutes.
 . Tocá para seguir. ⇒ . Touchez pour continuer.
 /día ⇒ /jour
@@ -38,7 +38,7 @@ Acá se llama « ⇒ Ici il s'appelle «
 Agregar a ⇒ Ajouter à
 Al guardar se reemplaza todo el stock del local. Empezás con cada sabor en «Sin contar» para que ninguno se cuele con el número viejo. ⇒ À l'enregistrement, tout le stock du magasin est remplacé. Vous commencez avec chaque parfum en « Non compté » pour qu'aucun ne passe avec l'ancien chiffre.
 Al guardar solo se reemplaza el stock de ⇒ À l'enregistrement, seul le stock de est remplacé :
-Al tocar una vasqueta podés elegir ⇒ En touchant un bac, vous pouvez choisir
+Al tocar una vasqueta podés elegir ⇒ En touchant un gelato, vous pouvez choisir
 Aplicar ⇒ Appliquer
 Aplicar a los ⇒ Appliquer aux
 Aplicar solo este día ⇒ Appliquer uniquement ce jour
@@ -53,12 +53,12 @@ Buscar por nombre o región… ⇒ Rechercher par nom ou région…
 Buscar producto… ⇒ Rechercher un produit…
 Buscar un local ⇒ Rechercher un magasin
 Buscá tu sucursal… ⇒ Cherchez votre magasin…
-CADA CAJA / VASQUETA ⇒ CHAQUE CARTON / BAC
-CADA VASQUETA ⇒ CHAQUE BAC
+CADA CAJA / VASQUETA ⇒ CHAQUE CARTON / GELATO
+CADA VASQUETA ⇒ CHAQUE GELATO
 CIERRE ⇒ CLÔTURE
 CONTEO ⇒ INVENTAIRE
 CUENTA: ⇒ CALCUL :
-Caja (2 vasquetas) · ⇒ Carton (2 bacs) ·
+Caja (2 vasquetas) · ⇒ Carton (2 gelatos) ·
 Calculado el ⇒ Calculé le
 Cambian · ⇒ Changent ·
 Cambiar rol de ⇒ Changer le rôle de
@@ -133,8 +133,8 @@ Empezar de cero ⇒ Recommencer à zéro
 Empleados ⇒ Employés
 En la cámara queda: ⇒ En chambre froide il reste :
 En la salida hay además ⇒ Dans la sortie il y a aussi
-En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo. ⇒ Pour les bacs, pesez chacun et saisissez son poids dans une case (avec « + » vous en ajoutez une autre) : le total se calcule tout seul.
-En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron. ⇒ Pour les bacs, touchez ceux qui reviennent : ils ont déjà le poids avec lequel ils sont sortis.
+En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo. ⇒ Pour les gelatos, pesez chacun et saisissez son poids dans une case (avec « + » vous en ajoutez une autre) : le total se calcule tout seul.
+En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron. ⇒ Pour les gelatos, touchez ceux qui reviennent : ils ont déjà le poids avec lequel ils sont sortis.
 En revisión ⇒ En vérification
 Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión. ⇒ Allez dans l'Historique, touchez « Annuler » sur ce mouvement et saisissez-le de nouveau correctement. On peut annuler jusqu'à 24 heures après. S'il est antérieur au dernier inventaire, c'est la supervision qui l'annule.
 Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado. ⇒ Allez dans l'Historique, touchez « Annuler » sur ce mouvement et saisissez-le de nouveau correctement. Si plus de 10 minutes se sont écoulées, prévenez votre responsable.
@@ -158,7 +158,7 @@ Este rubro no tiene sabores en este local. ⇒ Cette catégorie n'a pas de parfu
 Está en Ingreso › Devolución. ⇒ C'est dans Entrée › Retour.
 Está en la pestaña Devolución. ⇒ C'est dans l'onglet Retour.
 Estás cargando ⇒ Vous saisissez
-Falta pesar cada vasqueta de ⇒ Il faut peser chaque bac de
+Falta pesar cada vasqueta de ⇒ Il faut peser chaque gelato de
 Faltan ⇒ Il manque
 Faltan los kilos fabricados de ⇒ Il manque les kilos fabriqués de
 Faltan los kilos totales de ⇒ Il manque les kilos totaux de
@@ -194,7 +194,7 @@ Ir a Devolución ⇒ Aller à Retour
 Kilos de esas ⇒ Kilos de ces
 Kilos de helado en cámara ⇒ Kilos de glace en chambre froide
 Kilos del renglón ⇒ Kilos de la ligne
-Kilos fabricados y vasquetas resultantes ⇒ Kilos fabriqués et bacs obtenus
+Kilos fabricados y vasquetas resultantes ⇒ Kilos fabriqués et gelatos obtenus
 Kilos que marca la balanza ⇒ Kilos indiqués par la balance
 LOCAL ⇒ MAGASIN
 La abierta se terminó y abro una nueva ⇒ L'ouverte est terminée et j'en ouvre une nouvelle
@@ -265,7 +265,7 @@ Pedísela a quien te haya dado de alta. ⇒ Demandez-le à la personne qui vous 
 Peso en cámara (estimado) ⇒ Poids en chambre froide (estimé)
 Peso promedio: ⇒ Poids moyen :
 Pesá lo que sacás ⇒ Pesez ce que vous sortez
-Por sabor, cargá los kilos que se fabricaron y cuántas vasquetas resultaron de ese lote — son dos datos sueltos, no se calcula uno a partir del otro. ⇒ Par parfum, saisissez les kilos fabriqués et combien de bacs ont résulté de ce lot — ce sont deux données indépendantes, l'une ne se calcule pas à partir de l'autre.
+Por sabor, cargá los kilos que se fabricaron y cuántas vasquetas resultaron de ese lote — son dos datos sueltos, no se calcula uno a partir del otro. ⇒ Par parfum, saisissez les kilos fabriqués et combien de gelatos ont résulté de ce lot — ce sont deux données indépendantes, l'une ne se calcule pas à partir de l'autre.
 Queda 1 lugar ⇒ Il reste 1 place
 Quedan ⇒ Il reste
 Quitar confirmaciones ⇒ Retirer les confirmations
@@ -357,8 +357,8 @@ Todo conteo guardado queda con candado. ⇒ Tout inventaire enregistré reste ve
 Todo en orden ⇒ Tout est en ordre
 Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo. ⇒ Un Inventaire fixe directement le stock — l'annuler ne le rétablit PAS. Pour corriger des chiffres mal saisis, faites un nouveau Inventaire physique.
 Una caja nueva ⇒ Un nouveau carton
-Una caja o vasqueta venía rotulada como un sabor y era otro. ⇒ Un carton ou un bac était étiqueté comme un parfum et c'en était un autre.
-Una vasqueta quedó cargada o rotulada como un sabor y era otro. ⇒ Un bac a été saisi ou étiqueté comme un parfum et c'en était un autre.
+Una caja o vasqueta venía rotulada como un sabor y era otro. ⇒ Un carton ou un gelato était étiqueté comme un parfum et c'en était un autre.
+Una vasqueta quedó cargada o rotulada como un sabor y era otro. ⇒ Un gelato a été saisi ou étiqueté comme un parfum et c'en était un autre.
 Unidades con esta fecha ⇒ Unités avec cette date
 Usados antes · tocá para repetir ⇒ Utilisés avant · touchez pour répéter
 Usar la sugerida: ⇒ Utiliser la suggestion :
@@ -412,20 +412,20 @@ en el valor. ⇒ dans la valeur.
 en la caja con fibrón y volvela a la cámara. ⇒ sur le carton avec un marqueur et remettez-le en chambre froide.
 en la cola. ⇒ dans la file d'attente.
 esta caja ⇒ ce carton
-esta vasqueta ⇒ ce bac
+esta vasqueta ⇒ ce gelato
 este local no usa kilos reales ⇒ ce magasin n'utilise pas les kilos réels
 g (caja entera) ⇒ g (carton entier)
 g de consumo. Mejor pesar siempre. ⇒ g de consommation. Mieux vaut toujours peser.
 g. Revisá el número. ⇒ g. Vérifiez le nombre.
-hacés pic, pic, pic (una caja cerrada suma 2 vasquetas) ⇒ vous faites bip, bip, bip (un carton fermé ajoute 2 bacs)
+hacés pic, pic, pic (una caja cerrada suma 2 vasquetas) ⇒ vous faites bip, bip, bip (un carton fermé ajoute 2 gelatos)
 kg (promedio de lo que hay en cámara). ⇒ kg (moyenne de ce qu'il y a en chambre froide).
 kg / unidad ⇒ kg / unité
-kg de vasquetas ⇒ kg de bacs
+kg de vasquetas ⇒ kg de gelatos
 kg en total) ⇒ kg au total)
-kg por vasqueta — revisá cantidad y kilos. ⇒ kg par bac — vérifiez la quantité et les kilos.
+kg por vasqueta — revisá cantidad y kilos. ⇒ kg par gelato — vérifiez la quantité et les kilos.
 kg promedio ⇒ kg moyen
 kg vs. anterior ⇒ kg vs. précédent
-las vasquetas se valorizan con kilos reales y este local todavía no los usa. ⇒ les bacs sont valorisés avec des kilos réels et ce magasin ne les utilise pas encore.
+las vasquetas se valorizan con kilos reales y este local todavía no los usa. ⇒ les gelatos sont valorisés avec des kilos réels et ce magasin ne les utilise pas encore.
 lo producimos ⇒ nous le produisons
 lote más ⇒ lot de plus
 lotes más ⇒ lots de plus
@@ -458,13 +458,13 @@ sabor actualizado ⇒ parfum mis à jour
 sabor bajo ⇒ parfum bas
 sabor bajo mínimo ⇒ parfum sous le minimum
 sabor cargado ⇒ parfum saisi
-sabor de vasqueta sin kilos cargados ⇒ parfum de bac sans kilos saisis
+sabor de vasqueta sin kilos cargados ⇒ parfum de gelato sans kilos saisis
 sabor que contaste ⇒ parfum que vous avez compté
 sabor sin kilos cargados ⇒ parfum sans kilos saisis
 sabores bajo ⇒ parfums sous
 sabores bajo mínimo ⇒ parfums sous le minimum
 sabores cargados ⇒ parfums saisis
-sabores de vasqueta sin kilos cargados ⇒ parfums de bac sans kilos saisis
+sabores de vasqueta sin kilos cargados ⇒ parfums de gelato sans kilos saisis
 sabores que contaste ⇒ parfums que vous avez comptés
 sabores sin kilos cargados ⇒ parfums sans kilos saisis
 sabores. Abajo, una lista por país. ⇒ parfums. Dessous, une liste par pays.
@@ -479,12 +479,12 @@ sin peso ⇒ sans poids
 sin peso registrado ⇒ sans poids enregistré
 sin resolver — elegí el sabor o ignorá el renglón antes de cargar. ⇒ non résolu — choisissez le parfum ou ignorez la ligne avant de saisir.
 sumar una ⇒ ajouter une
-tocá Escanear vasqueta y la ✕ de esa fila ⇒ touchez Scanner un bac et la ✕ de cette ligne
+tocá Escanear vasqueta y la ✕ de esa fila ⇒ touchez Scanner un gelato et la ✕ de cette ligne
 tocá si vuelve ⇒ touchez s'il revient
 todavía nada cargado ⇒ rien de saisi pour l'instant
-vasqueta no puede pesar ⇒ un bac ne peut pas peser
-vasqueta ×1 ⇒ bac ×1
-vasquetas no pueden pesar ⇒ des bacs ne peuvent pas peser
+vasqueta no puede pesar ⇒ un gelato ne peut pas peser
+vasqueta ×1 ⇒ gelato ×1
+vasquetas no pueden pesar ⇒ des gelatos ne peuvent pas peser
 vencen el ⇒ périment le
 vs. el del ⇒ vs. celui du
 y escribí los kilos que marca la balanza (ej. 0,030 = 30 g). Caja entera: tocá «+1 caja». ⇒ et saisissez les kilos indiqués par la balance (ex. 0,030 = 30 g). Carton entier : touchez « +1 carton ».
@@ -533,4 +533,4 @@ ya tiene sus ⇒ a déjà ses
 🔒 Local fijo en este dispositivo ⇒ 🔒 Magasin fixe sur cet appareil
 🔓 Desbloqueado por supervisión. ⇒ 🔓 Déverrouillé par la supervision.
 🔓 hasta ⇒ 🔓 jusqu'à
-Sacar vasquetas ⇒ Sortir des bacs
+Sacar vasquetas ⇒ Sortir des gelatos

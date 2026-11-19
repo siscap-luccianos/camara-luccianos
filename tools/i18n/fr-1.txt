@@ -29,7 +29,7 @@
 , ingresá la contraseña de Operaciones para seguir. ⇒ , saisissez le mot de passe d'Opérations pour continuer.
 , ingresá tu PIN para seguir. ⇒ , saisissez votre PIN pour continuer.
 , lote ⇒ , lot
-, no cambia la cantidad de vasquetas. ⇒ , ne change pas le nombre de bacs.
+, no cambia la cantidad de vasquetas. ⇒ , ne change pas le nombre de gelatos.
 , no cuánto sacaste. Abajo la app te muestra los gramos: 0,030 kg = 30 g. ⇒ , pas ce que vous avez sorti. Dessous, l'application affiche les grammes : 0,030 kg = 30 g.
 , o de menos de 1,5 kg si es nueva. ⇒ , ou moins de 1,5 kg si elle est neuve.
 , solo consulta ⇒ , consultation uniquement
@@ -60,7 +60,7 @@
 . Ya está aprobado. ⇒ . Il est déjà approuvé.
 . ¿Es otra ⇒ . Est-ce une autre
 . ¿Es otra igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Est-ce une autre identique ou l'avez-vous scanné deux fois ? Si c'était une erreur, touchez la ✕ de cette ligne.
-. ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Est-ce un autre bac identique ou l'avez-vous scanné deux fois ? Si c'était une erreur, touchez la ✕ de cette ligne.
+. ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Est-ce un autre gelato identique ou l'avez-vous scanné deux fois ? Si c'était une erreur, touchez la ✕ de cette ligne.
 . ¿Está bien? ⇒ . Est-ce correct ?
 /día · cobertura ⇒ /jour · couverture
 1 caja ABIERTA de ⇒ 1 carton OUVERT de
@@ -68,7 +68,7 @@
 1 caja entera = ⇒ 1 carton entier =
 1 página cargada ⇒ 1 page chargée
 1 sola ⇒ 1 seule
-2 vasquetas ⇒ 2 bacs
+2 vasquetas ⇒ 2 gelatos
 : Inicial + Ingresos − Salidas − Merma = Esperado. La ⇒ : Initial + Entrées − Sorties − Perte = Attendu. La
 : ahí copiás el pedido por rubro, lo mandás por WhatsApp o copiás todo junto. ⇒ : vous y copiez la commande par catégorie, l'envoyez par WhatsApp ou copiez le tout.
 : cámara + local = total del local. ⇒ : chambre froide + magasin = total du magasin.
@@ -77,7 +77,7 @@
 : lista cada lote con su fecha. ⇒ : liste chaque lot avec sa date.
 : lo que salió cada semana y si viene subiendo, bajando o estable. ⇒ : ce qui est sorti chaque semaine et si cela monte, baisse ou reste stable.
 : se envía solo, ⇒ : s'envoie tout seul,
-: una vasqueta de ⇒ : un bac de
+: una vasqueta de ⇒ : un gelato de
 = Total ⇒ = Total
 = de 6 a 20 días, ⇒ = de 6 à 20 jours,
 = más de 20 días. ⇒ = plus de 20 jours.
@@ -101,7 +101,7 @@ Administrador ⇒ Administrateur
 Agregar ⇒ Ajouter
 Agregar otra ⇒ Ajouter une autre
 Agregar otra casilla ⇒ Ajouter une autre case
-Agregar otra vasqueta ⇒ Ajouter un autre bac
+Agregar otra vasqueta ⇒ Ajouter un autre gelato
 Al guardar la corrección el candado se cierra solo y el original se conserva. ⇒ En enregistrant la correction, le cadenas se referme tout seul et l'original est conservé.
 Al guardar ve «enviado ✓», sin totales ni diferencias. ⇒ À l'enregistrement, il voit « envoyé ✓ », sans totaux ni écarts.
 Al lado ves el ⇒ À côté vous voyez le
@@ -157,7 +157,7 @@ Caja descartada. ⇒ Carton écarté.
 Caja entera sin pesar ⇒ Carton entier sans pesée
 Caja mal rotulada ⇒ Carton mal étiqueté
 Cajas ⇒ Cartons
-Cajas de vasquetas ⇒ Cartons de bacs
+Cajas de vasquetas ⇒ Cartons de gelatos
 Calculando el valor del stock… ⇒ Calcul de la valeur du stock…
 Cambia ⇒ Change
 Cambiar fecha ⇒ Changer la date
@@ -248,7 +248,7 @@ Contraseña incorrecta. ⇒ Mot de passe incorrect.
 Control ⇒ Contrôle
 Control de stock ⇒ Contrôle de stock
 Control de stock por local ⇒ Contrôle de stock par magasin
-Contá de cero. Las vasquetas del local van en ⇒ Comptez à partir de zéro. Les bacs du magasin vont en
+Contá de cero. Las vasquetas del local van en ⇒ Comptez à partir de zéro. Les gelatos du magasin vont en
 Contá en ⇒ Comptez en
 Contá la ⇒ Comptez la
 Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial. ⇒ Comptez uniquement ce qui est dans le magasin, hors de la chambre froide. C'est enregistré dans le cadre de l'inventaire initial.
@@ -293,7 +293,7 @@ Código sin asignar ⇒ Code non attribué
 Cómo contar sin errores ⇒ Comment compter sans erreur
 Cómo funciona ⇒ Comment ça marche
 Cómo queda ⇒ Résultat
-Cómo sacar vasquetas con su peso ⇒ Comment sortir des bacs avec leur poids
+Cómo sacar vasquetas con su peso ⇒ Comment sortir des gelatos avec leur poids
 Cómo usar el escáner ⇒ Comment utiliser le scanner
 Cómo usar esta pantalla ⇒ Comment utiliser cet écran
 DIFERENCIA ⇒ ÉCART
@@ -342,7 +342,7 @@ Ej.: capacitación, pote caído, cucurucho mal hecho ⇒ Ex. : formation, pot to
 Ej: Obelisco CABA ⇒ Ex. : Obelisco CABA
 Ej: regalo, evento, muestra ⇒ Ex. : cadeau, événement, échantillon
 Ej: se cayó, se rompió ⇒ Ex. : est tombé, s'est cassé
-Ejemplo: 2 vasquetas con 7400 kg, o 12 con 12 kg. ⇒ Exemple : 2 bacs avec 7400 kg, ou 12 avec 12 kg.
+Ejemplo: 2 vasquetas con 7400 kg, o 12 con 12 kg. ⇒ Exemple : 2 gelatos avec 7400 kg, ou 12 avec 12 kg.
 El ⇒ Le
 El PIN nuevo tiene que ser de 4 números. ⇒ Le nouveau PIN doit comporter 4 chiffres.
 El local cambió ⇒ Le magasin a changé
@@ -358,7 +358,7 @@ Elegir mi perfil ⇒ Choisir mon profil
 Elegir otro local ⇒ Choisir un autre magasin
 Elegir período ⇒ Choisir la période
 Elegí al menos un país, o dejá «Todos los países». ⇒ Choisissez au moins un pays, ou laissez « Tous les pays ».
-Elegí el rubro (Vasquetas, Icepops, etc.). Cada sabor muestra lo que ⇒ Choisissez la catégorie (Bacs, Icepops, etc.). Chaque parfum montre ce que
+Elegí el rubro (Vasquetas, Icepops, etc.). Cada sabor muestra lo que ⇒ Choisissez la catégorie (Gelatos, Icepops, etc.). Chaque parfum montre ce que
 Elegí el sabor del rótulo… ⇒ Choisissez le parfum de l'étiquette…
 Elegí el sabor que figura en la caja y el que era en realidad. ⇒ Choisissez le parfum indiqué sur le carton et celui qu'il était en réalité.
 Elegí el sabor… ⇒ Choisissez le parfum…
@@ -372,11 +372,11 @@ Empleado eliminado ⇒ Employé supprimé
 En ⇒ En
 En Ingreso tocá ⇒ Dans Entrée, touchez
 En Salida tocá ⇒ Dans Sortie, touchez
-En Salida tocá el sabor de la vasqueta que sacás. ⇒ Dans Sortie, touchez le parfum du bac que vous sortez.
+En Salida tocá el sabor de la vasqueta que sacás. ⇒ Dans Sortie, touchez le parfum du gelato que vous sortez.
 En cámara: ⇒ En chambre froide :
 En este local la chocolatería ⇒ Dans ce magasin, la chocolaterie
-En las vasquetas cargá el peso de cada una. ⇒ Pour les bacs, saisissez le poids de chacun.
-En las vasquetas revisá también los ⇒ Pour les bacs, vérifiez aussi les
+En las vasquetas cargá el peso de cada una. ⇒ Pour les gelatos, saisissez le poids de chacun.
+En las vasquetas revisá también los ⇒ Pour les gelatos, vérifiez aussi les
 En un lote ⇒ Dans un lot
 En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla. ⇒ Pour la vente du jour et la carte cadeau, on peut choisir la date, jusqu'à 7 jours en arrière, au cas où vous auriez oublié de la saisir.
 Enrobés ⇒ Enrobés
@@ -399,7 +399,7 @@ Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No 
 Escaneada · ⇒ Scanné ·
 Escaneadas en esta salida ⇒ Scannés dans cette sortie
 Escaneado en este conteo ⇒ Scanné dans cet inventaire
-Escanear vasqueta ⇒ Scanner un bac
+Escanear vasqueta ⇒ Scanner un gelato
 Escape ⇒ Échap
 Escribilo en el equipo nuevo, después de elegir ⇒ Saisissez-le sur le nouvel appareil, après avoir choisi
 Escribí ⇒ Saisissez
@@ -410,10 +410,10 @@ Escribí el motivo. ⇒ Saisissez le motif.
 Escribí el mínimo que querés para el rubro. ⇒ Saisissez le minimum souhaité pour la catégorie.
 Escribí los ⇒ Saisissez les
 Escribí los kilos como los marca la balanza. Ej.: 0,030 kg = 30 g ⇒ Saisissez les kilos tels qu'indiqués par la balance. Ex. : 0,030 kg = 30 g
-Escribí los kilos de la vasqueta (entre 0,1 y 12), por ejemplo 3,40. ⇒ Saisissez les kilos du bac (entre 0,1 et 12), par exemple 3,40.
+Escribí los kilos de la vasqueta (entre 0,1 y 12), por ejemplo 3,40. ⇒ Saisissez les kilos du gelato (entre 0,1 et 12), par exemple 3,40.
 Escribí tu PIN de 4 números. ⇒ Saisissez votre PIN à 4 chiffres.
 Escribí un valor válido. ⇒ Saisissez une valeur valide.
-Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta. ⇒ C'est l'étiquette d'un CARTON (2 bacs). À la sortie, on scanne l'étiquette de chaque bac.
+Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta. ⇒ C'est l'étiquette d'un CARTON (2 gelatos). À la sortie, on scanne l'étiquette de chaque gelato.
 Ese lote ya no está en cámara. ⇒ Ce lot n'est plus en chambre froide.
 Esperado ⇒ Attendu
 Esperando el código… ⇒ En attente du code…
