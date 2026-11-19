@@ -122,6 +122,7 @@ html .timerInact{color:var(--header-muted)}
 html .timerInact.urgente{color:#F2C879}
 .btnAyuda{width:36px;height:36px;border-radius:50%;border:0;background:#F4EFE6;color:#2A2118;font-weight:800;font-size:1.2rem;line-height:1;padding:0;cursor:pointer;box-shadow:0 0 0 3px rgba(244,239,230,.28),0 2px 10px rgba(0,0,0,.35)}
 :root{--ayuda-halo:150,80,255}
+.idiomaSel{display:inline-flex;border:1px solid rgba(244,239,230,.5);border-radius:15px;overflow:hidden;height:30px}.idiomaSel button{border:0;background:transparent;color:#F4EFE6;font-weight:800;font-size:.7rem;letter-spacing:.05em;padding:0 9px;cursor:pointer}.idiomaSel button[aria-pressed=true]{background:#F4EFE6;color:#2A2118}
 .btnIdioma{height:30px;min-width:38px;padding:0 9px;border-radius:15px;border:1px solid rgba(244,239,230,.5);background:transparent;color:#F4EFE6;font-weight:800;font-size:.72rem;letter-spacing:.06em;cursor:pointer}
 .btnAyuda{position:relative;overflow:hidden;animation:ayudaHalo 2.4s ease-out infinite}
 .btnAyuda::after{content:"";position:absolute;top:-25%;left:-70%;width:45%;height:150%;background:linear-gradient(100deg,transparent,rgba(190,150,255,.95),rgba(255,255,255,.95),rgba(190,150,255,.95),transparent);transform:skewX(-20deg);animation:ayudaBrillo 3.2s ease-in-out infinite;pointer-events:none}
@@ -1628,7 +1629,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.193.0";
+const FRONTEND_VERSION = "1.193.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3515,7 +3516,7 @@ function renderHeader(){
       ${esOperador() && S.local ? `<button type="button" class="btn ghost" data-ir-operaciones="1">Operaciones</button>` : ""}
       ${S.local && S.sabores.length ? `<span class="alertPill">${al.length ? al.length+(al.length===1?" sabor bajo":" sabores bajo")+" mínimo" : "Stock OK"}</span>` : ""}
       ${!S.esGestion ? (()=>{ const seg=segundosInact(); return `<span class="timerInact${seg!==null&&seg<=60?" urgente":""}" id="timerInact" title="Si no tocás nada, la sesión se bloquea al llegar a cero">${textoTimerInact(seg)}</span>` })() : ""}
-      <button type="button" class="btnIdioma" id="idiomaBtn" aria-label="Idioma / Langue" title="Idioma / Langue" data-notr="1">${i18nSiguiente().toUpperCase()}</button>
+      <div class="idiomaSel" id="idiomaSel" role="group" aria-label="Idioma / Langue / Language" data-notr="1">${I18N_IDIOMAS.map(c=>`<button type="button" data-idioma="${c}" aria-pressed="${I18N.lang===c}" title="${{es:"Español",fr:"Français",en:"English"}[c]}">${c.toUpperCase()}</button>`).join("")}</div>
       <button type="button" class="btnAyuda${ls.get("ayudaVista","")?" vista":""}${S.conteo?" llama":""}" id="ayudaBtn" aria-label="Ayuda: cómo se usa" title="Ayuda: cómo se usa">?</button>
       <button type="button" class="btnTema" id="cambiarTema" aria-label="Cambiar tema" title="Cambiar tema: crema / negro y dorado">${temaActual()==="dorado"?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>Dorado':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>Crema'}</button>
       ${puedeModoLibre()&&S.offline&&!S.modoLibre?`<button type="button" class="btn ghost" id="activarModoLibre" title="Sin señal: el equipo carga sin PIN eligiendo su nombre">Modo libre</button>`:""}
@@ -7276,7 +7277,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.libreCarga){ if(S.modoLibre){ S.modoLibre.carga=t.dataset.libreCarga; renderApp() } return }
   if(t.id==="salir"){ cerrarSesion(false); return }
   if(t.id==="cambiarTema"){ alternarTema(); return }
-  if(t.id==="idiomaBtn"){ i18nCiclar(); renderApp(); return }
+  if(t.dataset.idioma){ try{ localStorage.setItem("idioma",t.dataset.idioma) }catch(e){} i18nSet(t.dataset.idioma); renderApp(); return }
   if(t.id==="ayudaBtn"){ abrirAyuda(); return }
   if(t.id==="reintentarCarga"){ S.errorCarga=null; renderApp(); cargarDatos(); return }
   if(t.id==="gvDefAbrir"){ S.gvDef={id:null, rub:null}; renderApp(); window.scrollTo(0,0); return }
