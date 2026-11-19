@@ -4,8 +4,9 @@
    por idioma (I18N_DIC). Idioma: el que eligió la persona (botón ES/FR) o, si no, el del país del local. */
 const I18N = { lang:"es", dic: (window.I18N_DIC||{}), cache:{}, reg:{} };
 const I18N_PAIS = { "Marruecos":"fr" };          // país del local → idioma
-const I18N_IDIOMAS = ["es","fr"];                // los que se pueden elegir con el botón (sumar "en" cuando esté el diccionario)
-const I18N_PALABRAS = { // respaldo palabra por palabra para textos con números o nombres pegados
+const I18N_IDIOMAS = ["es","fr","en"];              // los que se pueden elegir con el botón (sumar "en" cuando esté el diccionario)
+const I18N_PALABRAS = {
+  en:{ "vasquetas":"gelatos","vasqueta":"gelato","cajas":"boxes","caja":"box","unidades":"units","unidad":"unit","sabores":"flavors","sabor":"flavor","días":"days","día":"day","semanas":"weeks","semana":"week","horas":"hours","hace":"ago","ayer":"yesterday","hoy":"today","mañana":"tomorrow","local":"store","cámara":"cold room","pedido":"order","salida":"sale out","salidas":"outputs","ingreso":"entry","ingresos":"entries","devolución":"return","desperdicio":"waste","vence":"expires","vencido":"expired","lote":"batch","lotes":"batches","sin":"without","con":"with","y":"and","o":"or","kilos":"kilos","total":"total","hay":"there are","solo":"only","pendiente":"pending","por":"by","desde":"since","hasta":"until","lun":"Mon","mié":"Wed","jue":"Thu","vie":"Fri","sáb":"Sat","dom":"Sun","ene":"Jan","feb":"Feb","abr":"Apr","may":"May","jun":"Jun","jul":"Jul","ago":"Aug","sep":"Sep","dic":"Dec","todavía":"yet","menos":"less","más":"more","pesado":"weighed","prueba":"test" }, // respaldo palabra por palabra para textos con números o nombres pegados
   fr:{ "vasquetas":"gelatos","vasqueta":"gelato","cajas":"cartons","caja":"carton","unidades":"unités","unidad":"unité","sabores":"parfums","sabor":"parfum","días":"jours","día":"jour","semanas":"semaines","semana":"semaine","horas":"heures","hace":"il y a","ayer":"hier","hoy":"aujourd'hui","mañana":"demain","local":"magasin","cámara":"chambre froide","pedido":"commande","salida":"sortie","salidas":"sorties","ingreso":"entrée","ingresos":"entrées","devolución":"retour","desperdicio":"perte","vence":"périme","vencido":"périmé","lote":"lot","lotes":"lots","sin":"sans","con":"avec","de":"de","en":"en","y":"et","o":"ou","kilos":"kilos","total":"total","hay":"il y a","solo":"seulement","pendiente":"en attente","por":"par","desde":"depuis","hasta":"jusqu'à","según":"selon","lun":"lun","mié":"mer","jue":"jeu","vie":"ven","sáb":"sam","dom":"dim","ene":"janv","feb":"févr","abr":"avr","may":"mai","jun":"juin","jul":"juil","ago":"août","sep":"sept","dic":"déc","todavía":"encore","menos":"moins","más":"plus","pesado":"pesé","prueba":"test" }
 };
 const I18N_TOK=/[\p{L}\p{N}]+|[^\s]/uy, I18N_ALNUM=/[\p{L}\p{N}]/u;
@@ -31,6 +32,7 @@ function i18nSubst(core,lang){ // cambia cada frase conocida que aparece dentro 
 function i18nPalabras(t,lang){
   const w=I18N_PALABRAS[lang]; if(!w) return t;
   if(lang==="fr") t=t.replace(/(\d)(\s+)al(\s+)(\d)/g,"$1$2au$3$4"); // «16/11 al 22/11»
+  if(lang==="en") t=t.replace(/(\d)(\s+)al(\s+)(\d)/g,"$1$2to$3$4");
   return t.replace(/[\p{L}]+/gu,m=>{ const r=w[m.toLowerCase()]; if(r===undefined) return m; return m[0]!==m[0].toLowerCase()?r[0].toUpperCase()+r.slice(1):r });
 }
 function i18nCore(core,lang){
@@ -80,6 +82,7 @@ function i18nSet(lang){
   if(lang===I18N.lang) return false;
   I18N.lang=lang; document.documentElement.lang=lang; return true;
 }
+function i18nSiguiente(){ const i=I18N_IDIOMAS.indexOf(I18N.lang); return I18N_IDIOMAS[(i+1)%I18N_IDIOMAS.length] }
 function i18nCiclar(){
   const i=I18N_IDIOMAS.indexOf(I18N.lang), sig=I18N_IDIOMAS[(i+1)%I18N_IDIOMAS.length];
   try{ localStorage.setItem("idioma",sig) }catch(e){}

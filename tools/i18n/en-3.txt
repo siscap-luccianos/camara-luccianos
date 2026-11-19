@@ -1,0 +1,408 @@
+Solo en los que elija ⇒ Only in those you choose
+Solo hay ⇒ There are only
+Solo los que tienen stock ⇒ Only those with stock
+Solo supervisión ⇒ Supervision only
+Solo supervisión lo desbloquea ⇒ Only supervision unlocks it
+Solo un rubro ⇒ Just one category
+Solo una parte, capacitación, un pote caído… Se anotan los kilos y un detalle. ⇒ Only a part, training, a dropped tub… Kilos and a detail are recorded.
+Stock ⇒ Stock
+Stock bajo ⇒ Low stock
+Stock mínimo ⇒ Minimum stock
+Stock valorizado cámara ⇒ Cold room valued stock
+Stock › Conteo inicial ⇒ Stock › Opening count
+Stock › Pedido sugerido ⇒ Stock › Suggested order
+Sube ⇒ Goes up
+Subiendo ⇒ Rising
+Sumados a ⇒ Added to
+Sumar ⇒ Add
+Sumar un sabor nuevo solo a ese país: ⇒ Add a new flavor only to that country:
+Sumá este equipo a ⇒ Add this device to
+Supervisión pide el conteo y te aparece un aviso en Stock: ⇒ Supervision requests the count and a notice appears in Stock:
+Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara. ⇒ Supervision requested this count: it is saved separately and does not change the cold room stock.
+Supervisor ⇒ Supervisor
+SÁ ⇒ SA
+SÁB ⇒ SAT
+Sá ⇒ Sa
+Sí, guardar conteo ⇒ Yes, save count
+TRANSFERENCIA · ¿A QUÉ LOCAL VA? ⇒ TRANSFER · TO WHICH STORE?
+Tabletas ⇒ Bars
+Te la mandó otro local. Local de origen y lector. ⇒ Another store sent it to you. Origin store and reader.
+Teclado numérico ⇒ Numeric keypad
+Tendencia · 3 semanas ⇒ Trend · 3 weeks
+Tenés un conteo sin terminar ⇒ You have an unfinished count
+Tenía ⇒ There was
+Tipo ⇒ Type
+Tipo de movimiento ⇒ Movement type
+Tocá ⇒ Tap
+Tocá la ✕ de una línea para sacarla. Se guarda tal cual la ves. ⇒ Tap the ✕ on a line to remove it. It is saved exactly as you see it.
+Tocá los sabores que querés cambiar ⇒ Tap the flavors you want to change
+Tocá un día y después Aplicar para ver solo ese día, o tocá dos días para elegir el rango entre ellos. ⇒ Tap a day and then Apply to see just that day, or tap two days to choose the range between them.
+Tocá un local para abrir su detalle. ⇒ Tap a store to open its detail.
+Tocá un tema para leerlo. Solo ves los que tu local usa. ⇒ Tap a topic to read it. You only see the ones your store uses.
+Todas ⇒ All
+Todavía no contaste ningún sabor. ⇒ You haven't counted any flavor yet.
+Todavía no elegiste ningún producto. ⇒ You haven't chosen any product yet.
+Todavía no entró ⇒ Hasn't logged in yet
+Todavía no hay conteos guardados en este local. ⇒ There are no saved counts in this store yet.
+Todavía no hay conteos iniciales guardados con valor en este local. ⇒ There are no saved opening counts with value in this store yet.
+Todavía no marcaste ningún local. Abrí la lista y elegí los que quieras ver. ⇒ You haven't selected any store yet. Open the list and choose the ones you want to see.
+Todo ⇒ All
+Todo conteo guardado queda con 🔒. ⇒ Every saved count stays with 🔒.
+Todo el local ⇒ Whole store
+Todo queda guardado en la tablet. Cuando vuelva internet tocá ⇒ Everything is saved on the tablet. When the internet returns tap
+Todos ⇒ All
+Todos los países ⇒ All countries
+Todos los rubros ⇒ All categories
+Todos menos ⇒ All except
+Tortas ⇒ Cakes
+Total ⇒ Total
+Total ( ⇒ Total (
+Total a pedir: ⇒ Total to order:
+Total del local ⇒ Store total
+Total · ⇒ Total ·
+Transferencia ⇒ Transfer
+Transferencia a ⇒ Transfer to
+Transferencia de ⇒ Transfer from
+Transferencia enviada ⇒ Transfer sent
+Transferencia enviada registrada: ⇒ Transfer sent recorded:
+Transferencia recibida ⇒ Transfer received
+Transferencia recibida registrada: ⇒ Transfer received recorded:
+Transferencias entre locales ⇒ Transfers between stores
+Tu PIN ⇒ Your PIN
+Tus movimientos de hoy ⇒ Your movements today
+Un movimiento anterior al último conteo no lo anula el responsable. ⇒ A movement before the last count can't be cancelled by the manager.
+Una vasqueta de más de ⇒ A gelato of more than
+Una vasqueta pesa ⇒ A gelato weighs
+Una vez al mes: cámara + local ⇒ Once a month: cold room + store
+Unid. ⇒ Unit
+Unidad (chocolatería, pastelería, bollería) ⇒ Unit (chocolate, pastry, bakery)
+Unidades ⇒ Units
+Unidades fabricadas ⇒ Units produced
+Unidades fabricadas de ⇒ Units produced of
+Unidades pedidas ⇒ Units ordered
+Unidades por caja ⇒ Units per box
+Usar la cámara ⇒ Use the camera
+Vale solo para este conteo. Para que el sistema lo reconozca siempre, cargá el código en Sabores.codigo_fabrica. ⇒ Valid only for this count. For the system to always recognize it, enter the code in Flavors.factory_code.
+Valor ⇒ Value
+Valor correcto ( ⇒ Correct value (
+Valor del local (cámara + local): ⇒ Store value (cold room + store):
+Valorizado ⇒ Valued
+Vas a dejar de usar " ⇒ You are about to stop using "
+Vas a fijar " ⇒ You are about to set "
+Vas a guardar el conteo ⇒ You are about to save the count
+Vasqueta ⇒ Gelato
+Vasqueta mal rotulada ⇒ Mislabeled gelato
+Vasquetas ⇒ Gelatos
+Vasquetas o cajas de vasquetas ⇒ Gelatos or boxes of gelatos
+Vasquetas · Frutales ⇒ Gelatos · Fruity
+Ve solo cámara + local = total, sin diferencia ni %. ⇒ Sees only cold room + store = total, without difference or %.
+Vence ⇒ Expires
+Vence el ⇒ Expires on
+Vence en ⇒ Expires in
+Vence hoy ⇒ Expires today
+Vence mañana ⇒ Expires tomorrow
+Vencido ayer ⇒ Expired yesterday
+Vencido el ⇒ Expired on
+Vencido hace ⇒ Expired
+Vencimiento corregido: ⇒ Expiry corrected:
+Vencimiento puesto a ⇒ Expiry set to
+Vencimientos ⇒ Expiries
+Vencimientos · de más cerca a más lejos ⇒ Expiries · from closest to furthest
+Vender primero ⇒ Sell first
+Venta del día ⇒ Daily sales
+Venta del día, gift card, sin cargo y baja ⇒ Daily sales, gift card, free of charge and write-off
+Ver conteos iniciales guardados ⇒ View saved opening counts
+Ver detalle ⇒ View detail
+Ver detalle › ⇒ View detail ›
+Ver pedido sugerido y tendencia de retiros ⇒ View suggested order and output trend
+Ver pedido › ⇒ View order ›
+Ver resultado ⇒ View result
+Ver resumen del pedido por rubro ⇒ View order summary by category
+Verde ⇒ Green
+Verde: más de ⇒ Green: more than
+Verificando… ⇒ Checking…
+Vi ⇒ Fr
+Viendo: ⇒ Viewing:
+Visibilidad para el responsable. ⇒ Visibility for the manager.
+Visible para el responsable desde las 12:00 ( ⇒ Visible to the manager from 12:00 (
+Volver ⇒ Back
+Volver a Ingreso ⇒ Back to Entry
+Volver a Salida ⇒ Back to Output
+Volver a Stock ⇒ Back to Stock
+Volver a contar ⇒ Count again
+Volver a revisar ⇒ Review again
+Volver a revisar el pedido ⇒ Review the order again
+Vos lo anulás en Historial con ⇒ You cancel it in History with
+Ya no lo producimos ⇒ We no longer produce it
+Ya no queda más stock de ese sabor. ⇒ No more stock of that flavor remains.
+Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo? ⇒ You already have an unfinished count. Start from scratch and discard it?
+a nombre de quien lo cargó ⇒ in the name of whoever entered it
+a qué local va ⇒ which store it goes to
+a ratos ⇒ at times
+al pedido ⇒ to the order
+al terminar. ⇒ when finished.
+andá a la pestaña ⇒ go to the tab
+baja por vencimiento ⇒ write-off for expiry
+caja × ⇒ box ×
+cajas detectadas ⇒ boxes detected
+cambio de sabor ⇒ flavor change
+como los marca la balanza (ej. 0,030 = 30 g) o tocá «+1 caja». ⇒ as the scale shows them (e.g. 0.030 = 30 g) or tap "+1 box".
+como los marca la balanza. Ej.: 0,030 = 30 g · 2,500 = 1 caja. ⇒ as the scale shows them. E.g.: 0.030 = 30 g · 2.500 = 1 box.
+con este equipo? ⇒ with this device?
+con fibrón en la caja y ⇒ with a marker on the box and
+con stock de lo elegido ⇒ with stock of what is chosen
+con su PIN, en las tablets donde ya ingresaron antes (valen 30 días). ⇒ with their PIN, on the tablets where they logged in before (valid for 30 days).
+conteo parcial ⇒ partial count
+corrección (24 h máximo). ⇒ correction (24 h maximum).
+cámara ⇒ cold room
+de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar. ⇒ of each line: if they don't add up (e.g. 12 gelatos with 12 kg) it won't let you save.
+de esa fila para quitar solo esa vasqueta. ⇒ on that row to remove only that gelato.
+de fin de mes deja el stock de la cámara igual a lo contado y es el inicial del mes siguiente. Lo ves desde las 12:00 o cuando supervisión lo libere. ⇒ month-end leaves the cold room stock equal to what was counted and is the opening of the next month. You see it from 12:00 or when supervision releases it.
+de las que están sin fecha (hay ⇒ of those without a date (there are
+de qué local viene ⇒ which store it comes from
+de varios sabores a la vez ⇒ of several flavors at once
+declarados, revisá si repetiste una página ⇒ declared, check whether you repeated a page
+deja la cámara igual a lo contado y es el inicial del mes siguiente. ⇒ leaves the cold room equal to what was counted and is the opening of the next month.
+del pedido ⇒ of the order
+del período aparecen aparte. ⇒ of the period appear separately.
+dentro de Desperdicio. ⇒ inside Waste.
+devolución ⇒ return
+dispositivos aprobados. Un dispositivo nuevo queda bloqueado hasta que le pasás un código. ⇒ approved devices. A new device stays blocked until you give it a code.
+días ⇒ days
+días · ⇒ days ·
+ej. 6 ⇒ e.g. 6
+el equipo ⇒ the team
+el mínimo de ⇒ the minimum of
+elegí el país y completá «Dar de alta» (ya viene marcado «Solo en…»). ⇒ choose the country and complete "Create" (it already comes marked "Only in…").
+elegí qué caja usás. ⇒ choose which box you use.
+en kg y %, por producto y por rubro. ⇒ in kg and %, by product and by category.
+en la app ⇒ in the app
+en lo escaneado ⇒ in what was scanned
+en lo escaneado: revisalo antes de confirmar ( ⇒ in what was scanned: check it before confirming (
+en mi local ⇒ in my store
+en stock ⇒ in stock
+en un local, ese local lo ve todo. ⇒ in a store, that store sees everything.
+en «¿Quién carga?» y carga su Salida, Ingreso, Desperdicio o Devolución. ⇒ in "Who is entering?" and enters their Output, Entry, Waste or Return.
+equipo no aprobado ⇒ device not approved
+escaneá cada vasqueta, no la caja. El primer escaneo de un sabor pisa el número del sistema. ⇒ scan each gelato, not the box. The first scan of a flavor overwrites the system number.
+escaneá la caja (suma 2 vasquetas). ⇒ scan the box (adds 2 gelatos).
+escribí en el pad los ⇒ type on the keypad the
+etiqueta de producción ⇒ production label
+fabrica. En Producción solo aparece eso, aunque «Lo tenemos» esté apagado. Si no elegís nada, Producción ofrece todo el rubro. Lo que producís no va al pedido a fábrica: sale en «A producir». ⇒ produces. In Production only that appears, even if "We have it" is off. If you choose nothing, Production offers the whole category. What you produce doesn't go in the factory order: it goes out under "To produce".
+fabrica. Es un aviso interno, no va a fábrica. ⇒ produces. It is an internal notice, it doesn't go to the factory.
+foto no legible ⇒ photo not legible
+g de consumo ⇒ g of consumption
+g en total). ⇒ g in total).
+g. En cámara: ⇒ g. In cold room:
+gift card ⇒ gift card
+hace 2 h ⇒ 2 h ago
+hace 3 min ⇒ 3 min ago
+hasta 1 %, ⇒ up to 1 %,
+hasta 3 %, ⇒ up to 3 %,
+hay hoy ⇒ in stock
+hay ped ⇒ in stock ·
+igual o la pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ identical or did you scan it twice? If it was a mistake, tap the ✕ on that row.
+kg + local ⇒ kg + store
+kg = ⇒ kg =
+kg en la caja. ⇒ kg in the box.
+kg por vasqueta es raro. ¿Está bien? ⇒ kg per gelato is odd. Is that right?
+kg por vasqueta — revisá los kilos. ⇒ kg per gelato — check the kilos.
+kg por vasqueta. ¿Cuántas vasquetas trae? ⇒ kg per gelato. How many gelatos does it hold?
+kg por vasqueta: no cuadra. Podés corregir los kilos (lo escrito manda) y registrar igual. ⇒ kg per gelato: it doesn't add up. You can correct the kilos (what is written prevails) and record anyway.
+kg prom. ⇒ kg avg.
+kg prom. en ⇒ kg avg. in
+kg · del ⇒ kg · of
+kg · lote ⇒ kg · batch
+kg). Cerrá y cargalo a mano. ⇒ kg). Close and enter it by hand.
+kg. Revisá los kilos. ⇒ kg. Check the kilos.
+kg: cada una pesaría ⇒ kg: each one would weigh
+kg: no puede ser. Revisá la coma. ⇒ kg: it can't be. Check the comma.
+kilos del remito ⇒ kilos from the delivery note
+kilos que marca la balanza ⇒ kilos shown by the scale
+la gift card ⇒ the gift card
+la venta ⇒ the sale
+leídos de ⇒ read of
+leídos — más que los ⇒ read — more than the
+leídos ✓ (declarado ⇒ read ✓ (declared
+leídos). Si el rótulo está dañado, cerrá y escribí el número a mano. ⇒ read). If the label is damaged, close and type the number by hand.
+leídos). Si el rótulo está dañado, cerrá y tocá el sabor. ⇒ read). If the label is damaged, close and tap the flavor.
+lo ponés en cero a propósito. ⇒ you are setting it to zero on purpose.
+lo que sacó el equipo y volvió ⇒ what the team took out and came back
+lo que se fabrica acá ⇒ what is made here
+lo saca del stock. ⇒ takes it out of the stock.
+lo ve al entrar ⇒ sees it on entering
+los mínimos por defecto de ⇒ the default minimums of
+mañana ⇒ tomorrow
+mirá cuántas cajas hay y si hay una ⇒ see how many boxes there are and whether there is one
+miércoles ⇒ Wednesday
+modo oscuro ⇒ dark mode
+más ⇒ more
+más de 3 %. ⇒ more than 3 %.
+negro y dorado ⇒ black and gold
+ninguna caja cerrada ⇒ no closed box
+no es una vasqueta: cargalo a mano (cerrá y tocá el sabor). ⇒ it is not a gelato: enter it by hand (close and tap the flavor).
+no es una vasqueta: contalo a mano. ⇒ it is not a gelato: count it by hand.
+no está en este conteo. ⇒ is not in this count.
+no hay nadie cargado ⇒ nobody is registered
+no llegó respuesta ⇒ no response arrived
+no pueden pesar ⇒ cannot weigh
+no se saca por la Salida común ⇒ is not taken out through the regular Output
+nunca se muestra solo. ⇒ is never shown on its own.
+números). Si el rótulo está dañado, cerrá y cargá el sabor a mano. ⇒ digits). If the label is damaged, close and enter the flavor by hand.
+o más. ⇒ or more.
+para cambiar el mínimo ⇒ to change the minimum
+para cargar la siguiente vasqueta del mismo sabor, y ⇒ to enter the next gelato of the same flavor, and
+para pedir ⇒ to order
+para sacar. ⇒ to take out.
+para vender ⇒ to sell
+para ver lo que salió en la última semana, día por día. ⇒ to see what went out in the last week, day by day.
+pasan del ⇒ exceed the
+pesa unos ⇒ weighs about
+pide tu PIN y un motivo. Vale para ⇒ asks for your PIN and a reason. Valid for
+podés ⇒ you can
+por defecto ⇒ by default
+producción ⇒ production
+productos por PDF: dividí el relevamiento. ⇒ products per PDF: split the survey.
+productos). Con más, sale horizontal. ⇒ products). With more, it comes out landscape.
+pueden entrar ⇒ can enter
+páginas cargadas ⇒ pages loaded
+queda con ⇒ stays with
+quedan como están en el sistema. Aceptar = guardar solo esto. Cancelar = seguir contando. ⇒ stay as they are in the system. Accept = save only this. Cancel = keep counting.
+quedó ⇒ remained
+recién ⇒ just now
+respecto del inicial: esa parte de la diferencia es movimiento normal del local, no necesariamente un error. ⇒ compared with the opening: that part of the difference is normal store movement, not necessarily a mistake.
+responsables de local y de turno ⇒ store and shift managers
+sabor elegido ⇒ chosen flavor
+sabores actualizados ⇒ flavors updated
+sabores elegidos ⇒ chosen flavors
+sacá las bolitas que necesitás y volvé a poner la caja sobre la balanza. ⇒ take out the scoops you need and put the box back on the scale.
+se toman ⇒ are taken
+se vuelve a cargar ⇒ is entered again
+seguís con otro rubro. Tu avance se guarda solo en este equipo. ⇒ you continue with another category. Your progress is saved only on this device.
+sin PIN ⇒ without PIN
+sin asignar en la planilla ⇒ unassigned in the sheet
+sin asignar en la planilla ( ⇒ unassigned in the sheet (
+sin asignar en la planilla (peso ⇒ unassigned in the sheet (weight
+sin cargo ⇒ free of charge
+sin contar. ⇒ not counted.
+sin enviar ⇒ not sent
+sin fecha ⇒ no date
+sin internet ⇒ without internet
+sin stock ⇒ out of stock
+su nombre ⇒ their name
+sábado ⇒ Saturday
+tendencia de las últimas 3 semanas ⇒ trend of the last 3 weeks
+tiene su propio candado: lo desbloqueás igual para que el responsable recuente una vez. ⇒ has its own lock: you unlock it as well so the manager can recount once.
+tocá ⇒ tap
+todo el catálogo ⇒ the whole catalog
+todo el local ⇒ the whole store
+transferencia enviada ⇒ transfer sent
+transferencia recibida ⇒ transfer received
+una sola vez por mes ⇒ only once a month
+unidades en total ⇒ units in total
+unidades no puede ser. Revisá el número. ⇒ units can't be. Check the number.
+vasquetas de un sabor. ⇒ gelatos of a flavor.
+vasquetas es mucho. ¿Está bien? ⇒ gelatos is a lot. Is that right?
+vasquetas no puede ser. ⇒ gelatos can't be.
+vasquetas no puede ser. Revisá el número. ⇒ gelatos can't be. Check the number.
+venta del día ⇒ daily sales
+volvela a la cámara ⇒ put it back in the cold room
+vuelven a «sin fecha» ⇒ go back to "no date"
+vuelven a «sin fecha». ⇒ go back to "no date".
+x10 mix ⇒ x10 mix
+x6 mix ⇒ x6 mix
+y cargá lo que llegó ⇒ and enter what arrived
+y después ⇒ and then
+y después el ⇒ and then the
+y la ⇒ and the
+y lo dejaste en 0. ¿De verdad no queda nada? ⇒ and you left it at 0. Is nothing really left?
+y los ⇒ and the
+y sacale una foto al remito. ⇒ and take a photo of the delivery note.
+y sus kilos ⇒ and their kilos
+y tocá ⇒ and tap
+y tocá el sabor. Se abre «Reposición de Geladot». ⇒ and tap the flavor. "Geladot restock" opens.
+| Generado el ⇒ | Generated on
+«Desactivar» lo apaga en TODOS los locales y países. ⇒ "Deactivate" turns it off in ALL stores and countries.
+«Elegir varios» → marcá los sabores → «Quitar de» ese país. ⇒ "Select several" → mark the flavors → "Remove from" that country.
+«ver» abre los ingresos (remito, kg, quién cargó) y las salidas por semana. ⇒ "view" opens the entries (delivery note, kg, who entered) and the outputs by week.
+· +2 vasquetas ⇒ · +2 gelatos
+· Cámara ⇒ · Cold room
+· Local ⇒ · Store
+· Sacaron: ⇒ · Taken out by:
+· cargada por ⇒ · entered by
+· cargado ⇒ · entered
+· consumo ⇒ · consumption
+· cámara + local. ⇒ · cold room + store.
+· guardado en este equipo a las ⇒ · saved on this device at
+· hay ⇒ · in stock
+· hecho por ⇒ · done by
+· hoy dice ⇒ · today says
+· lo que ⇒ · what
+· lote ⇒ · batch
+· lote sin fecha ⇒ · batch with no date
+· mín. ⇒ · min.
+· precio de lista, no es el precio al público ⇒ · list price, not the public price
+· queda registrado con tu nombre. ⇒ · recorded with your name.
+· sin contar ⇒ · not counted
+· vence ⇒ · expires
+» en TODOS los locales y países? Para sacarlo solo de un país usá «Elegir varios» → «Quitar de». ⇒ " in ALL stores and countries? To remove it from just one country use "Select several" → "Remove from".
+» para siempre? Solo se puede si nunca se usó (si ya tiene movimientos, usá «Desactivar»). ⇒ " forever? Only possible if it was never used (if it already has movements, use "Deactivate").
+». Se liberó un lugar. ⇒ ". A slot was freed.
+». Ya puede entrar. ⇒ ". They can enter now.
+¿Borrar lo que cargaste y empezar de cero? ⇒ Delete what you entered and start from scratch?
+¿Borrar todo el pedido que cargaste? Las cantidades vuelven a quedar vacías. ⇒ Delete the whole order you entered? The quantities go back to empty.
+¿Cambiar ⇒ Change
+¿Cambiar el rol a " ⇒ Change the role to "
+¿Cancelar el pedido de conteo de ⇒ Cancel the count request for
+¿Cuántas unidades? ⇒ How many units?
+¿Cuánto pesa? ⇒ How much does it weigh?
+¿Cómo se usa? ⇒ How to use it
+¿Dar de baja a este empleado? ⇒ Deactivate this employee?
+¿De dónde sale? ⇒ Where does it come from?
+¿De qué lote sale? ⇒ Which batch does it come from?
+¿Desactivar « ⇒ Deactivate "
+¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia. ⇒ Discard the count in progress? What was entered so far is lost. The store stock doesn't change.
+¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia. ⇒ Discard the unfinished count? What you entered is lost. The store stock doesn't change.
+¿Eliminar a " ⇒ Delete "
+¿Eliminar este conteo físico del todo? Ojo: esto borra el registro del historial, pero NO corrige el stock — un conteo pisa el stock directo al guardarlo, así que si cargaste números mal tenés que hacer un conteo nuevo con los números correctos. No se puede deshacer. ⇒ Delete this physical count completely? Careful: this erases the history record but does NOT correct the stock — a count overwrites the stock directly when saved, so if you entered wrong numbers you have to do a new count with the right numbers. It cannot be undone.
+¿Eliminar este movimiento del todo? No es como anular: desaparece de la planilla y no se puede deshacer. ⇒ Delete this movement completely? It is not like cancelling: it disappears from the sheet and cannot be undone.
+¿Eliminar « ⇒ Delete "
+¿Empezar un relevamiento nuevo? Se borran los productos y locales elegidos. ⇒ Start a new survey? The chosen products and stores are cleared.
+¿En qué países se vende? ⇒ In which countries is it sold?
+¿Es una devolución? ⇒ Is it a return?
+¿Fijar " ⇒ Pin "
+¿Guardar el conteo ⇒ Save the count
+¿Llegó un sabor mal rotulado? ⇒ Did a mislabeled flavor arrive?
+¿Pedir el conteo de CIERRE de ⇒ Request the CLOSING count of
+¿Poner mínimo ⇒ Set minimum
+¿Quién carga? ⇒ Who is entering?
+¿Quién la sacó? ⇒ Who took it out?
+¿Qué caja usás? ⇒ Which box are you using?
+¿Qué estaba mal? (opcional) ⇒ What was wrong? (optional)
+¿Qué querés hacer en ⇒ What do you want to do in
+¿Qué se perdió? ⇒ What was lost?
+¿Qué vas a contar? ⇒ What will you count?
+¿Qué vas a hacer? ⇒ What will you do?
+¿Resetear TU PIN? Se te va a cerrar la sesión y vas a crear uno nuevo en el próximo ingreso. ⇒ Reset YOUR PIN? Your session will close and you will create a new one on your next login.
+¿Resetear el PIN? La persona va a crear uno nuevo en su próximo ingreso. ⇒ Reset the PIN? The person will create a new one on their next login.
+¿Solo es esto? Contaste ⇒ Is that all? You counted
+¿Una vasqueta quedó mal rotulada? ⇒ Was a gelato mislabeled?
+¿quién sos? ⇒ who are you?
+Último acceso: ⇒ Last access:
+últimas 3 semanas ⇒ last 3 weeks
+‹ Cambiar acción ⇒ ‹ Change action
+‹ Volver a Control ⇒ ‹ Back to Control
+‹ Volver a Gestión ⇒ ‹ Back to Management
+‹ Volver a Stock ⇒ ‹ Back to Stock
+↑ Subiendo ⇒ ↑ Rising
+→ Estable ⇒ → Stable
+→ ahora ⇒ → now
+↓ Bajando ⇒ ↓ Falling
+↻ Actualizar ⇒ ↻ Refresh
+✓ Equipo vinculado ⇒ ✓ Device linked
+✕ Quitar ⇒ ✕ Remove
+📄 PDF ⇒ 📄 PDF
+📷 Escaneado: ⇒ 📷 Scanned:
+🔒 Desbloquear ⇒ 🔒 Unlock
+🖨 Exportar ⇒ 🖨 Export
+🖨 Exportar PDF ⇒ 🖨 Export PDF

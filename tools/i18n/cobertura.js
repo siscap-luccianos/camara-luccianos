@@ -29,7 +29,8 @@ const { chromium } = require("playwright");
   }
   await page.goto("http://localhost:8995/");
   await page.waitForSelector("#authLocal");
-  await page.evaluate(() => localStorage.setItem("idioma", "fr"));
+  const idioma = process.env.IDIOMA || "fr";
+  await page.evaluate((i) => localStorage.setItem("idioma", i), idioma);
   await page.reload();
   await page.waitForSelector("#authLocal");
   await barrer("login");

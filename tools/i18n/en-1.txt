@@ -1,0 +1,476 @@
+(cámara + local) y siempre contra el ⇒ (cold room + store) and always compared with the
+(cámara + local), siempre contra el ⇒ (cold room + store), always compared with the
+(cámara + local). ⇒ (cold room + store).
+(fecha y unidades). ⇒ (date and quantities).
+(lo que dice la caja al cerrar), ⇒ (what the register says at closing),
+(lo que hay afuera de la cámara). ⇒ (what is outside the cold room).
+(por vencimiento, o transferencia a otro local: pide el destino). ⇒ (for expiry, or transfer to another store: asks for the destination).
+(regalo, evento o muestra: pide motivo) o ⇒ (gift, event or sample: asks for a reason) or
+(solo la cámara, sin lo que está en el local en servicio) ⇒ (cold room only, not what is in the store in service)
+(surtidos). Conitos: ⇒ (assorted). Cones:
+). Cerrá y tocá el sabor para cargarlo a mano. ⇒ ). Close and tap the flavor to enter it by hand.
+). Es cuánto ⇒ ). It is how much
+). Si no cambia, elegí «Horizontal». ⇒ ). If it doesn't change, choose "Landscape".
+). ¿Qué sabor es? ⇒ ). Which flavor is it?
+)? Son ⇒ )? There are
+*A producir – ⇒ *To produce –
+*Pedido de ⇒ *Order for
++ Agregar otra página ⇒ + Add another page
++ Agregar otro vencimiento ⇒ + Add another expiry date
++ Agregar un dispositivo con un código ⇒ + Add a device with a code
++ Local ⇒ + Store
++ Otro vencimiento ⇒ + Another expiry date
++1 caja ⇒ +1 box
+, con coma (ej. ⇒ , with a comma (e.g.
+, con la hora real. ⇒ , with the real time.
+, con su porcentaje. ⇒ , with its percentage.
+, escribí ⇒ , enter
+, ese código ya se escaneó. Si fue un error, tocá la ⇒ , this code was already scanned. If it was a mistake, tap the
+, ingresá la contraseña de Operaciones para seguir. ⇒ , enter the Operations password to continue.
+, ingresá tu PIN para seguir. ⇒ , enter your PIN to continue.
+, lote ⇒ , batch
+, no cambia la cantidad de vasquetas. ⇒ , it doesn't change the number of gelatos.
+, no cuánto sacaste. Abajo la app te muestra los gramos: 0,030 kg = 30 g. ⇒ , not how much you took out. Below, the app shows the grams: 0.030 kg = 30 g.
+, o de menos de 1,5 kg si es nueva. ⇒ , or less than 1.5 kg if it is new.
+, solo consulta ⇒ , view only
+, todo sobre el ⇒ , everything about the
+, usaste ⇒ , you used
+, y el motivo. ⇒ , and the reason.
+, ya cargaste ⇒ , you already entered
+. Ahora elegí tu perfil y poné tu PIN. ⇒ . Now choose your profile and enter your PIN.
+. Avisá a tu encargado. ⇒ . Tell your manager.
+. Corregir: ⇒ . Correct:
+. Elegí el país en las pills de abajo. ⇒ . Choose the country in the buttons below.
+. Lo que no contaste no se toca y podés seguir contando. ¿Guardar? ⇒ . What you didn't count is left untouched and you can keep counting. Save?
+. Los otros ⇒ . The others
+. Minis: solo ⇒ . Minis: only
+. No hay ninguna caja abierta. ⇒ . There is no open box.
+. No pueden ser. ⇒ . They can't be.
+. No se mandó al servidor: el stock no cambió. ⇒ . It was not sent to the server: the stock didn't change.
+. Primero el ⇒ . First the
+. Queda guardado en ese momento. ⇒ . It is saved at that moment.
+. Seguí contando. ⇒ . Keep counting.
+. Si el mes arranca con el conteo de cierre del anterior, no hace falta. ⇒ . If the month starts with the closing count of the previous one, it isn't needed.
+. Si esos productos están en otra página del remito, sacale una foto a esa página. ⇒ . If those products are on another page of the delivery note, take a photo of that page.
+. Si se vendió más, falta cargar un ingreso. ⇒ . If more was sold, an entry is missing.
+. Si un número es raro te lo marca para confirmar con ⇒ . If a number looks odd it is flagged for you to confirm with
+. Sirve para cualquier rubro. ⇒ . Works for any category.
+. Sirve una sola vez y vence en 15 minutos (a las ⇒ . It works only once and expires in 15 minutes (at
+. Tocalo para que el equipo cargue ⇒ . Tap it so the team can enter
+. Ya está aprobado. ⇒ . It is already approved.
+. ¿Es otra ⇒ . Is it another
+. ¿Es otra igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Is it another identical one or did you scan it twice? If it was a mistake, tap the ✕ on that row.
+. ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Is it another identical gelato or did you scan it twice? If it was a mistake, tap the ✕ on that row.
+. ¿Está bien? ⇒ . Is that right?
+/día · cobertura ⇒ /day · coverage
+1 caja ABIERTA de ⇒ 1 OPEN box of
+1 caja cerrada = 2,500 kg. ⇒ 1 closed box = 2.500 kg.
+1 caja entera = ⇒ 1 whole box =
+1 página cargada ⇒ 1 page loaded
+1 sola ⇒ 1 only
+2 vasquetas ⇒ 2 gelatos
+: Inicial + Ingresos − Salidas − Merma = Esperado. La ⇒ : Initial + Entries − Outputs − Loss = Expected. The
+: ahí copiás el pedido por rubro, lo mandás por WhatsApp o copiás todo junto. ⇒ : there you copy the order by category, send it by WhatsApp or copy everything together.
+: cámara + local = total del local. ⇒ : cold room + store = store total.
+: en ⇒ : in
+: escribí el peso de la etiqueta con coma (ej. 3,55). ⇒ : enter the label weight with a comma (e.g. 3.55).
+: lista cada lote con su fecha. ⇒ : lists each batch with its date.
+: lo que salió cada semana y si viene subiendo, bajando o estable. ⇒ : what went out each week and whether it is rising, falling or stable.
+: se envía solo, ⇒ : it is sent automatically,
+: una vasqueta de ⇒ : one gelato of
+= Total ⇒ = Total
+= de 6 a 20 días, ⇒ = 6 to 20 days,
+= más de 20 días. ⇒ = more than 20 days.
+= vencido o vence en 5 días o menos, ⇒ = expired or expires in 5 days or less,
+? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ ? It is the month-end close: it makes the cold room stock equal to what was counted, it gets locked and becomes the opening count of next month.
+A nombre de ⇒ In the name of
+A producir ⇒ To produce
+ABIERTA ⇒ OPEN
+Abrir ⇒ Open
+Abrí el detalle del local y tocá ⇒ Open the store detail and tap
+Activado ⇒ Enabled
+Activado por ⇒ Enabled by
+Activar escáner ⇒ Enable scanner
+Activo ⇒ Active
+Actualizando… ⇒ Updating…
+Actualizar ⇒ Refresh
+Acá ves cómo viene el consumo y cuánto hay en stock. Cargá lo que pidas escribiendo el número o con − y +. Tocá «Ver detalle» para ver lo vendido la última semana, de lunes a domingo. ⇒ Here you see how consumption is trending and how much stock there is. Enter what you order by typing the number or with − and +. Tap "View detail" to see what sold last week, Monday to Sunday.
+Admin y supervisor no ocupan lugar: cuando entran por Operaciones o con el código de admin no cuentan ni necesitan aprobación. ⇒ Admins and supervisors don't take up a slot: when they enter through Operations or with the admin code they don't count and need no approval.
+Administración general ⇒ General administration
+Administrador ⇒ Administrator
+Agregar ⇒ Add
+Agregar otra ⇒ Add another
+Agregar otra casilla ⇒ Add another box
+Agregar otra vasqueta ⇒ Add another gelato
+Al guardar la corrección el candado se cierra solo y el original se conserva. ⇒ When you save the correction the lock closes again and the original is kept.
+Al guardar ve «enviado ✓», sin totales ni diferencias. ⇒ When saved it shows "sent ✓", without totals or differences.
+Al lado ves el ⇒ Next to it you see the
+Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia». ⇒ The sender's stock goes down and the receiver's goes up. It doesn't count as consumption or in the suggested order. In History it shows with its blue "transfer" label.
+Al sacar, sale primero el lote que vence antes. Lo vencido no se vende. ⇒ When taking out, the batch that expires first goes first. Expired items are not sold.
+Alfajores ⇒ Alfajores
+Alfajores: botones ⇒ Alfajores: buttons
+Alta creada ⇒ Created
+Amarillo ⇒ Yellow
+Amarillo: ⇒ Yellow:
+Anulado por ⇒ Cancelled by
+Anulados ⇒ Cancelled
+Anulados en el período · ⇒ Cancelled in the period ·
+Anular ⇒ Cancel
+Anular antes del conteo ⇒ Cancel before the count
+Anular, Desperdicio o Devolución ⇒ Cancel, Waste or Return
+Anulá el movimiento y cargalo de nuevo ⇒ Cancel the movement and enter it again
+Apagar cámara ⇒ Turn off camera
+Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca. ⇒ Turn off those this store doesn't have (e.g. Buckets). They will stop appearing in Output, Entry, Stock and Order — the history of what was already entered is not touched.
+Aparece lo que sacó cualquiera del equipo en las últimas 48 hs, después del último conteo, y todavía no volvió, con el nombre de quien lo sacó. La devolución queda a nombre de quien la hace. ⇒ Shows what anyone on the team took out in the last 48 h, after the last count, and hasn't come back yet, with the name of whoever took it out. The return is recorded in the name of whoever makes it.
+Aprobaste « ⇒ You approved "
+Apuntá al código de barras del rótulo. ⇒ Point at the label barcode.
+Argentina ⇒ Argentina
+Asignar y sumar ⇒ Assign and add
+Automático ⇒ Automatic
+Autorizados ⇒ Authorized
+Avella ⇒ Avella
+Ayuda: cómo se usa ⇒ Help: how to use it
+Baja ⇒ Write-off
+Baja por vencimiento ⇒ Write-off for expiry
+Bajando ⇒ Falling
+Bajas ⇒ Write-offs
+Balde ⇒ Bucket
+Baldes ⇒ Buckets
+Bañados ⇒ Coated
+Bienvenido a Lucciano's ⇒ Welcome to Lucciano's
+Bollería ⇒ Bakery
+Bombones ⇒ Bonbons
+Borrar ⇒ Clear
+Bultos: ⇒ Packages:
+Buscar en el catálogo ⇒ Search the catalog
+Buscar en el catálogo: Dubai, King, Alfajor… ⇒ Search the catalog: Dubai, King, Alfajor…
+Buscar producto ⇒ Search product
+Buscar sabor ⇒ Search flavor
+Cada fila es un local: ⇒ Each row is a store:
+Cada país arranca con ⇒ Each country starts with
+Cada persona toca ⇒ Each person taps
+Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF. ⇒ Each one is a snapshot of the day: cold room + store. Tap one to open it, correct it or export it to PDF.
+Caja abierta o con dudas: ⇒ Open box or in doubt:
+Caja cerrada: ⇒ Closed box:
+Caja de ⇒ Box of
+Caja descartada. ⇒ Box discarded.
+Caja entera sin pesar ⇒ Whole box not weighed
+Caja mal rotulada ⇒ Box mislabeled
+Cajas ⇒ Boxes
+Cajas de vasquetas ⇒ Boxes of gelatos
+Calculando el valor del stock… ⇒ Calculating the stock value…
+Cambia ⇒ Changes
+Cambiar fecha ⇒ Change date
+Cambiar mi PIN ⇒ Change my PIN
+Cambiar tema ⇒ Change theme
+Cambiar tema: crema / negro y dorado ⇒ Change theme: cream / black and gold
+Cambiar varios sabores a la vez ⇒ Change several flavors at once
+Cambio de sabor ⇒ Flavor change
+Cambio de sabor registrado. ⇒ Flavor change recorded.
+Cambio de sabor: figura uno y era otro. ⇒ Flavor change: one was listed and it was another.
+Cambios de sabor ⇒ Flavor changes
+Cambios registrados ⇒ Recorded changes
+Cancelar ⇒ Cancel
+Cancelar pedido ⇒ Cancel request
+Candados ⇒ Locks
+Cannoli ⇒ Cannoli
+Canoli ⇒ Cannoli
+Cant. ⇒ Qty
+Cantidad que entra de cada sabor ⇒ Quantity received for each flavor
+Cargadas — ⇒ Entered —
+Cargado al carrito — revisá y confirmá el ingreso ⇒ Added to the cart — review and confirm the entry
+Cargado por ⇒ Entered by
+Cargalo en Desperdicio ⇒ Enter it in Waste
+Cargalo en Devolución ⇒ Enter it in Return
+Cargando ⇒ Loading
+Cargando datos de ⇒ Loading data for
+Cargando dispositivos… ⇒ Loading devices…
+Cargando el stock de todos los locales… ⇒ Loading the stock of all stores…
+Cargando equipo… ⇒ Loading team…
+Cargando los inventarios… ⇒ Loading inventories…
+Cargando sabores… ⇒ Loading flavors…
+Cargando… ⇒ Loading…
+Cargar al carrito de ingreso ⇒ Add to the entry cart
+Cargar fecha ⇒ Enter date
+Cargá lo que vendió la caja de cada producto. ⇒ Enter what the register sold for each product.
+Categoría ⇒ Category
+Categorías ⇒ Categories
+Cerrar ⇒ Close
+Cerrar modo libre ⇒ Close free mode
+Cerrar y salir de Elegir varios ⇒ Close and leave multi-select
+Chocolatería ⇒ Chocolate shop
+Chocolates ⇒ Chocolates
+Cierre ⇒ Closing
+Classiques ⇒ Classiques
+Colaborador ⇒ Team member
+Con ⇒ With
+Con peso: ⇒ With weight:
+Con remito de fábrica, lector de foto o motivo escrito. ⇒ With factory delivery note, photo reader or written reason.
+Confirmar ingreso ⇒ Confirm entry
+Confirmar reposición ⇒ Confirm restock
+Confirmar salida ⇒ Confirm output
+Confirmá con tu PIN. ⇒ Confirm with your PIN.
+Conitos ⇒ Cones
+Consumo de la última semana ⇒ Last week's consumption
+Consumo semanal ⇒ Weekly consumption
+Contar escaneando ⇒ Count by scanning
+Conteo ⇒ Count
+Conteo cámara ⇒ Cold room count
+Conteo cámara ya hecho 🔒. Lo desbloquea supervisión. ⇒ Cold room count already done 🔒. Supervision unlocks it.
+Conteo cámara. ⇒ Cold room count.
+Conteo de ⇒ Count of
+Conteo de cierre ⇒ Closing count
+Conteo de cierre enviado ✓. Supervisión lo revisa: lo ves desde las 12:00. El stock de la cámara quedó igual a lo contado. ⇒ Closing count sent ✓. Supervision reviews it: you see it from 12:00. The cold room stock is now equal to what was counted.
+Conteo de cierre enviado, pero no se pudo actualizar el stock: ⇒ Closing count sent, but the stock could not be updated:
+Conteo de cierre guardado, pero no se pudo actualizar el stock: ⇒ Closing count saved, but the stock could not be updated:
+Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado ⇒ Closing count saved: the cold room stock is now equal to what was counted
+Conteo guardado ⇒ Count saved
+Conteo inicial ⇒ Opening count
+Conteo inicial guardado ⇒ Opening count saved
+Conteo inicial · ⇒ Opening count ·
+Conteo inicial › Conteo cámara ⇒ Opening count › Cold room count
+Conteo inicial: cámara más local ⇒ Opening count: cold room plus store
+Conteo local ⇒ Store count
+Conteo mostrado al responsable ⇒ Count shown to the manager
+Conteo oculto otra vez ⇒ Count hidden again
+Conteo parcial ⇒ Partial count
+Conteo parcial enviado ✓. Lo revisa supervisión. ⇒ Partial count sent ✓. Supervision reviews it.
+Conteo parcial guardado ⇒ Partial count saved
+Conteo parcial y de cierre ⇒ Partial and closing count
+Conteo parcial: ⇒ Partial count:
+Conteo, Stock y Equipo necesitan internet. Los colaboradores solo entran sin señal si ya ingresaron ese día en esa tablet. ⇒ Count, Stock and Team need internet. Team members can only enter without signal if they already logged in that day on that tablet.
+Conteos ⇒ Counts
+Conteos guardados ⇒ Saved counts
+Continuar ⇒ Continue
+Continuar donde quedé ⇒ Resume where I left off
+Contraseña ⇒ Password
+Contraseña incorrecta. ⇒ Wrong password.
+Control ⇒ Control
+Control de stock ⇒ Stock control
+Control de stock por local ⇒ Stock control by store
+Contá de cero. Las vasquetas del local van en ⇒ Count from zero. The store's gelatos go in
+Contá en ⇒ Count in
+Contá la ⇒ Count the
+Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial. ⇒ Count only what is in the store, outside the cold room. It is saved as part of the opening count.
+Copiado ⇒ Copied
+Copiar lista para producción ⇒ Copy list for production
+Copiar o mandar por WhatsApp ⇒ Copy or send by WhatsApp
+Copiar o mandar por WhatsApp → ⇒ Copy or send by WhatsApp →
+Corrección registrada ⇒ Correction recorded
+Corregido: ⇒ Corrected:
+Corregir ⇒ Correct
+Corregir inventario local ⇒ Correct store inventory
+Corregir mi nombre ⇒ Correct my name
+Corregir sabor ⇒ Correct flavor
+Corregir un conteo guardado ⇒ Correct a saved count
+Corregir un producto (con motivo) se hace en Stock › Conteo inicial. ⇒ Correcting a product (with a reason) is done in Stock › Opening count.
+Corregir: se anula este movimiento y se abre la carga con lo mismo para que cambies lo que está mal. ¿Seguimos? ⇒ Correct: this movement is cancelled and the entry opens with the same data so you can change what is wrong. Continue?
+Corregí el nombre y apellido: ⇒ Correct the first and last name:
+Corregí lo que esté mal y registrá el descarte. ⇒ Correct what is wrong and record the disposal.
+Corregí tu nombre y apellido: ⇒ Correct your first and last name:
+Costo de lista · no es el precio al público ⇒ List cost · not the public price
+Costo unit. ⇒ Unit cost
+Crema ⇒ Cream
+Cremas ⇒ Creams
+Crítico ⇒ Critical
+Cuando enviás o recibís mercadería de otro local ⇒ When you send or receive goods from another store
+Cuando supervisión lo pide ⇒ When supervision requests it
+Cuánto pedir de ⇒ How much to order of
+Cuánto pedir y cómo mandarlo ⇒ How much to order and how to send it
+Cámara ⇒ Cold room
+Cámara ( ⇒ Cold room (
+Cámara + Local ⇒ Cold room + Store
+Cámara + Local · ⇒ Cold room + Store ·
+Cámara contada: ⇒ Cold room counted:
+Cámara: ⇒ Cold room:
+Código ⇒ Code
+Código de admin ⇒ Admin code
+Código de sabor ⇒ Flavor code
+Código del rótulo ⇒ Label code
+Código para sumar un equipo ⇒ Code to add a device
+Código repetido · ya estaba en la salida · ⇒ Repeated code · already in the output ·
+Código sin asignar ⇒ Unassigned code
+Cómo contar sin errores ⇒ How to count without mistakes
+Cómo funciona ⇒ How it works
+Cómo queda ⇒ Result
+Cómo sacar vasquetas con su peso ⇒ How to take out gelatos with their weight
+Cómo usar el escáner ⇒ How to use the scanner
+Cómo usar esta pantalla ⇒ How to use this screen
+DIFERENCIA ⇒ DIFFERENCE
+DO ⇒ SUN
+Da ⇒ Da
+Dado de baja ⇒ Deactivated
+Dar de alta ⇒ Create
+Dar de alta un admin o supervisor ⇒ Create an admin or supervisor
+Dar de alta un sabor nuevo ⇒ Create a new flavor
+De dónde sale la diferencia ⇒ Where the difference comes from
+Debajo del mínimo ⇒ Below minimum
+Dejar en 0 ⇒ Set to 0
+Dejá al menos un sabor que producís. ⇒ Leave at least one flavor that you produce.
+Desactivado ⇒ Disabled
+Desbloqueado: se puede hacer una corrección ⇒ Unlocked: a correction can be made
+Desbloquear ⇒ Unlock
+Desbloquear (PIN) ⇒ Unlock (PIN)
+Desbloquear conteo ⇒ Unlock count
+Desbloquear para corregir (PIN de supervisión) ⇒ Unlock to correct (supervision PIN)
+Descartar ⇒ Discard
+Descarte ⇒ Disposal
+Descarte registrado: ⇒ Disposal recorded:
+Desde ⇒ From
+Desglose ⇒ Breakdown
+Deshacer ⇒ Undo
+Deshacer lo cargado de ⇒ Undo what was entered for
+Desperdicio ⇒ Waste
+Desperdicio registrado: ⇒ Waste recorded:
+Detalle ⇒ Detail
+Detectado en el remito ⇒ Detected on the delivery note
+Devoluciones ⇒ Returns
+Devolución ⇒ Return
+Devolución registrada: ⇒ Return recorded:
+Devolver por un compañero ⇒ Return for a colleague
+Devolver por un compañero necesita señal. Probá de nuevo cuando vuelva. ⇒ Returning for a colleague needs signal. Try again when it is back.
+Diferencia ⇒ Difference
+Diferencia real ⇒ Actual difference
+Dispositivos de ⇒ Devices of
+Do ⇒ Su
+Dubai ⇒ Dubai
+Dulces de leche ⇒ Dulce de leche
+Día ⇒ Day
+EQ ⇒ TM
+Editar ⇒ Edit
+Ej.: capacitación, pote caído, cucurucho mal hecho ⇒ E.g.: training, dropped tub, badly made cone
+Ej: Obelisco CABA ⇒ E.g.: Obelisco CABA
+Ej: regalo, evento, muestra ⇒ E.g.: gift, event, sample
+Ej: se cayó, se rompió ⇒ E.g.: dropped, broke
+Ejemplo: 2 vasquetas con 7400 kg, o 12 con 12 kg. ⇒ Example: 2 gelatos with 7400 kg, or 12 with 12 kg.
+El ⇒ The
+El PIN nuevo tiene que ser de 4 números. ⇒ The new PIN must have 4 digits.
+El local cambió ⇒ The store changed
+El lote del ⇒ The batch of
+El pedido no se guarda en ningún lado: copialo o mandalo antes de salir. ⇒ The order isn't saved anywhere: copy it or send it before leaving.
+El primero (en negrita) es el que sale primero ⇒ The first one (in bold) is the one that goes out first
+El responsable ve solo su inicial. Parcial y cierre quedan ocultos. ⇒ The manager sees only the opening count. Partial and closing stay hidden.
+El responsable ve un aviso en Stock y cuenta cámara y local. ⇒ The manager sees a notice in Stock and counts the cold room and the store.
+El resto no se toca ⇒ The rest is not touched
+El valor no cambió. ⇒ The value didn't change.
+Elegir lote ⇒ Choose batch
+Elegir mi perfil ⇒ Choose my profile
+Elegir otro local ⇒ Choose another store
+Elegir período ⇒ Choose period
+Elegí al menos un país, o dejá «Todos los países». ⇒ Choose at least one country, or leave "All countries".
+Elegí el rubro (Vasquetas, Icepops, etc.). Cada sabor muestra lo que ⇒ Choose the category (Gelatos, Icepops, etc.). Each flavor shows what
+Elegí el sabor del rótulo… ⇒ Choose the flavor on the label…
+Elegí el sabor que figura en la caja y el que era en realidad. ⇒ Choose the flavor listed on the box and the one it really was.
+Elegí el sabor… ⇒ Choose the flavor…
+Elegí el tipo: ⇒ Choose the type:
+Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla. ⇒ Choose products from the catalog and see the current stock of the stores in a single table: the same one each store sees on its screen.
+Elegí quién carga este movimiento. ⇒ Choose who is entering this movement.
+Elegí tu perfil ⇒ Choose your profile
+Elegí una sucursal de la lista ⇒ Choose a store from the list
+Eliminar ⇒ Delete
+Empleado eliminado ⇒ Employee deleted
+En ⇒ In
+En Ingreso tocá ⇒ In Entry tap
+En Salida tocá ⇒ In Output tap
+En Salida tocá el sabor de la vasqueta que sacás. ⇒ In Output tap the flavor of the gelato you take out.
+En cámara: ⇒ In cold room:
+En este local la chocolatería ⇒ In this store the chocolate shop
+En las vasquetas cargá el peso de cada una. ⇒ For gelatos enter the weight of each one.
+En las vasquetas revisá también los ⇒ For gelatos also check the
+En un lote ⇒ In a batch
+En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla. ⇒ For daily sales and gift cards you can choose the date, up to 7 days back, in case you forgot to enter it.
+Enrobés ⇒ Coated
+Entendido ⇒ Got it
+Enter ⇒ Enter
+Entrar como admin, sin vincular ⇒ Enter as admin, without linking
+Entrar y cargar sin señal ⇒ Enter and record without signal
+Entrá a ⇒ Go to
+Entrá a Stock y tocá la tarjeta verde ⇒ Go to Stock and tap the green card
+Entrá a Stock › ⇒ Go to Stock ›
+Enviás mercadería ⇒ You send goods
+Equipo ⇒ Team
+Equipo de ⇒ Team of
+Equipo vinculado con el código ⇒ Device linked with the code
+Equipos del local ⇒ Store devices
+Error al cargar la producción ⇒ Error loading the production
+Error de fábrica ⇒ Factory error
+Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene. ⇒ It is the month-end close: it gets locked, makes the cold room stock equal to what was counted and becomes the opening count of next month.
+Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga. Si se pierde solo una parte (un cucurucho, un pote), el responsable usa ⇒ It is only for what was really lost. It asks for a reason (e.g. "dropped"). Don't use it to correct an entry error. If only part is lost (a cone, a tub), the manager uses
+Escaneada · ⇒ Scanned ·
+Escaneadas en esta salida ⇒ Scanned in this output
+Escaneado en este conteo ⇒ Scanned in this count
+Escanear vasqueta ⇒ Scan gelato
+Escape ⇒ Esc
+Escribilo en el equipo nuevo, después de elegir ⇒ Type it on the new device, after choosing
+Escribí ⇒ Enter
+Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con ⇒ Enter how many there are of each flavor. With Enter or the arrows you move to the next one. Boxes are added with
+Escribí cuánto pedir o usá ⇒ Enter how much to order or use
+Escribí el motivo ⇒ Enter the reason
+Escribí el motivo. ⇒ Enter the reason.
+Escribí el mínimo que querés para el rubro. ⇒ Enter the minimum you want for the category.
+Escribí los ⇒ Enter the
+Escribí los kilos como los marca la balanza. Ej.: 0,030 kg = 30 g ⇒ Enter the kilos as the scale shows them. E.g.: 0.030 kg = 30 g
+Escribí los kilos de la vasqueta (entre 0,1 y 12), por ejemplo 3,40. ⇒ Enter the kilos of the gelato (between 0.1 and 12), for example 3.40.
+Escribí tu PIN de 4 números. ⇒ Enter your 4-digit PIN.
+Escribí un valor válido. ⇒ Enter a valid value.
+Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta. ⇒ That is the label of a BOX (2 gelatos). On output you scan the label of each gelato.
+Ese lote ya no está en cámara. ⇒ That batch is no longer in the cold room.
+Esperado ⇒ Expected
+Esperando el código… ⇒ Waiting for the code…
+Esta caja pesa ⇒ This box weighs
+Esta semana ⇒ This week
+Estable ⇒ Stable
+Este código ya se escaneó ⇒ This code was already scanned
+Este dispositivo todavía no está vinculado. Pedile a tu responsable el código de 6 números. ⇒ This device is not linked yet. Ask your manager for the 6-digit code.
+Este equipo ⇒ This device
+Este equipo ya puede entrar a ⇒ This device can now enter
+Este local no tiene activado el stock valorizado. ⇒ This store doesn't have valued stock enabled.
+Este local puede tener hasta ⇒ This store can have up to
+Este local todavía no tiene conteos guardados. ⇒ This store has no saved counts yet.
+Este mes ⇒ This month
+Está bien ⇒ It's fine
+Está tardando más de lo normal. Probá de nuevo. ⇒ It is taking longer than usual. Try again.
+Falta actualizar el servidor (Code.gs) para cargar mermas. ⇒ The server needs updating (Code.gs) to record losses.
+Falta actualizar el servidor (Code.gs) para guardar inventarios. ⇒ The server needs updating (Code.gs) to save inventories.
+Falta actualizar el servidor (Code.gs) para poder cambiar fechas. ⇒ The server needs updating (Code.gs) to be able to change dates.
+Falta actualizar el servidor (Code.gs) para ver el control de stock. ⇒ The server needs updating (Code.gs) to see stock control.
+Falta actualizar el servidor (Code.gs) para ver el detalle. ⇒ The server needs updating (Code.gs) to see the detail.
+Falta actualizar el servidor (Code.gs) para ver los inventarios. ⇒ The server needs updating (Code.gs) to see the inventories.
+Falta actualizar el servidor (Code.gs). ⇒ The server needs updating (Code.gs).
+Falta el permiso de la cámara. ⇒ Camera permission is missing.
+Falta repegar Code.gs 1.56.0 y hacer Nueva implementación. ⇒ You need to paste Code.gs 1.56.0 again and make a New deployment.
+Falta repegar Code.gs y hacer Nueva implementación para cambiar mínimos en bloque. ⇒ You need to paste Code.gs again and make a New deployment to change minimums in bulk.
+Falta repegar Code.gs y hacer Nueva implementación. ⇒ You need to paste Code.gs again and make a New deployment.
+Falta una fecha ⇒ A date is missing
+Familia ⇒ Family
+Fecha de ⇒ Date of
+Figura como ⇒ Listed as
+Figuraba un sabor y era otro ⇒ One flavor was listed and it was another
+Filtrar vencimientos ⇒ Filter expiries
+Foto del remito ⇒ Delivery note photo
+Fruta ⇒ Fruit
+Frutales ⇒ Fruity
+Frutilla ⇒ Strawberry
+Geladot: cómo se retira ⇒ Geladot: how to take it out
+Gestión ⇒ Management
+Gift card ⇒ Gift card
+Gluten Free ⇒ Gluten Free
+Guardado ✓ ⇒ Saved ✓
+Guardado: ⇒ Saved:
+Guardando… ⇒ Saving…
+Guardar ⇒ Save
+Guardar PIN ⇒ Save PIN
+Guardar conteo inicial ⇒ Save opening count
+Guardar corrección ⇒ Save correction
+Guardar el cambio ⇒ Save the change
+Guardar lo contado ⇒ Save what was counted
+Guardar y seguir contando ⇒ Save and keep counting
+Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias. ⇒ Save. You see "sent ✓": totals and differences are not shown.
+HELADO EN EL LOCAL ⇒ ICE CREAM IN THE STORE
+Hace 2 semanas ⇒ 2 weeks ago
+Hace 3 semanas ⇒ 3 weeks ago
+Hacer el conteo ⇒ Do the count
+Hacer el conteo inicial ⇒ Do the opening count
+Hasta ⇒ To
+Hasta el 30/11 es de práctica. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias. ⇒ Until 30/11 it is practice. From 1/12 the store manager enters it at the start of the month (cold room + store) and nobody modifies it. Supervision will request control counts and review the differences.
+Hay ⇒ There are
