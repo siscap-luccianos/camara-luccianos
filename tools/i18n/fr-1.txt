@@ -1,0 +1,476 @@
+(cámara + local) y siempre contra el ⇒ (chambre froide + magasin) et toujours par rapport au
+(cámara + local), siempre contra el ⇒ (chambre froide + magasin), toujours par rapport au
+(cámara + local). ⇒ (chambre froide + magasin).
+(fecha y unidades). ⇒ (date et quantités).
+(lo que dice la caja al cerrar), ⇒ (ce qu'indique la caisse à la fermeture),
+(lo que hay afuera de la cámara). ⇒ (ce qui se trouve hors de la chambre froide).
+(por vencimiento, o transferencia a otro local: pide el destino). ⇒ (pour péremption, ou transfert vers un autre magasin : demande la destination).
+(regalo, evento o muestra: pide motivo) o ⇒ (cadeau, événement ou échantillon : demande un motif) ou
+(solo la cámara, sin lo que está en el local en servicio) ⇒ (uniquement la chambre froide, sans ce qui est en service dans le magasin)
+(surtidos). Conitos: ⇒ (assortis). Cônes :
+). Cerrá y tocá el sabor para cargarlo a mano. ⇒ ). Fermez et touchez le parfum pour le saisir à la main.
+). Es cuánto ⇒ ). C'est combien
+). Si no cambia, elegí «Horizontal». ⇒ ). Si cela ne change pas, choisissez « Horizontal ».
+). ¿Qué sabor es? ⇒ ). Quel parfum est-ce ?
+)? Son ⇒ ) ? Ce sont
+*A producir – ⇒ *À produire –
+*Pedido de ⇒ *Commande de
++ Agregar otra página ⇒ + Ajouter une autre page
++ Agregar otro vencimiento ⇒ + Ajouter une autre date de péremption
++ Agregar un dispositivo con un código ⇒ + Ajouter un appareil avec un code
++ Local ⇒ + Magasin
++ Otro vencimiento ⇒ + Autre date de péremption
++1 caja ⇒ +1 carton
+, con coma (ej. ⇒ , avec une virgule (ex.
+, con la hora real. ⇒ , avec l'heure réelle.
+, con su porcentaje. ⇒ , avec son pourcentage.
+, escribí ⇒ , saisissez
+, ese código ya se escaneó. Si fue un error, tocá la ⇒ , ce code a déjà été scanné. Si c'était une erreur, touchez la
+, ingresá la contraseña de Operaciones para seguir. ⇒ , saisissez le mot de passe d'Opérations pour continuer.
+, ingresá tu PIN para seguir. ⇒ , saisissez votre PIN pour continuer.
+, lote ⇒ , lot
+, no cambia la cantidad de vasquetas. ⇒ , ne change pas le nombre de bacs.
+, no cuánto sacaste. Abajo la app te muestra los gramos: 0,030 kg = 30 g. ⇒ , pas ce que vous avez sorti. Dessous, l'application affiche les grammes : 0,030 kg = 30 g.
+, o de menos de 1,5 kg si es nueva. ⇒ , ou moins de 1,5 kg si elle est neuve.
+, solo consulta ⇒ , consultation uniquement
+, todo sobre el ⇒ , tout sur le
+, usaste ⇒ , vous avez utilisé
+, y el motivo. ⇒ , et le motif.
+, ya cargaste ⇒ , vous avez déjà saisi
+. Ahora elegí tu perfil y poné tu PIN. ⇒ . Choisissez maintenant votre profil et saisissez votre PIN.
+. Avisá a tu encargado. ⇒ . Prévenez votre responsable.
+. Corregir: ⇒ . Corriger :
+. Elegí el país en las pills de abajo. ⇒ . Choisissez le pays dans les boutons ci-dessous.
+. Lo que no contaste no se toca y podés seguir contando. ¿Guardar? ⇒ . Ce que vous n'avez pas compté n'est pas modifié et vous pouvez continuer à compter. Enregistrer ?
+. Los otros ⇒ . Les autres
+. Minis: solo ⇒ . Minis : seulement
+. No hay ninguna caja abierta. ⇒ . Aucune boîte ouverte.
+. No pueden ser. ⇒ . C'est impossible.
+. No se mandó al servidor: el stock no cambió. ⇒ . Rien n'a été envoyé au serveur : le stock n'a pas changé.
+. Primero el ⇒ . D'abord le
+. Queda guardado en ese momento. ⇒ . C'est enregistré à ce moment-là.
+. Seguí contando. ⇒ . Continuez à compter.
+. Si el mes arranca con el conteo de cierre del anterior, no hace falta. ⇒ . Si le mois commence avec le comptage de clôture du précédent, ce n'est pas nécessaire.
+. Si esos productos están en otra página del remito, sacale una foto a esa página. ⇒ . Si ces produits sont sur une autre page du bon de livraison, photographiez cette page.
+. Si se vendió más, falta cargar un ingreso. ⇒ . Si vous en avez vendu plus, il manque une entrée à saisir.
+. Si un número es raro te lo marca para confirmar con ⇒ . Si un nombre est étrange, il vous est signalé pour confirmation avec
+. Sirve para cualquier rubro. ⇒ . Valable pour toute catégorie.
+. Sirve una sola vez y vence en 15 minutos (a las ⇒ . Utilisable une seule fois, il expire dans 15 minutes (à
+. Tocalo para que el equipo cargue ⇒ . Touchez-le pour que l'équipe saisisse
+. Ya está aprobado. ⇒ . Il est déjà approuvé.
+. ¿Es otra ⇒ . Est-ce une autre
+. ¿Es otra igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Est-ce une autre identique ou l'avez-vous scanné deux fois ? Si c'était une erreur, touchez la ✕ de cette ligne.
+. ¿Es otra vasqueta igual o lo pasaste dos veces? Si fue un error, tocá la ✕ de esa fila. ⇒ . Est-ce un autre bac identique ou l'avez-vous scanné deux fois ? Si c'était une erreur, touchez la ✕ de cette ligne.
+. ¿Está bien? ⇒ . Est-ce correct ?
+/día · cobertura ⇒ /jour · couverture
+1 caja ABIERTA de ⇒ 1 carton OUVERT de
+1 caja cerrada = 2,500 kg. ⇒ 1 carton fermé = 2,500 kg.
+1 caja entera = ⇒ 1 carton entier =
+1 página cargada ⇒ 1 page chargée
+1 sola ⇒ 1 seule
+2 vasquetas ⇒ 2 bacs
+: Inicial + Ingresos − Salidas − Merma = Esperado. La ⇒ : Initial + Entrées − Sorties − Perte = Attendu. La
+: ahí copiás el pedido por rubro, lo mandás por WhatsApp o copiás todo junto. ⇒ : vous y copiez la commande par catégorie, l'envoyez par WhatsApp ou copiez le tout.
+: cámara + local = total del local. ⇒ : chambre froide + magasin = total du magasin.
+: en ⇒ : en
+: escribí el peso de la etiqueta con coma (ej. 3,55). ⇒ : saisissez le poids de l'étiquette avec une virgule (ex. 3,55).
+: lista cada lote con su fecha. ⇒ : liste chaque lot avec sa date.
+: lo que salió cada semana y si viene subiendo, bajando o estable. ⇒ : ce qui est sorti chaque semaine et si cela monte, baisse ou reste stable.
+: se envía solo, ⇒ : s'envoie tout seul,
+: una vasqueta de ⇒ : un bac de
+= Total ⇒ = Total
+= de 6 a 20 días, ⇒ = de 6 à 20 jours,
+= más de 20 días. ⇒ = plus de 20 jours.
+= vencido o vence en 5 días o menos, ⇒ = périmé ou périme dans 5 jours ou moins,
+? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ ? C'est la clôture du mois : le stock de la chambre froide devient égal à ce qui a été compté, il est verrouillé et devient le comptage initial du mois suivant.
+A nombre de ⇒ Au nom de
+A producir ⇒ À produire
+ABIERTA ⇒ OUVERT
+Abrir ⇒ Ouvrir
+Abrí el detalle del local y tocá ⇒ Ouvrez le détail du magasin et touchez
+Activado ⇒ Activé
+Activado por ⇒ Activé par
+Activar escáner ⇒ Activer le scanner
+Activo ⇒ Actif
+Actualizando… ⇒ Mise à jour…
+Actualizar ⇒ Actualiser
+Acá ves cómo viene el consumo y cuánto hay en stock. Cargá lo que pidas escribiendo el número o con − y +. Tocá «Ver detalle» para ver lo vendido la última semana, de lunes a domingo. ⇒ Ici vous voyez l'évolution de la consommation et le stock disponible. Saisissez ce que vous commandez en tapant le nombre ou avec − et +. Touchez « Voir le détail » pour voir les ventes de la dernière semaine, du lundi au dimanche.
+Admin y supervisor no ocupan lugar: cuando entran por Operaciones o con el código de admin no cuentan ni necesitan aprobación. ⇒ L'admin et le superviseur n'occupent pas de place : lorsqu'ils entrent par Opérations ou avec le code admin, ils ne comptent pas et n'ont pas besoin d'approbation.
+Administración general ⇒ Administration générale
+Administrador ⇒ Administrateur
+Agregar ⇒ Ajouter
+Agregar otra ⇒ Ajouter une autre
+Agregar otra casilla ⇒ Ajouter une autre case
+Agregar otra vasqueta ⇒ Ajouter un autre bac
+Al guardar la corrección el candado se cierra solo y el original se conserva. ⇒ En enregistrant la correction, le cadenas se referme tout seul et l'original est conservé.
+Al guardar ve «enviado ✓», sin totales ni diferencias. ⇒ À l'enregistrement, il voit « envoyé ✓ », sans totaux ni écarts.
+Al lado ves el ⇒ À côté vous voyez le
+Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia». ⇒ Le stock de celui qui envoie baisse et celui de celui qui reçoit augmente. Cela n'entre ni dans la consommation ni dans la commande suggérée. Dans l'Historique, il apparaît avec son étiquette bleue « transfert ».
+Al sacar, sale primero el lote que vence antes. Lo vencido no se vende. ⇒ À la sortie, le lot qui périme en premier sort d'abord. Ce qui est périmé ne se vend pas.
+Alfajores ⇒ Alfajores
+Alfajores: botones ⇒ Alfajores : boutons
+Alta creada ⇒ Création effectuée
+Amarillo ⇒ Jaune
+Amarillo: ⇒ Jaune :
+Anulado por ⇒ Annulé par
+Anulados ⇒ Annulés
+Anulados en el período · ⇒ Annulés sur la période ·
+Anular ⇒ Annuler
+Anular antes del conteo ⇒ Annuler avant le comptage
+Anular, Desperdicio o Devolución ⇒ Annuler, Perte ou Retour
+Anulá el movimiento y cargalo de nuevo ⇒ Annulez le mouvement et saisissez-le de nouveau
+Apagar cámara ⇒ Éteindre la caméra
+Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca. ⇒ Désactivez ceux que ce magasin n'a pas (ex. Seaux). Ils n'apparaîtront plus dans Sortie, Entrée, Stock et Commande — l'historique de ce qui a déjà été saisi n'est pas modifié.
+Aparece lo que sacó cualquiera del equipo en las últimas 48 hs, después del último conteo, y todavía no volvió, con el nombre de quien lo sacó. La devolución queda a nombre de quien la hace. ⇒ Apparaît ce que n'importe qui de l'équipe a sorti dans les dernières 48 h, après le dernier comptage, et qui n'est pas encore revenu, avec le nom de la personne qui l'a sorti. Le retour est enregistré au nom de la personne qui le fait.
+Aprobaste « ⇒ Vous avez approuvé «
+Apuntá al código de barras del rótulo. ⇒ Visez le code-barres de l'étiquette.
+Argentina ⇒ Argentine
+Asignar y sumar ⇒ Attribuer et ajouter
+Automático ⇒ Automatique
+Autorizados ⇒ Autorisés
+Avella ⇒ Avella
+Ayuda: cómo se usa ⇒ Aide : mode d'emploi
+Baja ⇒ Retrait
+Baja por vencimiento ⇒ Retrait pour péremption
+Bajando ⇒ En baisse
+Bajas ⇒ Retraits
+Balde ⇒ Seau
+Baldes ⇒ Seaux
+Bañados ⇒ Enrobés
+Bienvenido a Lucciano's ⇒ Bienvenue chez Lucciano's
+Bollería ⇒ Viennoiserie
+Bombones ⇒ Bonbons
+Borrar ⇒ Effacer
+Bultos: ⇒ Colis :
+Buscar en el catálogo ⇒ Rechercher dans le catalogue
+Buscar en el catálogo: Dubai, King, Alfajor… ⇒ Rechercher dans le catalogue : Dubai, King, Alfajor…
+Buscar producto ⇒ Rechercher un produit
+Buscar sabor ⇒ Rechercher un parfum
+Cada fila es un local: ⇒ Chaque ligne est un magasin :
+Cada país arranca con ⇒ Chaque pays démarre avec
+Cada persona toca ⇒ Chaque personne touche
+Cada uno es una foto del día: cámara + local. Tocá uno para abrirlo, corregirlo o exportarlo a PDF. ⇒ Chacun est une photo du jour : chambre froide + magasin. Touchez-en un pour l'ouvrir, le corriger ou l'exporter en PDF.
+Caja abierta o con dudas: ⇒ Carton ouvert ou en cas de doute :
+Caja cerrada: ⇒ Carton fermé :
+Caja de ⇒ Carton de
+Caja descartada. ⇒ Carton écarté.
+Caja entera sin pesar ⇒ Carton entier sans pesée
+Caja mal rotulada ⇒ Carton mal étiqueté
+Cajas ⇒ Cartons
+Cajas de vasquetas ⇒ Cartons de bacs
+Calculando el valor del stock… ⇒ Calcul de la valeur du stock…
+Cambia ⇒ Change
+Cambiar fecha ⇒ Changer la date
+Cambiar mi PIN ⇒ Changer mon PIN
+Cambiar tema ⇒ Changer de thème
+Cambiar tema: crema / negro y dorado ⇒ Changer de thème : crème / noir et or
+Cambiar varios sabores a la vez ⇒ Changer plusieurs parfums à la fois
+Cambio de sabor ⇒ Changement de parfum
+Cambio de sabor registrado. ⇒ Changement de parfum enregistré.
+Cambio de sabor: figura uno y era otro. ⇒ Changement de parfum : l'un est indiqué mais c'était un autre.
+Cambios de sabor ⇒ Changements de parfum
+Cambios registrados ⇒ Modifications enregistrées
+Cancelar ⇒ Annuler
+Cancelar pedido ⇒ Annuler la demande
+Candados ⇒ Cadenas
+Cannoli ⇒ Cannoli
+Canoli ⇒ Cannoli
+Cant. ⇒ Qté
+Cantidad que entra de cada sabor ⇒ Quantité qui entre pour chaque parfum
+Cargadas — ⇒ Saisis —
+Cargado al carrito — revisá y confirmá el ingreso ⇒ Ajouté au panier — vérifiez et confirmez l'entrée
+Cargado por ⇒ Saisi par
+Cargalo en Desperdicio ⇒ Saisissez-le dans Perte
+Cargalo en Devolución ⇒ Saisissez-le dans Retour
+Cargando ⇒ Chargement
+Cargando datos de ⇒ Chargement des données de
+Cargando dispositivos… ⇒ Chargement des appareils…
+Cargando el stock de todos los locales… ⇒ Chargement du stock de tous les magasins…
+Cargando equipo… ⇒ Chargement de l'équipe…
+Cargando los inventarios… ⇒ Chargement des inventaires…
+Cargando sabores… ⇒ Chargement des parfums…
+Cargando… ⇒ Chargement…
+Cargar al carrito de ingreso ⇒ Ajouter au panier d'entrée
+Cargar fecha ⇒ Saisir la date
+Cargá lo que vendió la caja de cada producto. ⇒ Saisissez ce que la caisse a vendu pour chaque produit.
+Categoría ⇒ Catégorie
+Categorías ⇒ Catégories
+Cerrar ⇒ Fermer
+Cerrar modo libre ⇒ Fermer le mode libre
+Cerrar y salir de Elegir varios ⇒ Fermer et quitter la sélection multiple
+Chocolatería ⇒ Chocolaterie
+Chocolates ⇒ Chocolats
+Cierre ⇒ Clôture
+Classiques ⇒ Classiques
+Colaborador ⇒ Collaborateur
+Con ⇒ Avec
+Con peso: ⇒ Avec poids :
+Con remito de fábrica, lector de foto o motivo escrito. ⇒ Avec bon de livraison de l'usine, lecture par photo ou motif écrit.
+Confirmar ingreso ⇒ Confirmer l'entrée
+Confirmar reposición ⇒ Confirmer le réapprovisionnement
+Confirmar salida ⇒ Confirmer la sortie
+Confirmá con tu PIN. ⇒ Confirmez avec votre PIN.
+Conitos ⇒ Cônes
+Consumo de la última semana ⇒ Consommation de la dernière semaine
+Consumo semanal ⇒ Consommation hebdomadaire
+Contar escaneando ⇒ Compter en scannant
+Conteo ⇒ Comptage
+Conteo cámara ⇒ Comptage chambre froide
+Conteo cámara ya hecho 🔒. Lo desbloquea supervisión. ⇒ Comptage chambre froide déjà fait 🔒. La supervision le déverrouille.
+Conteo cámara. ⇒ Comptage chambre froide.
+Conteo de ⇒ Comptage de
+Conteo de cierre ⇒ Comptage de clôture
+Conteo de cierre enviado ✓. Supervisión lo revisa: lo ves desde las 12:00. El stock de la cámara quedó igual a lo contado. ⇒ Comptage de clôture envoyé ✓. La supervision le vérifie : vous le voyez à partir de 12h00. Le stock de la chambre froide est égal à ce qui a été compté.
+Conteo de cierre enviado, pero no se pudo actualizar el stock: ⇒ Comptage de clôture envoyé, mais le stock n'a pas pu être mis à jour :
+Conteo de cierre guardado, pero no se pudo actualizar el stock: ⇒ Comptage de clôture enregistré, mais le stock n'a pas pu être mis à jour :
+Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado ⇒ Comptage de clôture enregistré : le stock de la chambre froide est égal à ce qui a été compté
+Conteo guardado ⇒ Comptage enregistré
+Conteo inicial ⇒ Comptage initial
+Conteo inicial guardado ⇒ Comptage initial enregistré
+Conteo inicial · ⇒ Comptage initial ·
+Conteo inicial › Conteo cámara ⇒ Comptage initial › Comptage chambre froide
+Conteo inicial: cámara más local ⇒ Comptage initial : chambre froide plus magasin
+Conteo local ⇒ Comptage magasin
+Conteo mostrado al responsable ⇒ Comptage montré au responsable
+Conteo oculto otra vez ⇒ Comptage de nouveau masqué
+Conteo parcial ⇒ Comptage partiel
+Conteo parcial enviado ✓. Lo revisa supervisión. ⇒ Comptage partiel envoyé ✓. La supervision le vérifie.
+Conteo parcial guardado ⇒ Comptage partiel enregistré
+Conteo parcial y de cierre ⇒ Comptage partiel et de clôture
+Conteo parcial: ⇒ Comptage partiel :
+Conteo, Stock y Equipo necesitan internet. Los colaboradores solo entran sin señal si ya ingresaron ese día en esa tablet. ⇒ Comptage, Stock et Équipe nécessitent internet. Les collaborateurs n'entrent sans réseau que s'ils se sont déjà connectés ce jour-là sur cette tablette.
+Conteos ⇒ Comptages
+Conteos guardados ⇒ Comptages enregistrés
+Continuar ⇒ Continuer
+Continuar donde quedé ⇒ Reprendre où je m'étais arrêté
+Contraseña ⇒ Mot de passe
+Contraseña incorrecta. ⇒ Mot de passe incorrect.
+Control ⇒ Contrôle
+Control de stock ⇒ Contrôle de stock
+Control de stock por local ⇒ Contrôle de stock par magasin
+Contá de cero. Las vasquetas del local van en ⇒ Comptez à partir de zéro. Les bacs du magasin vont en
+Contá en ⇒ Comptez en
+Contá la ⇒ Comptez la
+Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial. ⇒ Comptez uniquement ce qui est dans le magasin, hors de la chambre froide. C'est enregistré dans le cadre du comptage initial.
+Copiado ⇒ Copié
+Copiar lista para producción ⇒ Copier la liste pour la production
+Copiar o mandar por WhatsApp ⇒ Copier ou envoyer par WhatsApp
+Copiar o mandar por WhatsApp → ⇒ Copier ou envoyer par WhatsApp →
+Corrección registrada ⇒ Correction enregistrée
+Corregido: ⇒ Corrigé :
+Corregir ⇒ Corriger
+Corregir inventario local ⇒ Corriger l'inventaire du magasin
+Corregir mi nombre ⇒ Corriger mon nom
+Corregir sabor ⇒ Corriger le parfum
+Corregir un conteo guardado ⇒ Corriger un comptage enregistré
+Corregir un producto (con motivo) se hace en Stock › Conteo inicial. ⇒ La correction d'un produit (avec motif) se fait dans Stock › Comptage initial.
+Corregir: se anula este movimiento y se abre la carga con lo mismo para que cambies lo que está mal. ¿Seguimos? ⇒ Corriger : ce mouvement est annulé et la saisie s'ouvre avec les mêmes données pour que vous changiez ce qui est faux. On continue ?
+Corregí el nombre y apellido: ⇒ Corrigez le nom et le prénom :
+Corregí lo que esté mal y registrá el descarte. ⇒ Corrigez ce qui est faux et enregistrez la mise au rebut.
+Corregí tu nombre y apellido: ⇒ Corrigez votre nom et prénom :
+Costo de lista · no es el precio al público ⇒ Coût catalogue · ce n'est pas le prix public
+Costo unit. ⇒ Coût unit.
+Crema ⇒ Crème
+Cremas ⇒ Crèmes
+Crítico ⇒ Critique
+Cuando enviás o recibís mercadería de otro local ⇒ Quand vous envoyez ou recevez de la marchandise d'un autre magasin
+Cuando supervisión lo pide ⇒ Quand la supervision le demande
+Cuánto pedir de ⇒ Combien commander de
+Cuánto pedir y cómo mandarlo ⇒ Combien commander et comment l'envoyer
+Cámara ⇒ Chambre froide
+Cámara ( ⇒ Chambre froide (
+Cámara + Local ⇒ Chambre froide + Magasin
+Cámara + Local · ⇒ Chambre froide + Magasin ·
+Cámara contada: ⇒ Chambre froide comptée :
+Cámara: ⇒ Chambre froide :
+Código ⇒ Code
+Código de admin ⇒ Code admin
+Código de sabor ⇒ Code du parfum
+Código del rótulo ⇒ Code de l'étiquette
+Código para sumar un equipo ⇒ Code pour ajouter un appareil
+Código repetido · ya estaba en la salida · ⇒ Code répété · déjà dans la sortie ·
+Código sin asignar ⇒ Code non attribué
+Cómo contar sin errores ⇒ Comment compter sans erreur
+Cómo funciona ⇒ Comment ça marche
+Cómo queda ⇒ Résultat
+Cómo sacar vasquetas con su peso ⇒ Comment sortir des bacs avec leur poids
+Cómo usar el escáner ⇒ Comment utiliser le scanner
+Cómo usar esta pantalla ⇒ Comment utiliser cet écran
+DIFERENCIA ⇒ ÉCART
+DO ⇒ DIM
+Da ⇒ Da
+Dado de baja ⇒ Désactivé
+Dar de alta ⇒ Créer
+Dar de alta un admin o supervisor ⇒ Créer un admin ou un superviseur
+Dar de alta un sabor nuevo ⇒ Créer un nouveau parfum
+De dónde sale la diferencia ⇒ D'où vient l'écart
+Debajo del mínimo ⇒ Sous le minimum
+Dejar en 0 ⇒ Mettre à 0
+Dejá al menos un sabor que producís. ⇒ Laissez au moins un parfum que vous produisez.
+Desactivado ⇒ Désactivé
+Desbloqueado: se puede hacer una corrección ⇒ Déverrouillé : une correction est possible
+Desbloquear ⇒ Déverrouiller
+Desbloquear (PIN) ⇒ Déverrouiller (PIN)
+Desbloquear conteo ⇒ Déverrouiller le comptage
+Desbloquear para corregir (PIN de supervisión) ⇒ Déverrouiller pour corriger (PIN de supervision)
+Descartar ⇒ Abandonner
+Descarte ⇒ Mise au rebut
+Descarte registrado: ⇒ Mise au rebut enregistrée :
+Desde ⇒ Du
+Desglose ⇒ Détail
+Deshacer ⇒ Annuler la saisie
+Deshacer lo cargado de ⇒ Annuler ce qui a été saisi pour
+Desperdicio ⇒ Pertes
+Desperdicio registrado: ⇒ Perte enregistrée :
+Detalle ⇒ Détail
+Detectado en el remito ⇒ Détecté sur le bon de livraison
+Devoluciones ⇒ Retours
+Devolución ⇒ Retour
+Devolución registrada: ⇒ Retour enregistré :
+Devolver por un compañero ⇒ Rendre pour un collègue
+Devolver por un compañero necesita señal. Probá de nuevo cuando vuelva. ⇒ Rendre pour un collègue nécessite du réseau. Réessayez quand il reviendra.
+Diferencia ⇒ Écart
+Diferencia real ⇒ Écart réel
+Dispositivos de ⇒ Appareils de
+Do ⇒ Di
+Dubai ⇒ Dubaï
+Dulces de leche ⇒ Dulces de leche
+Día ⇒ Jour
+EQ ⇒ EQ
+Editar ⇒ Modifier
+Ej.: capacitación, pote caído, cucurucho mal hecho ⇒ Ex. : formation, pot tombé, cornet raté
+Ej: Obelisco CABA ⇒ Ex. : Obelisco CABA
+Ej: regalo, evento, muestra ⇒ Ex. : cadeau, événement, échantillon
+Ej: se cayó, se rompió ⇒ Ex. : est tombé, s'est cassé
+Ejemplo: 2 vasquetas con 7400 kg, o 12 con 12 kg. ⇒ Exemple : 2 bacs avec 7400 kg, ou 12 avec 12 kg.
+El ⇒ Le
+El PIN nuevo tiene que ser de 4 números. ⇒ Le nouveau PIN doit comporter 4 chiffres.
+El local cambió ⇒ Le magasin a changé
+El lote del ⇒ Le lot du
+El pedido no se guarda en ningún lado: copialo o mandalo antes de salir. ⇒ La commande n'est enregistrée nulle part : copiez-la ou envoyez-la avant de quitter.
+El primero (en negrita) es el que sale primero ⇒ Le premier (en gras) est celui qui sort en premier
+El responsable ve solo su inicial. Parcial y cierre quedan ocultos. ⇒ Le responsable ne voit que son comptage initial. Le partiel et la clôture restent masqués.
+El responsable ve un aviso en Stock y cuenta cámara y local. ⇒ Le responsable voit un avis dans Stock et compte la chambre froide et le magasin.
+El resto no se toca ⇒ Le reste n'est pas modifié
+El valor no cambió. ⇒ La valeur n'a pas changé.
+Elegir lote ⇒ Choisir le lot
+Elegir mi perfil ⇒ Choisir mon profil
+Elegir otro local ⇒ Choisir un autre magasin
+Elegir período ⇒ Choisir la période
+Elegí al menos un país, o dejá «Todos los países». ⇒ Choisissez au moins un pays, ou laissez « Tous les pays ».
+Elegí el rubro (Vasquetas, Icepops, etc.). Cada sabor muestra lo que ⇒ Choisissez la catégorie (Bacs, Icepops, etc.). Chaque parfum montre ce que
+Elegí el sabor del rótulo… ⇒ Choisissez le parfum de l'étiquette…
+Elegí el sabor que figura en la caja y el que era en realidad. ⇒ Choisissez le parfum indiqué sur le carton et celui qu'il était en réalité.
+Elegí el sabor… ⇒ Choisissez le parfum…
+Elegí el tipo: ⇒ Choisissez le type :
+Elegí los productos del catálogo y mirá el stock vigente de los locales en una sola tabla: el mismo que ve cada local en su pantalla. ⇒ Choisissez les produits du catalogue et consultez le stock actuel des magasins dans un seul tableau : le même que chaque magasin voit sur son écran.
+Elegí quién carga este movimiento. ⇒ Choisissez qui saisit ce mouvement.
+Elegí tu perfil ⇒ Choisissez votre profil
+Elegí una sucursal de la lista ⇒ Choisissez un magasin dans la liste
+Eliminar ⇒ Supprimer
+Empleado eliminado ⇒ Employé supprimé
+En ⇒ En
+En Ingreso tocá ⇒ Dans Entrée, touchez
+En Salida tocá ⇒ Dans Sortie, touchez
+En Salida tocá el sabor de la vasqueta que sacás. ⇒ Dans Sortie, touchez le parfum du bac que vous sortez.
+En cámara: ⇒ En chambre froide :
+En este local la chocolatería ⇒ Dans ce magasin, la chocolaterie
+En las vasquetas cargá el peso de cada una. ⇒ Pour les bacs, saisissez le poids de chacun.
+En las vasquetas revisá también los ⇒ Pour les bacs, vérifiez aussi les
+En un lote ⇒ Dans un lot
+En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla. ⇒ Pour la vente du jour et la carte cadeau, on peut choisir la date, jusqu'à 7 jours en arrière, au cas où vous auriez oublié de la saisir.
+Enrobés ⇒ Enrobés
+Entendido ⇒ Compris
+Enter ⇒ Entrée
+Entrar como admin, sin vincular ⇒ Entrer en tant qu'admin, sans lier
+Entrar y cargar sin señal ⇒ Entrer et saisir sans réseau
+Entrá a ⇒ Allez dans
+Entrá a Stock y tocá la tarjeta verde ⇒ Allez dans Stock et touchez la carte verte
+Entrá a Stock › ⇒ Allez dans Stock ›
+Enviás mercadería ⇒ Vous envoyez de la marchandise
+Equipo ⇒ Équipe
+Equipo de ⇒ Équipe de
+Equipo vinculado con el código ⇒ Appareil lié avec le code
+Equipos del local ⇒ Appareils du magasin
+Error al cargar la producción ⇒ Erreur lors de la saisie de la production
+Error de fábrica ⇒ Erreur de fabrication
+Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene. ⇒ C'est la clôture du mois : il est verrouillé, le stock de la chambre froide devient égal à ce qui a été compté et il devient le comptage initial du mois suivant.
+Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga. Si se pierde solo una parte (un cucurucho, un pote), el responsable usa ⇒ C'est uniquement pour ce qui a vraiment été perdu. Un motif est demandé (ex. « est tombé »). Ne l'utilisez pas pour corriger une erreur de saisie. Si seule une partie est perdue (un cornet, un pot), le responsable utilise
+Escaneada · ⇒ Scanné ·
+Escaneadas en esta salida ⇒ Scannés dans cette sortie
+Escaneado en este conteo ⇒ Scanné dans ce comptage
+Escanear vasqueta ⇒ Scanner un bac
+Escape ⇒ Échap
+Escribilo en el equipo nuevo, después de elegir ⇒ Saisissez-le sur le nouvel appareil, après avoir choisi
+Escribí ⇒ Saisissez
+Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con ⇒ Saisissez combien il y en a de chaque parfum. Avec Entrée ou les flèches, vous passez au suivant. Les cartons s'ajoutent avec
+Escribí cuánto pedir o usá ⇒ Saisissez combien commander ou utilisez
+Escribí el motivo ⇒ Saisissez le motif
+Escribí el motivo. ⇒ Saisissez le motif.
+Escribí el mínimo que querés para el rubro. ⇒ Saisissez le minimum souhaité pour la catégorie.
+Escribí los ⇒ Saisissez les
+Escribí los kilos como los marca la balanza. Ej.: 0,030 kg = 30 g ⇒ Saisissez les kilos tels qu'indiqués par la balance. Ex. : 0,030 kg = 30 g
+Escribí los kilos de la vasqueta (entre 0,1 y 12), por ejemplo 3,40. ⇒ Saisissez les kilos du bac (entre 0,1 et 12), par exemple 3,40.
+Escribí tu PIN de 4 números. ⇒ Saisissez votre PIN à 4 chiffres.
+Escribí un valor válido. ⇒ Saisissez une valeur valide.
+Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta. ⇒ C'est l'étiquette d'un CARTON (2 bacs). À la sortie, on scanne l'étiquette de chaque bac.
+Ese lote ya no está en cámara. ⇒ Ce lot n'est plus en chambre froide.
+Esperado ⇒ Attendu
+Esperando el código… ⇒ En attente du code…
+Esta caja pesa ⇒ Ce carton pèse
+Esta semana ⇒ Cette semaine
+Estable ⇒ Stable
+Este código ya se escaneó ⇒ Ce code a déjà été scanné
+Este dispositivo todavía no está vinculado. Pedile a tu responsable el código de 6 números. ⇒ Cet appareil n'est pas encore lié. Demandez à votre responsable le code à 6 chiffres.
+Este equipo ⇒ Cet appareil
+Este equipo ya puede entrar a ⇒ Cet appareil peut maintenant entrer dans
+Este local no tiene activado el stock valorizado. ⇒ Ce magasin n'a pas activé le stock valorisé.
+Este local puede tener hasta ⇒ Ce magasin peut avoir jusqu'à
+Este local todavía no tiene conteos guardados. ⇒ Ce magasin n'a pas encore de comptages enregistrés.
+Este mes ⇒ Ce mois-ci
+Está bien ⇒ C'est correct
+Está tardando más de lo normal. Probá de nuevo. ⇒ Cela prend plus de temps que d'habitude. Réessayez.
+Falta actualizar el servidor (Code.gs) para cargar mermas. ⇒ Le serveur doit être mis à jour (Code.gs) pour saisir les pertes.
+Falta actualizar el servidor (Code.gs) para guardar inventarios. ⇒ Le serveur doit être mis à jour (Code.gs) pour enregistrer les inventaires.
+Falta actualizar el servidor (Code.gs) para poder cambiar fechas. ⇒ Le serveur doit être mis à jour (Code.gs) pour pouvoir changer les dates.
+Falta actualizar el servidor (Code.gs) para ver el control de stock. ⇒ Le serveur doit être mis à jour (Code.gs) pour voir le contrôle de stock.
+Falta actualizar el servidor (Code.gs) para ver el detalle. ⇒ Le serveur doit être mis à jour (Code.gs) pour voir le détail.
+Falta actualizar el servidor (Code.gs) para ver los inventarios. ⇒ Le serveur doit être mis à jour (Code.gs) pour voir les inventaires.
+Falta actualizar el servidor (Code.gs). ⇒ Le serveur doit être mis à jour (Code.gs).
+Falta el permiso de la cámara. ⇒ L'autorisation de la caméra est manquante.
+Falta repegar Code.gs 1.56.0 y hacer Nueva implementación. ⇒ Il faut recoller Code.gs 1.56.0 et faire un nouveau déploiement.
+Falta repegar Code.gs y hacer Nueva implementación para cambiar mínimos en bloque. ⇒ Il faut recoller Code.gs et faire un nouveau déploiement pour changer les minimums en bloc.
+Falta repegar Code.gs y hacer Nueva implementación. ⇒ Il faut recoller Code.gs et faire un nouveau déploiement.
+Falta una fecha ⇒ Il manque une date
+Familia ⇒ Famille
+Fecha de ⇒ Date de
+Figura como ⇒ Indiqué comme
+Figuraba un sabor y era otro ⇒ Un parfum était indiqué et c'en était un autre
+Filtrar vencimientos ⇒ Filtrer les péremptions
+Foto del remito ⇒ Photo du bon de livraison
+Fruta ⇒ Fruits
+Frutales ⇒ Fruités
+Frutilla ⇒ Fraise
+Geladot: cómo se retira ⇒ Geladot : comment le retirer
+Gestión ⇒ Gestion
+Gift card ⇒ Carte cadeau
+Gluten Free ⇒ Sans gluten
+Guardado ✓ ⇒ Enregistré ✓
+Guardado: ⇒ Enregistré :
+Guardando… ⇒ Enregistrement…
+Guardar ⇒ Enregistrer
+Guardar PIN ⇒ Enregistrer le PIN
+Guardar conteo inicial ⇒ Enregistrer le comptage initial
+Guardar corrección ⇒ Enregistrer la correction
+Guardar el cambio ⇒ Enregistrer le changement
+Guardar lo contado ⇒ Enregistrer ce qui est compté
+Guardar y seguir contando ⇒ Enregistrer et continuer à compter
+Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias. ⇒ Enregistrez. Vous voyez « envoyé ✓ » : les totaux et écarts ne sont pas affichés.
+HELADO EN EL LOCAL ⇒ GLACE DANS LE MAGASIN
+Hace 2 semanas ⇒ Il y a 2 semaines
+Hace 3 semanas ⇒ Il y a 3 semaines
+Hacer el conteo ⇒ Faire le comptage
+Hacer el conteo inicial ⇒ Faire le comptage initial
+Hasta ⇒ Au
+Hasta el 30/11 es de práctica. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias. ⇒ Jusqu'au 30/11, c'est un entraînement. À partir du 1/12, le responsable du magasin le saisit au début du mois (chambre froide + magasin) et personne ne le modifie. La supervision demandera des comptages de contrôle et vérifiera les écarts.
+Hay ⇒ Il y a

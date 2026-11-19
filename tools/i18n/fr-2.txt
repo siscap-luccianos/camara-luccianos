@@ -1,0 +1,433 @@
+Hay una versión nueva ( ⇒ Une nouvelle version est disponible (
+Hay varios locales con ese nombre o ninguno: elegí uno de la lista. ⇒ Plusieurs magasins portent ce nom, ou aucun : choisissez-en un dans la liste.
+Hecho ⇒ Fait
+Hecho por ⇒ Fait par
+Helado que se perdió y no es una vasqueta entera. Se anotan los kilos y un detalle corto. El sabor es opcional. ⇒ Glace perdue qui n'est pas un bac entier. On note les kilos et un court détail. Le parfum est facultatif.
+Historial ⇒ Historique
+Hola, ⇒ Bonjour,
+Hoy ⇒ Aujourd'hui
+Hoy en la cámara hay ⇒ Aujourd'hui en chambre froide il y a
+Ice Pop ⇒ Ice Pop
+Igual al sistema ⇒ Identique au système
+Ingreso ⇒ Entrée
+Ingreso con lotes ⇒ Entrée avec lots
+Ingreso desde el remito ⇒ Entrée depuis le bon de livraison
+Ingreso registrado: ⇒ Entrée enregistrée :
+Ingreso › Transferencia ⇒ Entrée › Transfert
+Ingresos ⇒ Entrées
+Ingresá la contraseña del local. ⇒ Saisissez le mot de passe du magasin.
+Inicial ⇒ Initial
+Inicial + Ingresos − Salidas − Merma = Esperado ⇒ Initial + Entrées − Sorties − Perte = Attendu
+Inicial · Parcial · Cierre · Diferencia ⇒ Initial · Partiel · Clôture · Écart
+Inicio ⇒ Accueil
+Inventario local de ⇒ Inventaire du magasin de
+Inventario local: ⇒ Inventaire du magasin :
+JU ⇒ JE
+JUE ⇒ JEU
+Jornada ⇒ Journée
+Ju ⇒ Je
+Kg ⇒ Kg
+Kilos ⇒ Kilos
+Kilos (granella, crumble: el stock es la cantidad de kilos) ⇒ Kilos (granella, crumble : le stock est la quantité de kilos)
+Kilos de helado ⇒ Kilos de glace
+Kilos de la vasqueta ⇒ Kilos du bac
+Kilos perdidos ⇒ Kilos perdus
+Kilos totales ⇒ Kilos totaux
+Kilos totales de ⇒ Kilos totaux de
+LU ⇒ LU
+LUN ⇒ LUN
+La app hace todas las cuentas: vos solo pesás. ⇒ L'application fait tous les calculs : vous, vous pesez seulement.
+La app todavía no está conectada. Avisale a Gabi que falta pegar la URL de Apps Script en index.html. ⇒ L'application n'est pas encore connectée. Prévenez Gabi qu'il manque l'URL d'Apps Script dans index.html.
+La chocolatería no se saca acá: se registra con «Registrar consumo». ⇒ La chocolaterie ne se sort pas ici : elle s'enregistre avec « Enregistrer la consommation ».
+La diferencia se mide sobre el ⇒ L'écart se mesure sur le
+La tabla y el semáforo ⇒ Le tableau et le feu tricolore
+La vasqueta entera ⇒ Le bac entier
+La ✕ quita solo esa lectura y recalcula el sabor. Si un rótulo no se lee, cerrá y escribí el número a mano. ⇒ La ✕ retire seulement cette lecture et recalcule le parfum. Si une étiquette ne se lit pas, fermez et saisissez le numéro à la main.
+La ✕ quita solo esa lectura: baja el sabor y saca ese peso. ⇒ La ✕ retire seulement cette lecture : elle diminue le parfum et retire ce poids.
+La ✕ quita solo esa vasqueta: baja 1 el sabor y saca ese peso. ⇒ La ✕ retire seulement ce bac : elle diminue le parfum de 1 et retire ce poids.
+Las ⇒ Les
+Las latas no tienen vencimiento. ⇒ Les boîtes n'ont pas de date de péremption.
+Lata x5 mix ⇒ Boîte x5 mix
+Latas ⇒ Boîtes
+Lectura descartada. ⇒ Lecture écartée.
+Leer el detalle ⇒ Lire le détail
+Leer remito ⇒ Lire le bon de livraison
+Leer remito con una foto ⇒ Lire le bon de livraison avec une photo
+Leer un remito con la foto ⇒ Lire un bon de livraison avec la photo
+Leyendo la página ⇒ Lecture de la page
+Limón ⇒ Citron
+Listo ⇒ Terminé
+Listo: ⇒ Terminé :
+Llegó un sabor mal rotulado ⇒ Un parfum est arrivé mal étiqueté
+Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «Anulados». ⇒ Ce qui est annulé n'est pas effacé : cela reste dans l'Historique, barré, et se voit avec le filtre « Annulés ».
+Lo producimos ⇒ Nous le produisons
+Lo que contaste ⇒ Ce que vous avez compté
+Lo que el sistema no deja guardar ⇒ Ce que le système ne permet pas d'enregistrer
+Lo que fabricás en el local (kilos y vasquetas). ⇒ Ce que vous fabriquez au magasin (kilos et bacs).
+Lo que había al hacer el conteo inicial ⇒ Ce qu'il y avait lors du comptage initial
+Lo que hay hoy en la cámara · costo de lista, no es el precio al público ⇒ Ce qu'il y a aujourd'hui en chambre froide · coût catalogue, pas le prix public
+Lo que no contaste no se toca ⇒ Ce que vous n'avez pas compté n'est pas modifié
+Lo que no tocaste queda «Sin contar» y conserva el stock. Con ⇒ Ce que vous n'avez pas touché reste « Non compté » et conserve le stock. Avec
+Lo que no toques cuenta como 0 ⇒ Ce que vous ne touchez pas compte pour 0
+Lo que no toques queda como está ⇒ Ce que vous ne touchez pas reste tel quel
+Lo que recibís de otro local se carga en Ingreso › ⇒ Ce que vous recevez d'un autre magasin se saisit dans Entrée ›
+Lo que sacó cualquiera del equipo y vuelve a la cámara. ⇒ Ce que n'importe qui de l'équipe a sorti et qui retourne en chambre froide.
+Lo tenemos ⇒ Nous l'avons
+Local ⇒ Magasin
+Local ( ⇒ Magasin (
+Local guardado: ⇒ Magasin enregistré :
+Locales a mostrar ⇒ Magasins à afficher
+Los ⇒ Les
+Los PIN no coinciden. Probá de nuevo. ⇒ Les PIN ne correspondent pas. Réessayez.
+Los dos PIN nuevos no coinciden. ⇒ Les deux nouveaux PIN ne correspondent pas.
+Los lotes sin fecha los completa tu responsable. ⇒ Les lots sans date sont complétés par votre responsable.
+Los movimientos ⇒ Les mouvements
+Lu ⇒ Lu
+MA ⇒ MA
+MAR ⇒ MAR
+MI ⇒ ME
+MIÉ ⇒ MER
+Ma ⇒ Ma
+Mandar por WhatsApp ⇒ Envoyer par WhatsApp
+Marcar los ⇒ Sélectionner les
+Marcá lo que ⇒ Cochez ce que
+Me confundí al tipear ⇒ Je me suis trompé en saisissant
+Me equivoqué al cargar ⇒ Je me suis trompé en saisissant
+Menos ⇒ Moins
+Mercadería que llegó ⇒ Marchandise arrivée
+Merma ⇒ Perte
+Merma en kilos ⇒ Perte en kilos
+Merma en kilos: descuenta kilos del ⇒ Perte en kilos : déduit des kilos du
+Mes ⇒ Mois
+Mes anterior ⇒ Mois précédent
+Mes pasado ⇒ Mois dernier
+Mes siguiente ⇒ Mois suivant
+Mi ⇒ Me
+Mini Ice Pop ⇒ Mini Ice Pop
+Mini Icepops ⇒ Mini Icepops
+Mini icepops (caja x4) ⇒ Mini icepops (carton x4)
+Mirá cuántas cajas hay ⇒ Regardez combien il y a de cartons
+Mirá el cuadro verde: «Usaste … g». Si está bien, tocá ⇒ Regardez l'encadré vert : « Vous avez utilisé … g ». Si c'est correct, touchez
+Mirá la línea de bultos: te avisa si lo leído no coincide con lo declarado. ⇒ Regardez la ligne des colis : elle vous prévient si ce qui est lu ne correspond pas à ce qui est déclaré.
+Modo Desperdicio: todo lo que marques acá se descuenta como desperdicio, no como salida de cámara. ⇒ Mode Pertes : tout ce que vous marquez ici est déduit comme perte, pas comme sortie de la chambre froide.
+Modo libre ⇒ Mode libre
+Modo libre activado: elegí quién carga. ⇒ Mode libre activé : choisissez qui saisit.
+Modo libre cerrado. ⇒ Mode libre fermé.
+Mostrado al responsable el ⇒ Montré au responsable le
+Mostrando ⇒ Affichage
+Mostrar al responsable ⇒ Montrer au responsable
+Mostrar al responsable (PIN) ⇒ Montrer au responsable (PIN)
+Motivo ⇒ Motif
+Motivo (obligatorio) ⇒ Motif (obligatoire)
+Motivo (opcional): ⇒ Motif (facultatif) :
+Motivo: ⇒ Motif :
+Movimiento anulado ⇒ Mouvement annulé
+Movimiento anulado. Corregí lo que esté mal y confirmá. ⇒ Mouvement annulé. Corrigez ce qui est faux et confirmez.
+Movimiento eliminado ⇒ Mouvement supprimé
+Movimientos ⇒ Mouvements
+Mueve el stock, no cuenta como consumo ⇒ Modifie le stock, ne compte pas comme consommation
+Multifruta ⇒ Multifruits
+Más ⇒ Plus
+Más de ⇒ Plus de
+Máximo ⇒ Maximum
+Mínimo ⇒ Minimum
+Nadie más tiene algo pendiente de devolver en este local. ⇒ Personne d'autre n'a quelque chose à rendre dans ce magasin.
+Navegador ⇒ Navigateur
+Ninguno ⇒ Aucun
+Ningún producto coincide. ⇒ Aucun produit ne correspond.
+Ningún renglón tiene cantidad — revisá los números antes de cargar ⇒ Aucune ligne n'a de quantité — vérifiez les chiffres avant de saisir
+No alcanza el stock de ⇒ Le stock est insuffisant pour
+No encontramos renglones de Vasquetas, Icepops, Sin Gluten o Cannolis en esta foto ⇒ Nous n'avons trouvé aucune ligne de Bacs, Icepops, Sans gluten ou Cannolis sur cette photo
+No hay locales con ese nombre. ⇒ Aucun magasin ne porte ce nom.
+No hay nada para producir hoy. ⇒ Rien à produire aujourd'hui.
+No hay productos con ese nombre. ⇒ Aucun produit ne porte ce nom.
+No hay stock de ⇒ Pas de stock de
+No hay stock de ese sabor. ⇒ Pas de stock de ce parfum.
+No lo uses para sacarlo de un país. ⇒ Ne l'utilisez pas pour le retirer d'un pays.
+No pude leer esa foto. Probá con otra o sacála de nuevo. ⇒ Je n'ai pas pu lire cette photo. Essayez-en une autre ou reprenez-la.
+No queda más stock para marcar como desperdicio. ⇒ Il ne reste plus de stock à marquer comme perte.
+No queda más stock para sacar. ⇒ Il ne reste plus de stock à sortir.
+No se pudieron actualizar los datos de este local: se muestra lo último guardado en este equipo y se reintenta solo. ⇒ Les données de ce magasin n'ont pas pu être mises à jour : les dernières données enregistrées sur cet appareil sont affichées et une nouvelle tentative aura lieu automatiquement.
+No se pudo abrir la cámara. Probá con el lector o escribí el número. ⇒ Impossible d'ouvrir la caméra. Essayez avec le lecteur ou saisissez le numéro.
+No se pudo actualizar el nombre. ⇒ Impossible de mettre à jour le nom.
+No se pudo ajustar. ⇒ Impossible d'ajuster.
+No se pudo anular el movimiento para corregirlo. ⇒ Impossible d'annuler le mouvement pour le corriger.
+No se pudo anular. ⇒ Impossible d'annuler.
+No se pudo cambiar el PIN. ⇒ Impossible de changer le PIN.
+No se pudo cambiar el rol. ⇒ Impossible de changer le rôle.
+No se pudo cambiar los mínimos. ⇒ Impossible de changer les minimums.
+No se pudo cancelar. ⇒ Impossible d'annuler.
+No se pudo cargar el lector de la cámara. Usá el lector o escribí el número. ⇒ Impossible de charger le lecteur de la caméra. Utilisez le lecteur ou saisissez le numéro.
+No se pudo cargar. Probá de nuevo. ⇒ Impossible de charger. Réessayez.
+No se pudo conectar. Probá de nuevo. ⇒ Impossible de se connecter. Réessayez.
+No se pudo conectar. Se va a reintentar solo. ⇒ Impossible de se connecter. Une nouvelle tentative aura lieu automatiquement.
+No se pudo copiar ⇒ Impossible de copier
+No se pudo dar de alta. ⇒ Impossible de créer.
+No se pudo dar de baja. ⇒ Impossible de désactiver.
+No se pudo desbloquear. ⇒ Impossible de déverrouiller.
+No se pudo editar el nombre. ⇒ Impossible de modifier le nom.
+No se pudo eliminar. ⇒ Impossible de supprimer.
+No se pudo entrar. Probá de nuevo. ⇒ Impossible d'entrer. Réessayez.
+No se pudo generar el código. Probá de nuevo. ⇒ Impossible de générer le code. Réessayez.
+No se pudo guardar el conteo. ⇒ Impossible d'enregistrer le comptage.
+No se pudo guardar el inventario. ⇒ Impossible d'enregistrer l'inventaire.
+No se pudo guardar el sabor. ⇒ Impossible d'enregistrer le parfum.
+No se pudo guardar el vencimiento. ⇒ Impossible d'enregistrer la date de péremption.
+No se pudo guardar la corrección. ⇒ Impossible d'enregistrer la correction.
+No se pudo guardar lo contado. ⇒ Impossible d'enregistrer ce qui est compté.
+No se pudo guardar. ⇒ Impossible d'enregistrer.
+No se pudo guardar. Probá de nuevo. ⇒ Impossible d'enregistrer. Réessayez.
+No se pudo leer el remito. Probá de nuevo. ⇒ Impossible de lire le bon de livraison. Réessayez.
+No se pudo leer ese código ( ⇒ Impossible de lire ce code (
+No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ( ⇒ Impossible de lire ce code : l'étiquette d'usine comporte 20 chiffres et l'étiquette de production 13 (
+No se pudo leer ese código: la vasqueta trae 20 números y la caja 28 ( ⇒ Impossible de lire ce code : le bac comporte 20 chiffres et le carton 28 (
+No se pudo pedir. ⇒ Impossible de demander.
+No se pudo registrar un movimiento pendiente: ⇒ Impossible d'enregistrer un mouvement en attente :
+No se pudo resetear el PIN. ⇒ Impossible de réinitialiser le PIN.
+No se pudo validar el PIN. ⇒ Impossible de valider le PIN.
+No se pudo verificar la contraseña. ⇒ Impossible de vérifier le mot de passe.
+No se pudo vincular. Probá de nuevo. ⇒ Impossible de lier. Réessayez.
+No suma ni resta el total: solo mueve unidades de un sabor al otro. No cuenta como venta ni cambia el pedido sugerido. Queda en Historial y se puede anular. ⇒ Cela n'ajoute ni ne retire du total : cela déplace seulement des unités d'un parfum à l'autre. Cela ne compte pas comme vente et ne change pas la commande suggérée. Cela reste dans l'Historique et peut être annulé.
+No sé a qué sabor corresponde el código ⇒ Je ne sais pas à quel parfum correspond le code
+No, volver ⇒ Non, revenir
+Nombre ⇒ Nom
+Nombre actualizado ⇒ Nom mis à jour
+Nombre del sabor ⇒ Nom du parfum
+Nombre y apellido ⇒ Nom et prénom
+Novedad: el Stock definitivo pasa a ser el «Conteo inicial» ⇒ Nouveauté : le Stock définitif devient le « Comptage initial »
+Números imposibles ⇒ Chiffres impossibles
+OPERACIONES · SUPERVISIÓN ⇒ OPÉRATIONS · SUPERVISION
+Oculto. El responsable solo ve «hecho ✓». Lo ve únicamente si lo mostrás. ⇒ Masqué. Le responsable voit seulement « fait ✓ ». Il ne le voit que si vous le montrez.
+Oculto. Se muestra solo a las 12:00 ( ⇒ Masqué. Il s'affiche seulement à 12h00 (
+Ojo: da ⇒ Attention : cela donne
+Omitir ⇒ Ignorer
+Opera ⇒ Opère
+Operaciones ⇒ Opérations
+Otra vasqueta ⇒ Un autre bac
+Otras cajas ⇒ Autres cartons
+Otro conteo: lo pide supervisión. ⇒ Autre comptage : demandé par la supervision.
+Otro local ⇒ Autre magasin
+Otro motivo ⇒ Autre motif
+PIN ⇒ PIN
+PIN guardado ⇒ PIN enregistré
+PIN incorrecto. ⇒ PIN incorrect.
+PIN reseteado ⇒ PIN réinitialisé
+PIN reseteado. Ingresá de nuevo para crear uno nuevo. ⇒ PIN réinitialisé. Reconnectez-vous pour en créer un nouveau.
+Palitos: ⇒ Bâtonnets :
+Para entrar a otro local desde acá necesitás el código de admin. ⇒ Pour entrer dans un autre magasin depuis ici, vous avez besoin du code admin.
+Para mostrarlos tocá ⇒ Pour les afficher, touchez
+Parcial ⇒ Partiel
+Parcial o cierre ⇒ Partiel ou clôture
+Pasa en conteos, ingresos, producción y remitos. El servidor también lo rechaza. ⇒ Cela s'applique aux comptages, entrées, production et bons de livraison. Le serveur le refuse aussi.
+Pasar a desperdicio ⇒ Passer en perte
+Pasar a mano ⇒ Passer en manuel
+Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ⇒ Étape 1 sur 2 : comptez ce qu'il y a dans la chambre froide, en partant de zéro.
+Paso 1: ⇒ Étape 1 :
+Paso 2 de 2: contá lo que hay en el local, fuera de la cámara. ⇒ Étape 2 sur 2 : comptez ce qu'il y a dans le magasin, hors de la chambre froide.
+Paso 2: ⇒ Étape 2 :
+Paso 3: ⇒ Étape 3 :
+Paso 4: ⇒ Étape 4 :
+Paso a paso, con la balanza ⇒ Pas à pas, avec la balance
+Pastelería ⇒ Pâtisserie
+Pastelería Fresca ⇒ Pâtisserie fraîche
+Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real. ⇒ Passez le lecteur sur chaque étiquette : bip, bip, bip. Chaque bip ajoute 1 bac avec son poids réel.
+Pasá las unidades de un sabor al otro: no suma ni resta el total, solo corrige el sabor. ⇒ Passez les unités d'un parfum à l'autre : cela n'ajoute ni ne retire du total, cela corrige seulement le parfum.
+País ⇒ Pays
+Pedido ⇒ Commande
+Pedido borrado. ⇒ Commande effacée.
+Pedido cancelado ⇒ Demande annulée
+Pedido de cierre enviado: el responsable de ⇒ Demande de clôture envoyée : le responsable de
+Pedido enviado: el responsable de ⇒ Demande envoyée : le responsable de
+Pedido sugerido ⇒ Commande suggérée
+Pedido sugerido y tendencia de retiros ⇒ Commande suggérée et tendance des sorties
+Pedile a tu responsable el código de 6 números. Te lo puede mandar por WhatsApp: vale 15 minutos y se usa una sola vez. ⇒ Demandez à votre responsable le code à 6 chiffres. Il peut vous l'envoyer par WhatsApp : il est valable 15 minutes et utilisable une seule fois.
+Pedir ⇒ Commander
+Pedir cierre ⇒ Demander la clôture
+Pedir parcial ⇒ Demander un partiel
+Pedir un conteo ⇒ Demander un comptage
+Pedir un conteo nuevo a este local: ⇒ Demander un nouveau comptage à ce magasin :
+Pendiente ⇒ En attente
+Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal. ⇒ En attente d'envoi — pas de connexion. L'envoi se fera tout seul dès le retour du réseau.
+Período ⇒ Période
+Pesada a mano ⇒ Pesée manuelle
+Peso de la vasqueta ⇒ Poids du bac
+Peso promedio (kg) ⇒ Poids moyen (kg)
+Pesá la caja al terminar, una sola vez por caja usada. ⇒ Pesez le carton à la fin, une seule fois par carton utilisé.
+Pide motivo ⇒ Demande un motif
+Poner fecha ⇒ Mettre la date
+Poner fecha a ⇒ Mettre la date à
+Poner mínimo ⇒ Mettre le minimum
+Poner vencimiento ⇒ Mettre la date de péremption
+Poné cuántas vasquetas eran ⇒ Indiquez combien de bacs c'était
+Por producto ⇒ Par produit
+Por rubro ⇒ Par catégorie
+Por vencimiento ⇒ Pour péremption
+Pote individual ⇒ Pot individuel
+Prestige ⇒ Prestige
+Primero respondé la pregunta de abajo. ⇒ Répondez d'abord à la question ci-dessous.
+Producción ⇒ Production
+Producción registrada: ⇒ Production enregistrée :
+Producir ⇒ Produire
+Producto ⇒ Produit
+Productos a relevar ⇒ Produits à relever
+Productos con stock ⇒ Produits en stock
+Productos que salen por una gift card. ⇒ Produits qui sortent avec une carte cadeau.
+Productos que salen sin cobrar (regalo, evento, muestra). ⇒ Produits qui sortent sans être facturés (cadeau, événement, échantillon).
+Productos que se dan de baja por vencimiento o que prestás a otro local. Si recibís mercadería de otro local, cargala en Ingreso › Transferencia recibida. ⇒ Produits retirés pour péremption ou prêtés à un autre magasin. Si vous recevez de la marchandise d'un autre magasin, saisissez-la dans Entrée › Transfert reçu.
+Promedio por día ⇒ Moyenne par jour
+Queda en 0 ⇒ Reste à 0
+Queda en Auditoría con tu nombre. ⇒ Reste dans l'Audit avec votre nom.
+Queda registrado qué había, qué quedó, quién y cuándo. Lo anterior no se pierde. ⇒ Il est enregistré ce qu'il y avait, ce qui reste, qui et quand. L'ancien n'est pas perdu.
+Quedan sin fecha: ⇒ Restent sans date :
+Quitados de ⇒ Retirés de
+Quitar ⇒ Retirer
+Quitar esta lectura ⇒ Retirer cette lecture
+Quitar esta vasqueta ⇒ Retirer ce bac
+Quitar fecha ⇒ Retirer la date
+Quitaste « ⇒ Vous avez retiré «
+Qué configurás ⇒ Ce que vous configurez
+Qué usar según lo que pasó ⇒ Que faire selon ce qui s'est passé
+Qué ve y cuándo ⇒ Ce qu'il voit et quand
+Rango personalizado… ⇒ Plage personnalisée…
+Rechazaste « ⇒ Vous avez refusé «
+Recibe: ⇒ Reçoit :
+Recibidas hasta ahora ⇒ Reçues jusqu'à présent
+Recibís mercadería ⇒ Vous recevez de la marchandise
+Recontamos ⇒ Nous avons recompté
+Reemplaza todo el stock ⇒ Remplace tout le stock
+Registrar ⇒ Enregistrer
+Registrar cambio de sabor ⇒ Enregistrer le changement de parfum
+Registrar consumo ⇒ Enregistrer la consommation
+Registrar descarte ⇒ Enregistrer la mise au rebut
+Reintentar ⇒ Réessayer
+Reintentar ahora ⇒ Réessayer maintenant
+Relevamiento ⇒ Relevé
+Relevar ⇒ Relever
+Relevar productos ⇒ Relever des produits
+Remito ⇒ Bon de livraison
+Reposición de Geladot · ⇒ Réapprovisionnement Geladot ·
+Reposición registrada: ⇒ Réapprovisionnement enregistré :
+Reposición: quedó ⇒ Réapprovisionnement : il reste
+Responsable de local ⇒ Responsable du magasin
+Responsable de turno ⇒ Responsable d'équipe
+Restar ⇒ Retirer
+Restar una ⇒ Retirer un
+Resumen del pedido ⇒ Résumé de la commande
+Retira: ⇒ Retire :
+Retiro de cámara ⇒ Sortie de la chambre froide
+Retiros · 3 semanas ⇒ Sorties · 3 semaines
+Revisar ⇒ Vérifier
+Revisar y guardar ⇒ Vérifier et enregistrer
+Revisá antes de confirmar ⇒ Vérifiez avant de confirmer
+Revisá antes de guardar ⇒ Vérifiez avant d'enregistrer
+Revisá cada rubro. Copialo o mandalo por WhatsApp, uno por uno. ⇒ Vérifiez chaque catégorie. Copiez-la ou envoyez-la par WhatsApp, une par une.
+Revisá el año del vencimiento: tiene que ser ⇒ Vérifiez l'année de péremption : elle doit être
+Revisá el total de abajo y tocá ⇒ Vérifiez le total ci-dessous et touchez
+Revisá la caja ⇒ Vérifiez le carton
+Revisá la fecha y la cantidad. ⇒ Vérifiez la date et la quantité.
+Revisá lo que leyó: los renglones en ⇒ Vérifiez ce qui a été lu : les lignes en
+Revisá los kilos: ⇒ Vérifiez les kilos :
+Revisá «Cómo queda» y tocá ⇒ Vérifiez « Résultat » et touchez
+Rojo ⇒ Rouge
+Rojo: vencido o vence en ⇒ Rouge : périmé ou périme dans
+Rol actualizado ⇒ Rôle mis à jour
+Rubro ⇒ Catégorie
+Rubros ⇒ Catégories
+Sabor ⇒ Parfum
+Sabor (opcional) ⇒ Parfum (facultatif)
+Sabor eliminado ⇒ Parfum supprimé
+Sabor guardado ⇒ Parfum enregistré
+Sabores ⇒ Parfums
+Sabores ( ⇒ Parfums (
+Sabores en alerta ⇒ Parfums en alerte
+Sabores en tu pedido ⇒ Parfums dans votre commande
+Sacar un sabor solo de ese país: ⇒ Retirer un parfum uniquement de ce pays :
+Sacar vasquetas con su peso real ⇒ Sortir des bacs avec leur poids réel
+Sale del stock, como un desperdicio común. ⇒ Sort du stock, comme une perte ordinaire.
+Sale primero el que vence antes ⇒ Sort d'abord celui qui périme en premier
+Salida ⇒ Sortie
+Salida registrada: ⇒ Sortie enregistrée :
+Salida › Retiro de cámara ⇒ Sortie › Sortie de la chambre froide
+Salida › Retiro de cámara › Chocolatería ⇒ Sortie › Sortie de la chambre froide › Chocolaterie
+Salida › Transferencia ⇒ Sortie › Transfert
+Salidas ⇒ Sorties
+Salidas por sabor (todas las categorías) ⇒ Sorties par parfum (toutes catégories)
+Salidas — Bollería ⇒ Sorties — Viennoiserie
+Salidas — Chocolatería ⇒ Sorties — Chocolaterie
+Salidas — Icepops ⇒ Sorties — Icepops
+Salidas — Pastelería ⇒ Sorties — Pâtisserie
+Salidas — Vasquetas ⇒ Sorties — Bacs
+Salir ⇒ Quitter
+Salto grande: de ⇒ Grand écart : de
+Salto raro ⇒ Écart étrange
+Saqué de más y lo volví a guardar ⇒ J'en ai sorti trop et je l'ai remis
+Se abre ⇒ S'ouvre
+Se descuenta del stock. ⇒ Déduit du stock.
+Se fue y dejó algo pendiente: lo devolvés a su nombre. ⇒ Il est parti en laissant quelque chose en attente : vous le rendez en son nom.
+Se guarda el stock de ⇒ Le stock est enregistré pour
+Se guarda tal cual lo ves. Tocá la ✕ para volver un sabor a como estaba. ⇒ C'est enregistré tel que vous le voyez. Touchez la ✕ pour remettre un parfum comme avant.
+Se hace ⇒ Se fait
+Se pesa cada vasqueta con el pad ⇒ Chaque bac se pèse avec le pavé numérique
+Se rompió, se cayó o venció ⇒ C'est cassé, tombé ou périmé
+Se vende en ⇒ Se vend en
+Seguir revisando ⇒ Continuer à vérifier
+Selección manual → ⇒ Sélection manuelle →
+Semana ⇒ Semaine
+Semana pasada ⇒ Semaine dernière
+Semáforo, poner fecha y desperdicio ⇒ Feu tricolore, mettre la date et pertes
+Semáforo: ⇒ Feu tricolore :
+Semáforo: verde hasta 1 % · amarillo hasta 3 % · rojo más de 3 % ⇒ Feu tricolore : vert jusqu'à 1 % · jaune jusqu'à 3 % · rouge plus de 3 %
+Separando sabores y cantidades… ⇒ Séparation des parfums et des quantités…
+Sesión bloqueada ⇒ Session verrouillée
+Sesión cerrada ⇒ Session fermée
+Si aparece el cartel «Sin señal», tocá tu nombre y escribí tu PIN como siempre. ⇒ Si le message « Pas de réseau » apparaît, touchez votre nom et saisissez votre PIN comme d'habitude.
+Si el remito tiene más de una hoja, tocá ⇒ Si le bon de livraison a plus d'une page, touchez
+Si es un ingreso sin remito (transferencia, evento), escribí el origen en «N° de remito o motivo». ⇒ S'il s'agit d'une entrée sans bon de livraison (transfert, événement), écrivez l'origine dans « N° de bon de livraison ou motif ».
+Si ese lote tiene menos unidades que las que sacás, el resto sale del siguiente que vence antes. ⇒ Si ce lot a moins d'unités que celles que vous sortez, le reste sort du lot suivant qui périme en premier.
+Si no hay abierta, abrí una cerrada. ⇒ S'il n'y en a pas d'ouverte, ouvrez-en une fermée.
+Si no se pesa, el sistema no sabe cuánto se consumió y el Control marca una diferencia. Si la abierta se termina y abrís otra, elegí «La abierta se terminó y abro una nueva». Una rotura va en Desperdicio, también en kilos con coma. ⇒ Si on ne pèse pas, le système ne sait pas combien a été consommé et le Contrôle signale un écart. Si celle qui est ouverte se termine et que vous en ouvrez une autre, choisissez « L'ouverte est terminée et j'en ouvre une nouvelle ». Une casse va dans Pertes, aussi en kilos avec une virgule.
+Si se corta internet ⇒ Si internet est coupé
+Si suena triple y sale ⇒ Si cela sonne trois fois et affiche
+Si te equivocaste, anulalo desde Historial y cargalo de nuevo. ⇒ Si vous vous êtes trompé, annulez depuis l'Historique et saisissez de nouveau.
+Si un rótulo no se lee: cerrá, tocá el sabor y escribí cuánto pesa (con coma, ej. 3,40). Con «Agregar otra» cargás varias seguidas. ⇒ Si une étiquette ne se lit pas : fermez, touchez le parfum et saisissez son poids (avec une virgule, ex. 3,40). Avec « Ajouter une autre », vous en saisissez plusieurs à la suite.
+Si ves un lote en rojo, avisale a tu responsable. ⇒ Si vous voyez un lot en rouge, prévenez votre responsable.
+Siempre primero la caja ABIERTA. ⇒ Toujours d'abord le carton OUVERT.
+Sin cambios ⇒ Sans changement
+Sin cambios: lo contado coincide con el sistema. ⇒ Sans changement : ce qui est compté correspond au système.
+Sin cargo ⇒ Sans frais
+Sin cargo: ⇒ Sans frais :
+Sin conexión ⇒ Pas de connexion
+Sin conexión. ⇒ Pas de connexion.
+Sin conexión: el cambio de sabor necesita señal. Probá de nuevo cuando vuelva. ⇒ Pas de connexion : le changement de parfum nécessite du réseau. Réessayez quand il reviendra.
+Sin conexión: el conteo se va a enviar solo. ⇒ Pas de connexion : le comptage sera envoyé tout seul.
+Sin conexión: la merma necesita señal. Probá de nuevo cuando vuelva. ⇒ Pas de connexion : la perte nécessite du réseau. Réessayez quand il reviendra.
+Sin conexión: lo contado se va a enviar solo. ⇒ Pas de connexion : ce qui est compté sera envoyé tout seul.
+Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal. ⇒ Pas de connexion : impossible d'enregistrer. Réessayez quand vous aurez du réseau.
+Sin conexión: se guardó y se va a enviar solo. ⇒ Pas de connexion : enregistré, il sera envoyé tout seul.
+Sin contar ⇒ Non compté
+Sin conteo inicial ⇒ Sans comptage initial
+Sin desperdicio en este período. ⇒ Aucune perte sur cette période.
+Sin devolver: ⇒ Non rendu :
+Sin diferencia ⇒ Sans écart
+Sin diferencias ⇒ Sans écarts
+Sin fecha ⇒ Sans date
+Sin identificar ⇒ Non identifié
+Sin nombre ⇒ Sans nom
+Sin país: nadie lo ve ⇒ Sans pays : personne ne le voit
+Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran. ⇒ Sans poids, on ne peut pas sortir un bac : ainsi les kilos en chambre froide concordent toujours.
+Sin producción en este período. ⇒ Aucune production sur cette période.
+Sin productos en este conteo. ⇒ Aucun produit dans ce comptage.
+Sin retiros ⇒ Sans sorties
+Sin sabor específico ⇒ Sans parfum précis
+Sin sabor específico / no sé ⇒ Sans parfum précis / je ne sais pas
+Sin sabores con stock ⇒ Aucun parfum en stock
+Sin sabores con stock. ⇒ Aucun parfum en stock.
+Sin salidas en este período. ⇒ Aucune sortie sur cette période.
+Sin señal: desbloqueado. Lo que cargues se envía solo cuando vuelva internet. ⇒ Pas de réseau : déverrouillé. Ce que vous saisissez s'envoie tout seul quand internet reviendra.
+Sin señal: entraste con tu PIN. Lo que cargues se envía solo cuando vuelva internet. ⇒ Pas de réseau : vous êtes entré avec votre PIN. Ce que vous saisissez s'envoie tout seul quand internet reviendra.
+Sin señal: no se puede comprobar el PIN. ⇒ Pas de réseau : impossible de vérifier le PIN.
+Sin señal: solo pueden entrar sin internet quienes ya ingresaron hoy en este dispositivo. ⇒ Pas de réseau : seules les personnes déjà connectées aujourd'hui sur cet appareil peuvent entrer sans internet.
+Sin stock ⇒ Rupture de stock
+Sobran ⇒ En trop
+Solo consulta. Las ventas se cargan en «Registrar consumo». ⇒ Consultation uniquement. Les ventes se saisissent dans « Enregistrer la consommation ».
+Solo en ⇒ Uniquement en
