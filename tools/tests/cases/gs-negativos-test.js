@@ -45,7 +45,7 @@ montar(); sb.it1={21:3}; r=run("registrar('c1','salida','SR',it1,'',ana)"); ok(!
 sb.it2={21:2}; r=run("registrar('c2','salida','SR',it2,'',ana)"); ok(r.ok,"salida exacta se acepta");
 // e) devolución
 montar(); sb.s1={21:1}; run("registrar('c3','salida','SR',s1,'',ana)"); // Ana sacó 1 más (ahora hay 1)… además la salida 2 es de Ana (hace 2 días, fuera de 24 hs)
-sb.d1={21:2}; r=run("registrar('c4','ingreso','SR',d1,'',ana,'','devolucion')"); ok(!r.ok&&/No podés devolver más/.test(r.error),"devolver más de lo sacado hoy se rechaza: "+(r.error||"").slice(0,80));
+sb.d1={21:2}; r=run("registrar('c4','ingreso','SR',d1,'',ana,'','devolucion')"); ok(!r.ok&&/No se puede devolver más/.test(r.error),"devolver más de lo sacado hoy se rechaza: "+(r.error||"").slice(0,80));
 sb.d2={21:1}; r=run("registrar('c5','ingreso','SR',d2,'',ana,'','devolucion')"); ok(r.ok,"devolver lo sacado se acepta");
 r=run("registrar('c6','ingreso','SR',d2,'',ana,'','devolucion')"); ok(!r.ok,"no se puede devolver dos veces lo mismo");
 sb.otro={id:"e2",nombre:"Beto",rol:"colaborador",local:"SR"};
