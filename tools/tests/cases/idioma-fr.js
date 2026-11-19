@@ -12,11 +12,11 @@ const { chromium } = require("playwright");
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   const nav0=await page.innerText("#tabs");
   ok(/Salida/i.test(nav0)&&!/Sortie/i.test(nav0),"en español al entrar: "+nav0.replace(/\s+/g," "));
-  ok((await page.innerText("#idiomaBtn")).trim()==="FR","el botón ofrece FR");
-  await page.click("#idiomaBtn"); await page.waitForTimeout(500);
+  ok(await page.$eval("[data-idioma=es]",e=>e.getAttribute("aria-pressed"))==="true","ES aparece marcado al entrar");
+  await page.click("[data-idioma=fr]"); await page.waitForTimeout(500);
   const nav1=await page.innerText("#tabs");
   ok(/Sortie/i.test(nav1)&&/Entrée/i.test(nav1),"pestañas en francés: "+nav1.replace(/\s+/g," "));
-  ok((await page.innerText("#idiomaBtn")).trim()==="EN","el botón ahora ofrece EN (el que sigue)");
+  ok(await page.$eval("[data-idioma=fr]",e=>e.getAttribute("aria-pressed"))==="true","FR queda marcado");
   ok(await page.evaluate(()=>document.documentElement.lang)==="fr","html lang=fr");
   // pantalla de Salida
   await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
@@ -28,13 +28,13 @@ const { chromium } = require("playwright");
   const t3=await page.evaluate(()=>tr("3 vasquetas"));
   ok(/3 gelatos/.test(t3),"número con unidad: "+t3);
   // inglés
-  await page.click("#idiomaBtn"); await page.waitForTimeout(500);
+  await page.click("[data-idioma=en]"); await page.waitForTimeout(500);
   const nav2=await page.innerText("#tabs");
   ok(/Output/i.test(nav2)&&/Entry/i.test(nav2)&&/Stock/i.test(nav2),"pestañas en inglés: "+nav2.replace(/\s+/g," "));
-  ok((await page.innerText("#idiomaBtn")).trim()==="ES","el botón ofrece volver a ES");
+  ok(await page.$eval("[data-idioma=en]",e=>e.getAttribute("aria-pressed"))==="true","EN queda marcado");
   ok(await page.evaluate(()=>tr("No hay stock de ese sabor."))==="No stock of that flavor.","aviso en inglés");
   // volver a español
-  await page.click("#idiomaBtn"); await page.waitForTimeout(500);
+  await page.click("[data-idioma=es]"); await page.waitForTimeout(500);
   ok(/Salida/i.test(await page.innerText("#tabs")),"vuelve a español");
   // idioma por país del local
   await page.evaluate(()=>{ localStorage.removeItem("idioma"); S.locales.forEach(l=>{ if(l.nombre==="Local prueba") l.pais="Marruecos" }); S.paisLocal="Marruecos"; renderApp() }); await page.waitForTimeout(500);
