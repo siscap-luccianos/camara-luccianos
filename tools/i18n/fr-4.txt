@@ -1,7 +1,7 @@
 " — no está en tu catálogo. ⇒ " — n'est pas dans votre catalogue.
 " — revisá que sea el sabor correcto. ⇒ " — vérifiez que c'est le bon parfum.
 % del inicial ⇒ % de l'initial
-(Hay un conteo completo posterior: se muestran las diferencias de este conteo.) ⇒ (Il y a un comptage complet postérieur : les écarts de ce comptage sont affichés.)
+(Hay un conteo completo posterior: se muestran las diferencias de este conteo.) ⇒ (Il y a un inventaire complet postérieur : les écarts de cet inventaire sont affichés.)
 (cámara + local, más ingresos, menos salidas y merma) ⇒ (chambre froide + magasin, plus entrées, moins sorties et pertes)
 (es obligatorio) y cargá lo que sale, a mano ⇒ (obligatoire) et saisissez ce qui sort, à la main
 (inventario) = ⇒ (inventaire) =
@@ -31,7 +31,7 @@
 4 números. Escribí el actual para confirmar que sos vos. ⇒ 4 chiffres. Saisissez l'actuel pour confirmer que c'est bien vous.
 : con ⇒ : avec
 : dejó cada sabor en lo contado. Las diferencias son contra el stock de ese momento. ⇒ : a laissé chaque parfum à la quantité comptée. Les écarts sont par rapport au stock de ce moment-là.
-: se cargan con un conteo con kilos ⇒ : se saisissent avec un comptage avec kilos
+: se cargan con un conteo con kilos ⇒ : se saisissent avec un inventaire avec kilos
 : si vuelve ⇒ : s'il revient
 Abro una cerrada · ⇒ J'ouvre un carton fermé ·
 Acá se llama « ⇒ Ici il s'appelle «
@@ -56,7 +56,7 @@ Buscá tu sucursal… ⇒ Cherchez votre magasin…
 CADA CAJA / VASQUETA ⇒ CHAQUE CARTON / BAC
 CADA VASQUETA ⇒ CHAQUE BAC
 CIERRE ⇒ CLÔTURE
-CONTEO ⇒ COMPTAGE
+CONTEO ⇒ INVENTAIRE
 CUENTA: ⇒ CALCUL :
 Caja (2 vasquetas) · ⇒ Carton (2 bacs) ·
 Calculado el ⇒ Calculé le
@@ -75,12 +75,12 @@ Confirmado ✓ ⇒ Confirmé ✓
 Confirmar ⇒ Confirmer
 Confirmar todos ⇒ Tout confirmer
 Confirmá ⇒ Confirmez
-Contando solo ⇒ Comptage de seulement
-Conteo físico de ⇒ Comptage physique de
-Conteo inicial del ⇒ Comptage initial du
-Conteo inicial valorizado ⇒ Comptage initial valorisé
-Conteo inicial valorizado · ⇒ Comptage initial valorisé ·
-Conteo parcial de ⇒ Comptage partiel de
+Contando solo ⇒ Inventaire de seulement
+Conteo físico de ⇒ Inventaire physique de
+Conteo inicial del ⇒ Inventaire initial du
+Conteo inicial valorizado ⇒ Inventaire initial valorisé
+Conteo inicial valorizado · ⇒ Inventaire initial valorisé ·
+Conteo parcial de ⇒ Inventaire partiel de
 Contraseña de ⇒ Mot de passe de
 Control de stock · ⇒ Contrôle de stock ·
 Contó (cámara + local) ⇒ A compté (chambre froide + magasin)
@@ -127,8 +127,8 @@ Elegí sabores y un país ⇒ Choisissez des parfums et un pays
 Elegí tu PIN ⇒ Choisissez votre PIN
 Elegí tu sucursal para empezar. ⇒ Choisissez votre magasin pour commencer.
 Eliminar definitivamente ⇒ Supprimer définitivement
-Empezar conteo de ⇒ Commencer le comptage de
-Empezar conteo de todo el local ⇒ Commencer le comptage de tout le magasin
+Empezar conteo de ⇒ Commencer l'inventaire de
+Empezar conteo de todo el local ⇒ Commencer l'inventaire de tout le magasin
 Empezar de cero ⇒ Recommencer à zéro
 Empleados ⇒ Employés
 En la cámara queda: ⇒ En chambre froide il reste :
@@ -136,13 +136,13 @@ En la salida hay además ⇒ Dans la sortie il y a aussi
 En las vasquetas pesá cada una y escribí su peso en una casilla (con «+» sumás otra): el total se calcula solo. ⇒ Pour les bacs, pesez chacun et saisissez son poids dans une case (avec « + » vous en ajoutez une autre) : le total se calcule tout seul.
 En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron. ⇒ Pour les bacs, touchez ceux qui reviennent : ils ont déjà le poids avec lequel ils sont sortis.
 En revisión ⇒ En vérification
-Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión. ⇒ Allez dans l'Historique, touchez « Annuler » sur ce mouvement et saisissez-le de nouveau correctement. On peut annuler jusqu'à 24 heures après. S'il est antérieur au dernier comptage, c'est la supervision qui l'annule.
+Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión. ⇒ Allez dans l'Historique, touchez « Annuler » sur ce mouvement et saisissez-le de nouveau correctement. On peut annuler jusqu'à 24 heures après. S'il est antérieur au dernier inventaire, c'est la supervision qui l'annule.
 Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado. ⇒ Allez dans l'Historique, touchez « Annuler » sur ce mouvement et saisissez-le de nouveau correctement. Si plus de 10 minutes se sont écoulées, prévenez votre responsable.
 Era en realidad ⇒ C'était en réalité
 Es la de hoy. Cambiala solo si te olvidaste de cargar un día anterior (hasta ⇒ C'est celle d'aujourd'hui. Changez-la seulement si vous avez oublié de saisir un jour précédent (jusqu'à
 Esa caja no puede pesar más de ⇒ Ce carton ne peut pas peser plus de
-Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. ⇒ Cette date est antérieure au dernier comptage physique : le comptage inclut déjà cette vente.
-Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior. ⇒ Cette date est antérieure au dernier comptage physique : le comptage inclut déjà cette vente. Choisissez une date postérieure.
+Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. ⇒ Cette date est antérieure au dernier inventaire physique : l'inventaire inclut déjà cette vente.
+Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior. ⇒ Cette date est antérieure au dernier inventaire physique : l'inventaire inclut déjà cette vente. Choisissez une date postérieure.
 Esa persona no tiene nada pendiente de devolver. ⇒ Cette personne n'a rien à rendre.
 Escanear en: ⇒ Scanner dans :
 Escribilo de nuevo para confirmarlo. ⇒ Saisissez-le de nouveau pour le confirmer.
@@ -152,7 +152,7 @@ Escribí de qué local viene para poder registrarla. ⇒ Indiquez de quel magasi
 Escribí el motivo arriba para poder registrarlo. ⇒ Saisissez le motif ci-dessus pour pouvoir l'enregistrer.
 Escribí los kilos como los marca la balanza. Ej.: 0,030 kg = 30 g · 1,800 kg = 1.800 g ⇒ Saisissez les kilos tels qu'indiqués par la balance. Ex. : 0,030 kg = 30 g · 1,800 kg = 1 800 g
 Este equipo todavía no está aprobado ⇒ Cet appareil n'est pas encore approuvé
-Este mes ya tiene su conteo inicial ( ⇒ Ce mois a déjà son comptage initial (
+Este mes ya tiene su conteo inicial ( ⇒ Ce mois a déjà son inventaire initial (
 Este producto no tiene vida útil cargada: elegí la fecha a mano. ⇒ Ce produit n'a pas de durée de vie saisie : choisissez la date à la main.
 Este rubro no tiene sabores en este local. ⇒ Cette catégorie n'a pas de parfums dans ce magasin.
 Está en Ingreso › Devolución. ⇒ C'est dans Entrée › Retour.
@@ -171,9 +171,9 @@ Generando… ⇒ Génération…
 Gestionar sabores de todos los locales ⇒ Gérer les parfums de tous les magasins
 Guardados ⇒ Enregistrés
 Guardando el vencimiento… esperá un momento. ⇒ Enregistrement de la péremption… patientez un instant.
-Guardar conteo ⇒ Enregistrer le comptage
-Guardar conteo de cierre ⇒ Enregistrer le comptage de clôture
-Guardar conteo parcial ⇒ Enregistrer le comptage partiel
+Guardar conteo ⇒ Enregistrer l'inventaire
+Guardar conteo de cierre ⇒ Enregistrer l'inventaire de clôture
+Guardar conteo parcial ⇒ Enregistrer l'inventaire partiel
 Hay un pedido de ⇒ Il y a une demande de
 Hecho el ⇒ Fait le
 Hecho · 🔒 ⇒ Fait · 🔒
@@ -183,7 +183,7 @@ INGRESOS ⇒ ENTRÉES
 INICIAL ⇒ INITIAL
 Idioma / Langue ⇒ Idioma / Langue
 Ignorar este renglón ⇒ Ignorer cette ligne
-Informe de conteo inicial ⇒ Rapport du comptage initial
+Informe de conteo inicial ⇒ Rapport de l'inventaire initial
 Informe de control ⇒ Rapport de contrôle
 Informe de historial ⇒ Rapport d'historique
 Informe de relevamiento ⇒ Rapport de relevé
@@ -221,7 +221,7 @@ Marcar por tipo ⇒ Sélectionner par type
 Marcá al menos un local para armar la tabla. ⇒ Cochez au moins un magasin pour construire le tableau.
 Mirá el número que marca la balanza. ⇒ Regardez le chiffre indiqué par la balance.
 Mostrar ⇒ Afficher
-Mostrar el conteo al responsable ⇒ Montrer le comptage au responsable
+Mostrar el conteo al responsable ⇒ Montrer l'inventaire au responsable
 Mínimo del rubro ⇒ Minimum de la catégorie
 Mínimos por defecto ⇒ Minimums par défaut
 Ningún producto coincide con la búsqueda. ⇒ Aucun produit ne correspond à la recherche.
@@ -304,7 +304,7 @@ Si no es un remito de proveedor (ej. llegó de otro local, de un foodtruck o de 
 Si no tocás nada, la sesión se bloquea al llegar a cero ⇒ Si vous ne touchez à rien, la session se verrouille à zéro
 Siempre usá primero la caja ABIERTA. ⇒ Utilisez toujours d'abord le carton OUVERT.
 Sin conexión: para guardar el inventario necesitás señal. ⇒ Pas de connexion : pour enregistrer l'inventaire, il faut du réseau.
-Sin conteo todavía ⇒ Pas encore de comptage
+Sin conteo todavía ⇒ Pas encore d'inventaire
 Sin contraseña del local: el dispositivo nuevo escribe el código y queda aprobado. ⇒ Sans mot de passe du magasin : le nouvel appareil saisit le code et il est approuvé.
 Sin fecha todavía ⇒ Pas encore de date
 Sin ingresos. ⇒ Sans entrées.
@@ -318,8 +318,8 @@ Sin señal. Pueden entrar con su PIN los ⇒ Pas de réseau. Peuvent entrer avec
 Sin señal: el equipo carga sin PIN eligiendo su nombre ⇒ Pas de réseau : l'équipe saisit sans PIN en choisissant son nom
 Sin stock en la app ⇒ Sans stock dans l'application
 Sin terminar ⇒ Non terminé
-Solicitud de conteo de cierre del mes ⇒ Demande de comptage de clôture du mois
-Solicitud de nuevo conteo parcial ⇒ Demande d'un nouveau comptage partiel
+Solicitud de conteo de cierre del mes ⇒ Demande d'inventaire de clôture du mois
+Solicitud de nuevo conteo parcial ⇒ Demande d'un nouvel inventaire partiel
 Solo consulta ⇒ Consultation uniquement
 Solo lo que recibe el local. ⇒ Uniquement ce que reçoit le magasin.
 Solo se reemplaza el stock de ⇒ Seul le stock de est remplacé :
@@ -331,8 +331,8 @@ Subcategorías ⇒ Sous-catégories
 Sugerido: ⇒ Suggéré :
 Sumar una ⇒ Ajouter une
 Supervisión ⇒ Supervision
-Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene. ⇒ La supervision a demandé le comptage de clôture de ce magasin (chambre froide + magasin). Le stock devient égal à ce qui est compté et c'est le comptage initial du mois suivant.
-Supervisión pidió un conteo de este local (cámara + local). ⇒ La supervision a demandé un comptage de ce magasin (chambre froide + magasin).
+Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene. ⇒ La supervision a demandé l'inventaire de clôture de ce magasin (chambre froide + magasin). Le stock devient égal à ce qui est compté et c'est l'inventaire initial du mois suivant.
+Supervisión pidió un conteo de este local (cámara + local). ⇒ La supervision a demandé un inventaire de ce magasin (chambre froide + magasin).
 Sí, confirmar ⇒ Oui, confirmer
 Sí, quitar ⇒ Oui, retirer
 TOTAL ⇒ TOTAL
@@ -343,8 +343,8 @@ Tocá para quitar uno ⇒ Touchez pour en retirer un
 Tocá tu tarjeta para continuar. ⇒ Touchez votre carte pour continuer.
 Tocá un producto y escribí cuántas unidades ⇒ Touchez un produit et saisissez combien d'unités
 Tocá un sabor para sumar una unidad ⇒ Touchez un parfum pour ajouter une unité
-Tocá «Corregir» en el producto: queda registrado el cambio y, al guardar, el conteo vuelve a cerrarse. ⇒ Touchez « Corriger » sur le produit : le changement est enregistré et, à l'enregistrement, le comptage se referme.
-Todavía ningún local hizo su conteo inicial. ⇒ Aucun magasin n'a encore fait son comptage initial.
+Tocá «Corregir» en el producto: queda registrado el cambio y, al guardar, el conteo vuelve a cerrarse. ⇒ Touchez « Corriger » sur le produit : le changement est enregistré et, à l'enregistrement, l'inventaire se referme.
+Todavía ningún local hizo su conteo inicial. ⇒ Aucun magasin n'a encore fait son inventaire initial.
 Todavía no hay chocolatería cargada. ⇒ Il n'y a pas encore de chocolaterie saisie.
 Todavía no hay nada cargado. ⇒ Rien n'est encore saisi.
 Todavía no hay nadie cargado. ⇒ Personne n'est encore enregistré.
@@ -353,9 +353,9 @@ Todavía no registraste nada hoy. ⇒ Vous n'avez encore rien enregistré aujour
 Todavía no tenés PIN. Elegí uno de 4 números. ⇒ Vous n'avez pas encore de PIN. Choisissez-en un à 4 chiffres.
 Todo confirmado. Reemplaza el stock actual de ⇒ Tout est confirmé. Remplace le stock actuel de
 Todo confirmado. Reemplaza solo el stock de ⇒ Tout est confirmé. Remplace seulement le stock de
-Todo conteo guardado queda con candado. ⇒ Tout comptage enregistré reste verrouillé.
+Todo conteo guardado queda con candado. ⇒ Tout inventaire enregistré reste verrouillé.
 Todo en orden ⇒ Tout est en ordre
-Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo. ⇒ Un Comptage fixe directement le stock — l'annuler ne le rétablit PAS. Pour corriger des chiffres mal saisis, faites un nouveau Comptage physique.
+Un Conteo fija el stock directo — anularlo NO lo revierte. Para corregir números mal cargados, hacé un Conteo físico nuevo. ⇒ Un Inventaire fixe directement le stock — l'annuler ne le rétablit PAS. Pour corriger des chiffres mal saisis, faites un nouveau Inventaire physique.
 Una caja nueva ⇒ Un nouveau carton
 Una caja o vasqueta venía rotulada como un sabor y era otro. ⇒ Un carton ou un bac était étiqueté comme un parfum et c'en était un autre.
 Una vasqueta quedó cargada o rotulada como un sabor y era otro. ⇒ Un bac a été saisi ou étiqueté comme un parfum et c'en était un autre.
@@ -382,7 +382,7 @@ Vincular este equipo al local ⇒ Lier cet appareil au magasin
 Volver a la cámara ⇒ Retour à la chambre froide
 Volver a lo ya leído ⇒ Revenir à ce qui est déjà lu
 Volver a ocultar ⇒ Masquer à nouveau
-Volver a ocultar el conteo ⇒ Masquer à nouveau le comptage
+Volver a ocultar el conteo ⇒ Masquer à nouveau l'inventaire
 Volvé a poner la caja sobre la balanza. ⇒ Remettez le carton sur la balance.
 WhatsApp ⇒ WhatsApp
 Ya liberaron un lugar, reintentar ⇒ Une place s'est libérée, réessayer
@@ -432,7 +432,7 @@ lotes más ⇒ lots de plus
 marcar como desperdicio ⇒ marquer comme perte
 más de este día ⇒ plus de ce jour
 mínimo ⇒ minimum
-no entran en el valor hasta el próximo conteo físico con kilos. ⇒ n'entrent pas dans la valeur avant le prochain comptage physique avec kilos.
+no entran en el valor hasta el próximo conteo físico con kilos. ⇒ n'entrent pas dans la valeur avant le prochain inventaire physique avec kilos.
 no lo recibimos ⇒ nous ne le recevons pas
 no se sabe cuándo vence ⇒ on ne sait pas quand il périme
 número ⇒ nombre
@@ -445,7 +445,7 @@ o el país ⇒ ou le pays
 otro local ⇒ autre magasin
 otro renglón del remito quedó en este mismo sabor, revisá cuál es cuál ⇒ une autre ligne du bon de livraison est associée à ce même parfum, vérifiez laquelle est laquelle
 para confirmar. ⇒ pour confirmer.
-para guardar el conteo. ⇒ pour enregistrer le comptage.
+para guardar el conteo. ⇒ pour enregistrer l'inventaire.
 para poder guardar. ⇒ pour pouvoir enregistrer.
 pesada(s) cargadas a mano. ⇒ pesée(s) saisies à la main.
 por unidad ⇒ à l'unité
@@ -521,12 +521,12 @@ ya tiene sus ⇒ a déjà ses
 ¿Quitar « ⇒ Retirer «
 ¿Qué produce ⇒ Ce que produit
 ¿Qué tiene ⇒ Ce que possède
-Último conteo: ⇒ Dernier comptage :
+Último conteo: ⇒ Dernier inventaire :
 — ¿seguro que es otro? ⇒ — êtes-vous sûr que c'est un autre ?
 ‹ Volver ⇒ ‹ Retour
 − Merma y desperdicio · ⇒ − Pertes et gaspillage ·
 − Salidas · ⇒ − Sorties ·
-⚠ Cerrado fuera de la jornada: el conteo cruzó el corte de las 04:00. Lo revisa supervisión. ⇒ ⚠ Clôturé hors journée : le comptage a dépassé la coupure de 04h00. La supervision le vérifie.
+⚠ Cerrado fuera de la jornada: el conteo cruzó el corte de las 04:00. Lo revisa supervisión. ⇒ ⚠ Clôturé hors journée : l'inventaire a dépassé la coupure de 04h00. La supervision le vérifie.
 ✓ Copiado ⇒ ✓ Copié
 ✓ vuelve ⇒ ✓ revient
 🔒 BLOQUEADO ⇒ 🔒 VERROUILLÉ

@@ -50,7 +50,7 @@
 . Primero el ⇒ . D'abord le
 . Queda guardado en ese momento. ⇒ . C'est enregistré à ce moment-là.
 . Seguí contando. ⇒ . Continuez à compter.
-. Si el mes arranca con el conteo de cierre del anterior, no hace falta. ⇒ . Si le mois commence avec le comptage de clôture du précédent, ce n'est pas nécessaire.
+. Si el mes arranca con el conteo de cierre del anterior, no hace falta. ⇒ . Si le mois commence avec l'inventaire de clôture du précédent, ce n'est pas nécessaire.
 . Si esos productos están en otra página del remito, sacale una foto a esa página. ⇒ . Si ces produits sont sur une autre page du bon de livraison, photographiez cette page.
 . Si se vendió más, falta cargar un ingreso. ⇒ . Si vous en avez vendu plus, il manque une entrée à saisir.
 . Si un número es raro te lo marca para confirmar con ⇒ . Si un nombre est étrange, il vous est signalé pour confirmation avec
@@ -82,7 +82,7 @@
 = de 6 a 20 días, ⇒ = de 6 à 20 jours,
 = más de 20 días. ⇒ = plus de 20 jours.
 = vencido o vence en 5 días o menos, ⇒ = périmé ou périme dans 5 jours ou moins,
-? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ ? C'est la clôture du mois : le stock de la chambre froide devient égal à ce qui a été compté, il est verrouillé et devient le comptage initial du mois suivant.
+? Es el cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ ? C'est la clôture du mois : le stock de la chambre froide devient égal à ce qui a été compté, il est verrouillé et devient l'inventaire initial du mois suivant.
 A nombre de ⇒ Au nom de
 A producir ⇒ À produire
 ABIERTA ⇒ OUVERT
@@ -116,12 +116,12 @@ Anulado por ⇒ Annulé par
 Anulados ⇒ Annulés
 Anulados en el período · ⇒ Annulés sur la période ·
 Anular ⇒ Annuler
-Anular antes del conteo ⇒ Annuler avant le comptage
+Anular antes del conteo ⇒ Annuler avant l'inventaire
 Anular, Desperdicio o Devolución ⇒ Annuler, Perte ou Retour
 Anulá el movimiento y cargalo de nuevo ⇒ Annulez le mouvement et saisissez-le de nouveau
 Apagar cámara ⇒ Éteindre la caméra
 Apagá los que este local no tiene (ej. Baldes). Van a dejar de aparecer en Salida, Ingreso, Stock y Pedido — el historial de lo que ya se cargó antes no se toca. ⇒ Désactivez ceux que ce magasin n'a pas (ex. Seaux). Ils n'apparaîtront plus dans Sortie, Entrée, Stock et Commande — l'historique de ce qui a déjà été saisi n'est pas modifié.
-Aparece lo que sacó cualquiera del equipo en las últimas 48 hs, después del último conteo, y todavía no volvió, con el nombre de quien lo sacó. La devolución queda a nombre de quien la hace. ⇒ Apparaît ce que n'importe qui de l'équipe a sorti dans les dernières 48 h, après le dernier comptage, et qui n'est pas encore revenu, avec le nom de la personne qui l'a sorti. Le retour est enregistré au nom de la personne qui le fait.
+Aparece lo que sacó cualquiera del equipo en las últimas 48 hs, después del último conteo, y todavía no volvió, con el nombre de quien lo sacó. La devolución queda a nombre de quien la hace. ⇒ Apparaît ce que n'importe qui de l'équipe a sorti dans les dernières 48 h, après le dernier inventaire, et qui n'est pas encore revenu, avec le nom de la personne qui l'a sorti. Le retour est enregistré au nom de la personne qui le fait.
 Aprobaste « ⇒ Vous avez approuvé «
 Apuntá al código de barras del rótulo. ⇒ Visez le code-barres de l'étiquette.
 Argentina ⇒ Argentine
@@ -214,33 +214,33 @@ Conitos ⇒ Cônes
 Consumo de la última semana ⇒ Consommation de la dernière semaine
 Consumo semanal ⇒ Consommation hebdomadaire
 Contar escaneando ⇒ Compter en scannant
-Conteo ⇒ Comptage
-Conteo cámara ⇒ Comptage chambre froide
-Conteo cámara ya hecho 🔒. Lo desbloquea supervisión. ⇒ Comptage chambre froide déjà fait 🔒. La supervision le déverrouille.
-Conteo cámara. ⇒ Comptage chambre froide.
-Conteo de ⇒ Comptage de
-Conteo de cierre ⇒ Comptage de clôture
-Conteo de cierre enviado ✓. Supervisión lo revisa: lo ves desde las 12:00. El stock de la cámara quedó igual a lo contado. ⇒ Comptage de clôture envoyé ✓. La supervision le vérifie : vous le voyez à partir de 12h00. Le stock de la chambre froide est égal à ce qui a été compté.
-Conteo de cierre enviado, pero no se pudo actualizar el stock: ⇒ Comptage de clôture envoyé, mais le stock n'a pas pu être mis à jour :
-Conteo de cierre guardado, pero no se pudo actualizar el stock: ⇒ Comptage de clôture enregistré, mais le stock n'a pas pu être mis à jour :
-Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado ⇒ Comptage de clôture enregistré : le stock de la chambre froide est égal à ce qui a été compté
-Conteo guardado ⇒ Comptage enregistré
-Conteo inicial ⇒ Comptage initial
-Conteo inicial guardado ⇒ Comptage initial enregistré
-Conteo inicial · ⇒ Comptage initial ·
-Conteo inicial › Conteo cámara ⇒ Comptage initial › Comptage chambre froide
-Conteo inicial: cámara más local ⇒ Comptage initial : chambre froide plus magasin
-Conteo local ⇒ Comptage magasin
-Conteo mostrado al responsable ⇒ Comptage montré au responsable
-Conteo oculto otra vez ⇒ Comptage de nouveau masqué
-Conteo parcial ⇒ Comptage partiel
-Conteo parcial enviado ✓. Lo revisa supervisión. ⇒ Comptage partiel envoyé ✓. La supervision le vérifie.
-Conteo parcial guardado ⇒ Comptage partiel enregistré
-Conteo parcial y de cierre ⇒ Comptage partiel et de clôture
-Conteo parcial: ⇒ Comptage partiel :
-Conteo, Stock y Equipo necesitan internet. Los colaboradores solo entran sin señal si ya ingresaron ese día en esa tablet. ⇒ Comptage, Stock et Équipe nécessitent internet. Les collaborateurs n'entrent sans réseau que s'ils se sont déjà connectés ce jour-là sur cette tablette.
-Conteos ⇒ Comptages
-Conteos guardados ⇒ Comptages enregistrés
+Conteo ⇒ Inventaire
+Conteo cámara ⇒ Inventaire chambre froide
+Conteo cámara ya hecho 🔒. Lo desbloquea supervisión. ⇒ Inventaire chambre froide déjà fait 🔒. La supervision le déverrouille.
+Conteo cámara. ⇒ Inventaire chambre froide.
+Conteo de ⇒ Inventaire de
+Conteo de cierre ⇒ Inventaire de clôture
+Conteo de cierre enviado ✓. Supervisión lo revisa: lo ves desde las 12:00. El stock de la cámara quedó igual a lo contado. ⇒ Inventaire de clôture envoyé ✓. La supervision le vérifie : vous le voyez à partir de 12h00. Le stock de la chambre froide est égal à ce qui a été compté.
+Conteo de cierre enviado, pero no se pudo actualizar el stock: ⇒ Inventaire de clôture envoyé, mais le stock n'a pas pu être mis à jour :
+Conteo de cierre guardado, pero no se pudo actualizar el stock: ⇒ Inventaire de clôture enregistré, mais le stock n'a pas pu être mis à jour :
+Conteo de cierre guardado: el stock de la cámara quedó igual a lo contado ⇒ Inventaire de clôture enregistré : le stock de la chambre froide est égal à ce qui a été compté
+Conteo guardado ⇒ Inventaire enregistré
+Conteo inicial ⇒ Inventaire initial
+Conteo inicial guardado ⇒ Inventaire initial enregistré
+Conteo inicial · ⇒ Inventaire initial ·
+Conteo inicial › Conteo cámara ⇒ Inventaire initial › Inventaire chambre froide
+Conteo inicial: cámara más local ⇒ Inventaire initial : chambre froide plus magasin
+Conteo local ⇒ Inventaire magasin
+Conteo mostrado al responsable ⇒ Inventaire montré au responsable
+Conteo oculto otra vez ⇒ Inventaire de nouveau masqué
+Conteo parcial ⇒ Inventaire partiel
+Conteo parcial enviado ✓. Lo revisa supervisión. ⇒ Inventaire partiel envoyé ✓. La supervision le vérifie.
+Conteo parcial guardado ⇒ Inventaire partiel enregistré
+Conteo parcial y de cierre ⇒ Inventaire partiel et de clôture
+Conteo parcial: ⇒ Inventaire partiel :
+Conteo, Stock y Equipo necesitan internet. Los colaboradores solo entran sin señal si ya ingresaron ese día en esa tablet. ⇒ Inventaire, Stock et Équipe nécessitent internet. Les collaborateurs n'entrent sans réseau que s'ils se sont déjà connectés ce jour-là sur cette tablette.
+Conteos ⇒ Inventaires
+Conteos guardados ⇒ Inventaires enregistrés
 Continuar ⇒ Continuer
 Continuar donde quedé ⇒ Reprendre où je m'étais arrêté
 Contraseña ⇒ Mot de passe
@@ -251,7 +251,7 @@ Control de stock por local ⇒ Contrôle de stock par magasin
 Contá de cero. Las vasquetas del local van en ⇒ Comptez à partir de zéro. Les bacs du magasin vont en
 Contá en ⇒ Comptez en
 Contá la ⇒ Comptez la
-Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial. ⇒ Comptez uniquement ce qui est dans le magasin, hors de la chambre froide. C'est enregistré dans le cadre du comptage initial.
+Contá solo lo que hay en el local, fuera de la cámara. Se guarda como parte del conteo inicial. ⇒ Comptez uniquement ce qui est dans le magasin, hors de la chambre froide. C'est enregistré dans le cadre de l'inventaire initial.
 Copiado ⇒ Copié
 Copiar lista para producción ⇒ Copier la liste pour la production
 Copiar o mandar por WhatsApp ⇒ Copier ou envoyer par WhatsApp
@@ -262,8 +262,8 @@ Corregir ⇒ Corriger
 Corregir inventario local ⇒ Corriger l'inventaire du magasin
 Corregir mi nombre ⇒ Corriger mon nom
 Corregir sabor ⇒ Corriger le parfum
-Corregir un conteo guardado ⇒ Corriger un comptage enregistré
-Corregir un producto (con motivo) se hace en Stock › Conteo inicial. ⇒ La correction d'un produit (avec motif) se fait dans Stock › Comptage initial.
+Corregir un conteo guardado ⇒ Corriger un inventaire enregistré
+Corregir un producto (con motivo) se hace en Stock › Conteo inicial. ⇒ La correction d'un produit (avec motif) se fait dans Stock › Inventaire initial.
 Corregir: se anula este movimiento y se abre la carga con lo mismo para que cambies lo que está mal. ¿Seguimos? ⇒ Corriger : ce mouvement est annulé et la saisie s'ouvre avec les mêmes données pour que vous changiez ce qui est faux. On continue ?
 Corregí el nombre y apellido: ⇒ Corrigez le nom et le prénom :
 Corregí lo que esté mal y registrá el descarte. ⇒ Corrigez ce qui est faux et enregistrez la mise au rebut.
@@ -311,7 +311,7 @@ Desactivado ⇒ Désactivé
 Desbloqueado: se puede hacer una corrección ⇒ Déverrouillé : une correction est possible
 Desbloquear ⇒ Déverrouiller
 Desbloquear (PIN) ⇒ Déverrouiller (PIN)
-Desbloquear conteo ⇒ Déverrouiller le comptage
+Desbloquear conteo ⇒ Déverrouiller l'inventaire
 Desbloquear para corregir (PIN de supervisión) ⇒ Déverrouiller pour corriger (PIN de supervision)
 Descartar ⇒ Abandonner
 Descarte ⇒ Mise au rebut
@@ -349,7 +349,7 @@ El local cambió ⇒ Le magasin a changé
 El lote del ⇒ Le lot du
 El pedido no se guarda en ningún lado: copialo o mandalo antes de salir. ⇒ La commande n'est enregistrée nulle part : copiez-la ou envoyez-la avant de quitter.
 El primero (en negrita) es el que sale primero ⇒ Le premier (en gras) est celui qui sort en premier
-El responsable ve solo su inicial. Parcial y cierre quedan ocultos. ⇒ Le responsable ne voit que son comptage initial. Le partiel et la clôture restent masqués.
+El responsable ve solo su inicial. Parcial y cierre quedan ocultos. ⇒ Le responsable ne voit que son inventaire initial. Le partiel et la clôture restent masqués.
 El responsable ve un aviso en Stock y cuenta cámara y local. ⇒ Le responsable voit un avis dans Stock et compte la chambre froide et le magasin.
 El resto no se toca ⇒ Le reste n'est pas modifié
 El valor no cambió. ⇒ La valeur n'a pas changé.
@@ -394,11 +394,11 @@ Equipo vinculado con el código ⇒ Appareil lié avec le code
 Equipos del local ⇒ Appareils du magasin
 Error al cargar la producción ⇒ Erreur lors de la saisie de la production
 Error de fábrica ⇒ Erreur de fabrication
-Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene. ⇒ C'est la clôture du mois : il est verrouillé, le stock de la chambre froide devient égal à ce qui a été compté et il devient le comptage initial du mois suivant.
+Es el cierre del mes: queda bloqueado, deja el stock de la cámara igual a lo contado y pasa a ser el conteo inicial del mes que viene. ⇒ C'est la clôture du mois : il est verrouillé, le stock de la chambre froide devient égal à ce qui a été compté et il devient l'inventaire initial du mois suivant.
 Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga. Si se pierde solo una parte (un cucurucho, un pote), el responsable usa ⇒ C'est uniquement pour ce qui a vraiment été perdu. Un motif est demandé (ex. « est tombé »). Ne l'utilisez pas pour corriger une erreur de saisie. Si seule une partie est perdue (un cornet, un pot), le responsable utilise
 Escaneada · ⇒ Scanné ·
 Escaneadas en esta salida ⇒ Scannés dans cette sortie
-Escaneado en este conteo ⇒ Scanné dans ce comptage
+Escaneado en este conteo ⇒ Scanné dans cet inventaire
 Escanear vasqueta ⇒ Scanner un bac
 Escape ⇒ Échap
 Escribilo en el equipo nuevo, después de elegir ⇒ Saisissez-le sur le nouvel appareil, après avoir choisi
@@ -426,7 +426,7 @@ Este equipo ⇒ Cet appareil
 Este equipo ya puede entrar a ⇒ Cet appareil peut maintenant entrer dans
 Este local no tiene activado el stock valorizado. ⇒ Ce magasin n'a pas activé le stock valorisé.
 Este local puede tener hasta ⇒ Ce magasin peut avoir jusqu'à
-Este local todavía no tiene conteos guardados. ⇒ Ce magasin n'a pas encore de comptages enregistrés.
+Este local todavía no tiene conteos guardados. ⇒ Ce magasin n'a pas encore d'inventaires enregistrés.
 Este mes ⇒ Ce mois-ci
 Está bien ⇒ C'est correct
 Está tardando más de lo normal. Probá de nuevo. ⇒ Cela prend plus de temps que d'habitude. Réessayez.
@@ -460,7 +460,7 @@ Guardado: ⇒ Enregistré :
 Guardando… ⇒ Enregistrement…
 Guardar ⇒ Enregistrer
 Guardar PIN ⇒ Enregistrer le PIN
-Guardar conteo inicial ⇒ Enregistrer le comptage initial
+Guardar conteo inicial ⇒ Enregistrer l'inventaire initial
 Guardar corrección ⇒ Enregistrer la correction
 Guardar el cambio ⇒ Enregistrer le changement
 Guardar lo contado ⇒ Enregistrer ce qui est compté
@@ -469,8 +469,8 @@ Guardá. Ves «enviado ✓»: no se muestran totales ni diferencias. ⇒ Enregis
 HELADO EN EL LOCAL ⇒ GLACE DANS LE MAGASIN
 Hace 2 semanas ⇒ Il y a 2 semaines
 Hace 3 semanas ⇒ Il y a 3 semaines
-Hacer el conteo ⇒ Faire le comptage
-Hacer el conteo inicial ⇒ Faire le comptage initial
+Hacer el conteo ⇒ Faire l'inventaire
+Hacer el conteo inicial ⇒ Faire l'inventaire initial
 Hasta ⇒ Au
-Hasta el 30/11 es de práctica. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias. ⇒ Jusqu'au 30/11, c'est un entraînement. À partir du 1/12, le responsable du magasin le saisit au début du mois (chambre froide + magasin) et personne ne le modifie. La supervision demandera des comptages de contrôle et vérifiera les écarts.
+Hasta el 30/11 es de práctica. Desde el 1/12 lo carga el responsable de local al empezar el mes (cámara + local) y nadie lo modifica. Supervisión va a pedir conteos de control y revisar las diferencias. ⇒ Jusqu'au 30/11, c'est un entraînement. À partir du 1/12, le responsable du magasin le saisit au début du mois (chambre froide + magasin) et personne ne le modifie. La supervision demandera des inventaires de contrôle et vérifiera les écarts.
 Hay ⇒ Il y a

@@ -9,7 +9,7 @@ Stock ⇒ Stock
 Stock bajo ⇒ Stock bas
 Stock mínimo ⇒ Stock minimum
 Stock valorizado cámara ⇒ Stock valorisé chambre froide
-Stock › Conteo inicial ⇒ Stock › Comptage initial
+Stock › Conteo inicial ⇒ Stock › Inventaire initial
 Stock › Pedido sugerido ⇒ Stock › Commande suggérée
 Sube ⇒ Monte
 Subiendo ⇒ En hausse
@@ -17,19 +17,19 @@ Sumados a ⇒ Ajoutés à
 Sumar ⇒ Ajouter
 Sumar un sabor nuevo solo a ese país: ⇒ Ajouter un nouveau parfum uniquement à ce pays :
 Sumá este equipo a ⇒ Ajoutez cet appareil à
-Supervisión pide el conteo y te aparece un aviso en Stock: ⇒ La supervision demande le comptage et un avis apparaît dans Stock :
-Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara. ⇒ La supervision a demandé ce comptage : il est enregistré à part et ne change pas le stock de la chambre froide.
+Supervisión pide el conteo y te aparece un aviso en Stock: ⇒ La supervision demande l'inventaire et un avis apparaît dans Stock :
+Supervisión pidió este conteo: se guarda aparte y no cambia el stock de la cámara. ⇒ La supervision a demandé cet inventaire : il est enregistré à part et ne change pas le stock de la chambre froide.
 Supervisor ⇒ Superviseur
 SÁ ⇒ SA
 SÁB ⇒ SAM
 Sá ⇒ Sa
-Sí, guardar conteo ⇒ Oui, enregistrer le comptage
+Sí, guardar conteo ⇒ Oui, enregistrer l'inventaire
 TRANSFERENCIA · ¿A QUÉ LOCAL VA? ⇒ TRANSFERT · VERS QUEL MAGASIN ?
 Tabletas ⇒ Tablettes
 Te la mandó otro local. Local de origen y lector. ⇒ Un autre magasin vous l'a envoyée. Magasin d'origine et lecteur.
 Teclado numérico ⇒ Pavé numérique
 Tendencia · 3 semanas ⇒ Tendance · 3 semaines
-Tenés un conteo sin terminar ⇒ Vous avez un comptage non terminé
+Tenés un conteo sin terminar ⇒ Vous avez un inventaire non terminé
 Tenía ⇒ Il y avait
 Tipo ⇒ Type
 Tipo de movimiento ⇒ Type de mouvement
@@ -43,11 +43,11 @@ Todas ⇒ Toutes
 Todavía no contaste ningún sabor. ⇒ Vous n'avez encore compté aucun parfum.
 Todavía no elegiste ningún producto. ⇒ Vous n'avez encore choisi aucun produit.
 Todavía no entró ⇒ N'est pas encore entré
-Todavía no hay conteos guardados en este local. ⇒ Il n'y a pas encore de comptages enregistrés dans ce magasin.
-Todavía no hay conteos iniciales guardados con valor en este local. ⇒ Il n'y a pas encore de comptages initiaux enregistrés avec valeur dans ce magasin.
+Todavía no hay conteos guardados en este local. ⇒ Il n'y a pas encore d'inventaires enregistrés dans ce magasin.
+Todavía no hay conteos iniciales guardados con valor en este local. ⇒ Il n'y a pas encore d'inventaires initiaux enregistrés avec valeur dans ce magasin.
 Todavía no marcaste ningún local. Abrí la lista y elegí los que quieras ver. ⇒ Vous n'avez encore coché aucun magasin. Ouvrez la liste et choisissez ceux que vous voulez voir.
 Todo ⇒ Tout
-Todo conteo guardado queda con 🔒. ⇒ Tout comptage enregistré reste avec 🔒.
+Todo conteo guardado queda con 🔒. ⇒ Tout inventaire enregistré reste avec 🔒.
 Todo el local ⇒ Tout le magasin
 Todo queda guardado en la tablet. Cuando vuelva internet tocá ⇒ Tout est enregistré sur la tablette. Quand internet reviendra, touchez
 Todos ⇒ Tous
@@ -70,7 +70,7 @@ Transferencia recibida registrada: ⇒ Transfert reçu enregistré :
 Transferencias entre locales ⇒ Transferts entre magasins
 Tu PIN ⇒ Votre PIN
 Tus movimientos de hoy ⇒ Vos mouvements d'aujourd'hui
-Un movimiento anterior al último conteo no lo anula el responsable. ⇒ Un mouvement antérieur au dernier comptage ne peut pas être annulé par le responsable.
+Un movimiento anterior al último conteo no lo anula el responsable. ⇒ Un mouvement antérieur au dernier inventaire ne peut pas être annulé par le responsable.
 Una vasqueta de más de ⇒ Un bac de plus de
 Una vasqueta pesa ⇒ Un bac pèse
 Una vez al mes: cámara + local ⇒ Une fois par mois : chambre froide + magasin
@@ -82,14 +82,14 @@ Unidades fabricadas de ⇒ Unités fabriquées de
 Unidades pedidas ⇒ Unités commandées
 Unidades por caja ⇒ Unités par carton
 Usar la cámara ⇒ Utiliser la caméra
-Vale solo para este conteo. Para que el sistema lo reconozca siempre, cargá el código en Sabores.codigo_fabrica. ⇒ Valable uniquement pour ce comptage. Pour que le système le reconnaisse toujours, saisissez le code dans Sabores.codigo_fabrica.
+Vale solo para este conteo. Para que el sistema lo reconozca siempre, cargá el código en Sabores.codigo_fabrica. ⇒ Valable uniquement pour cet inventaire. Pour que le système le reconnaisse toujours, saisissez le code dans Sabores.codigo_fabrica.
 Valor ⇒ Valeur
 Valor correcto ( ⇒ Valeur correcte (
 Valor del local (cámara + local): ⇒ Valeur du magasin (chambre froide + magasin) :
 Valorizado ⇒ Valorisé
 Vas a dejar de usar " ⇒ Vous allez cesser d'utiliser "
 Vas a fijar " ⇒ Vous allez fixer "
-Vas a guardar el conteo ⇒ Vous allez enregistrer le comptage
+Vas a guardar el conteo ⇒ Vous allez enregistrer l'inventaire
 Vasqueta ⇒ Bac
 Vasqueta mal rotulada ⇒ Bac mal étiqueté
 Vasquetas ⇒ Bacs
@@ -111,7 +111,7 @@ Vencimientos · de más cerca a más lejos ⇒ Péremptions · du plus proche au
 Vender primero ⇒ Vendre en premier
 Venta del día ⇒ Vente du jour
 Venta del día, gift card, sin cargo y baja ⇒ Vente du jour, carte cadeau, sans frais et retrait
-Ver conteos iniciales guardados ⇒ Voir les comptages initiaux enregistrés
+Ver conteos iniciales guardados ⇒ Voir les inventaires initiaux enregistrés
 Ver detalle ⇒ Voir le détail
 Ver detalle › ⇒ Voir le détail ›
 Ver pedido sugerido y tendencia de retiros ⇒ Voir la commande suggérée et la tendance des sorties
@@ -135,7 +135,7 @@ Volver a revisar el pedido ⇒ Revérifier la commande
 Vos lo anulás en Historial con ⇒ Vous l'annulez dans l'Historique avec
 Ya no lo producimos ⇒ Nous ne le produisons plus
 Ya no queda más stock de ese sabor. ⇒ Il ne reste plus de stock de ce parfum.
-Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo? ⇒ Vous avez déjà un comptage non terminé. Recommencer à zéro et l'abandonner ?
+Ya tenés un conteo sin terminar. ¿Empezar de cero y descartarlo? ⇒ Vous avez déjà un inventaire non terminé. Recommencer à zéro et l'abandonner ?
 a nombre de quien lo cargó ⇒ au nom de la personne qui l'a saisi
 a qué local va ⇒ vers quel magasin
 a ratos ⇒ par moments
@@ -152,7 +152,7 @@ con este equipo? ⇒ avec cet appareil ?
 con fibrón en la caja y ⇒ avec un marqueur sur le carton et
 con stock de lo elegido ⇒ avec du stock de ce qui est choisi
 con su PIN, en las tablets donde ya ingresaron antes (valen 30 días). ⇒ avec leur PIN, sur les tablettes où ils se sont déjà connectés (valable 30 jours).
-conteo parcial ⇒ comptage partiel
+conteo parcial ⇒ inventaire partiel
 corrección (24 h máximo). ⇒ correction (24 h maximum).
 cámara ⇒ chambre froide
 de cada renglón: si no cierran (ej. 12 vasquetas con 12 kg) no deja cargar. ⇒ de chaque ligne : si cela ne concorde pas (ex. 12 bacs avec 12 kg), la saisie est refusée.
@@ -242,7 +242,7 @@ negro y dorado ⇒ noir et or
 ninguna caja cerrada ⇒ aucun carton fermé
 no es una vasqueta: cargalo a mano (cerrá y tocá el sabor). ⇒ ce n'est pas un bac : saisissez-le à la main (fermez et touchez le parfum).
 no es una vasqueta: contalo a mano. ⇒ ce n'est pas un bac : comptez-le à la main.
-no está en este conteo. ⇒ n'est pas dans ce comptage.
+no está en este conteo. ⇒ n'est pas dans cet inventaire.
 no hay nadie cargado ⇒ personne n'est enregistré
 no llegó respuesta ⇒ aucune réponse reçue
 no pueden pesar ⇒ ne peuvent pas peser
@@ -353,7 +353,7 @@ y tocá el sabor. Se abre «Reposición de Geladot». ⇒ et touchez le parfum. 
 ¿Borrar todo el pedido que cargaste? Las cantidades vuelven a quedar vacías. ⇒ Effacer toute la commande saisie ? Les quantités redeviennent vides.
 ¿Cambiar ⇒ Changer
 ¿Cambiar el rol a " ⇒ Changer le rôle en "
-¿Cancelar el pedido de conteo de ⇒ Annuler la demande de comptage de
+¿Cancelar el pedido de conteo de ⇒ Annuler la demande d'inventaire de
 ¿Cuántas unidades? ⇒ Combien d'unités ?
 ¿Cuánto pesa? ⇒ Combien ça pèse ?
 ¿Cómo se usa? ⇒ Mode d'emploi
@@ -361,19 +361,19 @@ y tocá el sabor. Se abre «Reposición de Geladot». ⇒ et touchez le parfum. 
 ¿De dónde sale? ⇒ D'où cela vient-il ?
 ¿De qué lote sale? ⇒ De quel lot sort-il ?
 ¿Desactivar « ⇒ Désactiver «
-¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia. ⇒ Abandonner le comptage en cours ? Ce qui a été saisi jusqu'ici est perdu. Le stock du magasin ne change pas.
-¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia. ⇒ Abandonner le comptage non terminé ? Ce que vous avez saisi est perdu. Le stock du magasin ne change pas.
+¿Descartar el conteo en curso? Se pierde lo cargado hasta ahora. El stock del local no cambia. ⇒ Abandonner l'inventaire en cours ? Ce qui a été saisi jusqu'ici est perdu. Le stock du magasin ne change pas.
+¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia. ⇒ Abandonner l'inventaire non terminé ? Ce que vous avez saisi est perdu. Le stock du magasin ne change pas.
 ¿Eliminar a " ⇒ Supprimer "
-¿Eliminar este conteo físico del todo? Ojo: esto borra el registro del historial, pero NO corrige el stock — un conteo pisa el stock directo al guardarlo, así que si cargaste números mal tenés que hacer un conteo nuevo con los números correctos. No se puede deshacer. ⇒ Supprimer complètement ce comptage physique ? Attention : cela efface l'enregistrement de l'historique, mais NE corrige PAS le stock — un comptage remplace directement le stock à l'enregistrement, donc si vous avez saisi de mauvais chiffres, il faut faire un nouveau comptage avec les bons chiffres. Irréversible.
+¿Eliminar este conteo físico del todo? Ojo: esto borra el registro del historial, pero NO corrige el stock — un conteo pisa el stock directo al guardarlo, así que si cargaste números mal tenés que hacer un conteo nuevo con los números correctos. No se puede deshacer. ⇒ Supprimer complètement cet inventaire physique ? Attention : cela efface l'enregistrement de l'historique, mais NE corrige PAS le stock — un inventaire remplace directement le stock à l'enregistrement, donc si vous avez saisi de mauvais chiffres, il faut faire un nouvel inventaire avec les bons chiffres. Irréversible.
 ¿Eliminar este movimiento del todo? No es como anular: desaparece de la planilla y no se puede deshacer. ⇒ Supprimer complètement ce mouvement ? Ce n'est pas comme annuler : il disparaît de la feuille et c'est irréversible.
 ¿Eliminar « ⇒ Supprimer «
 ¿Empezar un relevamiento nuevo? Se borran los productos y locales elegidos. ⇒ Commencer un nouveau relevé ? Les produits et magasins choisis sont effacés.
 ¿En qué países se vende? ⇒ Dans quels pays se vend-il ?
 ¿Es una devolución? ⇒ Est-ce un retour ?
 ¿Fijar " ⇒ Fixer "
-¿Guardar el conteo ⇒ Enregistrer le comptage
+¿Guardar el conteo ⇒ Enregistrer l'inventaire
 ¿Llegó un sabor mal rotulado? ⇒ Un parfum est-il arrivé mal étiqueté ?
-¿Pedir el conteo de CIERRE de ⇒ Demander le comptage de CLÔTURE de
+¿Pedir el conteo de CIERRE de ⇒ Demander l'inventaire de CLÔTURE de
 ¿Poner mínimo ⇒ Mettre le minimum
 ¿Quién carga? ⇒ Qui saisit ?
 ¿Quién la sacó? ⇒ Qui l'a sortie ?

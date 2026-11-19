@@ -64,7 +64,7 @@ Lo producimos ⇒ Nous le produisons
 Lo que contaste ⇒ Ce que vous avez compté
 Lo que el sistema no deja guardar ⇒ Ce que le système ne permet pas d'enregistrer
 Lo que fabricás en el local (kilos y vasquetas). ⇒ Ce que vous fabriquez au magasin (kilos et bacs).
-Lo que había al hacer el conteo inicial ⇒ Ce qu'il y avait lors du comptage initial
+Lo que había al hacer el conteo inicial ⇒ Ce qu'il y avait lors de l'inventaire initial
 Lo que hay hoy en la cámara · costo de lista, no es el precio al público ⇒ Ce qu'il y a aujourd'hui en chambre froide · coût catalogue, pas le prix public
 Lo que no contaste no se toca ⇒ Ce que vous n'avez pas compté n'est pas modifié
 Lo que no tocaste queda «Sin contar» y conserva el stock. Con ⇒ Ce que vous n'avez pas touché reste « Non compté » et conserve le stock. Avec
@@ -169,7 +169,7 @@ No se pudo editar el nombre. ⇒ Impossible de modifier le nom.
 No se pudo eliminar. ⇒ Impossible de supprimer.
 No se pudo entrar. Probá de nuevo. ⇒ Impossible d'entrer. Réessayez.
 No se pudo generar el código. Probá de nuevo. ⇒ Impossible de générer le code. Réessayez.
-No se pudo guardar el conteo. ⇒ Impossible d'enregistrer le comptage.
+No se pudo guardar el conteo. ⇒ Impossible d'enregistrer l'inventaire.
 No se pudo guardar el inventario. ⇒ Impossible d'enregistrer l'inventaire.
 No se pudo guardar el sabor. ⇒ Impossible d'enregistrer le parfum.
 No se pudo guardar el vencimiento. ⇒ Impossible d'enregistrer la date de péremption.
@@ -194,7 +194,7 @@ Nombre ⇒ Nom
 Nombre actualizado ⇒ Nom mis à jour
 Nombre del sabor ⇒ Nom du parfum
 Nombre y apellido ⇒ Nom et prénom
-Novedad: el Stock definitivo pasa a ser el «Conteo inicial» ⇒ Nouveauté : le Stock définitif devient le « Comptage initial »
+Novedad: el Stock definitivo pasa a ser el «Conteo inicial» ⇒ Nouveauté : le Stock définitif devient le « Inventaire initial »
 Números imposibles ⇒ Chiffres impossibles
 OPERACIONES · SUPERVISIÓN ⇒ OPÉRATIONS · SUPERVISION
 Oculto. El responsable solo ve «hecho ✓». Lo ve únicamente si lo mostrás. ⇒ Masqué. Le responsable voit seulement « fait ✓ ». Il ne le voit que si vous le montrez.
@@ -205,7 +205,7 @@ Opera ⇒ Opère
 Operaciones ⇒ Opérations
 Otra vasqueta ⇒ Un autre bac
 Otras cajas ⇒ Autres cartons
-Otro conteo: lo pide supervisión. ⇒ Autre comptage : demandé par la supervision.
+Otro conteo: lo pide supervisión. ⇒ Autre inventaire : demandé par la supervision.
 Otro local ⇒ Autre magasin
 Otro motivo ⇒ Autre motif
 PIN ⇒ PIN
@@ -218,7 +218,7 @@ Para entrar a otro local desde acá necesitás el código de admin. ⇒ Pour ent
 Para mostrarlos tocá ⇒ Pour les afficher, touchez
 Parcial ⇒ Partiel
 Parcial o cierre ⇒ Partiel ou clôture
-Pasa en conteos, ingresos, producción y remitos. El servidor también lo rechaza. ⇒ Cela s'applique aux comptages, entrées, production et bons de livraison. Le serveur le refuse aussi.
+Pasa en conteos, ingresos, producción y remitos. El servidor también lo rechaza. ⇒ Cela s'applique aux inventaires, entrées, production et bons de livraison. Le serveur le refuse aussi.
 Pasar a desperdicio ⇒ Passer en perte
 Pasar a mano ⇒ Passer en manuel
 Paso 1 de 2: contá lo que hay dentro de la cámara, empezando de cero. ⇒ Étape 1 sur 2 : comptez ce qu'il y a dans la chambre froide, en partant de zéro.
@@ -244,8 +244,8 @@ Pedile a tu responsable el código de 6 números. Te lo puede mandar por WhatsAp
 Pedir ⇒ Commander
 Pedir cierre ⇒ Demander la clôture
 Pedir parcial ⇒ Demander un partiel
-Pedir un conteo ⇒ Demander un comptage
-Pedir un conteo nuevo a este local: ⇒ Demander un nouveau comptage à ce magasin :
+Pedir un conteo ⇒ Demander un inventaire
+Pedir un conteo nuevo a este local: ⇒ Demander un nouvel inventaire à ce magasin :
 Pendiente ⇒ En attente
 Pendiente de enviar — sin conexión. Se va a mandar solo apenas vuelva la señal. ⇒ En attente d'envoi — pas de connexion. L'envoi se fera tout seul dès le retour du réseau.
 Período ⇒ Période
@@ -399,13 +399,13 @@ Sin cargo: ⇒ Sans frais :
 Sin conexión ⇒ Pas de connexion
 Sin conexión. ⇒ Pas de connexion.
 Sin conexión: el cambio de sabor necesita señal. Probá de nuevo cuando vuelva. ⇒ Pas de connexion : le changement de parfum nécessite du réseau. Réessayez quand il reviendra.
-Sin conexión: el conteo se va a enviar solo. ⇒ Pas de connexion : le comptage sera envoyé tout seul.
+Sin conexión: el conteo se va a enviar solo. ⇒ Pas de connexion : l'inventaire sera envoyé tout seul.
 Sin conexión: la merma necesita señal. Probá de nuevo cuando vuelva. ⇒ Pas de connexion : la perte nécessite du réseau. Réessayez quand il reviendra.
 Sin conexión: lo contado se va a enviar solo. ⇒ Pas de connexion : ce qui est compté sera envoyé tout seul.
 Sin conexión: no se pudo guardar. Probá de nuevo cuando tengas señal. ⇒ Pas de connexion : impossible d'enregistrer. Réessayez quand vous aurez du réseau.
 Sin conexión: se guardó y se va a enviar solo. ⇒ Pas de connexion : enregistré, il sera envoyé tout seul.
 Sin contar ⇒ Non compté
-Sin conteo inicial ⇒ Sans comptage initial
+Sin conteo inicial ⇒ Sans inventaire initial
 Sin desperdicio en este período. ⇒ Aucune perte sur cette période.
 Sin devolver: ⇒ Non rendu :
 Sin diferencia ⇒ Sans écart
@@ -416,7 +416,7 @@ Sin nombre ⇒ Sans nom
 Sin país: nadie lo ve ⇒ Sans pays : personne ne le voit
 Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran. ⇒ Sans poids, on ne peut pas sortir un bac : ainsi les kilos en chambre froide concordent toujours.
 Sin producción en este período. ⇒ Aucune production sur cette période.
-Sin productos en este conteo. ⇒ Aucun produit dans ce comptage.
+Sin productos en este conteo. ⇒ Aucun produit dans cet inventaire.
 Sin retiros ⇒ Sans sorties
 Sin sabor específico ⇒ Sans parfum précis
 Sin sabor específico / no sé ⇒ Sans parfum précis / je ne sais pas
