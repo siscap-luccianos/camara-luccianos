@@ -1527,7 +1527,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.190.2";
+const FRONTEND_VERSION = "1.191.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -1935,11 +1935,12 @@ function desdeDevolucion(){ return Math.max(Date.now()-VENTANA_DEVOLUCION_MS, (S
 function resetSalidaMenu(){ S.salidaElegida=false; S.salidaTransf=false; S.destinoTransf="" }
 function resetIngresoMenu(){ S.ingresoElegido=false; S.devPor=null; S.devCompa=false; S.devMotivo=""; if(S.cart&&S.cart.devolucion){ S.cart.devolucion={}; } S.devSel={}; S.devTip={} }
 function empDev(){ return S.devPor||(S.modoLibre&&S.modoLibre.carga)||S.empleado.id }
-function pendienteDevolucionHoy(eid){
-  eid=eid||S.empleado.id;
+/** Devolución del equipo (desde 1.191): lo que se sacó en el local (por cualquiera) y todavía no volvió.
+ *  Cualquiera del equipo puede devolverlo; la devolución queda a nombre de quien la hace. El parámetro se ignora (compatibilidad). */
+function pendienteDevolucionHoy(){
   const desde=desdeDevolucion(), sacado={}, devuelto={};
   for(const r of regsActivos()){
-    if(r.ts<=desde || String(r.empleadoId)!==String(eid)) continue;
+    if(r.ts<=desde) continue;
     if(r.tipo==="salida" && !r.subtipo) for(const [id,q] of Object.entries(r.items||{})) sacado[id]=(sacado[id]||0)+(+q||0);
     else if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,q] of Object.entries(r.items||{})) devuelto[id]=(devuelto[id]||0)+(+q||0);
   }
@@ -1947,6 +1948,19 @@ function pendienteDevolucionHoy(eid){
   Object.keys(sacado).forEach(id=>{ const p=sacado[id]-(devuelto[id]||0); if(p>0) pendiente[id]=p; });
   return pendiente;
 }
+/** Por sabor, quién sacó lo que sigue pendiente: [{nombre,q}] (las devoluciones se descuentan de las salidas más viejas). */
+function pendientePorQuien(){
+  const desde=desdeDevolucion(), cola={};
+  const regs=regsActivos().filter(r=>r.ts>desde).sort((a,b)=>a.ts-b.ts);
+  for(const r of regs){
+    if(r.tipo==="salida" && !r.subtipo) for(const [id,q] of Object.entries(r.items||{})){ if(+q>0) (cola[id]=cola[id]||[]).push({nombre:r.empleado||"Sin nombre",q:+q}) }
+    else if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,q0] of Object.entries(r.items||{})){ let q=+q0||0; const l=cola[id]||[]; while(q>0&&l.length){ const t=Math.min(q,l[0].q); l[0].q-=t; q-=t; if(l[0].q<=0) l.shift() } }
+  }
+  const out={};
+  Object.keys(cola).forEach(id=>{ const m={}; cola[id].forEach(x=>{ m[x.nombre]=(m[x.nombre]||0)+x.q }); const l=Object.keys(m).map(n=>({nombre:n,q:m[n]})); if(l.length) out[id]=l });
+  return out;
+}
+function textoQuienes(l){ return (l||[]).map(x=>`${esc(x.nombre)} ${x.q}`).join(" · ") }
 /** Compañeros del local con algo pendiente de devolver (para que un responsable devuelva por ellos). */
 function companerosPendientes(){
   const vistos={}, out=[];
@@ -1958,22 +1972,22 @@ function companerosPendientes(){
   }
   return out.sort((a,b)=>a.nombre.localeCompare(b.nombre));
 }
-function puedeDevolverPorOtro(){ return ["admin","supervisor","encargado","turno"].includes(S.empleado.rol) }
+function puedeDevolverPorOtro(){ return false } // desde 1.191 la devolución es de todo el equipo: ya no hace falta «devolver por un compañero»
 /** Kilos reales: por vasqueta que esta persona sacó hoy y todavía no devolvió, el peso con que salió.
  *  {id:{pesos:[kg…], sinPeso:n}} — «sinPeso» son las que salieron sin peso registrado (antes de pesar) y se escriben a mano. */
 function pesosPendientesDev(){
-  const eid=empDev(), desde=desdeDevolucion(), pend=pendienteDevolucionHoy(eid), tomadas={}, out={};
-  const regs=regsActivos().filter(r=>r.ts>desde && String(r.empleadoId)===String(eid)).sort((a,b)=>a.ts-b.ts);
+  const desde=desdeDevolucion(), pend=pendienteDevolucionHoy(), tomadas={}, out={};
+  const regs=regsActivos().filter(r=>r.ts>desde).sort((a,b)=>a.ts-b.ts);
   for(const r of regs){
-    if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})) (tomadas[id]=tomadas[id]||[]).push(...a);
+    if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})) (tomadas[id]=tomadas[id]||[]).push(...a.map(kg=>({kg,nombre:r.empleado||"Sin nombre"})));
   }
   for(const r of regs){
-    if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,a] of Object.entries(r.pesos||{})) for(const kg of a){ const l=tomadas[id]||[], i=l.findIndex(x=>Math.abs(x-kg)<0.005); if(i>=0) l.splice(i,1) }
+    if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,a] of Object.entries(r.pesos||{})) for(const kg of a){ const l=tomadas[id]||[], i=l.findIndex(x=>Math.abs(x.kg-kg)<0.005); if(i>=0) l.splice(i,1) }
   }
   Object.keys(pend).forEach(id=>{
     if(!esVasquetaKilos(id)) return;
     const l=(tomadas[id]||[]).slice(0,pend[id]);
-    out[id]={pesos:l, sinPeso:Math.max(0,pend[id]-l.length)};
+    out[id]={pesos:l.map(x=>x.kg), quienes:l.map(x=>x.nombre), sinPeso:Math.max(0,pend[id]-l.length)};
   });
   return out;
 }
@@ -4469,7 +4483,7 @@ function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
   if(!soloProd && S.tipoIngreso==="transferencia" && puedeTransferir() && escanerDisponible()) t.push(accTileHTML("irEscanerIng","Activar escáner","Vasquetas","scan","m"));
   if(soloEsc) return t.length?accGridHTML(t):"";
   if(S.produccionLocal&&!soloProd) t.push(accTileHTML("irProduccion","Producción","lo que se fabrica acá","prod","dest"));
-  if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","algo que sacaste y volvió","back"));
+  if(hayPendiente) t.push(accTileHTML("irDevolucion","Devolución","lo que sacó el equipo y volvió","back"));
   if(puedeCambioSabor()) t.push(soloProd?accTileHTML("irCambioSabor","Corregir sabor","¿Una vasqueta quedó mal rotulada?","swap"):accTileHTML("irCambioSabor","Cambio de sabor","¿Llegó un sabor mal rotulado?","swap"));
   return t.length?accGridHTML(t):"";
 }
@@ -4478,7 +4492,7 @@ function menuIngresoHTML(){
   const rol=S.empleado.rol, resp=puedeDevolverPorOtro(), t=[];
   const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-ing-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
   if(rol!=="colaborador") t.push(tile("merc","📦","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito."));
-  t.push(tile("dev","↩️","Devolución","Algo que sacaste y volvés a guardar."));
+  t.push(tile("dev","↩️","Devolución","Lo que sacó cualquiera del equipo y vuelve a la cámara."));
   if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
   if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor mal rotulado","Cambio de sabor: figura uno y era otro."));
   if(S.produccionLocal) t.push(tile("prod","🏭","Producción","Lo que fabricás en el local (kilos y vasquetas)."));
@@ -4523,7 +4537,8 @@ function gridIngreso(st){
   ${list.length?`<div class="rows">${list.map(row).join("")}</div>`:`<div class="empty">Ningún sabor coincide con la búsqueda.</div>`}`;
 }
 function gridDevolucion(st){
-  const pendiente=pendienteDevolucionHoy(empDev());
+  const pendiente=pendienteDevolucionHoy();
+  const quienes=pendientePorQuien();
   const cart=S.cart.devolucion;
   const ids=S.sabores.filter(s=>pendiente[s.id]>0);
   const pp=S.kilosReales?pesosPendientesDev():{};
@@ -4533,24 +4548,24 @@ function gridDevolucion(st){
       const d=pp[s.id], sel=S.devSel[s.id]||[], tip=S.devTip[s.id]||{};
       return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Sacaste ${max} ${unidad(s.id,max)} hoy sin devolver${q?` · <b>${q} vuelve${q===1?"":"n"}</b>`:""}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Sin devolver: ${max} ${unidad(s.id,max)} · Sacaron: ${textoQuienes(quienes[s.id])}${q?` · <b>${q} vuelve${q===1?"":"n"}</b>`:""}</div></div>
       <div class="lotesFull">
-        ${d.pesos.length?`<div class="devChips">${d.pesos.map((kg,i)=>`<button type="button" class="devChip${sel.includes(i)?" on":""}" data-devchip="${s.id}:${i}" aria-pressed="${sel.includes(i)}"><b>${fmtKg(kg)} kg</b><small>${sel.includes(i)?"✓ vuelve":"tocá si vuelve"}</small></button>`).join("")}</div>`:""}
+        ${d.pesos.length?`<div class="devChips">${d.pesos.map((kg,i)=>`<button type="button" class="devChip${sel.includes(i)?" on":""}" data-devchip="${s.id}:${i}" aria-pressed="${sel.includes(i)}"><b>${fmtKg(kg)} kg</b><small>${esc((d.quienes&&d.quienes[i])||"")}</small><small>${sel.includes(i)?"✓ vuelve":"tocá si vuelve"}</small></button>`).join("")}</div>`:""}
         ${d.sinPeso?`<div class="devSin">${d.sinPeso===1?"Salió 1 sin peso registrado":"Salieron "+d.sinPeso+" sin peso registrado"}: si vuelve${d.sinPeso===1?"":"n"}, escribí cuánto pesa${d.sinPeso===1?"":" cada una"}.${Array.from({length:d.sinPeso},(_,k)=>`<div class="kgFila"><label for="dt-${s.id}-${k}">Vasqueta ${k+1}</label><input type="text" inputmode="decimal" id="dt-${s.id}-${k}" data-devtip="${s.id}:${k}" value="${esc(tip[k]||"")}" placeholder="0,00"> kg</div>`).join("")}</div>`:""}
       </div>
     </div>`;
     }
     return `<div class="row">
       ${plateHTML(s.id)}
-      <div class="nm">${esc(s.nombre)}<div class="meta">Pendiente de devolver: ${max} ${unidad(s.id,max)}</div></div>
+      <div class="nm">${esc(s.nombre)}<div class="meta">Sin devolver: ${max} ${unidad(s.id,max)} · Sacaron: ${textoQuienes(quienes[s.id])}</div></div>
       <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end">${kilosInlineHTML(s.id)}<div class="stepper"><button type="button" data-ddec="${s.id}" aria-label="Restar">−</button><span class="n">${q}</span><button type="button" data-dinc="${s.id}" data-max="${max}" aria-label="Sumar">+</button></div></div>
       ${kilosAvisoHTML(s.id,q)}
     </div>`};
   return `${S.tab==="ingreso"?`<button class="btn volver" type="button" id="volverIngreso" style="margin-bottom:12px">Volver a Ingreso</button>`:""}
   <p class="sec" style="margin-top:${S.tab==="ingreso"?"6px":"0"}">${S.devCompa?"Devolver por un compañero":"Devolución"}</p>
   ${S.devCompa?devCompaSelectorHTML():""}
-  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${S.devCompa?"Se devuelve a nombre de tu compañero y queda marcado como cargado por vos. Solo lo que él sacó y todavía no devolvió.":"Lo que sacaste en las últimas 48 hs y todavía no devolviste. No podés devolver más de lo que sacaste."}${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
-  ${S.devCompa&&!S.devPor?"":ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">${S.devCompa?"Esa persona no tiene nada pendiente de devolver.":"No tenés nada pendiente de devolver hoy."}</div>`}
+  <p style="margin:0 0 10px;color:var(--muted);font-size:.85rem;line-height:1.4">${S.devCompa?"Se devuelve a nombre de tu compañero y queda marcado como cargado por vos. Solo lo que él sacó y todavía no devolvió.":"Lo que se sacó en el local en las últimas 48 hs y todavía no volvió, con el nombre de quien lo sacó. Lo puede devolver cualquiera del equipo y la devolución queda a nombre de quien la hace."}${S.kilosReales&&Object.keys(pp).length?" En las vasquetas, tocá las que vuelven: ya tienen el peso con que salieron.":""}</p>
+  ${S.devCompa&&!S.devPor?"":ids.length?`<div class="rows">${ids.map(row).join("")}</div>`:`<div class="empty">${S.devCompa?"Esa persona no tiene nada pendiente de devolver.":"No hay nada pendiente de devolver."}</div>`}
   ${S.devCompa&&S.devPor&&ids.length?`<div class="devMotivoBox"><label for="devMotivo">Motivo (obligatorio)</label><div class="cmbChips">${["Se fue y me avisó","Cambio de turno"].map(m=>`<button type="button" class="chip" data-dev-motivo="${esc(m)}" aria-pressed="${S.devMotivo===m}">${esc(m)}</button>`).join("")}</div><input type="text" id="devMotivo" value="${esc(S.devMotivo)}" placeholder="Ej: Manuel se fue, avisó que devolvía 1"></div>`:""}`;
 }
 function devCompaSelectorHTML(){
@@ -6632,7 +6647,7 @@ function renderBar(){
           ${avisoKilos}
           ${fechaAntesConteo?`<div class="warn">Esa fecha es anterior al último conteo físico: el conteo ya incluye esa venta. Elegí una fecha posterior.</div>`:""}
           ${neg.length?`<div class="warn">No hay stock suficiente de: ${neg.map(esc).join(", ")}. Actualizá la pantalla o sacá menos cantidad.</div>`:""}
-          ${cartKey==="ingreso"&&!enTransfIn&&!S.remito.trim()?`<div class="warn" style="background:#FBF3DF;color:#6B521C;border-radius:10px;padding:8px 10px">¿Estás devolviendo algo que habías sacado? Este ingreso no tiene remito ni motivo. Si es una devolución cargala en «Devolución»: se descuenta de lo que sacaste. <button type="button" class="chip" id="irDevolucionAviso" style="margin-top:6px">Ir a Devolución</button></div>`:""}
+          ${cartKey==="ingreso"&&!enTransfIn&&!S.remito.trim()?`<div class="warn" style="background:#FBF3DF;color:#6B521C;border-radius:10px;padding:8px 10px">¿Estás devolviendo algo que habías sacado? Este ingreso no tiene remito ni motivo. Si es una devolución cargala en «Devolución»: se descuenta de lo que se sacó. <button type="button" class="chip" id="irDevolucionAviso" style="margin-top:6px">Ir a Devolución</button></div>`:""}
           ${dup?`<div class="warn">El remito N° ${esc(S.remito)} ya se cargó el ${esc(new Date(dup.ts).toLocaleString("es-AR",{dateStyle:"short",timeStyle:"short"}))} — ¿seguro que es otro?</div>`:""}</div>
           <button class="btn ghost" id="volver" ${S.busy?"disabled":""}>${cartKey==="salida"?"Seguir cargando":"Volver"}</button><button class="btn" id="ok" ${(S.busy||neg.length||faltaVenc.length||faltaKilos.length||fechaAntesConteo)?"disabled":""}>${S.busy?"Guardando…":"Confirmar "+verbo}</button>`;
       } else {
@@ -8781,7 +8796,7 @@ function ayudaTemas(){
   T.push({id:"quepaso", titulo:"Qué usar según lo que pasó", sub:"Anular, Desperdicio o Devolución", html:`<div class="ayCards">
     <div class="ayCard"><span class="ayTag a">Me equivoqué al cargar</span><b>Anulá el movimiento y cargalo de nuevo</b><p>${colab?"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Si pasaron más de 10 minutos, avisale a tu encargado.":"Entrá a Historial, tocá «Anular» en ese movimiento y volvé a cargarlo bien. Se puede anular hasta 24 horas después. Si es anterior al último conteo, lo anula supervisión."} Lo anulado no se borra: queda en Historial, tachado, y lo ves con el filtro «Anulados».</p></div>
     <div class="ayCard"><span class="ayTag b">Se rompió, se cayó o venció</span><b>Cargalo en Desperdicio</b><p>Es solo para lo que realmente se perdió. Pide un motivo (ej. «se cayó»). No lo uses para corregir un error de carga. Si se pierde solo una parte (un cucurucho, un pote), el responsable usa <b>Merma en kilos</b> dentro de Desperdicio.</p></div>
-    <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece solo lo que sacaste vos en las últimas 48 hs, después del último conteo, y todavía no devolviste.</p></div></div>`});
+    <div class="ayCard"><span class="ayTag c">Saqué de más y lo volví a guardar</span><b>Cargalo en Devolución</b><p>${colab?"Está en la pestaña Devolución.":"Está en Ingreso › Devolución."} Aparece lo que sacó cualquiera del equipo en las últimas 48 hs, después del último conteo, y todavía no volvió, con el nombre de quien lo sacó. La devolución queda a nombre de quien la hace.</p></div></div>`});
   if(!colab && rol!=="produccion") T.push({id:"cambio", titulo:"Llegó un sabor mal rotulado", sub:"Figuraba un sabor y era otro", html:li([
     "Entrá a <b>Ingreso</b> y tocá <b>¿Llegó un sabor mal rotulado?</b>.",
     "Elegí el sabor que figura en la caja y el que era en realidad.",
