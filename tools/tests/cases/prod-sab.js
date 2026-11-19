@@ -5,7 +5,8 @@ const { chromium } = require("playwright");
   const fallos=[], err=[]; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c) fallos.push(m)};
   page.on("pageerror",e=>err.push(e.message)); page.on("console",m=>{if(m.type()==="error"&&!/ERR_|404/.test(m.text())) err.push(m.text())});
   const entrar=async()=>{
-    await page.goto("http://localhost:8991/"); await page.waitForSelector("#authLocal");
+    await page.addInitScript(()=>{try{localStorage.setItem("idioma","es")}catch(e){}}); // estos tests miran textos en español (Marruecos sale en francés solo)
+  await page.goto("http://localhost:8991/"); await page.waitForSelector("#authLocal");
     await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
     await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
     await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if(await page.waitForSelector("[data-tecla]",{timeout:900}).catch(()=>null)){ for(const d of "1234") await page.click('[data-tecla="'+d+'"]') }

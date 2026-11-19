@@ -4,6 +4,7 @@ const { chromium } = require("playwright");
   const page = await (await b.newContext({ viewport: { width: 390, height: 900 } })).newPage();
   const fallos=[], err=[]; const ok=(c,m)=>{console.log((c?"OK   ":"FALLA")+" "+m); if(!c) fallos.push(m)};
   page.on("pageerror",e=>err.push(e.message)); page.on("console",m=>{if(m.type()==="error"&&!/ERR_|404/.test(m.text())) err.push(m.text())});
+  await page.addInitScript(()=>{try{localStorage.setItem("idioma","es")}catch(e){}}); // estos tests miran textos en español (Marruecos sale en francés solo)
   await page.goto("http://localhost:8995/"); await page.waitForSelector("#authLocal");
   await page.fill("#authLocal","Operaciones"); await page.click("#authLocalOk");
   await page.fill("#authClave","op2024"); await page.click("#authClaveOk");
