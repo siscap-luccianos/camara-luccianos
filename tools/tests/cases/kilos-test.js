@@ -53,18 +53,8 @@ const { chromium } = require("playwright");
   const kpi2=await page.$eval(".kpis",e=>e.textContent.replace(/\s+/g," "));
   ok(/39,67 kg/.test(kpi2), "después de sacar 3,60 kg quedan 39,67: "+kpi2.slice(0,150));
 
-  // ---- CONTEO con kilos
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(400);
-  await page.fill("[data-c='4']","3"); await page.fill("[data-c='20']","2"); await page.fill("[data-c='5']","0"); 
-  await page.waitForSelector("[data-kc='4']");
-  let bar=await page.$eval("#barIn",e=>e.textContent); ok(/Faltan los kilos totales de/.test(bar),"conteo pide kilos: "+bar.slice(0,90));
-  const goC=await page.$("#go"); ok(await goC.isDisabled(),"Guardar conteo bloqueado sin kilos");
-  await page.fill("[data-kc='4']","11,4"); await page.fill("[data-kc='20']","7,2");
-  await page.click("#go"); await page.click("#ok"); await page.waitForTimeout(800);
-  const kpi3=await page.$eval(".kpis",e=>e.textContent.replace(/\s+/g," "));
-  ok(/18,60 kg/.test(kpi3), "tras el conteo, kilos = 11,4+7,2 = 18,60: "+kpi3.slice(0,150));
-  const filas3=await page.$$eval(".rows .row",e=>e.map(x=>x.textContent.replace(/\s+/g," ")));
-  ok(filas3.some(t=>/Cheesecake/.test(t)&&/(0,00 kg)/.test(t)||/Cheesecake/.test(t)&&/0,00 kg/.test(t)), "Cheesecake contado en 0 queda en 0,00 kg");
+  // (21/11/2026) El tramo «Conteo con kilos» se sacó de acá: el Conteo cámara pasó a ser por rubro y ya no reemplaza el stock operativo,
+  // así que ese flujo lo cubren conteo-camara-*.js, conteo-parcial.js y gs-conteoparcial-test.js.
 
   // ---- Local sin kilos reales no cambia
   await page.fill("#local","Obelisco CABA"); await page.press("#local","Enter"); await page.waitForTimeout(900);

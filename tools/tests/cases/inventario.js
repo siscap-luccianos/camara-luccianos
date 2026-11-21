@@ -64,7 +64,7 @@ const { chromium } = require("playwright");
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1500);
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
   await (await page.$("#conteoInicialBtn"))?.click(); await page.waitForTimeout(200);
-  ok(/sin terminar/.test(await page.innerText("#invBtn")), "después de recargar avisa que hay un inventario sin terminar");
+  ok(/sin terminar/i.test(await page.innerText("#invBtn")), "después de recargar avisa que hay un inventario sin terminar");
   await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#invBtn"); await page.waitForTimeout(300);
   ok(/Retomaste/.test(await page.innerText("main")), "retoma lo que había cargado");
   ok(await page.$eval('[data-familia="chocolateria"]', e => e.getAttribute("aria-selected")) === "true", "vuelve al rubro donde estaba");
