@@ -1705,7 +1705,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.199.7";
+const FRONTEND_VERSION = "1.199.8";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3443,7 +3443,7 @@ function renderAuth(){
       </form>`;
   } else if(a.paso==="quien"){
     const RESP_ROLES=["admin","supervisor","encargado","turno"];
-    const tarjeta=(e,pri)=>`<button type="button" data-authemp="${e.id}" data-nom="${esc(e.nombre)}"${pri?' class="pri"':""}><span class="ini">${esc(iniPersona(e.nombre))}</span><span class="pTxt"><span class="nm">${esc(e.nombre)}</span></span>${(a.esGestion&&e.tienePin===false)?`<span class="candado" title="Todavía no creó su PIN" aria-label="Sin PIN" style="margin-left:auto;font-size:1.05rem">🔒</span>`:""}<span class="chev">›</span></button>`;
+    const tarjeta=(e,pri)=>`<button type="button" data-authemp="${e.id}" data-nom="${esc(e.nombre)}"${pri?' class="pri"':""}><span class="ini">${esc(iniPersona(e.nombre))}</span><span class="pTxt"><span class="nm">${esc(e.nombre)}</span></span>${a.esGestion?(e.tienePin===false?`<span class="candado" title="Todavía no creó su PIN" style="margin-left:auto;font-size:.78rem;font-weight:700;color:#f0b35a;white-space:nowrap">Sin PIN</span>`:`<span class="candado" title="PIN activo" aria-label="PIN activo" style="margin-left:auto;font-size:1.05rem">🔒</span>`):""}<span class="chev">›</span></button>`;
     const resp=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)!==-1), equ=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)===-1);
     const conTit=resp.length>0 && equ.length>0;
     const grupo=(tit,lista,pri)=>lista.length?`<section class="authGrupo">${conTit?`<div class="authGrpTit">${tit}</div>`:""}<div class="authList${pri?" pri":""}">${lista.map(e=>tarjeta(e,pri)).join("")}</div></section>`:"";
