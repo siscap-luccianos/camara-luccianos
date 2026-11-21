@@ -1706,7 +1706,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.200.0";
+const FRONTEND_VERSION = "1.200.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3914,7 +3914,7 @@ function controlView(){
     <div class="cgLay">
      <aside class="cgSide noPrint">
       <div class="cgTiles">${tile("todos","Todos","t-todos")}${tile("sin","Sin pedido","t-sin")}${tile("pend","Con pedido","t-con")}${tile("viejo","Sin conteo 30+ días","t-viejo")}${tile("propios","Propios","t-prop")}${tile("fran","Franquicias","t-fran")}</div>
-      <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
+      <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${C.gruposError?`<div class="cgVacio" role="status">No se pudieron cargar tus grupos. <button type="button" class="cgLink" data-ctl-gruposreint>Reintentar</button></div>`:""}${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
       ${(()=>{ const por={}; ajenos.forEach(g=>{ const k=g.owner||"Otro supervisor"; (por[k]=por[k]||[]).push(g) }); return Object.keys(por).sort().map(k=>`<div><div class="cgSec"><b>Grupos de ${esc(k)}</b></div><div class="cgLista">${por[k].map(gfila).join("")}</div></div>`).join("") })()}
       ${regiones.length?`<div><div class="cgSec"><b>Regiones</b></div><div class="cgTags">${regiones.map(r=>`<button type="button" class="cgTag" data-cg-reg="${esc(r)}" aria-pressed="${C.reg===r}">#${esc(r)}</button>`).join("")}</div></div>`:""}
       <div class="cgAyuda"><button type="button" class="cgLink" data-ctl-refresh>↻ Actualizar</button><button type="button" class="cgLink" data-ctl-como>Cómo funciona</button></div>
@@ -4013,6 +4013,7 @@ function ctlDesbloquear(inventarioId, local, despues, accion){
 function controlClick(t){
   const C=controlEstado();
   if(t.dataset.ctlRefresh!==undefined){ C.datos=null; C.error=null; renderApp(); cargarControl(); return true }
+  if(t.dataset.ctlGruposreint!==undefined){ const C0=controlEstado(); C0.gruposReint=0; ctlGruposCargar(); return true }
   if(t.dataset.ctlVer!==undefined){ C.det=t.dataset.ctlVer; C.detData=null; C.detId=""; C.detError=null; C.vista="rubro"; C.verG={}; renderApp(); window.scrollTo(0,0); cargarControlDetalle(C.det,""); return true }
   if(t.dataset.ctlVolver!==undefined){ C.det=null; C.detData=null; renderApp(); cargarControl(); return true }
   if(t.dataset.ctlSel){ C.detId=t.dataset.ctlSel; C.detData=null; renderApp(); cargarControlDetalle(C.det,C.detId); return true }
@@ -4055,7 +4056,13 @@ function ctlAvisoCierre(t,n){ return t==="final"?" El cierre deja el stock de la
 function ctlGruposLeer(){ const C=controlEstado(); return C.grupos||{ultimo:[],grupos:[]} }
 async function ctlGruposCargar(){
   const C=controlEstado(); const r=await api("gruposConteo",{});
-  C.grupos=(r&&r.ok)?{ultimo:r.ultimo||[],grupos:r.grupos||[]}:{ultimo:[],grupos:[]};
+  if(r&&r.ok){ C.grupos={ultimo:r.ultimo||[],grupos:r.grupos||[]}; C.gruposError=false; C.gruposReint=0 }
+  else {
+    // (1.200.1) si falla la carga no se pisan los grupos que ya estaban con una lista vacía: se avisa y se reintenta solo
+    if(!C.grupos) C.grupos={ultimo:[],grupos:[]};
+    C.gruposError=!(r&&/desconocida/i.test(r.error||""));
+    if(C.gruposError && (C.gruposReint||0)<3){ C.gruposReint=(C.gruposReint||0)+1; setTimeout(()=>{ if(controlEstado()===C) ctlGruposCargar() },4000) }
+  }
   C.gruposSinServidor=!!(r&&!r.ok&&/desconocida/i.test(r.error||""));
   if(!S.local && S.tab==="control" && !C.det && !_estaEscribiendo()) renderApp();
 }
