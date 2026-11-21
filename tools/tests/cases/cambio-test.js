@@ -83,8 +83,15 @@ let fails=0; const ok=(c,m)=>{ console.log((c?"OK   ":"FALLA ")+m); if(!c) fails
   msg=await page.$eval("#escMsg",e=>e.textContent); ok(/PLU 99 sin asignar/.test(msg), "PLU sin asignar avisa: "+msg);
   await page.fill("#escCodigo","00040038905112621001"); await page.press("#escCodigo","Enter"); await page.waitForTimeout(300);
   msg=await page.$eval("#escMsg",e=>e.textContent); ok(/Banana Split/.test(msg)&&/lote/.test(msg), "el rótulo de fábrica sigue andando: "+msg);
-  const kgs=await page.evaluate(()=>S.pesos.salida["4"]); ok(JSON.stringify(kgs)==="[3.55,3.55,3.89]","pesos cargados: "+JSON.stringify(kgs));
+  await page.waitForTimeout(2700);
+  await page.fill("#escCodigo",""); await page.type("#escCodigo",ean("200001103556"),{delay:5}); await page.waitForTimeout(600);
+  msg=await page.$eval("#escMsg",e=>e.textContent); ok(/Banana Split/.test(msg)&&/3,56/.test(msg), "un lector SIN Enter también lee la etiqueta de 13 números: "+msg);
+  const kgs=await page.evaluate(()=>S.pesos.salida["4"]); ok(JSON.stringify(kgs)==="[3.55,3.55,3.89,3.556]"||JSON.stringify(kgs)==="[3.55,3.55,3.89,3.56]","pesos cargados: "+JSON.stringify(kgs));
 
+  // lector de mano: dos vasquetas idénticas seguidas, sin pausa, cuentan las dos (antes la segunda se descartaba si llegaba en menos de 2,5 s)
+  const antes=(await page.evaluate(()=>S.pesos.salida["4"])).length;
+  for(const c of [ean("200001103557"),ean("200001103557")]){ await page.fill("#escCodigo",c); await page.press("#escCodigo","Enter"); await page.waitForTimeout(60) }
+  const despues=(await page.evaluate(()=>S.pesos.salida["4"])).length; ok(despues===antes+2,"dos etiquetas idénticas seguidas del lector cuentan las dos ("+antes+" → "+despues+")");
   ok(err.length===0, "sin errores de consola"+(err.length?": "+err.join(" | "):""));
   console.log(fails?("\n"+fails+" FALLAS"):"\nTODO OK");
   await b.close(); process.exit(fails?1:0);

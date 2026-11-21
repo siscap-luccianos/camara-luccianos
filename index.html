@@ -1706,7 +1706,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.200.3";
+const FRONTEND_VERSION = "1.200.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -8736,7 +8736,7 @@ function abrirEscaner(modo){
   ov.addEventListener("input", e=>{
     if(e.target.id!=="escCodigo") return;
     clearTimeout(tIn);
-    tIn=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28){ i.value=""; procesarEscaneo(d) } },180);
+    tIn=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28||(d.length===13&&parseCodigoRotulo(d))){ i.value=""; procesarEscaneo(d) } },180);
   });
   ov.addEventListener("keydown", e=>{
     if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); clearTimeout(tIn); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
@@ -8779,8 +8779,10 @@ function procesarEscaneo(txt, cam){
   if(p && p.tipo==="caja"){ e.msg={tipo:"err", t:"Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta."}; pitido(false); renderEscaner(); return }
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
-  if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
-  e.ultimo={crudo:p.crudo, ts:ahora};
+  if(cam){ // la cámara repite la misma lectura varios cuadros seguidos; el lector de mano no (1.200.4: antes también se descartaba la 2.ª vasqueta idéntica si llegaba en menos de 2,5 s)
+    if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return }
+    e.ultimo={crudo:p.crudo, ts:ahora};
+  }
   const s=p.plu!==undefined ? saboresDelLocal().find(x=>x.plu && String(+x.plu)===p.plu) : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
   if(!s){ e.msg={tipo:"err", t:(p.plu!==undefined?"PLU "+p.plu:"Código de sabor "+p.codigo)+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":", lote "+p.lote)+"). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
   if(disponibleParaPesar(s.id,"salida")<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
@@ -8848,8 +8850,10 @@ function procesarEscaneoIng(txt, cam){
   const p=parseCodigoRotulo(txt);
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código ("+String(txt).replace(/\D/g,"").length+" números). Si el rótulo está dañado, cerrá y cargá el sabor a mano."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
-  if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
-  e.ultimo={crudo:p.crudo, ts:ahora};
+  if(cam){ // la cámara repite la misma lectura varios cuadros seguidos; el lector de mano no (1.200.4: antes también se descartaba la 2.ª vasqueta idéntica si llegaba en menos de 2,5 s)
+    if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return }
+    e.ultimo={crudo:p.crudo, ts:ahora};
+  }
   const s=p.plu!==undefined ? saboresDelLocal().find(x=>x.plu && String(+x.plu)===p.plu) : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
   if(!s){ e.msg={tipo:"err", t:(p.plu!==undefined?"PLU "+p.plu:"Código de sabor "+p.codigo)+" sin asignar en la planilla ("+fmtKg(p.kg)+" kg). Cerrá y cargalo a mano."}; pitido(false); renderEscaner(); return }
   if(!esVasquetaEsc(s)){ e.msg={tipo:"err", t:s.nombre+" no es una vasqueta: cargalo a mano (cerrá y tocá el sabor)."}; pitido(false); renderEscaner(); return }
@@ -8979,7 +8983,7 @@ function abrirEscanerConteo(){
   ov.addEventListener("input", e=>{
     if(e.target.id!=="escCodigo") return;
     clearTimeout(t);
-    t=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28){ i.value=""; procesarEscaneoConteo(d) } },180);
+    t=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28||(d.length===13&&parseCodigoRotulo(d))){ i.value=""; procesarEscaneoConteo(d) } },180);
   });
   ov.addEventListener("keydown", e=>{
     if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); clearTimeout(t); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneoConteo(v) }
