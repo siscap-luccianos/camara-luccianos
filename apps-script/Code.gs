@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.107.0";
+const BACKEND_VERSION = "1.108.0";
 
 function doPost(e) {
   let resultado;
@@ -3309,6 +3309,8 @@ function controlStock(empleado) {
   const pedidos = _leerCrudo("PedidosConteo");
   const sabores = _leerCrudo("Sabores");
   const regs = _leerCrudo("Registros");
+  const sinPinPor = {}; // (1.108.0) empleados activos que todavía no crearon su PIN, por local
+  _leerCrudo("Empleados").forEach((e) => { if (e.rol !== "admin" && e.rol !== "supervisor" && _esVerdadero(e.activo) !== false && !e.pin_hash) { const k = String(e.local || "").trim(); sinPinPor[k] = (sinPinPor[k] || 0) + 1; } });
   const filas = [];
   locales.forEach((l) => {
     const nombre = String(l.nombre).trim();
@@ -3337,6 +3339,7 @@ function controlStock(empleado) {
     } else {
       fila.estado = pend ? "pedido" : (base ? "sin_pedir" : "sin_inicial");
     }
+    fila.sinPin = sinPinPor[nombre] || 0;
     filas.push(fila);
   });
   return { ok: true, locales: filas };
