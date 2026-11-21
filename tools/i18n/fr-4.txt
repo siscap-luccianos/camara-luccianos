@@ -534,3 +534,5 @@ ya tiene sus ⇒ a déjà ses
 🔓 Desbloqueado por supervisión. ⇒ 🔓 Déverrouillé par la supervision.
 🔓 hasta ⇒ 🔓 jusqu'à
 Sacar vasquetas ⇒ Sortir des gelatos
+Supervisión pidió un control de este local (cámara + local). Es aparte del Conteo inicial: se compara contra el inicial y no cambia tu stock. ⇒ La supervision a demandé un contrôle de ce magasin (chambre froide + magasin). C'est distinct de l'inventaire initial : il est comparé à l'initial et ne modifie pas ton stock.
+Guardado · práctica ⇒ Enregistré · essai
