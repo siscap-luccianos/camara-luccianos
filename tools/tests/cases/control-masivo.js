@@ -24,6 +24,10 @@ const { chromium } = require("playwright");
   ok(await n() === 1, "el buscador filtra"); await page.fill("#ctlQ", ""); await page.waitForTimeout(150);
   await page.click("[data-ctl-f='fran']"); ok(await n() === 1, "tarjeta Franquicias"); await page.click("[data-ctl-f='todos']");
   await page.click("[data-cg-reg='CABA']"); ok(await n() === 3, "etiqueta #CABA filtra"); await page.click("[data-cg-reg='CABA']");
+  // tocar cualquier parte de la fila abre el detalle del local
+  await page.click("[data-cg-drag='Local prueba'] .cgSub"); await page.waitForSelector(".ctlAcc", { timeout: 5000 }).catch(() => {});
+  ok(await page.$(".ctlAcc") !== null, "tocar la fila (no solo el nombre) abre el detalle del local");
+  await page.click("[data-ctl-volver]"); await page.waitForSelector("[data-ctl-chk]");
   // pedido individual
   await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.click("[data-tp='final']"); await page.click("[data-si]"); await page.waitForTimeout(400);
   ok(/Pedido de cierre/.test(await txt()), "pedido individual de cierre queda marcado");
