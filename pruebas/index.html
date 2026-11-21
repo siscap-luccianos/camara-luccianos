@@ -1717,7 +1717,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.199.6";
+const FRONTEND_VERSION = "1.199.8";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3455,7 +3455,7 @@ function renderAuth(){
       </form>`;
   } else if(a.paso==="quien"){
     const RESP_ROLES=["admin","supervisor","encargado","turno"];
-    const tarjeta=(e,pri)=>`<button type="button" data-authemp="${e.id}" data-nom="${esc(e.nombre)}"${pri?' class="pri"':""}><span class="ini">${esc(iniPersona(e.nombre))}</span><span class="pTxt"><span class="nm">${esc(e.nombre)}</span></span><span class="chev">›</span></button>`;
+    const tarjeta=(e,pri)=>`<button type="button" data-authemp="${e.id}" data-nom="${esc(e.nombre)}"${pri?' class="pri"':""}><span class="ini">${esc(iniPersona(e.nombre))}</span><span class="pTxt"><span class="nm">${esc(e.nombre)}</span></span>${a.esGestion?(e.tienePin===false?`<span class="candado" title="Todavía no creó su PIN" style="margin-left:auto;font-size:.78rem;font-weight:700;color:#f0b35a;white-space:nowrap">Sin PIN</span>`:`<span class="candado" title="PIN activo" aria-label="PIN activo" style="margin-left:auto;font-size:1.05rem">🔒</span>`):""}<span class="chev">›</span></button>`;
     const resp=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)!==-1), equ=(a.empleados||[]).filter(e=>RESP_ROLES.indexOf(e.rol)===-1);
     const conTit=resp.length>0 && equ.length>0;
     const grupo=(tit,lista,pri)=>lista.length?`<section class="authGrupo">${conTit?`<div class="authGrpTit">${tit}</div>`:""}<div class="authList${pri?" pri":""}">${lista.map(e=>tarjeta(e,pri)).join("")}</div></section>`:"";
@@ -3905,7 +3905,7 @@ function controlView(){
     const abierto=C.swOpen===f.local;
     return `<div class="cgSw" data-sw="${esc(f.local)}"><div class="cgSwAcc noPrint"><button type="button" class="mv" data-cg-mover1="${esc(f.local)}">Mover</button>${f.pedido?`<button type="button" class="pd" data-ctl-cancel="${esc(f.local)}">Cancelar</button>`:`<button type="button" class="pd" data-ctl-pedir1="${esc(f.local)}">Pedir</button>`}</div>
       <div class="cgRow${C.sel[f.local]?" sel":""}${abierto?" abierto":""}" draggable="true" data-cg-drag="${esc(f.local)}"><input type="checkbox" data-ctl-chk="${esc(f.local)}"${C.sel[f.local]?" checked":""} aria-label="Marcar ${esc(f.local)}">
-      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos",f.sinPin?`<b title="${esc((f.sinPinNombres||[]).join(", ")||"Todavía no crearon su PIN")}" style="color:var(--warn)">🔒 ${f.sinPin} sin PIN${f.sinPinNombres&&f.sinPinNombres.length?": "+esc(f.sinPinNombres.slice(0,3).join(", "))+(f.sinPinNombres.length>3?"…":""):""}</b>`:""].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}</div>
+      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos"].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}</div>
       <div class="cgFin">${est}${dif&&dif!=="—"?`<span class="cgDif">${dif}</span>`:""}<button type="button" class="cgLink noPrint" data-ctl-pedir1="${esc(f.local)}"${f.pedido?" hidden":""}>Pedir</button><span class="cgChev" aria-hidden="true">›</span></div></div></div>`;
   };
   const titulo=grupo?grupo.nombre:({todos:"Todos los locales",propios:"Propios",fran:"Franquicias",viejo:"Sin conteo hace 30+ días",sin:"Sin pedido",pend:"Con pedido"}[C.f]||"Todos los locales");
@@ -6334,7 +6334,7 @@ function _teamFila(e, rolesQuePuedoCrear){
   const puedeCambiarRol = (e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion") && rolesQuePuedoCrear.length>0;
   return `<div class="teamRow${e.activo?"":" baja"}">
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
-    <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}${(e.activo&&e.tienePin===false)?` · <b title="Todavía no creó su PIN" style="color:var(--warn)">🔒 Sin PIN</b>`:""}</span></span>
+    <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
     ${e.activo?`<div class="acciones">
       ${(e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
       ${puedeCambiarRol?`<select data-cambiar-rol="${e.id}" data-rol-actual="${e.rol}" aria-label="Cambiar rol de ${esc(e.nombre)}" style="font-size:.75rem;padding:6px 8px">${rolesQuePuedoCrear.map(r=>`<option value="${r}" ${r===e.rol?"selected":""}>${esc(ROL_LABEL[r])}</option>`).join("")}</select>`:""}
