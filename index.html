@@ -1705,7 +1705,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.199.9";
+const FRONTEND_VERSION = "1.199.10";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3847,7 +3847,7 @@ function ctlDetalleHTML(){
     <div class="noPrint ctlSel"><small>ELEGÍ UN CONTEO YA CARGADO (no pide nada nuevo)</small><div class="invPills">${chips}</div></div>
     ${franja}
     ${esCmp?ctlCuentaHTML(D,c,base):""}
-    <div class="noPrint invPills" style="margin:6px 0 10px"><button type="button" class="chip" data-ctl-vista="rubro" aria-pressed="${C.vista!=="producto"}">Por rubro</button><button type="button" class="chip" data-ctl-vista="producto" aria-pressed="${C.vista==="producto"}">Por producto</button></div>
+    <p class="sec noPrint" style="margin:14px 0 8px">Resumen del conteo</p>
     ${cuerpo}
     <div class="ctlPedir noPrint">${pedir}</div>
     <div class="ctlNota">La diferencia se mide sobre el <b>total</b> (cámara + local) y siempre contra el <b>inicial</b>: Inicial + Ingresos − Salidas − Merma = Esperado. La <b>merma</b> incluye el desperdicio de cualquier rubro y la merma en kilos que cargan los responsables; una diferencia que nadie explica sigue siendo merma sin registrar.</div>
