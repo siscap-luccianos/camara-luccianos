@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.105.0";
+const BACKEND_VERSION = "1.106.0";
 
 function doPost(e) {
   let resultado;
@@ -2914,7 +2914,7 @@ function guardarGrupoConteo(nombre, locales, empleado) {
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
   nombre = String(nombre || "").trim().slice(0, 30);
   if (!nombre) return { ok: false, error: "Poné un nombre para el grupo." };
-  if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
+  if (!Array.isArray(locales)) return { ok: false, error: "Faltan los locales." };
   if (locales.length > 200) return { ok: false, error: "Demasiados locales." };
   const lista = []; const vistos = {};
   locales.forEach((l) => { l = String(l || "").trim(); if (l && !vistos[l]) { vistos[l] = 1; lista.push(l); } });
@@ -3321,7 +3321,7 @@ function controlStock(empleado) {
     const base = mios.filter((r) => String(r.tipo) !== "parcial" && (!ultimoCmp || Number(r.ts) < Number(ultimoCmp.ts))).pop() || null;
     const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "" }, _resumenConteo(r, catalogo));
     const posteriores = base ? comparados.filter((r) => Number(r.ts) > Number(base.ts)) : [];
-    const fila = { local: nombre, grupo: String(l.grupo || "").trim(), pedido: _pedidoPublico(pend), base: base ? resumenDe(base) : null, conteos: posteriores.map(resumenDe), estado: "", difKg: 0, difU: 0, pctKg: null, pctU: null };
+    const fila = { local: nombre, grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(), pedido: _pedidoPublico(pend), base: base ? resumenDe(base) : null, conteos: posteriores.map(resumenDe), estado: "", difKg: 0, difU: 0, pctKg: null, pctU: null };
     if (base && posteriores.length) {
       const ult = posteriores[posteriores.length - 1];
       const cmp = _compararConteoTotal(base, ult, nombre, catalogo, regs); // el control mide el TOTAL (cámara + local)

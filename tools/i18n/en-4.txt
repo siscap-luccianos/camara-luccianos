@@ -562,3 +562,28 @@ Grupo nuevo ⇒ New group
 Crear grupo ⇒ Create group
 Agregar al grupo ⇒ Add to group
 Quitar del grupo ⇒ Remove from group
+Pedí un conteo a un local, o armá grupos de locales y pedilo a todo el grupo. ⇒ Request a count from a store, or build groups of stores and request it from the whole group.
+Todos los locales ⇒ All stores
+Mis grupos ⇒ My groups
+De otros supervisores ⇒ From other supervisors
+Regiones ⇒ Regions
+Mover a… ⇒ Move to…
+Mover a ⇒ Move to
+Grupo nuevo ⇒ New group
+Nuevo ⇒ New
+Último pedido ⇒ Last request
+Borrar grupo ⇒ Delete group
+Pedir conteo ⇒ Request count
+Cancelar pedidos ⇒ Cancel requests
+Quitar ⇒ Remove
+Listo ⇒ Done
+Mover ⇒ Move
+Pedir ⇒ Request
+Al día ⇒ Up to date
+Sin conteo reciente ⇒ No recent count
+Sin pedido ⇒ No request
+Con pedido ⇒ With request
+Sin conteo 30+ días ⇒ No count in 30+ days
+Propios ⇒ Own
+Franquicias ⇒ Franchises
+Crear ⇒ Create

@@ -562,3 +562,28 @@ Grupo nuevo ⇒ Nouveau groupe
 Crear grupo ⇒ Créer le groupe
 Agregar al grupo ⇒ Ajouter au groupe
 Quitar del grupo ⇒ Retirer du groupe
+Pedí un conteo a un local, o armá grupos de locales y pedilo a todo el grupo. ⇒ Demande un inventaire à un magasin, ou crée des groupes de magasins et demande-le à tout le groupe.
+Todos los locales ⇒ Tous les magasins
+Mis grupos ⇒ Mes groupes
+De otros supervisores ⇒ D'autres superviseurs
+Regiones ⇒ Régions
+Mover a… ⇒ Déplacer vers…
+Mover a ⇒ Déplacer vers
+Grupo nuevo ⇒ Nouveau groupe
+Nuevo ⇒ Nouveau
+Último pedido ⇒ Dernière demande
+Borrar grupo ⇒ Supprimer le groupe
+Pedir conteo ⇒ Demander un inventaire
+Cancelar pedidos ⇒ Annuler les demandes
+Quitar ⇒ Retirer
+Listo ⇒ Terminé
+Mover ⇒ Déplacer
+Pedir ⇒ Demander
+Al día ⇒ À jour
+Sin conteo reciente ⇒ Sans inventaire récent
+Sin pedido ⇒ Sans demande
+Con pedido ⇒ Avec demande
+Sin conteo 30+ días ⇒ Sans inventaire depuis 30+ jours
+Propios ⇒ Propres
+Franquicias ⇒ Franchises
+Crear ⇒ Créer
