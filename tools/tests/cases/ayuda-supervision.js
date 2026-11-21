@@ -10,7 +10,7 @@ const { chromium } = require("playwright");
   await page.fill("#authClave", "op2024"); await page.click("#authClaveOk");
   await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]"); if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click("[data-tecla='" + d + "']"); }
   await page.waitForSelector("header"); await page.waitForTimeout(400);
-  await page.click("#tabs [data-t='control']"); await page.waitForSelector(".ctlTabla"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='control']"); await page.waitForSelector(".cgFilas"); await page.waitForTimeout(300);
   ok(!!(await page.$("[data-ctl-como]")), "Control tiene el botón «Cómo funciona»");
   await page.click("[data-ctl-como]"); await page.waitForSelector("#ayudaOv"); await page.waitForTimeout(200);
   let t = (await page.innerText("#ayudaOv")).replace(/\s+/g, " ");
