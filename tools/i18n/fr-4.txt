@@ -536,3 +536,17 @@ ya tiene sus ⇒ a déjà ses
 Sacar vasquetas ⇒ Sortir des gelatos
 Supervisión pidió un control de este local (cámara + local). Es aparte del Conteo inicial: se compara contra el inicial y no cambia tu stock. ⇒ La supervision a demandé un contrôle de ce magasin (chambre froide + magasin). C'est distinct de l'inventaire initial : il est comparé à l'initial et ne modifie pas ton stock.
 Guardado · práctica ⇒ Enregistré · essai
+Falta el local ⇒ Il manque le magasin
+Falta la cámara ⇒ Il manque la chambre froide
+Completo ⇒ Complet
+Contar la cámara ⇒ Compter la chambre froide
+Contar el local ⇒ Compter le magasin
+Volver a contar ⇒ Recompter
+✓ Hecho ⇒ ✓ Fait
+Los dos pasos hechos ⇒ Les deux étapes sont faites
+Cerrado: lo desbloquea supervisión ⇒ Fermé : la supervision le déverrouille
+Paso 1 · Lo que hay en la cámara ⇒ Étape 1 · Ce qu'il y a dans la chambre froide
+Paso 2 · Lo que hay afuera ⇒ Étape 2 · Ce qu'il y a à l'extérieur
+Contás lo que hay dentro de la cámara. Hacelo primero. ⇒ Tu comptes ce qu'il y a dans la chambre froide. Fais-le en premier.
+Contás lo que está en el local, fuera de la cámara. ⇒ Tu comptes ce qui est dans le magasin, hors de la chambre froide.
+Período de práctica. ⇒ Période d'essai.

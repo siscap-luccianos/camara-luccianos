@@ -536,3 +536,17 @@ ya tiene sus ⇒ already has its
 Sacar vasquetas ⇒ Take out gelatos
 Supervisión pidió un control de este local (cámara + local). Es aparte del Conteo inicial: se compara contra el inicial y no cambia tu stock. ⇒ Supervision requested a check of this store (cold room + store). It is separate from the Initial count: it is compared against the initial one and does not change your stock.
 Guardado · práctica ⇒ Saved · practice
+Falta el local ⇒ Store count missing
+Falta la cámara ⇒ Cold room count missing
+Completo ⇒ Complete
+Contar la cámara ⇒ Count the cold room
+Contar el local ⇒ Count the store
+Volver a contar ⇒ Count again
+✓ Hecho ⇒ ✓ Done
+Los dos pasos hechos ⇒ Both steps done
+Cerrado: lo desbloquea supervisión ⇒ Locked: supervision unlocks it
+Paso 1 · Lo que hay en la cámara ⇒ Step 1 · What is in the cold room
+Paso 2 · Lo que hay afuera ⇒ Step 2 · What is outside
+Contás lo que hay dentro de la cámara. Hacelo primero. ⇒ You count what is inside the cold room. Do this first.
+Contás lo que está en el local, fuera de la cámara. ⇒ You count what is in the store, outside the cold room.
+Período de práctica. ⇒ Practice period.

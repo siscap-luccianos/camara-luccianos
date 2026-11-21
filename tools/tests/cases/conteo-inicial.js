@@ -25,7 +25,7 @@ const { chromium } = require("playwright");
   ok(tarjetas.length === 1 && /Conteo inicial/.test(tarjetas[0]) && !/Conteo físico/.test(await page.innerText("#main")), "en Stock queda un solo cartel «Conteo inicial» (sin «Conteo físico» suelto): " + tarjetas.join(" | "));
   await page.click("#conteoInicialBtn"); await page.waitForTimeout(200);
   const hub = await page.$$eval(".hubRes .htTx b, .hubTile .htTx b", e => e.map(x => x.textContent.trim()));
-  ok(/^Conteo inicial de .+\|Contar la cámara\|Contar el local$/.test(hub.join("|")), "adentro: " + hub.join(" + "));
+  ok(/^Conteo inicial de .+\|Cámara\|Local$/.test(hub.join("|")), "adentro: " + hub.join(" + "));
   ok(await page.$("#hubVolver") !== null, "hay «Volver a Stock»");
   await page.click("#hubVolver"); await page.waitForTimeout(200);
   ok(await page.$("#conteoInicialBtn") !== null, "volver deja el Stock con su cartel");
