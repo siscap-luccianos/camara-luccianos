@@ -551,3 +551,7 @@ Contás lo que hay dentro de la cámara. Hacelo primero. ⇒ You count what is i
 Contás lo que está en el local, fuera de la cámara. ⇒ You count what is in the store, outside the cold room.
 Período de práctica. ⇒ Practice period.
 Repetir (práctica) ⇒ Repeat (practice)
+Mis grupos: ⇒ My groups
+Guardar como grupo ⇒ Save as group
+Guardar grupo ⇒ Save group
+Después lo marcás con un toque. ⇒ Then select it with one tap.
