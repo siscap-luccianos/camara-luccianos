@@ -1570,6 +1570,7 @@ body.invBlur .invProt>*:not(.invMarca){filter:blur(16px)}
 .ctlRubro{border:1px solid var(--line);border-radius:20px;background:var(--surface);padding:14px 18px;margin:0 0 10px}
 .ctlRubroTit{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.ctlRubroTit b{font-family:var(--display);font-size:1.15rem}
 .ctlEq{display:flex;align-items:center;gap:10px;text-align:center;flex-wrap:wrap}.ctlEq>div{flex:1;min-width:90px;padding:8px 4px;border-radius:12px}.ctlEq small{display:block;font-size:.64rem;letter-spacing:.08em;color:var(--muted);font-weight:800}.ctlEq b{font-size:1.05rem}.ctlEq>span{color:var(--muted);font-size:1.1rem}.ctlEq .t{background:#2A201A;color:#F8F1E6}.ctlEq .t small{color:#E7DAC6}
+.corrY{background:#F7D54A!important;color:#463500!important}.corrO{background:#F29A3A!important;color:#3a1d00!important}.corrB{background:#5AA7E6!important;color:#04213a!important}.corrY small,.corrO small,.corrB small{color:inherit!important}.ctlEq i{display:block;font-style:normal;font-size:.64rem;font-weight:700}.ctlPr em{display:block;font-style:normal;font-size:.68rem;font-weight:600;opacity:.85}.ctlLey{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);align-items:center;margin:8px 0}.ctlLey span{display:inline-flex;gap:6px;align-items:center}.ctlLey u{display:inline-block;width:14px;height:14px;border-radius:5px}
 .ctlEq .d{font-weight:800}.ctlEq .d i{display:block;font-style:normal;font-size:.72rem}.ctlEq .d.ok{background:#E3EFE0;color:#2F5A2A}.ctlEq .d.warn{background:#FFF1CC;color:#8A5A00}.ctlEq .d.bad{background:#FDE8E6;color:#B42318}.ctlEq .d small{color:inherit}
 .ctlProds{margin-top:8px}.ctlPr.cmp{grid-template-columns:2fr repeat(7,1fr)}.ctlPrGrp{margin:18px 0 2px;padding:6px 0 4px;border-top:2px solid var(--ink);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent,#7A3E1D)}.ctlPrGrp:first-of-type{margin-top:8px}.ctlPr{display:grid;grid-template-columns:2.2fr 1fr 1fr 1fr 1fr 1.1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:.84rem;text-align:center;align-items:center}.ctlPr .n{text-align:left;font-weight:700}.ctlPr.cab{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border-top:0}
 .gelAyuda{grid-column:1/-1;font-size:.82rem;color:var(--muted);margin:2px 0 0;text-align:right}.repPaso{display:flex;align-items:center;gap:8px;background:#F3E3B8;color:#4a3410;border-radius:12px;padding:7px 10px;font-weight:800;font-size:.8rem;letter-spacing:.04em;text-transform:uppercase;margin:12px 0 8px}.repPaso i{font-style:normal;background:#4a3410;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
@@ -1705,7 +1706,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.199.14";
+const FRONTEND_VERSION = "1.200.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3800,6 +3801,14 @@ function ctlCuentaHTML(D,c,base){
     ${difRealHTML}
     ${anu}</div>`;
 }
+/** Reconteos pintados (1.200.0): amarillo = corregido 1 vez, naranja = 2 o más veces, azul = lo corrigió supervisión. {sabor:{n,antes,sup}} */
+function ctlCorrDe(corr, ids){
+  let n=0, sup=false, hay=false;
+  (ids||[]).forEach(id=>{ const x=corr&&corr[String(id)]; if(x){ hay=true; n=Math.max(n,x.n||0); if(x.sup) sup=true } });
+  if(!hay) return null;
+  return sup?{cls:"corrB",txt:"ajuste supervisión"}:n>=2?{cls:"corrO",txt:"corregido ×"+n}:{cls:"corrY",txt:"corregido"};
+}
+function ctlLeyendaCorr(){ return `<div class="ctlLey noPrint"><span><u class="corrY"></u>Corregido 1 vez</span><span><u class="corrO"></u>Corregido 2 o más veces</span><span><u class="corrB"></u>Ajuste de supervisión</span><span>Sin color: sin reconteo</span></div>` }
 function ctlDetalleHTML(){
   const C=controlEstado(), D=C.detData;
   const volver=`<div class="noPrint" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button type="button" class="btn volver" data-ctl-volver>‹ Volver a Control</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button></div>`;
@@ -3817,8 +3826,9 @@ function ctlDetalleHTML(){
     <div class="ctlKpis">${bloque("INICIAL",ini)}${bloque("PARCIAL",par)}${bloque("CIERRE",cie)}<div class="ctlKpi dif ${esCmp?ctlSem(D.dif.kg,D.dif.pctKg):""}"><small>DIFERENCIA</small><b>${esCmp?(D.dif.kg<0?"−":D.dif.kg>0?"+":"")+ctlKg(Math.abs(D.dif.kg))+" kg":"—"}</b>${esCmp&&D.dif.pctKg!==null?`<i>${D.dif.pctKg<0?"−":"+"}${String(Math.abs(D.dif.pctKg)).replace(".",",")} % del inicial</i>`:""}</div></div></div>`;
   const grp=D.grupos.slice().sort((a,b)=>(GRUPO_PRODUCTO_ORDEN.indexOf(a.g)+1||99)-(GRUPO_PRODUCTO_ORDEN.indexOf(b.g)+1||99));
   const sgn=(v,kg,sig)=>!v?"—":sig+ctlV(v,kg);
+  const celdaCorr=(v,x,kg)=>{ if(!x) return `<span>${v}</span>`; const k=ctlCorrDe({a:x},["a"]); return `<span class="${k.cls}">${v}<em>(antes ${ctlV(x.antes,kg)})</em></span>` };
   const filaProd=(x)=>x.ini!==null&&x.ini!==undefined
-    ? `<div class="ctlPr cmp"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.ini,x.kg)}</span><span>${sgn(x.ing,x.kg,"+")}</span><span>${sgn(x.sal,x.kg,"−")}</span><span>${sgn(x.merma,x.kg,"−")}</span><span><b>${ctlV(x.esperado,x.kg)}</b></span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>${ctlPill(x.dif,null,x.kg).replace(/ · [^<]*%/,"")}</span></div>`
+    ? `<div class="ctlPr cmp"><span class="n">${esc(x.nombre)}</span>${celdaCorr(ctlV(x.ini,x.kg),(D.base&&D.base.correcciones||{})[String(x.id)],x.kg)}<span>${sgn(x.ing,x.kg,"+")}</span><span>${sgn(x.sal,x.kg,"−")}</span><span>${sgn(x.merma,x.kg,"−")}</span><span><b>${ctlV(x.esperado,x.kg)}</b></span>${celdaCorr("<b>"+ctlV(x.tot,x.kg)+"</b>",(c.correcciones||{})[String(x.id)],x.kg)}<span>${ctlPill(x.dif,null,x.kg).replace(/ · [^<]*%/,"")}</span></div>`
     : `<div class="ctlPr"><span class="n">${esc(x.nombre)}</span><span>${ctlV(x.cam,x.kg)}</span><span>${ctlV(x.loc,x.kg)}</span><span><b>${ctlV(x.tot,x.kg)}</b></span><span>—</span><span>—</span></div>`;
   const cabProd=esCmp
     ? `<div class="ctlPr cmp cab"><span class="n">Producto</span><span>Inicial</span><span>Ingresos</span><span>Salidas</span><span>Merma</span><span>Esperado</span><span>Conteo</span><span>Diferencia</span></div>`
@@ -3832,9 +3842,10 @@ function ctlDetalleHTML(){
   } else {
     cuerpo=grp.map(g=>`<div class="ctlRubro"><div class="ctlRubroTit"><b>${esc(GRUPO_PRODUCTO_LABEL[g.g]||g.g)}</b><button type="button" class="invLnk noPrint" data-ctl-verg="${esc(g.g)}">${C.verG&&C.verG[g.g]?"Ocultar sabores":"Ver sabores"}</button></div>
       ${esCmp&&g.ini!==null&&g.ini!==undefined
-        ? `<div class="ctlEq"><div><small>INICIAL</small><b>${ctlV(g.ini,g.kg)}</b></div><span>+</span><div><small>INGRESOS</small><b>${ctlV(g.ing,g.kg)}</b></div><span>−</span><div><small>SALIDAS</small><b>${ctlV(g.sal,g.kg)}</b></div><span>−</span><div><small>MERMA</small><b>${ctlV(g.merma||0,g.kg)}</b></div><span>=</span><div class="t"><small>ESPERADO</small><b>${ctlV(g.esperado,g.kg)}</b></div><div><small>CONTEO</small><b>${ctlV(g.tot,g.kg)}</b></div><div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div></div>`
+        ? `<div class="ctlEq">${(()=>{const k=ctlCorrDe(D.base&&D.base.correcciones,(g.productos||[]).map(p=>p.id));return `<div class="${k?k.cls:""}"><small>INICIAL</small><b>${ctlV(g.ini,g.kg)}</b>${k?`<i>${k.txt}</i>`:""}</div>`})()}<span>+</span><div><small>INGRESOS</small><b>${ctlV(g.ing,g.kg)}</b></div><span>−</span><div><small>SALIDAS</small><b>${ctlV(g.sal,g.kg)}</b></div><span>−</span><div><small>MERMA</small><b>${ctlV(g.merma||0,g.kg)}</b></div><span>=</span><div class="t"><small>ESPERADO</small><b>${ctlV(g.esperado,g.kg)}</b></div>${(()=>{const k=ctlCorrDe(c.correcciones,(g.productos||[]).map(p=>p.id));return `<div class="${k?k.cls:""}"><small>CONTEO</small><b>${ctlV(g.tot,g.kg)}</b>${k?`<i>${k.txt}</i>`:""}</div>`})()}<div class="d ${ctlSem(g.dif,g.pct)}"><small>DIFERENCIA</small><b>${g.dif?(g.dif<0?"−":"+")+ctlV(Math.abs(g.dif),g.kg):"Sin diferencia"}</b>${g.dif&&g.pct!==null?`<i>${g.pct<0?"−":"+"}${String(Math.abs(g.pct)).replace(".",",")} %</i>`:""}</div></div>`
         : `<div class="ctlEq"><div><small>CÁMARA</small><b>${ctlV(g.cam,g.kg)}</b></div><span>+</span><div><small>LOCAL</small><b>${ctlV(g.loc,g.kg)}</b></div><span>=</span><div class="t"><small>TOTAL</small><b>${ctlV(g.tot,g.kg)}</b></div></div>`}
       ${C.verG&&C.verG[g.g]?`<div class="ctlProds">${cabProd}${g.productos.map(filaProd).join("")}</div>`:""}</div>`).join("")||`<div class="note">Sin productos en este conteo.</div>`;
+    if(esCmp) cuerpo+=ctlLeyendaCorr();
   }
   const pend=D.pedido;
   const pedir=pend?`<span><b>Hay un pedido de ${pend.tipo==="final"?"cierre":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Cancelar pedido</button>`:`<span><b>Pedir un conteo nuevo a este local:</b></span><button type="button" class="rlvBtn" data-ctl-pedir="${esc(C.det)}">Pedir parcial</button><button type="button" class="rlvBtn" data-ctl-pedirfinal="${esc(C.det)}">Pedir cierre</button>`;
@@ -3903,7 +3914,7 @@ function controlView(){
     <div class="cgLay">
      <aside class="cgSide noPrint">
       <div class="cgTiles">${tile("todos","Todos","t-todos")}${tile("sin","Sin pedido","t-sin")}${tile("pend","Con pedido","t-con")}${tile("viejo","Sin conteo 30+ días","t-viejo")}${tile("propios","Propios","t-prop")}${tile("fran","Franquicias","t-fran")}</div>
-      <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
+      <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${C.gruposError?`<div class="cgVacio" role="status">No se pudieron cargar tus grupos. <button type="button" class="cgLink" data-ctl-gruposreint>Reintentar</button></div>`:""}${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
       ${(()=>{ const por={}; ajenos.forEach(g=>{ const k=g.owner||"Otro supervisor"; (por[k]=por[k]||[]).push(g) }); return Object.keys(por).sort().map(k=>`<div><div class="cgSec"><b>Grupos de ${esc(k)}</b></div><div class="cgLista">${por[k].map(gfila).join("")}</div></div>`).join("") })()}
       ${regiones.length?`<div><div class="cgSec"><b>Regiones</b></div><div class="cgTags">${regiones.map(r=>`<button type="button" class="cgTag" data-cg-reg="${esc(r)}" aria-pressed="${C.reg===r}">#${esc(r)}</button>`).join("")}</div></div>`:""}
       <div class="cgAyuda"><button type="button" class="cgLink" data-ctl-refresh>↻ Actualizar</button><button type="button" class="cgLink" data-ctl-como>Cómo funciona</button></div>
@@ -3955,7 +3966,7 @@ function ctlLiberar(inventarioId, local, mostrar){
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
     <p class="mantTit" id="ctlTit" style="margin:0">${mostrar?"Mostrar el conteo al responsable":"Volver a ocultar el conteo"}</p>
     <p class="mantSub" style="margin:0">${esc(local)} · queda registrado con tu nombre.${mostrar?" El responsable ve solo cámara + local = total.":""}</p>
-    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" name="ctl_codigo" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
     <div class="warn" id="ctlErr" style="display:none"></div>
     <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>${mostrar?"Mostrar":"Ocultar"}</button></div></div>`;
   document.body.appendChild(ov);
@@ -3965,9 +3976,10 @@ function ctlLiberar(inventarioId, local, mostrar){
     if(e.target.closest("[data-ctl-si]")){
       const pin=ov.querySelector("#ctlPin").value.trim();
       if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const bSi=ov.querySelector("[data-ctl-si]"), txt0=bSi.textContent; bSi.disabled=true; bSi.textContent="Guardando…"; ov.querySelector("#ctlErr").style.display="none";
       const r=await api("liberarInventario",{local, inventarioId, pin, mostrar});
       if(r && r.ok){ ov.remove(); toast(mostrar?"Conteo mostrado al responsable":"Conteo oculto otra vez"); ctlRefrescar() }
-      else err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar.");
+      else { bSi.disabled=false; bSi.textContent=txt0; err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar."); }
     }
   });
   ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove(); if(e.key==="Enter"){ const b=ov.querySelector("[data-ctl-si]"); if(b) b.click() } });
@@ -3979,8 +3991,8 @@ function ctlDesbloquear(inventarioId, local, despues, accion){
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
     <p class="mantTit" id="ctlTit" style="margin:0">Desbloquear conteo</p>
     <p class="mantSub" style="margin:0">${esc(local)} · habilita una corrección y después se vuelve a cerrar. Queda registrado con tu nombre y el motivo; el conteo original se conserva.</p>
-    <input id="ctlMotivo" type="text" maxlength="200" placeholder="Motivo (obligatorio)" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
-    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlMotivo" type="text" maxlength="200" placeholder="Motivo (obligatorio)" name="ctl_motivo" autocomplete="off" data-lpignore="true" data-1p-ignore style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" name="ctl_codigo" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
     <div class="warn" id="ctlErr" style="display:none"></div>
     <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>Desbloquear</button></div></div>`;
   document.body.appendChild(ov);
@@ -3991,9 +4003,10 @@ function ctlDesbloquear(inventarioId, local, despues, accion){
       const motivo=ov.querySelector("#ctlMotivo").value.trim(), pin=ov.querySelector("#ctlPin").value.trim();
       if(motivo.length<3){ err("Escribí el motivo."); return }
       if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const bSi=ov.querySelector("[data-ctl-si]"), txt0=bSi.textContent; bSi.disabled=true; bSi.textContent="Guardando…"; ov.querySelector("#ctlErr").style.display="none";
       const r=await (accion==="camara"?api("desbloquearConteoCamara",{local, pin, motivo}):api("desbloquearInventario",{local, inventarioId, pin, motivo}));
       if(r && r.ok){ ov.remove(); toast("Desbloqueado: se puede hacer una corrección"); if(despues) despues(); else ctlRefrescar() }
-      else err((r&&r.error)||"No se pudo desbloquear.");
+      else { bSi.disabled=false; bSi.textContent=txt0; err((r&&r.error)||"No se pudo desbloquear."); }
     }
   });
   ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove() });
@@ -4002,6 +4015,7 @@ function ctlDesbloquear(inventarioId, local, despues, accion){
 function controlClick(t){
   const C=controlEstado();
   if(t.dataset.ctlRefresh!==undefined){ C.datos=null; C.error=null; renderApp(); cargarControl(); return true }
+  if(t.dataset.ctlGruposreint!==undefined){ const C0=controlEstado(); C0.gruposReint=0; ctlGruposCargar(); return true }
   if(t.dataset.ctlVer!==undefined){ C.det=t.dataset.ctlVer; C.detData=null; C.detId=""; C.detError=null; C.vista="rubro"; C.verG={}; renderApp(); window.scrollTo(0,0); cargarControlDetalle(C.det,""); return true }
   if(t.dataset.ctlVolver!==undefined){ C.det=null; C.detData=null; renderApp(); cargarControl(); return true }
   if(t.dataset.ctlSel){ C.detId=t.dataset.ctlSel; C.detData=null; renderApp(); cargarControlDetalle(C.det,C.detId); return true }
@@ -4044,7 +4058,13 @@ function ctlAvisoCierre(t,n){ return t==="final"?" El cierre deja el stock de la
 function ctlGruposLeer(){ const C=controlEstado(); return C.grupos||{ultimo:[],grupos:[]} }
 async function ctlGruposCargar(){
   const C=controlEstado(); const r=await api("gruposConteo",{});
-  C.grupos=(r&&r.ok)?{ultimo:r.ultimo||[],grupos:r.grupos||[]}:{ultimo:[],grupos:[]};
+  if(r&&r.ok){ C.grupos={ultimo:r.ultimo||[],grupos:r.grupos||[]}; C.gruposError=false; C.gruposReint=0 }
+  else {
+    // (1.200.1) si falla la carga no se pisan los grupos que ya estaban con una lista vacía: se avisa y se reintenta solo
+    if(!C.grupos) C.grupos={ultimo:[],grupos:[]};
+    C.gruposError=!(r&&/desconocida/i.test(r.error||""));
+    if(C.gruposError && (C.gruposReint||0)<3){ C.gruposReint=(C.gruposReint||0)+1; setTimeout(()=>{ if(controlEstado()===C) ctlGruposCargar() },4000) }
+  }
   C.gruposSinServidor=!!(r&&!r.ok&&/desconocida/i.test(r.error||""));
   if(!S.local && S.tab==="control" && !C.det && !_estaEscribiendo()) renderApp();
 }
