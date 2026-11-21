@@ -1706,7 +1706,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.200.1";
+const FRONTEND_VERSION = "1.200.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3966,7 +3966,7 @@ function ctlLiberar(inventarioId, local, mostrar){
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
     <p class="mantTit" id="ctlTit" style="margin:0">${mostrar?"Mostrar el conteo al responsable":"Volver a ocultar el conteo"}</p>
     <p class="mantSub" style="margin:0">${esc(local)} · queda registrado con tu nombre.${mostrar?" El responsable ve solo cámara + local = total.":""}</p>
-    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" name="ctl_codigo" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
     <div class="warn" id="ctlErr" style="display:none"></div>
     <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>${mostrar?"Mostrar":"Ocultar"}</button></div></div>`;
   document.body.appendChild(ov);
@@ -3976,9 +3976,10 @@ function ctlLiberar(inventarioId, local, mostrar){
     if(e.target.closest("[data-ctl-si]")){
       const pin=ov.querySelector("#ctlPin").value.trim();
       if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const bSi=ov.querySelector("[data-ctl-si]"), txt0=bSi.textContent; bSi.disabled=true; bSi.textContent="Guardando…"; ov.querySelector("#ctlErr").style.display="none";
       const r=await api("liberarInventario",{local, inventarioId, pin, mostrar});
       if(r && r.ok){ ov.remove(); toast(mostrar?"Conteo mostrado al responsable":"Conteo oculto otra vez"); ctlRefrescar() }
-      else err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar.");
+      else { bSi.disabled=false; bSi.textContent=txt0; err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo guardar."); }
     }
   });
   ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove(); if(e.key==="Enter"){ const b=ov.querySelector("[data-ctl-si]"); if(b) b.click() } });
@@ -3990,8 +3991,8 @@ function ctlDesbloquear(inventarioId, local, despues, accion){
   ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="ctlTit">
     <p class="mantTit" id="ctlTit" style="margin:0">Desbloquear conteo</p>
     <p class="mantSub" style="margin:0">${esc(local)} · habilita una corrección y después se vuelve a cerrar. Queda registrado con tu nombre y el motivo; el conteo original se conserva.</p>
-    <input id="ctlMotivo" type="text" maxlength="200" placeholder="Motivo (obligatorio)" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
-    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" autocomplete="off" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlMotivo" type="text" maxlength="200" placeholder="Motivo (obligatorio)" name="ctl_motivo" autocomplete="off" data-lpignore="true" data-1p-ignore style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
+    <input id="ctlPin" type="text" inputmode="numeric" maxlength="4" class="inputMasked" placeholder="Tu PIN" name="ctl_codigo" autocomplete="one-time-code" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other" style="width:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--line)">
     <div class="warn" id="ctlErr" style="display:none"></div>
     <div class="mantAcc"><button type="button" class="btn ghost" data-ctl-no>Cancelar</button><button type="button" class="btn" data-ctl-si>Desbloquear</button></div></div>`;
   document.body.appendChild(ov);
@@ -4002,9 +4003,10 @@ function ctlDesbloquear(inventarioId, local, despues, accion){
       const motivo=ov.querySelector("#ctlMotivo").value.trim(), pin=ov.querySelector("#ctlPin").value.trim();
       if(motivo.length<3){ err("Escribí el motivo."); return }
       if(!/^\d{4}$/.test(pin)){ err("Escribí tu PIN de 4 números."); return }
+      const bSi=ov.querySelector("[data-ctl-si]"), txt0=bSi.textContent; bSi.disabled=true; bSi.textContent="Guardando…"; ov.querySelector("#ctlErr").style.display="none";
       const r=await (accion==="camara"?api("desbloquearConteoCamara",{local, pin, motivo}):api("desbloquearInventario",{local, inventarioId, pin, motivo}));
       if(r && r.ok){ ov.remove(); toast("Desbloqueado: se puede hacer una corrección"); if(despues) despues(); else ctlRefrescar() }
-      else err((r&&r.error)||"No se pudo desbloquear.");
+      else { bSi.disabled=false; bSi.textContent=txt0; err((r&&r.error)||"No se pudo desbloquear."); }
     }
   });
   ov.addEventListener("keydown", e=>{ if(e.key==="Escape") ov.remove() });
