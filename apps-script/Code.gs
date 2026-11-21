@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.106.0";
+const BACKEND_VERSION = "1.107.0";
 
 function doPost(e) {
   let resultado;
@@ -2571,12 +2571,14 @@ function _liberaCierreTs(ts) {
   return noon;
 }
 
+const VISIBLE_RESP_MS = 3600000; // cuánto dura un conteo mostrado al responsable (1 hora)
 /** ¿Lo ve el responsable de local? Inicial siempre; cierre desde las 12:00 o cuando supervisión lo libera; parcial solo si supervisión lo libera. Supervisión y los locales con ver_diferencias=SI ven todo. */
 function _visibleParaResponsable(r, verTodo) {
   if (verTodo) return true;
   const tipo = String(r.tipo);
   if (tipo !== "parcial" && tipo !== "final") return true;
-  if ((Number(r.visible_resp_ts) || 0) > 0) return true;
+  const vts = Number(r.visible_resp_ts) || 0;
+  if (vts > 0 && Date.now() < vts + VISIBLE_RESP_MS) return true; // lo muestra supervisión: dura 1 hora y se oculta solo
   return tipo === "final" && Date.now() >= _liberaCierreTs(r.ts);
 }
 
@@ -2627,6 +2629,7 @@ function _inventarioPublico(r, verValor) {
     tipo: String(r.tipo) === "parcial" ? "parcial" : String(r.tipo) === "final" ? "final" : "inicial",
     desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0,
     visible_resp_ts: Number(r.visible_resp_ts) || 0,
+    visible_hasta: (Number(r.visible_resp_ts) || 0) > 0 ? (Number(r.visible_resp_ts) || 0) + VISIBLE_RESP_MS : 0,
     libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0,
     con_original: !!r.items_original,
     fijo: !((Number(r.desbloqueado_hasta) || 0) > Date.now()),
@@ -2795,12 +2798,13 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     const antes = Number(items[String(saborId)]) || 0;
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
     if (nuevo > 0) items[String(saborId)] = nuevo; else delete items[String(saborId)];
-    cambios.push({ ts: Date.now(), q: empleado.nombre, s: String(saborId), antes: antes, despues: nuevo, mot: motivo });
+    // La corrección del admin no deja marca visible (ni «corregido por» ni el original): queda solo en Auditoría. La de un supervisor sí.
+    if (empleado.rol !== "admin") cambios.push({ ts: Date.now(), q: empleado.nombre, s: String(saborId), antes: antes, despues: nuevo, mot: motivo });
     const precios = _jsonObj(fila.precios, null);
     const valorTotal = precios && Object.keys(precios).length ? _invValor(items, camara, precios, catalogo) : (fila.valor_total === undefined ? "" : fila.valor_total);
     // La primera corrección de un conteo desbloqueado guarda la versión original: queda al lado, no se pisa.
     const cambiosFila = { items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal, desbloqueado_hasta: 0 }; // una corrección y el candado vuelve a cerrarse
-    if (!fila.items_original) cambiosFila.items_original = String(fila.items || "{}");
+    if (!fila.items_original && empleado.rol !== "admin") cambiosFila.items_original = String(fila.items || "{}");
     _actualizarCrudo("Inventarios", fila.id, cambiosFila);
     _auditar("corregir_inventario", empleado.id, empleado.nombre, local + ": inventario " + fila.id + ", " + sab.nombre + " " + antes + " → " + nuevo + " (" + motivo + ")");
     const publica = _inventarioPublico(Object.assign({}, fila, { desbloqueado_hasta: 0, items: JSON.stringify(items), cambios: JSON.stringify(cambios), valor_total: valorTotal, items_original: fila.items_original || String(fila.items || "{}") }), _invVerValor(filaLocal, empleado));
@@ -3355,7 +3359,7 @@ function controlDetalle(local, inventarioId, empleado) {
   if (!elegido) return { ok: false, error: "No se encontró ese conteo." };
   const esCmp = String(elegido.tipo) === "parcial" || String(elegido.tipo) === "final";
   const base = esCmp ? (mios.filter((r) => String(r.tipo) !== "parcial" && Number(r.ts) < Number(elegido.ts)).pop() || null) : null;
-  const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "", fijo: _inventarioPublico(r, false).fijo, desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0, visible_resp_ts: Number(r.visible_resp_ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }, _resumenConteo(r, catalogo));
+  const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "", fijo: _inventarioPublico(r, false).fijo, desbloqueado_hasta: Number(r.desbloqueado_hasta) || 0, visible_resp_ts: Number(r.visible_resp_ts) || 0, visible_hasta: (Number(r.visible_resp_ts) || 0) > 0 ? (Number(r.visible_resp_ts) || 0) + VISIBLE_RESP_MS : 0, cambios: _jsonObj(r.cambios, []).slice(-1), libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }, _resumenConteo(r, catalogo));
   const regsCtl = base ? _leerCrudo("Registros") : null;
   const cmp = base ? _compararConteoTotal(base, elegido, local, catalogo, regsCtl) : null;   // TOTAL: cámara + local
   const cmpCam = base ? _compararConteo(base, elegido, local, catalogo, regsCtl) : null;     // solo cámara (dato secundario)

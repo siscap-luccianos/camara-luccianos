@@ -587,3 +587,13 @@ Sin conteo 30+ días ⇒ Sans inventaire depuis 30+ jours
 Propios ⇒ Propres
 Franquicias ⇒ Franchises
 Crear ⇒ Créer
+Habilitar recuento ⇒ Autoriser un nouveau comptage
+Habilitar recuento (PIN) ⇒ Autoriser un nouveau comptage (PIN)
+Ya habilitado ⇒ Déjà autorisé
+Mostrar el resultado ⇒ Afficher le résultat
+Mostrar 1 hora (PIN) ⇒ Afficher 1 heure (PIN)
+Ocultar ahora (PIN) ⇒ Masquer maintenant (PIN)
+Cerrado ⇒ Fermé
+Habilitado ⇒ Autorisé
+Conteo de la cámara ⇒ Comptage de la chambre froide
+Este resultado ya no está disponible: pasó la hora en que supervisión lo mostró. ⇒ Ce résultat n'est plus disponible : l'heure pendant laquelle la supervision l'a affiché est écoulée.

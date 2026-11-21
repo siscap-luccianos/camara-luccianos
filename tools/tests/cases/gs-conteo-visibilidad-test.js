@@ -53,6 +53,10 @@ r=run(`liberarInventario("Galerías","1","1234",true,emp)`); ok(!r.ok,"el inicia
 r=run(`liberarInventario("Galerías","2","1234",true,emp)`); ok(r.ok&&inv[1].visible_resp_ts===NOW&&inv[1].visible_resp_por==="Gabi","con PIN lo muestra y queda quién y cuándo");
 ok(audit.some(a=>a[0]==="mostrar_conteo_responsable"),"queda en Auditoría");
 E("encargado"); r=run(`inventarios("Galerías",emp)`); ok(ids(r)==="1,2","el responsable ya ve el parcial liberado");
+// dura 1 hora y se oculta solo
+NOW+=59*60000; E("encargado"); r=run(`inventarios("Galerías",emp)`); ok(ids(r)==="1,2","a los 59 minutos el responsable todavía lo ve");
+NOW+=2*60000; r=run(`inventarios("Galerías",emp)`); ok(ids(r)==="1","pasada la hora se oculta solo");
+NOW-=61*60000; E("supervisor");
 E("supervisor"); r=run(`liberarInventario("Galerías","2","1234",false,emp)`); ok(r.ok&&inv[1].visible_resp_ts===0,"supervisión puede volver a ocultarlo");
 E("encargado"); r=run(`inventarios("Galerías",emp)`); ok(ids(r)==="1","y el responsable deja de verlo");
 // no puede corregir lo oculto

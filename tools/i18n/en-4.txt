@@ -587,3 +587,13 @@ Sin conteo 30+ días ⇒ No count in 30+ days
 Propios ⇒ Own
 Franquicias ⇒ Franchises
 Crear ⇒ Create
+Habilitar recuento ⇒ Allow a recount
+Habilitar recuento (PIN) ⇒ Allow a recount (PIN)
+Ya habilitado ⇒ Already allowed
+Mostrar el resultado ⇒ Show the result
+Mostrar 1 hora (PIN) ⇒ Show for 1 hour (PIN)
+Ocultar ahora (PIN) ⇒ Hide now (PIN)
+Cerrado ⇒ Locked
+Habilitado ⇒ Allowed
+Conteo de la cámara ⇒ Cold room count
+Este resultado ya no está disponible: pasó la hora en que supervisión lo mostró. ⇒ This result is no longer available: the hour in which supervision showed it has passed.
