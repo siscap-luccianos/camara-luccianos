@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.109.0";
+const BACKEND_VERSION = "1.109.1";
 
 function doPost(e) {
   let resultado;
@@ -4061,7 +4061,7 @@ function _auditar(accion, actorId, actorNombre, detalle) {
   // de pocos segundos de Empleados/Sabores/Locales (cierra el hueco de un sondeo que las rearmó con datos viejos).
   Object.keys(HOJAS_CACHE).forEach(_invalidarHojaCache);
   try {
-    _escribirCrudo("Auditoria", { ts: Date.now(), accion: accion, actorId: actorId, actor: actorNombre, detalle: detalle || "" });
+    _escribirCrudo("Auditoria", { ts: Date.now(), fecha_hora: Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "dd/MM/yyyy HH:mm:ss"), accion: accion, actorId: actorId, actor: actorNombre, detalle: detalle || "" });
   } catch (err) {
     // La auditoría nunca debe tumbar la operación principal.
   }
