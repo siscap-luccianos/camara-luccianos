@@ -1,1 +1,5 @@
 .DS_Store
+
+# capturas temporales que genera la suite
+/dev1.png
+/esc1.png
