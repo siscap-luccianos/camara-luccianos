@@ -11,6 +11,7 @@ const args = process.argv.slice(2), filtro = args.find(a => !a.startsWith("--"))
 const todas = fs.readdirSync(cases).filter(f => f.endsWith(".js") && (!filtro || f.includes(filtro))).sort();
 if (args.includes("--lista")) { console.log(todas.join("\n")); process.exit(0); }
 const salida = fs.mkdtempSync(path.join(os.tmpdir(), "logistock-tests-"));
+console.log("Pruebas: " + todas.length + " · cada línea muestra el avance en %");
 const esperar = ms => new Promise(r => setTimeout(r, ms));
 const resultados = [];
 function fallo(txt, code) { return code !== 0 || /^FALLA(?!S 0)/m.test(txt) || /FALLAS [1-9]/.test(txt) || /Error: |pageerror/i.test(txt) && /pageerror\s*[:=]\s*\[?["'{A-Za-z]/.test(txt); }
@@ -30,7 +31,8 @@ function fallo(txt, code) { return code !== 0 || /^FALLA(?!S 0)/m.test(txt) || /
     const txt = (r.stdout || "") + (r.stderr || "");
     const mal = fallo(txt, r.status);
     resultados.push([f, mal ? "FALLA" : "OK", mal ? txt.trim().split("\n").slice(-6).join("\n") : ""]);
-    console.log((mal ? "FALLA " : "OK    ") + f);
+    const hechas = resultados.length, pct = Math.round(hechas * 100 / todas.length);
+    console.log((mal ? "FALLA " : "OK    ") + f + "   [" + hechas + "/" + todas.length + " · " + pct + " %]");
     if (mal) console.log(resultados[resultados.length - 1][2].replace(/^/gm, "      "));
   }
   const n = s => resultados.filter(r => r[1] === s).length;
