@@ -106,7 +106,7 @@ function resp(b){
   if(a==="desbloquearConteoCamara"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; db.camDesb=true; console.log("DESB_CAMARA",JSON.stringify({local:b.local,mot:b.motivo})); return {ok:true,desbloqueado_hasta:Date.now()+864e5}; }
   if(a==="liberarInventario"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; db.vis=db.vis||{}; db.vis[String(b.inventarioId)]=b.mostrar?Date.now():0; console.log("LIBERAR",JSON.stringify({inv:b.inventarioId,mostrar:b.mostrar})); return {ok:true,visible_resp_ts:db.vis[String(b.inventarioId)]}; }
   if(a==="controlStock"){ const pend=(db.pedidos||[]).filter(q=>q.estado==="pendiente"); const T=Date.now();
-    const res=(id,tipo,dias,cam)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",camKg:cam,camU:1240,locKg:26.5,locU:96});
+    const res=(id,tipo,dias,cam)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",camKg:cam,camU:1240,locKg:26.5,locU:96,correcciones:({"7":{"4":{n:1,antes:23,sup:false}},"8":{"4":{n:1,antes:21,sup:true}},"9":{"20":{n:2,antes:12,sup:false}}})[id]||{}});
     return {ok:true,locales:[
       {local:"Local prueba",grupo:"Propios",region:"CABA",estado:pend.find(q=>q.local==="Local prueba")?"pedido":"controlado",pedido:pend.find(q=>q.local==="Local prueba")||null,base:res("7","inicial",20,201.3),conteos:[res("8","parcial",5,188.9),res("9","final",1,170)],difKg:-18.9,difU:0,pctKg:-9.4,pctU:null},
       {local:"Obelisco CABA",grupo:"Propios",region:"CABA",estado:pend.find(q=>q.local==="Obelisco CABA")?"pedido":"sin_inicial",pedido:pend.find(q=>q.local==="Obelisco CABA")||null,base:null,conteos:[],difKg:0,difU:0,pctKg:null,pctU:null},

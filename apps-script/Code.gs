@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.108.2";
+const BACKEND_VERSION = "1.109.0";
 
 function doPost(e) {
   let resultado;
@@ -2799,7 +2799,7 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
     if (nuevo > 0) items[String(saborId)] = nuevo; else delete items[String(saborId)];
     // La corrección del admin no deja marca visible (ni «corregido por» ni el original): queda solo en Auditoría. La de un supervisor sí.
-    if (empleado.rol !== "admin") cambios.push({ ts: Date.now(), q: empleado.nombre, s: String(saborId), antes: antes, despues: nuevo, mot: motivo });
+    if (empleado.rol !== "admin") cambios.push({ ts: Date.now(), q: empleado.nombre, r: empleado.rol, s: String(saborId), antes: antes, despues: nuevo, mot: motivo });
     const precios = _jsonObj(fila.precios, null);
     const valorTotal = precios && Object.keys(precios).length ? _invValor(items, camara, precios, catalogo) : (fila.valor_total === undefined ? "" : fila.valor_total);
     // La primera corrección de un conteo desbloqueado guarda la versión original: queda al lado, no se pisa.
@@ -3397,8 +3397,19 @@ function controlDetalle(local, inventarioId, empleado) {
     x.productos.sort((a, b) => Math.abs(b.dif || 0) - Math.abs(a.dif || 0) || String(a.nombre).localeCompare(String(b.nombre)));
     return x;
   });
-  const sel = resumenDe(elegido);
-  const bsel = base ? resumenDe(base) : null;
+  // (1.109.0) Qué sabores se recontaron en cada conteo: {sabor: {n: veces, antes: valor original, sup: lo corrigió supervisión}}. Las correcciones del admin no dejan rastro.
+  const rolPorNombre = {};
+  _leerCrudo("Empleados").forEach((e) => { rolPorNombre[String(e.nombre || "").trim()] = e.rol; });
+  const correccionesDe = (r) => {
+    const out = {};
+    _jsonObj(r.cambios, []).forEach((c) => {
+      const k = String(c.s), x = out[k] || (out[k] = { n: 0, antes: Number(c.antes) || 0, sup: false });
+      x.n++; if ((c.r || rolPorNombre[String(c.q || "").trim()]) === "supervisor") x.sup = true;
+    });
+    return out;
+  };
+  const sel = Object.assign(resumenDe(elegido), { correcciones: correccionesDe(elegido) });
+  const bsel = base ? Object.assign(resumenDe(base), { correcciones: correccionesDe(base) }) : null;
   let dk = 0, du = 0;
   let lk = 0, lu = 0; // variación del local (cuánto cambió lo que hay en el local entre el inicial y este conteo)
   if (cmp) Object.keys(cmp).forEach((id) => { if (cmp[id].kg) { dk += cmp[id].dif; lk += cmp[id].locCont - cmp[id].locIni; } else { du += cmp[id].dif; lu += cmp[id].locCont - cmp[id].locIni; } });
