@@ -96,6 +96,8 @@ function resp(b){
   }
   if(a==="pedirConteoParcial"||a==="pedirConteoFinal"){ db.pedidos=db.pedidos||[]; const ya=db.pedidos.find(q=>q.local===b.local&&q.estado==="pendiente"); if(ya) return {ok:true,repetido:true,pedido:ya}; const q={id:String(db.pedidos.length+1),local:b.local,ts:Date.now(),por:"Gabi Busquets",estado:"pendiente",tipo:a==="pedirConteoFinal"?"final":"parcial"}; db.pedidos.push(q); return {ok:true,pedido:q}; }
   if(a==="cancelarPedidoConteo"){ (db.pedidos||[]).forEach(q=>{ if(q.local===b.local&&q.estado==="pendiente") q.estado="cancelado" }); return {ok:true}; }
+  if(a==="pedirConteoMasivo"){ db.pedidos=db.pedidos||[]; let n=0; const rep=[]; (b.locales||[]).forEach(l=>{ if(db.pedidos.find(q=>q.local===l&&q.estado==="pendiente")) rep.push(l); else { db.pedidos.push({id:String(db.pedidos.length+1),local:l,ts:Date.now(),por:"Gabi Busquets",estado:"pendiente",tipo:b.tipo==="final"?"final":"parcial"}); n++ } }); console.log("MASIVO",JSON.stringify({tipo:b.tipo,n:(b.locales||[]).length})); return {ok:true,pedidos:n,repetidos:rep,errores:[]}; }
+  if(a==="cancelarPedidosMasivo"){ let n=0; (db.pedidos||[]).forEach(q=>{ if((b.locales||[]).includes(q.local)&&q.estado==="pendiente"){ q.estado="cancelado"; n++ } }); return {ok:true,cancelados:n}; }
   if(a==="pedidoConteo") return {ok:true,pedido:(db.pedidos||[]).find(q=>q.local===b.local&&q.estado==="pendiente")||null};
   if(a==="desbloquearInventario"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; console.log("DESBLOQUEAR",JSON.stringify({inv:b.inventarioId,mot:b.motivo})); db.desb=(db.desb||0)+1; return {ok:true,desbloqueado_hasta:Date.now()+864e5}; }
   if(a==="desbloquearConteoCamara"){ if(b.pin!=="1234") return {ok:false,pidePin:true,error:"PIN incorrecto."}; db.camDesb=true; console.log("DESB_CAMARA",JSON.stringify({local:b.local,mot:b.motivo})); return {ok:true,desbloqueado_hasta:Date.now()+864e5}; }
@@ -104,7 +106,9 @@ function resp(b){
     const res=(id,tipo,dias,cam)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",camKg:cam,camU:1240,locKg:26.5,locU:96});
     return {ok:true,locales:[
       {local:"Local prueba",estado:pend.find(q=>q.local==="Local prueba")?"pedido":"controlado",pedido:pend.find(q=>q.local==="Local prueba")||null,base:res("7","inicial",20,201.3),conteos:[res("8","parcial",5,188.9),res("9","final",1,170)],difKg:-18.9,difU:0,pctKg:-9.4,pctU:null},
-      {local:"Recoleta CABA",estado:pend.find(q=>q.local==="Recoleta CABA")?"pedido":"sin_pedir",pedido:pend.find(q=>q.local==="Recoleta CABA")||null,base:res("11","inicial",20,288.5),conteos:[],difKg:0,difU:0,pctKg:null,pctU:null}]}; }
+      {local:"Obelisco CABA",grupo:"Propios",estado:pend.find(q=>q.local==="Obelisco CABA")?"pedido":"sin_inicial",pedido:pend.find(q=>q.local==="Obelisco CABA")||null,base:null,conteos:[],difKg:0,difU:0,pctKg:null,pctU:null},
+      {local:"Santa Rosa La Pampa",grupo:"Franquicias",estado:pend.find(q=>q.local==="Santa Rosa La Pampa")?"pedido":"sin_inicial",pedido:pend.find(q=>q.local==="Santa Rosa La Pampa")||null,base:null,conteos:[],difKg:0,difU:0,pctKg:null,pctU:null},
+      {local:"Recoleta CABA",grupo:"Propios",estado:pend.find(q=>q.local==="Recoleta CABA")?"pedido":"sin_pedir",pedido:pend.find(q=>q.local==="Recoleta CABA")||null,base:res("11","inicial",20,288.5),conteos:[],difKg:0,difU:0,pctKg:null,pctU:null}]}; }
   if(a==="controlDetalle"){ const T=Date.now(); const sel=String(b.inventarioId||"9");
     const mk=(id,tipo,dias,cam,fijo)=>({id,tipo,ts:T-dias*864e5,empleado:"Laura",fijo:fijo!==false&&!db.desb,desbloqueado_hasta:db.desb?T+864e5:0,visible_resp_ts:(db.vis&&db.vis[id])||0,libera_ts:tipo==="final"?T+36e5:0,camKg:cam,camU:1240,locKg:26.5,locU:96});
     const conteos=[mk("7","inicial",20,201.3),mk("8","parcial",5,188.9),mk("9","final",1,170)];

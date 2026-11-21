@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.103.0";
+const BACKEND_VERSION = "1.104.0";
 
 function doPost(e) {
   let resultado;
@@ -121,6 +121,8 @@ function _despacharConSesion(accion, body, empleado) {
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
     case "pedirConteoParcial": return pedirConteo(body.local, "parcial", empleado);
+    case "pedirConteoMasivo": return pedirConteoMasivo(body.locales, body.tipo, empleado);
+    case "cancelarPedidosMasivo": return cancelarPedidosMasivo(body.locales, empleado);
     case "pedirConteoFinal": return pedirConteo(body.local, "final", empleado);
     case "cancelarPedidoConteo": return cancelarPedidoConteo(body.local, empleado);
     case "pedidoConteo": return pedidoConteo(body.local, empleado);
@@ -2881,6 +2883,33 @@ function pedirConteo(local, tipo, empleado) {
 
 function pedirConteoParcial(local, empleado) { return pedirConteo(local, "parcial", empleado); }
 
+/** (1.104.0) Pedido de conteo a varios locales de una vez. Devuelve cuántos se pidieron, cuáles ya tenían pedido y cuáles fallaron. */
+function pedirConteoMasivo(locales, tipo, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede pedir un conteo." };
+  if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
+  if (locales.length > 200) return { ok: false, error: "Demasiados locales de una vez." };
+  const vistos = {}, res = { ok: true, pedidos: 0, repetidos: [], errores: [] };
+  locales.forEach((l) => {
+    l = String(l || "").trim();
+    if (!l || vistos[l]) return;
+    vistos[l] = 1;
+    const r = pedirConteo(l, tipo, empleado);
+    if (!r.ok) res.errores.push({ local: l, error: r.error });
+    else if (r.repetido) res.repetidos.push(l);
+    else res.pedidos++;
+  });
+  return res;
+}
+
+/** (1.104.0) Cancela los pedidos de conteo pendientes de varios locales. */
+function cancelarPedidosMasivo(locales, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede cancelar pedidos." };
+  if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
+  let n = 0;
+  locales.slice(0, 200).forEach((l) => { const q = _pedidoPendiente(String(l || "").trim()); if (q) { const r = cancelarPedidoConteo(String(l).trim(), empleado); if (r.ok) n++; } });
+  return { ok: true, cancelados: n };
+}
+
 function cancelarPedidoConteo(local, empleado) {
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede cancelar el pedido." };
   const lock = LockService.getScriptLock();
@@ -3193,14 +3222,14 @@ function controlStock(empleado) {
     catalogo["0"] = { id: "0", nombre: "Sin sabor específico", tipo: "v", familia: "vasquetas", peso: 0 }; // merma sin sabor: cuenta en el total del helado
     const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(a.ts) - Number(b.ts));
     const pend = pedidos.filter((q) => String(q.local).trim() === nombre && String(q.estado) === "pendiente")[0];
-    if (!mios.length && !pend) return;
+    // (1.104.0) ya no se saltea a los locales sin conteo: Control los lista a todos para poder pedirles uno
     // base = el último conteo inicial o cierre (un cierre es el inicial del mes siguiente); lo comparado = los parciales y cierres posteriores a esa base
     const comparados = mios.filter((r) => String(r.tipo) === "parcial" || String(r.tipo) === "final");
     const ultimoCmp = comparados.length ? comparados[comparados.length - 1] : null;
     const base = mios.filter((r) => String(r.tipo) !== "parcial" && (!ultimoCmp || Number(r.ts) < Number(ultimoCmp.ts))).pop() || null;
     const resumenDe = (r) => Object.assign({ id: r.id, tipo: String(r.tipo) === "final" ? "final" : String(r.tipo) === "parcial" ? "parcial" : "inicial", ts: Number(r.ts) || 0, empleado: r.empleado || "" }, _resumenConteo(r, catalogo));
     const posteriores = base ? comparados.filter((r) => Number(r.ts) > Number(base.ts)) : [];
-    const fila = { local: nombre, pedido: _pedidoPublico(pend), base: base ? resumenDe(base) : null, conteos: posteriores.map(resumenDe), estado: "", difKg: 0, difU: 0, pctKg: null, pctU: null };
+    const fila = { local: nombre, grupo: String(l.grupo || "").trim(), pedido: _pedidoPublico(pend), base: base ? resumenDe(base) : null, conteos: posteriores.map(resumenDe), estado: "", difKg: 0, difU: 0, pctKg: null, pctU: null };
     if (base && posteriores.length) {
       const ult = posteriores[posteriores.length - 1];
       const cmp = _compararConteoTotal(base, ult, nombre, catalogo, regs); // el control mide el TOTAL (cámara + local)

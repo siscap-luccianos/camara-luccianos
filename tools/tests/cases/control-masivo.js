@@ -1,0 +1,44 @@
+// Control: pedir conteo a un local o a varios a la vez; aviso del pedido para admin dentro de un local; pasos de Stock.
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 1100, height: 900 } })).newPage();
+  const err = []; page.on("pageerror", e => err.push(e.message)); page.on("console", m => { if (m.type() === "error" && !/Failed to load|ERR_|fonts/.test(m.text())) err.push(m.text()) });
+  let fallas = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) fallas++ };
+  page.on("dialog", d => d.accept());
+  await page.addInitScript(() => localStorage.setItem("idioma", "es"));
+  await page.goto("http://localhost:8999/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal", "Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave", "op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+  if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click('[data-tecla="' + d + '"]'); }
+  await page.waitForSelector("header"); await page.waitForTimeout(300);
+  await page.click("#tabs [data-t='control']"); await page.waitForSelector("[data-ctl-chk]");
+  const n = async () => (await page.$$("[data-ctl-chk]")).length;
+  ok(await n() === 4, "Control lista todos los locales, incluso sin conteo: " + await n());
+  await page.fill("#ctlQ", "santa"); await page.waitForTimeout(150);
+  ok(await n() === 1, "el buscador filtra");
+  await page.fill("#ctlQ", ""); await page.waitForTimeout(150);
+  await page.click("[data-ctl-f='fran']"); ok(await n() === 1, "filtro Franquicias");
+  await page.click("[data-ctl-f='todos']");
+  await page.click("[data-ctl-pedir1='Recoleta CABA']"); await page.click("[data-tp='final']"); await page.click("[data-si]"); await page.waitForTimeout(400);
+  ok(/Pedido de cierre/.test(await page.innerText("#main")), "pedido individual de cierre queda marcado");
+  await page.click("[data-ctl-todos]"); await page.waitForTimeout(150);
+  ok(/4 locales marcados/.test(await page.innerText("#main")), "marcar los que se ven");
+  await page.click("[data-ctl-masivo]"); await page.waitForTimeout(500);
+  const t = await page.innerText("#main");
+  ok((t.match(/Pedido parcial/g) || []).length === 3 && /Pedido de cierre/.test(t), "el masivo pide parcial a los 3 que no tenían (Recoleta conserva el suyo)");
+  await page.click("[data-ctl-f='pend']"); ok(await n() === 4, "filtro Con pedido");
+  await page.click("[data-ctl-todos]"); await page.click("[data-ctl-cancelmas]"); await page.waitForTimeout(500);
+  await page.click("[data-ctl-f='todos']");
+  ok(!/Pedido parcial|Pedido de cierre/.test(await page.innerText("#main")), "cancelar en masa limpia los pedidos");
+  await page.click("[data-ctl-pedir1='Local prueba']"); await page.click("[data-si]"); await page.waitForTimeout(400);
+  await page.fill("#local", "Local prueba"); await page.press("#local", "Enter"); await page.waitForTimeout(1500);
+  ok(await page.$("#pedidoConteoHacer") !== null, "admin dentro del local ve el aviso del pedido");
+  await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
+  await page.click("#conteoInicialBtn"); await page.waitForTimeout(200);
+  const hub = await page.innerText("#main");
+  ok(/paso 1/i.test(hub) && /paso 2/i.test(hub) && /hacelo primero/i.test(hub), "Stock explica los pasos");
+  ok(err.length === 0, "sin errores de consola " + err.join(" | "));
+  console.log("FALLAS " + fallas); await b.close(); process.exit(fallas ? 1 : 0);
+})();
