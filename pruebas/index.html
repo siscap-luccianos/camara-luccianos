@@ -1717,7 +1717,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.199.2";
+const FRONTEND_VERSION = "1.199.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -6334,7 +6334,7 @@ function _teamFila(e, rolesQuePuedoCrear){
   const puedeCambiarRol = (e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion") && rolesQuePuedoCrear.length>0;
   return `<div class="teamRow${e.activo?"":" baja"}">
     <span class="ini" style="width:36px;height:36px;font-size:.8rem">${esc(iniPersona(e.nombre))}</span>
-    <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}</span></span>
+    <span class="nm">${esc(e.nombre)}<br><span class="rol">${esc(ROL_LABEL[e.rol]||e.rol)}${e.activo?"":" · dado de baja"}${(e.activo&&e.tienePin===false)?` · <b title="Todavía no creó su PIN" style="color:var(--warn)">🔒 Sin PIN</b>`:""}</span></span>
     ${e.activo?`<div class="acciones">
       ${(e.rol==="colaborador"||e.rol==="turno"||e.rol==="produccion")?`<button type="button" data-editar-nombre-emp="${e.id}" data-nombre-actual="${esc(e.nombre)}">Editar nombre</button>`:""}
       ${puedeCambiarRol?`<select data-cambiar-rol="${e.id}" data-rol-actual="${e.rol}" aria-label="Cambiar rol de ${esc(e.nombre)}" style="font-size:.75rem;padding:6px 8px">${rolesQuePuedoCrear.map(r=>`<option value="${r}" ${r===e.rol?"selected":""}>${esc(ROL_LABEL[r])}</option>`).join("")}</select>`:""}
