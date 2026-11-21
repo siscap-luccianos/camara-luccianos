@@ -557,3 +557,8 @@ Guardar grupo ⇒ Save group
 Después lo marcás con un toque. ⇒ Then select it with one tap.
 Supervisión y administración ⇒ Supervision and administration
 Supervisores y administradores de todos los locales ⇒ Supervisors and administrators of all stores
+Guardar en un grupo ⇒ Save to a group
+Grupo nuevo ⇒ New group
+Crear grupo ⇒ Create group
+Agregar al grupo ⇒ Add to group
+Quitar del grupo ⇒ Remove from group

@@ -557,3 +557,8 @@ Guardar grupo ⇒ Enregistrer le groupe
 Después lo marcás con un toque. ⇒ Ensuite tu le sélectionnes d'un geste.
 Supervisión y administración ⇒ Supervision et administration
 Supervisores y administradores de todos los locales ⇒ Superviseurs et administrateurs de tous les magasins
+Guardar en un grupo ⇒ Enregistrer dans un groupe
+Grupo nuevo ⇒ Nouveau groupe
+Crear grupo ⇒ Créer le groupe
+Agregar al grupo ⇒ Ajouter au groupe
+Quitar del grupo ⇒ Retirer du groupe

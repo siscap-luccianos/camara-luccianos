@@ -48,6 +48,18 @@ const { chromium } = require("playwright");
   const idxMio = await page.$$eval("[data-ctl-gsel]", e => e.findIndex(x => /Mis locales/.test(x.textContent)));
   await page.click("[data-ctl-nada]"); await page.click("[data-ctl-gsel='" + idxMio + "']"); await page.waitForTimeout(150);
   ok(/4 locales marcados/.test(await page.innerText("#main")), "tocar el grupo marca sus locales");
+  // agregar o quitar de un grupo que ya existe (como Recordatorios)
+  await page.click("[data-ctl-nada]"); await page.check("[data-ctl-chk='Obelisco CABA']"); await page.click("[data-ctl-gguardar]"); await page.waitForTimeout(150);
+  ok(/Grupo nuevo/.test(await page.innerText(".mantenerBox")) && /Mis locales/.test(await page.innerText(".mantenerBox")), "el diálogo ofrece grupo nuevo y los grupos que ya tenía");
+  await page.click("[data-gsel='0']"); await page.click("[data-gmodo='quitar']"); await page.waitForTimeout(100);
+  ok(/Se quitan 1 local/.test(await page.innerText(".mantenerBox")), "explica cuántos locales se quitan");
+  await page.click("[data-si]"); await page.waitForTimeout(400);
+  ok(/Mis locales \(3\)/.test(await page.innerText("#main")), "quitar un local del grupo lo deja en 3");
+  await page.click("[data-ctl-gguardar]"); await page.click("[data-gsel='0']"); await page.waitForTimeout(100);
+  ok(/Se agregan 1 local/.test(await page.innerText(".mantenerBox")), "explica cuántos locales se agregan");
+  await page.click("[data-si]"); await page.waitForTimeout(400);
+  ok(/Mis locales \(4\)/.test(await page.innerText("#main")), "agregar vuelve a dejarlo en 4");
+  await page.click("[data-ctl-nada]");
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(800);
   await page.click("#tabs [data-t='control']"); await page.waitForSelector("[data-ctl-chk]");
   await page.waitForTimeout(400);
