@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.104.0";
+const BACKEND_VERSION = "1.104.1";
 
 function doPost(e) {
   let resultado;
@@ -2883,31 +2883,63 @@ function pedirConteo(local, tipo, empleado) {
 
 function pedirConteoParcial(local, empleado) { return pedirConteo(local, "parcial", empleado); }
 
-/** (1.104.0) Pedido de conteo a varios locales de una vez. Devuelve cuántos se pidieron, cuáles ya tenían pedido y cuáles fallaron. */
+/** (1.104.0) Pedido de conteo a varios locales de una vez: un solo candado, una lectura de Locales y de PedidosConteo y UNA fila de Auditoría
+ *  (antes de esto, cada local hacía todo eso por separado y 130 locales no entraban en el tiempo). */
 function pedirConteoMasivo(locales, tipo, empleado) {
+  tipo = tipo === "final" ? "final" : "parcial";
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede pedir un conteo." };
   if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
   if (locales.length > 200) return { ok: false, error: "Demasiados locales de una vez." };
-  const vistos = {}, res = { ok: true, pedidos: 0, repetidos: [], errores: [] };
-  locales.forEach((l) => {
-    l = String(l || "").trim();
-    if (!l || vistos[l]) return;
-    vistos[l] = 1;
-    const r = pedirConteo(l, tipo, empleado);
-    if (!r.ok) res.errores.push({ local: l, error: r.error });
-    else if (r.repetido) res.repetidos.push(l);
-    else res.pedidos++;
-  });
-  return res;
+  const validos = {};
+  _leerCrudo("Locales").forEach((l) => { if (_esVerdadero(l.operaciones) !== true) validos[String(l.nombre || "").trim()] = 1; });
+  _hojaPedidosConteo();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, error: "El servidor está ocupado. Probá de nuevo en un momento." };
+  const res = { ok: true, pedidos: 0, repetidos: [], errores: [] };
+  try {
+    const pendientes = {};
+    _leerCrudo("PedidosConteo").forEach((q) => { if (String(q.estado) === "pendiente") pendientes[String(q.local).trim()] = q; });
+    const vistos = {}, hechos = [];
+    locales.forEach((l) => {
+      l = String(l || "").trim();
+      if (!l || vistos[l]) return;
+      vistos[l] = 1;
+      if (!validos[l]) { res.errores.push({ local: l, error: "No se encontró ese local." }); return; }
+      const ya = pendientes[l];
+      if (ya) {
+        if ((String(ya.tipo) === "final") !== (tipo === "final")) res.errores.push({ local: l, error: "Ya tiene un pedido " + (String(ya.tipo) === "final" ? "de cierre" : "parcial") + ": cancelalo primero." });
+        else res.repetidos.push(l);
+        return;
+      }
+      _escribirCrudo("PedidosConteo", { local: l, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo });
+      res.pedidos++; hechos.push(l);
+    });
+    if (hechos.length) _auditar(tipo === "final" ? "pedir_conteo_final" : "pedir_conteo_parcial", empleado.id, empleado.nombre, "Pidió un conteo " + tipo + " a " + hechos.length + " locales: " + hechos.join(", ").slice(0, 900));
+    return res;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
-/** (1.104.0) Cancela los pedidos de conteo pendientes de varios locales. */
+/** (1.104.0) Cancela los pedidos de conteo pendientes de varios locales (un candado, una lectura, una fila de Auditoría). */
 function cancelarPedidosMasivo(locales, empleado) {
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede cancelar pedidos." };
   if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
-  let n = 0;
-  locales.slice(0, 200).forEach((l) => { const q = _pedidoPendiente(String(l || "").trim()); if (q) { const r = cancelarPedidoConteo(String(l).trim(), empleado); if (r.ok) n++; } });
-  return { ok: true, cancelados: n };
+  if (locales.length > 200) return { ok: false, error: "Demasiados locales de una vez." };
+  _hojaPedidosConteo();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, error: "El servidor está ocupado. Probá de nuevo en un momento." };
+  try {
+    const quiero = {}; locales.forEach((l) => { quiero[String(l || "").trim()] = 1; });
+    const cancelados = [];
+    _leerCrudo("PedidosConteo").forEach((q) => {
+      if (String(q.estado) === "pendiente" && quiero[String(q.local).trim()]) { _actualizarCrudo("PedidosConteo", q.id, { estado: "cancelado", hecho_ts: Date.now(), hecho_por: empleado.nombre }); cancelados.push(String(q.local).trim()); }
+    });
+    if (cancelados.length) _auditar("cancelar_pedido_conteo", empleado.id, empleado.nombre, "Canceló el pedido de conteo de " + cancelados.length + " locales: " + cancelados.join(", ").slice(0, 900));
+    return { ok: true, cancelados: cancelados.length };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function cancelarPedidoConteo(local, empleado) {

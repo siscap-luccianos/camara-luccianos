@@ -1627,7 +1627,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.194.0";
+const FRONTEND_VERSION = "1.194.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3798,7 +3798,9 @@ function controlView(){
     if(C.f==="sin") return !f.pedido;
     return true;
   });
-  const marcados=Object.keys(C.sel).filter(n=>C.sel[n]);
+  C.visNom=vis.map(f=>f.local);
+  const marcados=C.visNom.filter(n=>C.sel[n]);
+  const ocultos=Object.keys(C.sel).filter(n=>C.sel[n]).length-marcados.length;
   const nPend=C.datos.filter(f=>f.pedido).length;
   const filas=vis.map(f=>{
     const par=f.conteos.filter(x=>x.tipo==="parcial"), cie=f.conteos.filter(x=>x.tipo==="final");
@@ -3809,7 +3811,7 @@ function controlView(){
     return `<div class="ctlRow${C.sel[f.local]?" sel":""}"><div class="ctlLoc"><label class="ctlChk noPrint"><input type="checkbox" data-ctl-chk="${esc(f.local)}"${C.sel[f.local]?" checked":""}> <button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button></label>${f.grupo?`<div class="f">${esc(f.grupo)}${d!==null?" · último conteo hace "+d+" d":""}</div>`:""}${pill?`<div>${pill}</div>`:""}</div><div>${cel(f.base)}</div><div>${cel(ultP)}${par.length>1?`<div class="f">+${par.length-1} más</div>`:""}</div><div>${cel(ultC)}</div><div>${ctlDifFila(f)}</div><div class="noPrint ctlAcc">${acc}<button type="button" class="rlvBtn" data-ctl-ver="${esc(f.local)}">Abrir</button></div></div>`;
   }).join("");
   const chip=(k,t)=>`<button type="button" class="chip" data-ctl-f="${k}" aria-pressed="${C.f===k}">${t}</button>`;
-  const barra=marcados.length?`<div class="ctlMasivo noPrint"><b>${marcados.length} local${marcados.length>1?"es":""} marcado${marcados.length>1?"s":""}</b>
+  const barra=marcados.length?`<div class="ctlMasivo noPrint"><b>${marcados.length} local${marcados.length>1?"es":""} marcado${marcados.length>1?"s":""}</b>${ocultos>0?`<span class="note" style="color:inherit;opacity:.8">${ocultos} más marcado${ocultos>1?"s":""} fuera del filtro: no se incluyen</span>`:""}
     <div class="ctlMasTipo"><button type="button" class="chip" data-ctl-tm="parcial" aria-pressed="${C.tipoM==="parcial"}">Conteo parcial</button><button type="button" class="chip" data-ctl-tm="final" aria-pressed="${C.tipoM==="final"}">Conteo de cierre</button></div>
     <div class="ctlMasAcc"><button type="button" class="btn" data-ctl-masivo>Pedir a ${marcados.length} local${marcados.length>1?"es":""}</button><button type="button" class="btn ghost" data-ctl-cancelmas>Cancelar sus pedidos</button><button type="button" class="btn ghost" data-ctl-nada>Quitar selección</button></div></div>`:"";
   return `<div class="rlv ctl">
@@ -3917,7 +3919,6 @@ const CTL_NOFALTA="Falta actualizar el servidor (Code.gs) para pedir varios cont
 function ctlTipoTxt(t){ return t==="final"?"de CIERRE":"parcial" }
 function ctlAvisoCierre(t,n){ return t==="final"?" El cierre deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.":"" }
 function ctlPedirUno(local){
-  const C=controlEstado();
   ctlElegirTipo("¿Qué conteo le pedís a "+local+"?", async tipo=>{
     const r=await api(tipo==="final"?"pedirConteoFinal":"pedirConteoParcial",{local});
     toast(r&&r.ok?"Pedido enviado: el responsable de "+local+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar();
@@ -3937,22 +3938,39 @@ function ctlElegirTipo(titulo, ok){
     if(e.target.closest("[data-si]")){ ov.remove(); ok(tipo) }
   });
 }
+function ctlMarcadosVisibles(){ const C=controlEstado(); return (C.visNom||[]).filter(n=>(C.sel||{})[n]) }
+async function ctlEnLotes(accion, ls, extra, boton){
+  // lotes de 25 para no pasar el tiempo del servidor; el botón queda apagado mientras corre
+  const tot={ok:true,pedidos:0,repetidos:[],errores:[],cancelados:0};
+  if(boton) boton.disabled=true;
+  for(let i=0;i<ls.length;i+=25){
+    if(boton) boton.textContent="Enviando "+Math.min(i+25,ls.length)+" de "+ls.length+"…";
+    const r=await api(accion,Object.assign({locales:ls.slice(i,i+25)},extra||{}),90000);
+    if(!r||!r.ok) return {ok:false,error:(r&&r.error)||"No se pudo conectar.",parcial:tot};
+    tot.pedidos+=r.pedidos||0; tot.cancelados+=r.cancelados||0; (r.repetidos||[]).forEach(x=>tot.repetidos.push(x)); (r.errores||[]).forEach(x=>tot.errores.push(x));
+  }
+  return tot;
+}
 function ctlPedirMasivo(){
-  const C=controlEstado(), ls=Object.keys(C.sel||{}).filter(n=>C.sel[n]); if(!ls.length) return;
+  const C=controlEstado(), ls=ctlMarcadosVisibles(); if(!ls.length) return;
   const tipo=C.tipoM==="final"?"final":"parcial";
   if(!confirm("¿Pedir un conteo "+ctlTipoTxt(tipo)+" a "+ls.length+" local"+(ls.length>1?"es":"")+"?"+ctlAvisoCierre(tipo))) return;
   (async()=>{
-    const r=await api("pedirConteoMasivo",{locales:ls,tipo});
-    if(r&&r.ok){ const rep=(r.repetidos||[]).length, er=(r.errores||[]).length; toast("Pedido enviado a "+r.pedidos+" local"+(r.pedidos===1?"":"es")+(rep?" · "+rep+" ya lo tenían":"")+(er?" · "+er+" con error: "+r.errores[0].error:"")); C.sel={}; }
-    else toast((r&&/desconocida/i.test(r.error||""))?CTL_NOFALTA:(r&&r.error)||"No se pudo pedir.");
+    const r=await ctlEnLotes("pedirConteoMasivo",ls,{tipo},document.querySelector("[data-ctl-masivo]"));
+    if(r&&r.ok){ const rep=r.repetidos.length, er=r.errores.length; toast("Pedido enviado a "+r.pedidos+" local"+(r.pedidos===1?"":"es")+(rep?" · "+rep+" ya lo tenían":"")+(er?" · "+er+" con error ("+r.errores.slice(0,3).map(x=>x.local).join(", ")+(er>3?"…":"")+"): "+r.errores[0].error:"")); ls.forEach(n=>{ if(!r.errores.some(x=>x.local===n)) delete C.sel[n] }); }
+    else toast((r&&/desconocida/i.test(r.error||""))?CTL_NOFALTA:((r&&r.error)||"No se pudo pedir.")+((r&&r.parcial&&r.parcial.pedidos)?" Ya se pidieron "+r.parcial.pedidos+": revisá la lista.":""));
     ctlRefrescar();
   })();
 }
 function ctlCancelarMasivo(){
-  const C=controlEstado(), ls=Object.keys(C.sel||{}).filter(n=>C.sel[n]); if(!ls.length) return;
+  const C=controlEstado(), ls=ctlMarcadosVisibles(); if(!ls.length) return;
   if(!confirm("¿Cancelar los pedidos pendientes de los "+ls.length+" locales marcados?")) return;
-  (async()=>{ const r=await api("cancelarPedidosMasivo",{locales:ls}); toast(r&&r.ok?r.cancelados+" pedido"+(r.cancelados===1?"":"s")+" cancelado"+(r.cancelados===1?"":"s"):(/desconocida/i.test((r&&r.error)||"")?CTL_NOFALTA:(r&&r.error)||"No se pudo cancelar.")); if(r&&r.ok) C.sel={}; ctlRefrescar() })();
+  (async()=>{ const r=await ctlEnLotes("cancelarPedidosMasivo",ls,null,document.querySelector("[data-ctl-cancelmas]")); toast(r&&r.ok?r.cancelados+" pedido"+(r.cancelados===1?"":"s")+" cancelado"+(r.cancelados===1?"":"s"):(/desconocida/i.test((r&&r.error)||"")?CTL_NOFALTA:(r&&r.error)||"No se pudo cancelar.")); if(r&&r.ok) ls.forEach(n=>delete C.sel[n]); ctlRefrescar() })();
 }
+document.addEventListener("change",e=>{
+  const c=e.target&&e.target.closest&&e.target.closest("[data-ctl-chk]"); if(!c) return;
+  const C=controlEstado(); C.sel=C.sel||{}; if(c.checked) C.sel[c.dataset.ctlChk]=true; else delete C.sel[c.dataset.ctlChk]; renderApp();
+});
 document.addEventListener("input",e=>{
   const t=e.target; if(!t||t.id!=="ctlQ") return;
   const C=controlEstado(); C.q=t.value; const p=t.selectionStart; renderApp();
