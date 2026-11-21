@@ -555,3 +555,5 @@ Mis grupos: ⇒ Mes groupes
 Guardar como grupo ⇒ Enregistrer comme groupe
 Guardar grupo ⇒ Enregistrer le groupe
 Después lo marcás con un toque. ⇒ Ensuite tu le sélectionnes d'un geste.
+Supervisión y administración ⇒ Supervision et administration
+Supervisores y administradores de todos los locales ⇒ Superviseurs et administrateurs de tous les magasins

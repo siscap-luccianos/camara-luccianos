@@ -555,3 +555,5 @@ Mis grupos: ⇒ My groups
 Guardar como grupo ⇒ Save as group
 Guardar grupo ⇒ Save group
 Después lo marcás con un toque. ⇒ Then select it with one tap.
+Supervisión y administración ⇒ Supervision and administration
+Supervisores y administradores de todos los locales ⇒ Supervisors and administrators of all stores

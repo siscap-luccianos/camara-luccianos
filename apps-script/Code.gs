@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.104.1";
+const BACKEND_VERSION = "1.105.0";
 
 function doPost(e) {
   let resultado;
@@ -121,6 +121,9 @@ function _despacharConSesion(accion, body, empleado) {
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
     case "pedirConteoParcial": return pedirConteo(body.local, "parcial", empleado);
+    case "gruposConteo": return gruposConteo(empleado);
+    case "guardarGrupoConteo": return guardarGrupoConteo(body.nombre, body.locales, empleado);
+    case "borrarGrupoConteo": return borrarGrupoConteo(body.id, empleado);
     case "pedirConteoMasivo": return pedirConteoMasivo(body.locales, body.tipo, empleado);
     case "cancelarPedidosMasivo": return cancelarPedidosMasivo(body.locales, empleado);
     case "pedirConteoFinal": return pedirConteo(body.local, "final", empleado);
@@ -2882,6 +2885,63 @@ function pedirConteo(local, tipo, empleado) {
 }
 
 function pedirConteoParcial(local, empleado) { return pedirConteo(local, "parcial", empleado); }
+
+/* (1.105.0) Grupos de locales para pedir conteos: cada supervisor (y el admin) arma los suyos; el admin ve los de todos.
+   Hoja «GruposConteo» (se crea sola): id, owner_id, owner, nombre, locales (JSON), ts. El nombre «__ultimo__» guarda el último grupo al que se le pidió. */
+const COLUMNAS_GRUPOS_CONTEO = ["id", "owner_id", "owner", "nombre", "locales", "ts"];
+const GRUPO_ULTIMO = "__ultimo__";
+function _hojaGruposConteo() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName("GruposConteo");
+  if (!sh) {
+    sh = ss.insertSheet("GruposConteo");
+    sh.getRange(1, 1, 1, COLUMNAS_GRUPOS_CONTEO.length).setValues([COLUMNAS_GRUPOS_CONTEO]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function _grupoLista(g) { try { const l = JSON.parse(g.locales || "[]"); return Array.isArray(l) ? l.map((x) => String(x)) : []; } catch (e) { return []; } }
+function gruposConteo(empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
+  _hojaGruposConteo();
+  const todos = _leerCrudo("GruposConteo");
+  const mios = todos.filter((g) => String(g.owner_id) === String(empleado.id));
+  const ult = mios.filter((g) => String(g.nombre) === GRUPO_ULTIMO)[0];
+  const visibles = (empleado.rol === "admin" ? todos : mios).filter((g) => String(g.nombre) !== GRUPO_ULTIMO);
+  return { ok: true, ultimo: ult ? _grupoLista(ult) : [], grupos: visibles.map((g) => ({ id: g.id, nombre: String(g.nombre), locales: _grupoLista(g), ownerId: String(g.owner_id), owner: String(g.owner || ""), propio: String(g.owner_id) === String(empleado.id) })) };
+}
+function guardarGrupoConteo(nombre, locales, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
+  nombre = String(nombre || "").trim().slice(0, 30);
+  if (!nombre) return { ok: false, error: "Poné un nombre para el grupo." };
+  if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
+  if (locales.length > 200) return { ok: false, error: "Demasiados locales." };
+  const lista = []; const vistos = {};
+  locales.forEach((l) => { l = String(l || "").trim(); if (l && !vistos[l]) { vistos[l] = 1; lista.push(l); } });
+  _hojaGruposConteo();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { ok: false, error: "El servidor está ocupado. Probá de nuevo." };
+  try {
+    const ya = _leerCrudo("GruposConteo").filter((g) => String(g.owner_id) === String(empleado.id) && String(g.nombre).toLowerCase() === nombre.toLowerCase())[0];
+    if (ya) _actualizarCrudo("GruposConteo", ya.id, { locales: JSON.stringify(lista), ts: Date.now() });
+    else _escribirCrudo("GruposConteo", { owner_id: empleado.id, owner: empleado.nombre, nombre: nombre, locales: JSON.stringify(lista), ts: Date.now() });
+    return { ok: true };
+  } finally { lock.releaseLock(); }
+}
+function borrarGrupoConteo(id, empleado) {
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión." };
+  _hojaGruposConteo();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) return { ok: false, error: "El servidor está ocupado. Probá de nuevo." };
+  try {
+    const g = _leerCrudo("GruposConteo").filter((x) => String(x.id) === String(id))[0];
+    if (!g) return { ok: true };
+    if (String(g.owner_id) !== String(empleado.id) && empleado.rol !== "admin") return { ok: false, error: "Ese grupo es de otra persona." };
+    const sh = _sheet("GruposConteo"); const datos = sh.getDataRange().getValues(); const col = datos[0].indexOf("id");
+    for (let i = 1; i < datos.length; i++) { if (String(datos[i][col]) === String(id)) { sh.deleteRow(i + 1); break; } }
+    return { ok: true };
+  } finally { lock.releaseLock(); }
+}
 
 /** (1.104.0) Pedido de conteo a varios locales de una vez: un solo candado, una lectura de Locales y de PedidosConteo y UNA fila de Auditoría
  *  (antes de esto, cada local hacía todo eso por separado y 130 locales no entraban en el tiempo). */
