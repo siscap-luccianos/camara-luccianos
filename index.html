@@ -1705,7 +1705,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.199.4";
+const FRONTEND_VERSION = "1.199.5";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3893,7 +3893,7 @@ function controlView(){
     const abierto=C.swOpen===f.local;
     return `<div class="cgSw" data-sw="${esc(f.local)}"><div class="cgSwAcc noPrint"><button type="button" class="mv" data-cg-mover1="${esc(f.local)}">Mover</button>${f.pedido?`<button type="button" class="pd" data-ctl-cancel="${esc(f.local)}">Cancelar</button>`:`<button type="button" class="pd" data-ctl-pedir1="${esc(f.local)}">Pedir</button>`}</div>
       <div class="cgRow${C.sel[f.local]?" sel":""}${abierto?" abierto":""}" draggable="true" data-cg-drag="${esc(f.local)}"><input type="checkbox" data-ctl-chk="${esc(f.local)}"${C.sel[f.local]?" checked":""} aria-label="Marcar ${esc(f.local)}">
-      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos",f.sinPin?`<b title="Empleados que todavía no crearon su PIN" style="color:var(--warn)">🔒 ${f.sinPin} sin PIN</b>`:""].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}</div>
+      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos",f.sinPin?`<b title="${esc((f.sinPinNombres||[]).join(", ")||"Todavía no crearon su PIN")}" style="color:var(--warn)">🔒 ${f.sinPin} sin PIN${f.sinPinNombres&&f.sinPinNombres.length?": "+esc(f.sinPinNombres.slice(0,3).join(", "))+(f.sinPinNombres.length>3?"…":""):""}</b>`:""].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}</div>
       <div class="cgFin">${est}${dif&&dif!=="—"?`<span class="cgDif">${dif}</span>`:""}<button type="button" class="cgLink noPrint" data-ctl-pedir1="${esc(f.local)}"${f.pedido?" hidden":""}>Pedir</button><span class="cgChev" aria-hidden="true">›</span></div></div></div>`;
   };
   const titulo=grupo?grupo.nombre:({todos:"Todos los locales",propios:"Propios",fran:"Franquicias",viejo:"Sin conteo hace 30+ días",sin:"Sin pedido",pend:"Con pedido"}[C.f]||"Todos los locales");
