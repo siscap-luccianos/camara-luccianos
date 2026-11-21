@@ -1706,7 +1706,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.200.2";
+const FRONTEND_VERSION = "1.200.5";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3817,7 +3817,7 @@ function ctlDetalleHTML(){
   if(!D.conteo) return `<div class="rlv ctl">${volver}<div class="note">Este local todavía no tiene conteos guardados.</div></div>`;
   const c=D.conteo, base=D.base, desb=c.desbloqueado_hasta>Date.now(), fijo=c.fijo;
   const tipoTxt=CTL_TIPO[c.tipo]||"Conteo", esCmp=c.tipo!=="inicial"&&!!D.dif;
-  const chips=D.conteos.map(x=>`<button type="button" class="chip" data-ctl-sel="${esc(x.id)}" aria-pressed="${String(x.id)===String(c.id)}">${x.fijo?"🔒 ":""}${CTL_TIPO[x.tipo]||x.tipo} · ${ctlFecha(x.ts)}</button>`).join("");
+  const chips=D.conteos.map(x=>`<button type="button" class="chip" data-ctl-sel="${esc(x.id)}" aria-pressed="${String(x.id)===String(c.id)}">${x.fijo?"🔒 ":((x.desbloqueado_hasta||0)>Date.now()?"🔓 ":"")}${CTL_TIPO[x.tipo]||x.tipo} · ${ctlFecha(x.ts)}</button>`).join("");
   const ult=t=>{ const l=D.conteos.filter(x=>x.tipo===t); return l.length?l[l.length-1]:null };
   const ini=D.conteos.filter(x=>x.tipo!=="parcial")[0]||null, par=ult("parcial"), cie=ult("final");
   const bloque=(tit,x)=>`<div class="ctlKpi"><small>${tit}</small><b>${x?ctlKg(x.camKg)+" kg":"—"}</b>${x?`<i>${ctlFecha(x.ts)}</i>`:""}</div>`;
@@ -8260,6 +8260,27 @@ function iniciarChequeoDeVersion(){
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") chequearVersionNueva(); });
 }
 
+/** Pestaña en la que estaba la persona dentro de un local: se guarda por sesión del navegador para que un refresco (arrastrar hacia abajo
+ *  en el celular o la tablet) no la mande a «Salida». Vale solo para el mismo local y la misma persona, y solo si esa pestaña le corresponde. */
+function tabLocalPermitida(t){
+  const r=S.empleado&&S.empleado.rol; if(!r) return false;
+  if(t==="salida"||t==="historial") return true;
+  if(t==="devolucion") return r==="colaborador";
+  if(t==="ingreso"||t==="stock") return r!=="colaborador";
+  if(t==="equipo") return r==="admin"||r==="supervisor"||r==="encargado";
+  if(t==="sabores") return r==="admin"||r==="encargado";
+  if(t==="gestion") return !!S.stockValorizado;
+  return false;
+}
+function guardarTabLocal(){
+  try{ if(S.local && S.empleado && tabLocalPermitida(S.tab)) sessionStorage.setItem("tabLocal", JSON.stringify({l:S.local, e:String(S.empleado.id), t:S.tab})) }catch(e){}
+}
+function restaurarTabLocal(){
+  try{
+    const g=JSON.parse(sessionStorage.getItem("tabLocal")||"null");
+    if(g && S.local && S.empleado && g.l===S.local && g.e===String(S.empleado.id) && tabLocalPermitida(g.t)) S.tab=g.t;
+  }catch(e){}
+}
 async function start(){
   setInterval(actualizarTimerInact, 1000);
   if(!S.locales.length){
@@ -8287,7 +8308,7 @@ async function start(){
     // dispositivo), acá no veníamos de un login con datos frescos ni de
     // setLocal() — sin esto, S.sabores arrancaba vacío y la app no tenía
     // nada para mostrar hasta que volviera la conexión.
-    if(S.local) precargarDatosCache(S.local);
+    if(S.local){ precargarDatosCache(S.local); restaurarTabLocal(); }
     renderApp();
     reiniciarInactividad();
     await cargarDatos();
@@ -8736,7 +8757,7 @@ function abrirEscaner(modo){
   ov.addEventListener("input", e=>{
     if(e.target.id!=="escCodigo") return;
     clearTimeout(tIn);
-    tIn=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28){ i.value=""; procesarEscaneo(d) } },180);
+    tIn=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28||(d.length===13&&parseCodigoRotulo(d))){ i.value=""; procesarEscaneo(d) } },180);
   });
   ov.addEventListener("keydown", e=>{
     if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); clearTimeout(tIn); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneo(v) }
@@ -8779,8 +8800,10 @@ function procesarEscaneo(txt, cam){
   if(p && p.tipo==="caja"){ e.msg={tipo:"err", t:"Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta."}; pitido(false); renderEscaner(); return }
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
-  if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
-  e.ultimo={crudo:p.crudo, ts:ahora};
+  if(cam){ // la cámara repite la misma lectura varios cuadros seguidos; el lector de mano no (1.200.4: antes también se descartaba la 2.ª vasqueta idéntica si llegaba en menos de 2,5 s)
+    if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return }
+    e.ultimo={crudo:p.crudo, ts:ahora};
+  }
   const s=p.plu!==undefined ? saboresDelLocal().find(x=>x.plu && String(+x.plu)===p.plu) : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
   if(!s){ e.msg={tipo:"err", t:(p.plu!==undefined?"PLU "+p.plu:"Código de sabor "+p.codigo)+" sin asignar en la planilla (peso "+fmtKg(p.kg)+" kg"+(p.plu!==undefined?"":", lote "+p.lote)+"). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
   if(disponibleParaPesar(s.id,"salida")<=0){ e.msg={tipo:"err", t:"No hay stock de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
@@ -8848,8 +8871,10 @@ function procesarEscaneoIng(txt, cam){
   const p=parseCodigoRotulo(txt);
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código ("+String(txt).replace(/\D/g,"").length+" números). Si el rótulo está dañado, cerrá y cargá el sabor a mano."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
-  if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return } // la cámara repite la misma lectura varios cuadros seguidos
-  e.ultimo={crudo:p.crudo, ts:ahora};
+  if(cam){ // la cámara repite la misma lectura varios cuadros seguidos; el lector de mano no (1.200.4: antes también se descartaba la 2.ª vasqueta idéntica si llegaba en menos de 2,5 s)
+    if(e.ultimo && e.ultimo.crudo===p.crudo && ahora-e.ultimo.ts<2500){ e.ultimo.ts=ahora; return }
+    e.ultimo={crudo:p.crudo, ts:ahora};
+  }
   const s=p.plu!==undefined ? saboresDelLocal().find(x=>x.plu && String(+x.plu)===p.plu) : saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
   if(!s){ e.msg={tipo:"err", t:(p.plu!==undefined?"PLU "+p.plu:"Código de sabor "+p.codigo)+" sin asignar en la planilla ("+fmtKg(p.kg)+" kg). Cerrá y cargalo a mano."}; pitido(false); renderEscaner(); return }
   if(!esVasquetaEsc(s)){ e.msg={tipo:"err", t:s.nombre+" no es una vasqueta: cargalo a mano (cerrá y tocá el sabor)."}; pitido(false); renderEscaner(); return }
@@ -8979,7 +9004,7 @@ function abrirEscanerConteo(){
   ov.addEventListener("input", e=>{
     if(e.target.id!=="escCodigo") return;
     clearTimeout(t);
-    t=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28){ i.value=""; procesarEscaneoConteo(d) } },180);
+    t=setTimeout(()=>{ const i=document.getElementById("escCodigo"); if(!i) return; const d=i.value.replace(/\D/g,""); if(d.length===20||d.length===28||(d.length===13&&parseCodigoRotulo(d))){ i.value=""; procesarEscaneoConteo(d) } },180);
   });
   ov.addEventListener("keydown", e=>{
     if(e.target.id==="escCodigo" && e.key==="Enter"){ e.preventDefault(); clearTimeout(t); const v=e.target.value; e.target.value=""; if(v.trim()) procesarEscaneoConteo(v) }
@@ -9380,6 +9405,7 @@ function scheduleRender(){
 }
 function renderApp(){
   _lotesMemo=null;
+  guardarTabLocal();
   i18nSet(i18nIdiomaActual()); // idioma según la persona o el país del local
   document.body.classList.remove("sinLocal");
   const m=$("#app");
