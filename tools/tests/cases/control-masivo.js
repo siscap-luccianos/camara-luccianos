@@ -34,6 +34,10 @@ const { chromium } = require("playwright");
   await page.click("[data-tp='inicial']"); await page.click("[data-si]"); await page.waitForTimeout(400);
   ok(/Solicitud inicial/.test(await txt()), "queda «Solicitud inicial» en la fila");
   await page.click(".cgFin [data-ctl-cancel='Obelisco CABA']"); await page.waitForTimeout(400);
+  // un local que ya tiene su inicial no puede recibir otra solicitud de inicial
+  await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.waitForSelector("[data-tp='inicial']");
+  ok(await page.$eval("[data-tp='inicial']", e => e.disabled) === true && /Ya tiene su conteo inicial/.test(await page.innerText(".mantenerBox")), "con inicial hecho, la opción «I» queda apagada: «Ya tiene su conteo inicial»");
+  await page.click("[data-no]");
   // pedido individual
   await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.click("[data-tp='final']"); await page.click("[data-si]"); await page.waitForTimeout(400);
   ok(/Solicitud de cierre/.test(await txt()), "pedido individual de cierre queda marcado");
