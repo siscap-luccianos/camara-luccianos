@@ -1,0 +1,28 @@
+Parcial de un solo rubro ⇒ Partiel d'un seul rayon
+Solo cuenta lo que elijas. Los demás rubros no se tocan. ⇒ Ne compte que ce que vous choisissez. Les autres rayons ne sont pas touchés.
+Se pide ⇒ On demande
+cámara + local ⇒ chambre froide + magasin
+del rubro ⇒ du rayon
+El responsable no ve el resultado anterior. El rubro solo se elige en el parcial. ⇒ Le responsable ne voit pas le résultat précédent. Le rayon ne se choisit que pour le partiel.
+no lo lleva ⇒ ne le propose pas
+ninguno lo lleva ⇒ aucun ne le propose
+Se omiten ⇒ Ignorés :
+(no lo llevan). ⇒ (ils ne le proposent pas).
+Solicitud de reconteo parcial ⇒ Demande de nouveau comptage partiel
+Supervisión pidió contar solo ⇒ La supervision a demandé de compter uniquement
+de este local (cámara + local). ⇒ de ce magasin (chambre froide + magasin).
+Contando solo ⇒ Comptage uniquement de
+El resto del local no se toca. ⇒ Le reste du magasin n'est pas touché.
+¿Guardar el conteo parcial de ⇒ Enregistrer le comptage partiel de
+Habilitar reconteo ⇒ Autoriser un nouveau comptage
+Habilitar reconteo de ⇒ Autoriser un nouveau comptage de
+Se vuelve a contar cámara y local completos. ⇒ La chambre froide et le magasin sont recomptés en entier.
+Los demás rubros, sus kilos y vencimientos quedan como están. ⇒ Les autres rayons, leurs kilos et leurs dates de péremption restent comme ils sont.
+Este conteo es solo de ⇒ Ce comptage ne concerne que
+: se habilita el reconteo de ese rubro. ⇒ : on autorise le nouveau comptage de ce rayon.
+Elegí el rubro. ⇒ Choisissez le rayon.
+Reconteo habilitado: ⇒ Nouveau comptage autorisé :
+Reconteo habilitado solo para ⇒ Nouveau comptage autorisé uniquement pour
+solo para ⇒ uniquement pour
+: tocá «Corregir» en esos productos. Queda registrado cada cambio y los demás rubros no se tocan; el conteo se cierra solo al vencer. ⇒ : touchez « Corriger » sur ces produits. Chaque modification est enregistrée et les autres rayons ne sont pas touchés ; le comptage se ferme tout seul à l'expiration.
+Los demás rubros no se tocaron. ⇒ Les autres rayons n'ont pas été touchés.

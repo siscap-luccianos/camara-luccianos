@@ -30,7 +30,7 @@ const { chromium } = require("playwright");
   await page.click("[data-ctl-volver]"); await page.waitForSelector("[data-ctl-chk]");
   // el menú ofrece solo parcial y cierre (el inicial no se solicita desde Control)
   await page.click(".cgFin [data-ctl-pedir1='Obelisco CABA']"); await page.waitForSelector("[data-tp='parcial']");
-  ok(await page.$$eval("[data-tp]", e => e.map(x => x.querySelector(".ctlOpL").textContent).join("")) === "PC" && !(await page.$("[data-tp='inicial']")), "el menú ofrece solo P · C");
+  ok(await page.$$eval("[data-tp]", e => e.map(x => x.querySelector(".ctlOpL").textContent).join("")) === "PPC" && !(await page.$("[data-tp='inicial']")), "el menú ofrece parcial · parcial de un rubro · cierre");
   await page.click("[data-no]");
   // pedido individual
   await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.click("[data-tp='final']"); await page.click("[data-si]"); await page.waitForTimeout(400);

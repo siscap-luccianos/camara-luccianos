@@ -1,0 +1,28 @@
+Parcial de un solo rubro ⇒ Partial count of a single category
+Solo cuenta lo que elijas. Los demás rubros no se tocan. ⇒ Only counts what you choose. The other categories are not touched.
+Se pide ⇒ Requesting
+cámara + local ⇒ cold room + store
+del rubro ⇒ of the category
+El responsable no ve el resultado anterior. El rubro solo se elige en el parcial. ⇒ The manager does not see the previous result. The category is only chosen for the partial count.
+no lo lleva ⇒ does not carry it
+ninguno lo lleva ⇒ none carry it
+Se omiten ⇒ Skipped:
+(no lo llevan). ⇒ (they do not carry it).
+Solicitud de reconteo parcial ⇒ Partial recount request
+Supervisión pidió contar solo ⇒ Supervision asked to count only
+de este local (cámara + local). ⇒ in this store (cold room + store).
+Contando solo ⇒ Counting only
+El resto del local no se toca. ⇒ The rest of the store is not touched.
+¿Guardar el conteo parcial de ⇒ Save the partial count of
+Habilitar reconteo ⇒ Allow a recount
+Habilitar reconteo de ⇒ Allow a recount of
+Se vuelve a contar cámara y local completos. ⇒ The cold room and the store are counted again in full.
+Los demás rubros, sus kilos y vencimientos quedan como están. ⇒ The other categories, their kilos and expiry dates stay as they are.
+Este conteo es solo de ⇒ This count is only for
+: se habilita el reconteo de ese rubro. ⇒ : the recount of that category is allowed.
+Elegí el rubro. ⇒ Choose the category.
+Reconteo habilitado: ⇒ Recount allowed:
+Reconteo habilitado solo para ⇒ Recount allowed only for
+solo para ⇒ only for
+: tocá «Corregir» en esos productos. Queda registrado cada cambio y los demás rubros no se tocan; el conteo se cierra solo al vencer. ⇒ : tap "Correct" on those products. Every change is recorded and the other categories are not touched; the count closes by itself when it expires.
+Los demás rubros no se tocaron. ⇒ The other categories were not touched.

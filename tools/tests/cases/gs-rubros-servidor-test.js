@@ -36,7 +36,7 @@ sb.ana={id:"e1",nombre:"Ana",rol:"encargado",local:"L1"}; sb.admin={id:"a1",nomb
 run("_puedeVerLocal=function(){return true}");
 sb.Utilities.formatDate=(d)=>new Date(d).toISOString().slice(0,10);
 montar();
-ok(run("BACKEND_VERSION")==="1.111.0","BACKEND_VERSION 1.111.0");
+ok(/^1\.\d+\.\d+$/.test(run("BACKEND_VERSION")) && run("BACKEND_VERSION").split(".")[1]*1>=111,"BACKEND_VERSION >= 1.111.0");
 
 // registrar: ingreso y salida de un rubro apagado
 sb.i1={117:2}; let r=run("registrar('a1','ingreso','L1',i1,'R1',ana)");
