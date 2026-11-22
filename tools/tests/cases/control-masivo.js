@@ -28,15 +28,9 @@ const { chromium } = require("playwright");
   await page.click("[data-cg-drag='Local prueba'] .cgSub"); await page.waitForSelector(".ctlAcc", { timeout: 5000 }).catch(() => {});
   ok(await page.$(".ctlAcc") !== null, "tocar la fila (no solo el nombre) abre el detalle del local");
   await page.click("[data-ctl-volver]"); await page.waitForSelector("[data-ctl-chk]");
-  // solicitar un conteo inicial a un local sin inicial
-  await page.click(".cgFin [data-ctl-pedir1='Obelisco CABA']"); await page.waitForSelector("[data-tp='inicial']");
-  ok(await page.$$eval("[data-tp]", e => e.map(x => x.querySelector(".ctlOpL").textContent).join("")) === "IPC", "el menú ofrece I · P · C");
-  await page.click("[data-tp='inicial']"); await page.click("[data-si]"); await page.waitForTimeout(400);
-  ok(/Solicitud inicial/.test(await txt()), "queda «Solicitud inicial» en la fila");
-  await page.click(".cgFin [data-ctl-cancel='Obelisco CABA']"); await page.waitForTimeout(400);
-  // un local que ya tiene su inicial no puede recibir otra solicitud de inicial
-  await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.waitForSelector("[data-tp='inicial']");
-  ok(await page.$eval("[data-tp='inicial']", e => e.disabled) === true && /Ya tiene su conteo inicial/.test(await page.innerText(".mantenerBox")), "con inicial hecho, la opción «I» queda apagada: «Ya tiene su conteo inicial»");
+  // el menú ofrece solo parcial y cierre (el inicial no se solicita desde Control)
+  await page.click(".cgFin [data-ctl-pedir1='Obelisco CABA']"); await page.waitForSelector("[data-tp='parcial']");
+  ok(await page.$$eval("[data-tp]", e => e.map(x => x.querySelector(".ctlOpL").textContent).join("")) === "PC" && !(await page.$("[data-tp='inicial']")), "el menú ofrece solo P · C");
   await page.click("[data-no]");
   // pedido individual
   await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.click("[data-tp='final']"); await page.click("[data-si]"); await page.waitForTimeout(400);

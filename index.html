@@ -1707,7 +1707,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.201.2";
+const FRONTEND_VERSION = "1.201.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4134,7 +4134,7 @@ function ctlElegirTipo(titulo, ok, conBase, total){
   const NOTAS={inicial:"Inicial: el stock de arranque del local (cámara + local). Queda cerrado.",parcial:"Parcial: un control en el medio del mes. No cambia el stock.",final:"Cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene."};
   const op=(t,l,n)=>`<button type="button" class="ctlOp" data-tp="${t}" aria-pressed="${t==="parcial"}"${t==="inicial"&&todosConBase?" disabled":""}><span class="ctlOpL">${l}</span><span><b>${n}</b>${t==="inicial"&&todosConBase?`<small style="display:block;color:var(--muted)">${total===1?"Ya tiene su conteo inicial":"Todos ya tienen su conteo inicial"}</small>`:""}</span></button>`;
   ov.innerHTML=`<div class="mantenerBox"><h3 style="margin:0 0 8px">${esc(titulo)}</h3>
-    <div class="ctlOps" style="margin-bottom:10px">${op("inicial","I","Conteo inicial")}${op("parcial","P","Conteo parcial")}${op("final","C","Conteo de cierre")}</div>
+    <div class="ctlOps" style="margin-bottom:10px">${op("parcial","P","Conteo parcial")}${op("final","C","Conteo de cierre")}</div>
     <p class="note" id="ctlTpNota" style="margin:0 0 12px">${NOTAS.parcial}</p>${conBase>0&&!todosConBase?`<p class="note" style="margin:-6px 0 12px">${conBase} de ${total} ya tienen su conteo inicial: si pedís inicial, a esos no se les solicita.</p>`:""}
     <div class="mantAcc"><button type="button" class="btn ghost" data-no>Cancelar</button><button type="button" class="btn" data-si>Solicitar</button></div></div>`;
   document.body.appendChild(ov); let tipo="parcial";
