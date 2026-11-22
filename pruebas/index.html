@@ -936,7 +936,10 @@ body:has(.etiqOv){overflow:hidden}
 .menuHero .mhTx{display:flex;flex-direction:column;gap:6px}
 .menuHero .mhTit{font-family:Fraunces,serif;font-weight:600;font-size:1.7rem;line-height:1.1}
 .menuHero .mhSub{font-size:.95rem;color:#D6C8B6;max-width:34ch}
-.menuHero .mhMeta{display:flex;gap:22px;margin-top:auto;font-size:.82rem;color:#D6C8B6;flex-wrap:wrap}
+.menuHero .mhMeta{display:flex;flex-direction:column;gap:8px;margin-top:auto;font-size:.82rem;color:#D6C8B6}
+.menuHero .mhCap{font-weight:700;letter-spacing:.02em}
+.menuHero .mhCols{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,112px));gap:10px 16px;justify-content:start}
+.menuHero .mhCols div{min-width:0}
 .menuHero .mhMeta b{display:block;font-family:Fraunces,serif;font-weight:700;font-size:1.5rem;line-height:1.1;color:#E0C07A}
 .menuAvisos{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;font-weight:700}
 .menuAvisos span{display:flex;align-items:center;gap:7px}
@@ -1744,7 +1747,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.202.2";
+const FRONTEND_VERSION = "1.202.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4504,17 +4507,19 @@ function menuAvisosHTML(){
   return `<div class="menuAvisos">${p.join("")}</div>`;
 }
 function menuResumenHoyHTML(tipo){
-  const desde=jornadaDe(); let n=0, u=0;
+  // Unidades de hoy por rubro (solo los rubros que lleva el local), en columnas parejas.
+  const desde=jornadaDe(), por={};
   for(const r of regsActivos()){
     if(r.tipo!==tipo||r.ts<desde) continue;
     if(tipo==="salida"&&(r.subtipo==="transferencia"||r.subtipo==="desperdicio")) continue;
     if(tipo==="ingreso"&&(r.subtipo==="devolucion"||r.subtipo==="produccion")) continue;
-    n++;
-    for(const [id,q] of Object.entries(r.items||{})){ if(tipo==="ingreso"||esVasquetaNormal(id)) u+=(+q||0) }
+    for(const [id,q] of Object.entries(r.items||{})){ const sb=S.saboresPorId[String(id)]; if(!sb) continue; const g=grupoProductoDe(sb); por[g]=(por[g]||0)+(+q||0) }
   }
-  return tipo==="salida"
-    ? `<div><b>${u}</b>${u===1?"vasqueta":"vasquetas"} hoy</div><div><b>${n}</b>${n===1?"retiro":"retiros"}</div>`
-    : `<div><b>${n}</b>${n===1?"remito":"remitos"} hoy</div><div><b>${u}</b>${u===1?"unidad":"unidades"}</div>`;
+  const lleva=new Set(saboresDelLocalBase().map(grupoProductoDe));
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>lleva.has(g)||por[g]);
+  const lab=g=>(GRUPO_PRODUCTO_LABEL[g]||"Geladot").toLowerCase();
+  const cols=grupos.map(g=>`<div><b>${por[g]||0}</b>${lab(g)}</div>`).join("");
+  return `<span class="mhCap">${tipo==="salida"?"Salió hoy":"Entró hoy"}</span><span class="mhCols">${cols||"<div><b>0</b>unidades</div>"}</span>`;
 }
 function menuPrincipalHTML(sec, tipo, tiles, boton){
   const ico=(k,extra="")=>`<span class="ib" ${extra} aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MENU_ICONOS[k]}</svg></span>`;
