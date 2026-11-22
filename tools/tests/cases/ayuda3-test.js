@@ -11,6 +11,7 @@ const { chromium } = require("playwright");
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   const r=await page.evaluate(()=>{ S.ventaDia=true; const a=ayudaTemas().map(t=>t.id); S.ventaDia=false; S.chocoSoloDeposito=true; const b=ayudaTemas().map(t=>t.id); S.chocoSoloDeposito=false; S.empleado.rol="colaborador"; const c=ayudaTemas().map(t=>t.id); S.empleado.rol="admin"; return {conVentaDia:a, soloDeposito:b, colaborador:c}; });
   console.log(JSON.stringify(r));
+  await page.evaluate(()=>{ const s={id:9001,nombre:"Alfajor de prueba",familia:"chocolateria",tipo:"c",categoria:"Alfajores",minimo:6,activo:"SI"}; S.sabores.push(s); S.saboresPorId[9001]=s; });
   await page.evaluate(()=>{ S.ventaDia=true; });
   await page.click("#ayudaBtn"); await page.waitForSelector("#ayudaOv");
   await page.click("[data-ay-tema='choco']"); await page.waitForTimeout(200);

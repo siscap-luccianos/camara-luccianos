@@ -11,6 +11,7 @@ const { chromium } = require("playwright");
   await page.waitForSelector("header"); await page.waitForTimeout(400);
   await page.fill("#local","Local prueba"); await page.press("#local","Enter"); await page.waitForTimeout(900);
   const temas=async()=>page.$$eval("#ayLista [data-ay-tema]",e=>e.map(x=>x.dataset.ayTema));
+  await page.evaluate(()=>{ const s={id:9001,nombre:"Alfajor de prueba",familia:"chocolateria",tipo:"c",categoria:"Alfajores",minimo:6,activo:"SI"}; S.sabores.push(s); S.saboresPorId[9001]=s; });
   await page.click("#ayudaBtn"); await page.waitForSelector("#ayudaOv");
   let t=await temas(); console.log("Local prueba:",t.join(","));
   ok(t.includes("quepaso")&&t.includes("escaner")&&t.includes("venc")&&t.includes("conteo")&&t.includes("remito")&&t.includes("pedido"),"Local prueba ve escáner, vencimientos, conteo, remito y pedido");

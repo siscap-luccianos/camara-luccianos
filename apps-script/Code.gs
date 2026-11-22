@@ -3720,10 +3720,10 @@ function resetPin(empleadoId, empleado) {
 
   let permitido = false;
   if (empleado.rol === "admin") permitido = true;
-  else if (empleado.rol === "supervisor") permitido = true;
+  else if (empleado.rol === "supervisor" && objetivo.rol !== "admin" && objetivo.rol !== "supervisor") permitido = true; // el PIN de supervisores y admins lo resetea solo un admin
   else if (empleado.rol === "encargado" && (objetivo.rol === "colaborador" || objetivo.rol === "turno" || objetivo.rol === "produccion") && String(objetivo.local || "").trim() === String(empleado.local || "").trim()) permitido = true;
   else if (empleado.rol === "encargado" && String(objetivo.id) === String(empleado.id)) permitido = true; // su propio PIN
-  if (!permitido) return { ok: false, error: empleado.rol === "encargado" ? "Un responsable de local solo puede resetear su propio PIN y el de turno, colaboradores y producción de su local. Para el PIN de otro responsable, pedíselo a un supervisor o admin." : "No tenés permiso para resetear el PIN de ese empleado." };
+  if (!permitido) return { ok: false, error: empleado.rol === "encargado" ? "Un responsable de local solo puede resetear su propio PIN y el de turno, colaboradores y producción de su local. Para el PIN de otro responsable, pedíselo a un supervisor o admin." : (empleado.rol === "supervisor" && (objetivo.rol === "admin" || objetivo.rol === "supervisor") ? "El PIN de un supervisor o de un administrador lo resetea solo un administrador." : "No tenés permiso para resetear el PIN de ese empleado.") };
 
   const lock = LockService.getScriptLock();
   lock.tryLock(10000);
@@ -3774,7 +3774,8 @@ function editarNombreEmpleado(empleadoId, nombre, empleado) {
 function cambiarRolEmpleado(empleadoId, nuevoRol, empleado) {
   const objetivo = _empleadoPorId(empleadoId);
   if (!objetivo) return { ok: false, error: "No se encontró ese empleado." };
-  if (objetivo.rol !== "colaborador" && objetivo.rol !== "turno" && objetivo.rol !== "produccion") {
+  const puedeSerEncargado = objetivo.rol === "encargado" && (empleado.rol === "admin" || empleado.rol === "supervisor"); // admin/supervisor pueden cambiar al responsable de local (ej. pasarlo a turno) y sumar otro
+  if (objetivo.rol !== "colaborador" && objetivo.rol !== "turno" && objetivo.rol !== "produccion" && !puedeSerEncargado) {
     return { ok: false, error: "Ese rol no se puede cambiar desde acá." };
   }
   if (["encargado", "turno", "colaborador", "produccion"].indexOf(nuevoRol) === -1) {
