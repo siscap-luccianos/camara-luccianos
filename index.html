@@ -1736,7 +1736,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.203.2";
+const FRONTEND_VERSION = "1.203.4";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4382,7 +4382,9 @@ function categoriasPresentes(){
 /** En un local con «Venta del día» (Locales.venta_dia=SI) la chocolatería ya no se saca en la
  *  Salida normal: se descuenta una vez por día, al cierre, con lo que dice la caja. Solo se
  *  oculta en la Salida común; Desperdicio, Ingreso, Conteo y Stock la siguen mostrando. */
-function chocoOcultaEnSalida(){ return !!S.ventaDia && S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio }
+/** «Venta del día» solo tiene sentido si el local lleva chocolatería (un local con el rubro apagado no la ve). */
+function ventaDiaActiva(){ return !!S.ventaDia && saboresDelLocal().some(s=>grupoProductoDe(s)==="chocolateria") }
+function chocoOcultaEnSalida(){ return ventaDiaActiva() && S.tab==="salida" && !S.modoVenta && !S.modoDesperdicio }
 function chipFiltros(){
   const grupos=conteoParcialActivo()?[S.conteoAlcance]:familiasPresentes(), grupoActivo=S.filtroFamilia||"vasquetas";
   const cats=categoriasPresentes();
@@ -4468,7 +4470,7 @@ function revisarAccion(t){
 }
 function chocoBarraHTML(){
   const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
-  const consumo=(S.ventaDia&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
+  const consumo=(ventaDiaActiva()&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
   return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
@@ -4614,7 +4616,7 @@ function accionesSalidaHTML(){
   if(S.filtroFamilia==="chocolateria") return ""; // en Chocolatería no hay escáner: arriba van «Registrar consumo» y «Vencimientos»
   const t=[];
   if(escanerDisponible()) t.push(accTileHTML("irEscaner","Activar escáner","Vasquetas","scan","m"));
-  const nota=(S.ventaDia&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: se registra con «Registrar consumo».</p>`:"";
+  const nota=(ventaDiaActiva()&&!salidaEsTransf())?`<p style="margin:-2px 0 12px;color:var(--muted);font-size:.78rem;line-height:1.4">La chocolatería no se saca acá: se registra con «Registrar consumo».</p>`:"";
   return (t.length?accGridHTML(t):"")+nota;
 }
 function gridDesperdicio(st){
@@ -5997,6 +5999,13 @@ function puedeAnular(r){
   if(rol==="colaborador") return String(r.empleadoId)===String(S.empleado.id) && edad<=10*60*1000;
   return false;
 }
+/** Pestañas de rubro del Historial: solo las que el local lleva (Todas, Desperdicio y Producción no dependen del rubro). */
+function tabHistLleva(v,g){
+  if(v==="vasquetas") return g.has("vasquetas")||g.has("baldes")||g.has("glutenfree");
+  if(v==="icepops") return g.has("icepops")||g.has("geladot");
+  if(v==="chocolateria"||v==="pasteleria"||v==="bolleria") return g.has(v);
+  return true;
+}
 const CATEGORIAS_HIST = [["todas","Todas"],["vasquetas","Vasquetas"],["icepops","Icepops"],["chocolateria","Chocolatería"],["pasteleria","Pastelería"],["bolleria","Bollería"],["desperdicio","Desperdicio"],["produccion","Producción"]];
 const RANGOS_HIST = [["s0","Esta semana"],["s1","Semana pasada"],["s2","Hace 2 semanas"],["s3","Hace 3 semanas"],["m0","Este mes"],["m1","Mes pasado"]];
 /** Info del rango elegido en Historial: una semana calendario (lunes a
@@ -6287,8 +6296,9 @@ function histView(){
   const kgLabel=x=>x?x.toLocaleString("es-AR",{maximumFractionDigits:1}):"·";
 
   const gruposDelLocal=new Set(saboresDelLocal().map(grupoProductoDe));
-  const tabsCategoria = CATEGORIAS_HIST.filter(([v])=>(v!=="produccion"||S.produccionLocal) && (v!=="pasteleria"&&v!=="bolleria"||gruposDelLocal.has(v)))
-    .map(([v,l])=>`<button type="button" class="tabCat" role="tab" data-categoria-hist="${v}" aria-selected="${S.categoriaHist===v}">${l}</button>`).join("");
+  const catsHist = CATEGORIAS_HIST.filter(([v])=>(v!=="produccion"||S.produccionLocal) && tabHistLleva(v,gruposDelLocal));
+  if(!catsHist.some(([v])=>v===S.categoriaHist)) S.categoriaHist="todas";
+  const tabsCategoria = catsHist.map(([v,l])=>`<button type="button" class="tabCat" role="tab" data-categoria-hist="${v}" aria-selected="${S.categoriaHist===v}">${l}</button>`).join("");
   const iconoCal = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>`;
   const esRangoCal = S.rangoHist.charAt(0)==="c";
   const segmentoPeriodo = [["d1","Hoy"],["s0","Semana"],["m0","Mes"],["d60","Todo"]].map(([v,l])=>`<button type="button" class="segBtn" data-rango-hist="${v}" aria-pressed="${S.rangoHist===v}">${l}</button>`).join("");
@@ -9412,7 +9422,7 @@ function ayudaTemas(){
     <div class="ayCard"><span class="ayTag a">Enviás mercadería</span><b>Salida › Transferencia</b><p>En <b>Salida</b> tocá <b>Transferencia</b>, escribí <b>a qué local va</b> (es obligatorio) y cargá lo que sale, a mano${escanerDisponible()?" o con <b>Escanear vasqueta</b>":""}. Sirve para cualquier rubro.</p></div>
     <div class="ayCard"><span class="ayTag b">Recibís mercadería</span><b>Ingreso › Transferencia</b><p>En <b>Ingreso</b> tocá <b>Transferencia</b>, escribí <b>de qué local viene</b> y cargá lo que llegó${escanerDisponible()?": con <b>Escanear vasqueta</b> hacés pic, pic, pic (una caja cerrada suma 2 vasquetas)":""}.</p></div>
     <div class="ayCard"><span class="ayTag c">Cómo queda</span><b>Mueve el stock, no cuenta como consumo</b><p>Al que envía le baja el stock y al que recibe le sube. No entra en el consumo ni en el pedido sugerido. En Historial se ve con su etiqueta azul «transferencia».</p></div></div>`});
-  if(S.ventaDia && !colab) T.push({id:"choco", titulo:"Registrar consumo", sub:"Venta del día, gift card, sin cargo y baja", html:li([
+  if(ventaDiaActiva() && !colab) T.push({id:"choco", titulo:"Registrar consumo", sub:"Venta del día, gift card, sin cargo y baja", html:li([
     "En este local la chocolatería <b>no se saca por la Salida común</b>: en <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Registrar consumo</b>.",
     "Elegí el tipo: <b>Venta del día</b> (lo que dice la caja al cerrar), <b>Gift card</b>, <b>Sin cargo</b> (regalo, evento o muestra: pide motivo) o <b>Baja</b> (por vencimiento, o transferencia a otro local: pide el destino).",
     "En venta del día y gift card se puede elegir la fecha, hasta 7 días atrás, por si te olvidaste de cargarla.",
