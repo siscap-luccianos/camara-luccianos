@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.110.0";
+const BACKEND_VERSION = "1.111.0";
 
 function doPost(e) {
   let resultado;
@@ -913,6 +913,18 @@ function _errorPaisItems(local, items, catalogo) {
   return fuera.length ? "No se vende en " + pais + ": " + fuera.join(", ") + "." : "";
 }
 
+/** (1.111.0) "" si ningún sabor con cantidad > 0 es de un RUBRO APAGADO del local (Locales.lleva_<rubro>=NO); si no, el mensaje de error.
+ *  Los sabores que el local solo excluyó a mano (sabores_excluidos) no se rechazan acá: el local puede seguir teniendo stock de ellos. */
+function _errorRubroItems(local, items, catalogo) {
+  const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
+  const ap = _rubrosApagados(fila);
+  if (!ap.length) return "";
+  const porId = {};
+  (catalogo || _leerCrudo("Sabores")).forEach((sab) => { porId[String(sab.id)] = sab; });
+  const fuera = Object.keys(items || {}).filter((id) => (Number(items[id]) || 0) > 0 && porId[String(id)] && ap.indexOf(_rubroDeSabor(porId[String(id)])) !== -1).map((id) => porId[String(id)].nombre);
+  return fuera.length ? "Este local no lleva ese rubro (" + fuera.join(", ") + "). Lo maneja el supervisor en la planilla." : "";
+}
+
 function _datosSinCache(local, empleado) {
   const stockFilas = _leerCrudo("Stock").filter((s) => String(s.local || "").trim() === String(local).trim());
   const stock = stockFilas.length ? _stockPublico(stockFilas[0]) : null;
@@ -1347,6 +1359,8 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   catalogoVenc.forEach((sab) => { nombreVenc[String(sab.id)] = sab.nombre; familiaVenc[String(sab.id)] = sab.familia || "vasquetas"; categoriaVenc[String(sab.id)] = sab.categoria || ""; });
   const errPais = _errorPaisItems(local, items, catalogoVenc);
   if (errPais) return { ok: false, error: errPais };
+  const errRubro = _errorRubroItems(local, items, catalogoVenc);
+  if (errRubro) return { ok: false, error: errRubro };
   const norm = _normalizarVencimientos(vencimientos, items, tipo);
   if (!norm.ok) return norm;
   const vencimientos2 = norm.vencimientos;
@@ -2245,6 +2259,8 @@ function cambioSabor(clienteId, local, desde, hacia, cantidad, kilos, motivo, em
   if (familiasCambio.indexOf(String(sd.familia || "vasquetas")) === -1 || familiasCambio.indexOf(String(sh.familia || "vasquetas")) === -1) return { ok: false, error: "El cambio de sabor aplica a vasquetas, baldes, icepops y gluten free (no a chocolatería, pastelería ni bollería)." };
   const errPais = _errorPaisItems(local, { [desde]: 1, [hacia]: 1 }, catalogo);
   if (errPais) return { ok: false, error: errPais };
+  const errRubro = _errorRubroItems(local, { [desde]: 1, [hacia]: 1 }, catalogo);
+  if (errRubro) return { ok: false, error: errRubro };
   const esKg = (x) => String(x.tipo || "v") === "v" && String(x.familia || "vasquetas") === "vasquetas";
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   const kilosReales = !!filaLocal && _esVerdadero(filaLocal.kilos_reales) === true;
@@ -2405,6 +2421,24 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, e
     const filaLocalConteo = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     const paisConteo = _paisDeLocal(filaLocalConteo);
     catalogoConteo.forEach((sab) => { if (items2[String(sab.id)] !== undefined && !_saborEnPais(sab, paisConteo)) items2[String(sab.id)] = 0; });
+    // (1.111.0) Rubros apagados del local: no se cuentan, quedan en 0. Sabores que el local excluyó a mano (sabores_excluidos):
+    // no se ven en la pantalla del conteo, así que conservan lo que tenían en la base anterior (salvo los que el local produce).
+    const apagadosConteo = _rubrosApagados(filaLocalConteo);
+    const excluidosManual = filaLocalConteo ? String(filaLocalConteo.sabores_excluidos || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+    const produceConteo = filaLocalConteo ? String(filaLocalConteo.produccion_sabores || "").split(",").map((x) => x.trim()).filter(Boolean) : [];
+    const conservadosConteo = {};
+    if (apagadosConteo.length || excluidosManual.length) {
+      const stockPrevio = _leerCrudo("Stock").filter((r) => String(r.local || "").trim() === String(local).trim())[0];
+      const basePrevia = stockPrevio ? _jsonObj(stockPrevio.base, {}) : {};
+      catalogoConteo.forEach((sab) => {
+        const id = String(sab.id);
+        if (apagadosConteo.indexOf(_rubroDeSabor(sab)) !== -1) { if (items2[id] !== undefined) items2[id] = 0; return; }
+        if (excluidosManual.indexOf(id) !== -1 && produceConteo.indexOf(id) === -1 && _saborEnPais(sab, paisConteo)) {
+          const previo = Math.max(0, Number(basePrevia[id]) || 0);
+          if (previo > 0 || items2[id] !== undefined) { items2[id] = previo; conservadosConteo[id] = true; }
+        }
+      });
+    }
     const nombreConteo = {}, familiaConteo = {}, categoriaConteo = {};
     catalogoConteo.forEach((sab) => { nombreConteo[String(sab.id)] = sab.nombre; familiaConteo[String(sab.id)] = sab.familia || ""; categoriaConteo[String(sab.id)] = sab.categoria || ""; });
     const norm = _normalizarVencimientos(vencimientos, items2, "conteo");
@@ -2414,7 +2448,7 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, e
     const kilosConteo = {};
     Object.keys(kilos || {}).forEach((id) => { const k = Number(kilos[id]) || 0; if (k > 0 && items2[id] !== undefined) kilosConteo[id] = Math.round(k * 100) / 100; });
     if (filaLocalConteo && _esVerdadero(filaLocalConteo.kilos_reales) === true) {
-      const faltan = catalogoConteo.filter((sab) => String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas" && (items2[String(sab.id)] || 0) > 0 && !kilosConteo[String(sab.id)]).map((sab) => sab.nombre);
+      const faltan = catalogoConteo.filter((sab) => String(sab.tipo || "v") === "v" && String(sab.familia || "vasquetas") === "vasquetas" && (items2[String(sab.id)] || 0) > 0 && !kilosConteo[String(sab.id)] && !conservadosConteo[String(sab.id)]).map((sab) => sab.nombre);
       if (faltan.length) return { ok: false, error: "Faltan los kilos totales de: " + faltan.join(", ") + "." };
     }
     const total = _totalItems(items2);
@@ -2689,6 +2723,8 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
   const pais = _paisDeLocal(filaLocal);
   const catalogo = {};
   _leerCrudo("Sabores").forEach((s) => { if (_saborEnPais(s, pais)) catalogo[String(s.id)] = s; });
+  const errRubroInv = _errorRubroItems(local, items); // (1.111.0)
+  if (errRubroInv) return { ok: false, error: errRubroInv };
   const contados = {};
   let malos = false;
   const imposiblesLocal = [];
@@ -3324,7 +3360,8 @@ function controlStock(empleado) {
     const nombre = String(l.nombre).trim();
     const pais = _paisDeLocal(l);
     const catalogo = {};
-    sabores.forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
+    const excl = _excluidosDelLocal(l, sabores); // (1.111.0) lo que el local no puede contar (rubro apagado o excluido) no entra al control
+    sabores.forEach((sb) => { if (_saborEnPais(sb, pais) && excl.indexOf(String(sb.id)) === -1) catalogo[String(sb.id)] = sb; });
     catalogo["0"] = { id: "0", nombre: "Sin sabor específico", tipo: "v", familia: "vasquetas", peso: 0 }; // merma sin sabor: cuenta en el total del helado
     const mios = invs.filter((r) => String(r.local || "").trim() === nombre).sort((a, b) => Number(a.ts) - Number(b.ts));
     const pend = pedidos.filter((q) => String(q.local).trim() === nombre && String(q.estado) === "pendiente")[0];
@@ -3361,7 +3398,8 @@ function controlDetalle(local, inventarioId, empleado) {
   if (!filaLocal) return { ok: false, error: "No se encontró ese local." };
   const pais = _paisDeLocal(filaLocal);
   const catalogo = {};
-  _leerCrudo("Sabores").forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
+  const saboresCtl = _leerCrudo("Sabores"), exclCtl = _excluidosDelLocal(filaLocal, saboresCtl); // (1.111.0) sin lo que el local no puede contar
+  saboresCtl.forEach((sb) => { if (_saborEnPais(sb, pais) && exclCtl.indexOf(String(sb.id)) === -1) catalogo[String(sb.id)] = sb; });
   catalogo["0"] = { id: "0", nombre: "Sin sabor específico", tipo: "v", familia: "vasquetas", peso: 0 }; // merma sin sabor: cuenta en el total del helado
   const mios = _leerCrudo("Inventarios").filter((r) => String(r.local || "").trim() === String(local).trim()).sort((a, b) => Number(a.ts) - Number(b.ts));
   if (!mios.length) return { ok: true, conteos: [], grupos: [], pedido: _pedidoPublico(_pedidoPendiente(local)) }; // (1.109.2) con el pedido, para poder cancelarlo aunque no haya ningún conteo
