@@ -1706,7 +1706,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.200.6";
+const FRONTEND_VERSION = "1.200.7";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3908,7 +3908,7 @@ function controlView(){
       <div class="cgFin">${est}${f.pedido?`<button type="button" class="cgLink noPrint" data-ctl-cancel="${esc(f.local)}">Cancelar</button>`:`<button type="button" class="cgLink noPrint" data-ctl-pedir1="${esc(f.local)}">Pedir</button>`}<span class="cgChev" aria-hidden="true">›</span></div></div></div>`;
   };
   const titulo=grupo?grupo.nombre:({todos:"Todos los locales",propios:"Propios",fran:"Franquicias",viejo:"Sin conteo hace 30+ días",sin:"Sin pedido",pend:"Con pedido"}[C.f]||"Todos los locales");
-  const barra=marcados.length?`<div class="cgBarra noPrint"><b>${marcados.length} seleccionado${marcados.length>1?"s":""}${ocultos>0?`<span class="cgMini">${ocultos} fuera del filtro: no se incluyen</span>`:""}</b><button type="button" class="cgLink" data-ctl-masivo>Pedir conteo</button><button type="button" class="cgLink" data-cg-mover>Mover a…</button>${grupo&&grupo.propio?`<button type="button" class="cgLink rojo" data-cg-quitar>Quitar</button>`:""}<button type="button" class="cgLink" data-ctl-cancelmas>Cancelar pedidos</button><button type="button" class="cgLink" data-ctl-nada>Listo</button></div>`:"";
+  const barra=marcados.length?`<div class="cgBarra noPrint"><button type="button" class="ctlCerrar" data-ctl-nada aria-label="Cancelar la selección" title="Cancelar la selección">✕</button><b>${marcados.length} seleccionado${marcados.length>1?"s":""}${ocultos>0?`<span class="cgMini">${ocultos} fuera del filtro: no se incluyen</span>`:""}</b><button type="button" class="cgLink" data-ctl-masivo>Pedir conteo</button><button type="button" class="cgLink" data-cg-mover>Mover a…</button>${grupo&&grupo.propio?`<button type="button" class="cgLink rojo" data-cg-quitar>Quitar</button>`:""}<button type="button" class="cgLink" data-ctl-cancelmas>Anular pedidos</button></div>`:"";
   return `<div class="rlv ctl cgApp">
     <div class="noPrint"><h1 class="cgH1">Control de stock</h1><p class="cgNota">Pedí un conteo a un local, o armá grupos de locales y pedilo a todo el grupo.</p></div>
     <div class="cgLay">
@@ -4041,7 +4041,7 @@ function controlClick(t){
   if(t.dataset.cgNuevo!==undefined){ ctlNuevoGrupoVacio(); return true }
   if(t.dataset.cgPedirg!==undefined){ ctlPedirA(C.visNom||[]); return true }
   if(t.dataset.cgBorrarg!==undefined){ const g=(ctlGruposLeer().grupos||[]).find(x=>String(x.id)===String(C.g)); if(g&&confirm("¿Borrar el grupo «"+g.nombre+"»? Los locales no se borran.")){ (async()=>{ const r=await api("borrarGrupoConteo",{id:g.id}); if(r&&r.ok){ C.g=""; await ctlGruposCargar(); renderApp() } else toast((r&&r.error)||"No se pudo borrar.") })() } return true }
-  if(t.dataset.cgQuitar!==undefined){ const g=(ctlGruposLeer().grupos||[]).find(x=>String(x.id)===String(C.g)), ls=ctlMarcadosVisibles(); if(g&&ls.length){ (async()=>{ if(await ctlGuardarGrupoSrv(g.nombre,g.locales.filter(n=>ls.indexOf(n)<0))){ C.sel={}; renderApp(); toast("Quitados de «"+g.nombre+"»") } })() } return true }
+  if(t.dataset.cgQuitar!==undefined){ const g=(ctlGruposLeer().grupos||[]).find(x=>String(x.id)===String(C.g)), ls=ctlMarcadosVisibles(); if(g&&ls.length&&confirm("¿Quitar "+ls.length+" local"+(ls.length===1?"":"es")+" del grupo «"+g.nombre+"»?")){ (async()=>{ if(await ctlGuardarGrupoSrv(g.nombre,g.locales.filter(n=>ls.indexOf(n)<0))){ C.sel={}; renderApp(); toast("Quitados de «"+g.nombre+"»") } })() } return true }
   if(t.dataset.ctlPedir1){ ctlPedirUno(t.dataset.ctlPedir1); return true }
   if(t.dataset.ctlMasivo!==undefined){ ctlPedirMasivo(); return true }
   if(t.dataset.ctlCancelmas!==undefined){ ctlCancelarMasivo(); return true }
@@ -4167,7 +4167,7 @@ function ctlPedirA(ls){
 }
 function ctlCancelarMasivo(){
   const C=controlEstado(), ls=ctlMarcadosVisibles(); if(!ls.length) return;
-  if(!confirm("¿Cancelar los pedidos pendientes de los "+ls.length+" locales marcados?")) return;
+  if(!confirm("¿Anular los pedidos pendientes de los "+ls.length+" locales marcados?")) return;
   (async()=>{ const r=await ctlEnLotes("cancelarPedidosMasivo",ls,null,document.querySelector("[data-ctl-cancelmas]")); toast(r&&r.ok?r.cancelados+" pedido"+(r.cancelados===1?"":"s")+" cancelado"+(r.cancelados===1?"":"s"):(/desconocida/i.test((r&&r.error)||"")?CTL_NOFALTA:(r&&r.error)||"No se pudo cancelar.")); if(r&&r.ok) ls.forEach(n=>delete C.sel[n]); ctlRefrescar() })();
 }
 (function(){
