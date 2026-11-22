@@ -17,7 +17,9 @@ const { chromium } = require("playwright");
 
   // 1) entrada desde Stock
   ok(!!(await page.$("#conteoInicialBtn")), "Stock tiene el cartel «Conteo inicial»"); await page.click("#conteoInicialBtn"); await page.waitForTimeout(200);
-  ok(!!(await page.$("#conteoBtn")) && !!(await page.$("#invBtn")) && !!(await page.$("#invGuardadosBtn")), "adentro: Conteo cámara + Conteo local = Conteo inicial");
+  ok(!!(await page.$("#conteoBtn")) && (await page.$$(".hubTile")).length === 2 && !!(await page.$("#invGuardadosBtn")), "adentro: Conteo cámara + Conteo local = Conteo inicial (el local espera a la cámara)");
+  ok(!(await page.$("#invBtn")), "el local no se puede contar antes que la cámara");
+  await page.evaluate(() => { window.cargarConteoBloqueado = () => {}; S.camaraBloqueada = true; renderApp() }); await page.waitForTimeout(200);
   ok(!!(await page.$("#invGuardadosBtn")), "y el acceso a los inventarios guardados");
   await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#invBtn"); await page.waitForTimeout(300);
   let txt = (await page.innerText("main")).replace(/\s+/g, " ");
@@ -64,6 +66,7 @@ const { chromium } = require("playwright");
   await page.reload(); await page.waitForSelector("header"); await page.waitForTimeout(1500);
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
   await (await page.$("#conteoInicialBtn"))?.click(); await page.waitForTimeout(200);
+  await page.evaluate(() => { window.cargarConteoBloqueado = () => {}; S.camaraBloqueada = true; renderApp() }); await page.waitForTimeout(200);
   ok(/sin terminar/i.test(await page.innerText("#invBtn")), "después de recargar avisa que hay un inventario sin terminar");
   await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#invBtn"); await page.waitForTimeout(300);
   ok(/Retomaste/.test(await page.innerText("main")), "retoma lo que había cargado");
