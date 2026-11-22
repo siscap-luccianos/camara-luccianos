@@ -1,0 +1,112 @@
+(solo lectura) ⇒ (read-only)
+. Después se cierra solo. ⇒ . It then closes by itself.
+. El original se conserva. ⇒ . The original is kept.
+. No se puede copiar ni imprimir. ⇒ . It can't be copied or printed.
+: revisá la lista. ⇒ : check the list.
+Ajuste de supervisión ⇒ Supervisor adjustment
+Anular solicitud ⇒ Cancel request
+Anular solicitudes ⇒ Cancel requests
+Buscar local ⇒ Search store
+Cancelar la selección ⇒ Cancel selection
+Cargar devolución ⇒ Log return
+Cargar mercadería ⇒ Log goods received
+Cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ Month-end closing: the cold room stock is set to what was counted, it gets locked and becomes next month's opening count.
+Con solicitud ⇒ With request
+Contada el ⇒ Counted on
+Conteo inicial de ⇒ Opening count for
+Corregido 1 vez ⇒ Corrected once
+Corregido 2 o más veces ⇒ Corrected 2 or more times
+Corregido por ⇒ Corrected by
+El cierre deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ The closing sets the cold room stock to what was counted, locks it and makes it next month's opening count.
+El responsable lo ve hasta las ⇒ The manager sees it until
+Empezar el retiro ⇒ Start the withdrawal
+Entró hoy ⇒ In today
+Enviando ⇒ Sending
+Este grupo está vacío. Arrastrá locales desde «Todos» o usá «Mover a…». ⇒ This group is empty. Drag stores from "All" or use "Move to…".
+Falta actualizar el servidor (Code.gs) para guardar grupos. ⇒ The server (Code.gs) needs updating to save groups.
+Falta actualizar el servidor (Code.gs) para pedir varios conteos de una vez. ⇒ The server (Code.gs) needs updating to request several counts at once.
+Grupo « ⇒ Group «
+Grupos de ⇒ Groups of
+Habilitado hasta las ⇒ Enabled until
+Habilitar (PIN) ⇒ Enable (PIN)
+Habilitar reconteo del conteo ⇒ Enable recount of the count
+Habilitar reconteo del conteo inicial ⇒ Enable recount of the opening count
+Hay una solicitud de ⇒ There is a request for
+Inicial: el stock de arranque del local (cámara + local). Queda cerrado. ⇒ Opening: the store's starting stock (cold room + store). It gets locked.
+Lo ve durante 1 hora para comparar y se oculta solo. No puede copiar ni imprimir. ⇒ They see it for 1 hour to compare, then it hides itself. They can't copy or print it.
+Lo ves hasta las ⇒ You see it until
+Marcar ⇒ Select
+Ningún local coincide. ⇒ No store matches.
+No se pudieron cargar tus grupos. ⇒ Couldn't load your groups.
+No se pudo borrar. ⇒ Couldn't delete.
+No se pudo conectar. ⇒ Couldn't connect.
+No se pudo guardar el grupo. ⇒ Couldn't save the group.
+Nombre del grupo ⇒ Group name
+Otro supervisor ⇒ Another supervisor
+PIN activo ⇒ PIN active
+Parcial: un control en el medio del mes. No cambia el stock. ⇒ Partial: a mid-month check. It doesn't change the stock.
+Permite que el responsable lo vuelva a contar una vez. El original se conserva. ⇒ Lets the manager count it again once. The original is kept.
+Permite un ajuste. El inicial original se conserva. ⇒ Allows one adjustment. The original opening count is kept.
+Podés contar y volver a contar las veces que quieras. Desde el 1/12 cada conteo guardado queda cerrado 🔒. ⇒ You can count and recount as many times as you want. From 1/12 on, every saved count is locked 🔒.
+Primero contá la cámara ⇒ Count the cold room first
+Quitados de « ⇒ Removed from «
+Resumen del conteo ⇒ Count summary
+Retiros ⇒ Outputs
+Salió hoy ⇒ Out today
+Se la mandás a otro local. ⇒ You send it to another store.
+Se muestra solo desde las 12:00. ⇒ Only shown from 12:00.
+Se rompió, cayó o venció. Pide motivo. ⇒ Broken, dropped or expired. Asks for a reason.
+Sin PIN ⇒ No PIN
+Sin color: sin reconteo ⇒ No color: no recount
+Sin conteo hace 30+ días ⇒ No count in 30+ days
+Sin solicitud ⇒ No request
+Solicitar ⇒ Request
+Solicitar cierre ⇒ Request closing
+Solicitar conteo ⇒ Request a count
+Solicitar conteo a los ⇒ Request a count from the
+Solicitar parcial ⇒ Request a partial
+Solicitar un conteo nuevo a este local: ⇒ Request a new count from this store:
+Solicitud ⇒ Request
+Solicitud de conteo inicial ⇒ Opening count request
+Solicitud enviada a ⇒ Request sent to
+Solicitud enviada: el responsable de ⇒ Request sent: the manager of
+Solicitá un conteo a un local, o armá grupos de locales y solicitalo a todo el grupo. ⇒ Request a count from one store, or build groups of stores and request it from the whole group.
+Supervisión solicitó el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene. ⇒ Supervision requested this store's closing count (cold room + store). It sets the stock to what was counted and becomes next month's opening count.
+Supervisión solicitó el conteo inicial de este local: es el stock de arranque (cámara + local). Primero contá la cámara y después el local. Queda cerrado. ⇒ Supervision requested this store's opening count: it is the starting stock (cold room + store). Count the cold room first, then the store. It gets locked.
+Supervisión solicitó un conteo de este local (cámara + local). ⇒ Supervision requested a count of this store (cold room + store).
+Todavía no creó su PIN ⇒ Hasn't created their PIN yet
+Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo». ⇒ You don't have any groups yet. Select stores and choose "Move to…", or tap "New".
+Todos ya tienen su conteo inicial ⇒ Everyone already has their opening count
+Ya estaban en « ⇒ Already in «
+Ya se pidieron ⇒ Already requested
+Ya tiene su conteo inicial ⇒ Already has its opening count
+ajuste supervisión ⇒ supervisor adjustment
+bajo mínimo ⇒ below minimum
+con error ( ⇒ with error (
+conteo inicial ⇒ opening count
+corregido × ⇒ corrected ×
+de 2 pasos hechos ⇒ of 2 steps done
+de CIERRE ⇒ CLOSING
+del grupo ya no existe ⇒ of the group no longer exists
+del grupo « ⇒ of the group «
+en « ⇒ in «
+fuera del filtro: no se incluyen ⇒ outside the filter: not included
+la ve al entrar ⇒ sees it on entering
+locales marcados? ⇒ selected stores?
+min). Después se oculta solo. ⇒ min). Then it hides itself.
+otro supervisor ⇒ another supervisor
+sin conteos ⇒ no counts
+ya lo tenían ⇒ already had it
+ya tienen su conteo inicial: si pedís inicial, a esos no se les solicita. ⇒ already have their opening count: if you request the opening one, they are skipped.
+· grupo de ⇒ · group of
+· motivo: « ⇒ · reason: «
+· tocá para ver el desglose ⇒ · tap to see the breakdown
+» creado ⇒ » created
+»? Los locales no se borran. ⇒ »? Stores are not deleted.
+¿Anular las solicitudes pendientes de los ⇒ Cancel the pending requests of the
+¿Borrar el grupo « ⇒ Delete the group «
+¿Quitar ⇒ Remove
+¿Qué conteo le solicitás a ⇒ Which count do you request from
+¿Qué conteo les solicitás a ⇒ Which count do you request from
+último conteo hace ⇒ last count
+«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ⇒ "—" means the store doesn't carry it. It is the stock each store has in the app today; if a store has never done a physical count it may not match what is in the cold room. Data

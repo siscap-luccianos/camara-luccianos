@@ -1,0 +1,112 @@
+(solo lectura) ⇒ (lecture seule)
+. Después se cierra solo. ⇒ . Ensuite, il se ferme tout seul.
+. El original se conserva. ⇒ . L'original est conservé.
+. No se puede copiar ni imprimir. ⇒ . Impossible de copier ou d'imprimer.
+: revisá la lista. ⇒ : vérifiez la liste.
+Ajuste de supervisión ⇒ Ajustement de la supervision
+Anular solicitud ⇒ Annuler la demande
+Anular solicitudes ⇒ Annuler les demandes
+Buscar local ⇒ Chercher un magasin
+Cancelar la selección ⇒ Annuler la sélection
+Cargar devolución ⇒ Enregistrer le retour
+Cargar mercadería ⇒ Enregistrer la marchandise
+Cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ Clôture du mois : le stock de la chambre froide devient égal à ce qui a été compté, il est verrouillé et devient l'inventaire initial du mois suivant.
+Con solicitud ⇒ Avec demande
+Contada el ⇒ Comptée le
+Conteo inicial de ⇒ Inventaire initial de
+Corregido 1 vez ⇒ Corrigé 1 fois
+Corregido 2 o más veces ⇒ Corrigé 2 fois ou plus
+Corregido por ⇒ Corrigé par
+El cierre deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene. ⇒ La clôture rend le stock de la chambre froide égal à ce qui a été compté, le verrouille et en fait l'inventaire initial du mois suivant.
+El responsable lo ve hasta las ⇒ Le responsable le voit jusqu'à
+Empezar el retiro ⇒ Commencer la sortie
+Entró hoy ⇒ Entré aujourd'hui
+Enviando ⇒ Envoi en cours
+Este grupo está vacío. Arrastrá locales desde «Todos» o usá «Mover a…». ⇒ Ce groupe est vide. Faites glisser des magasins depuis « Tous » ou utilisez « Déplacer vers… ».
+Falta actualizar el servidor (Code.gs) para guardar grupos. ⇒ Le serveur (Code.gs) doit être mis à jour pour enregistrer les groupes.
+Falta actualizar el servidor (Code.gs) para pedir varios conteos de una vez. ⇒ Le serveur (Code.gs) doit être mis à jour pour demander plusieurs comptages à la fois.
+Grupo « ⇒ Groupe «
+Grupos de ⇒ Groupes de
+Habilitado hasta las ⇒ Autorisé jusqu'à
+Habilitar (PIN) ⇒ Autoriser (PIN)
+Habilitar reconteo del conteo ⇒ Autoriser le recomptage de l'inventaire
+Habilitar reconteo del conteo inicial ⇒ Autoriser le recomptage de l'inventaire initial
+Hay una solicitud de ⇒ Il y a une demande de
+Inicial: el stock de arranque del local (cámara + local). Queda cerrado. ⇒ Initial : le stock de départ du magasin (chambre froide + magasin). Il est verrouillé.
+Lo ve durante 1 hora para comparar y se oculta solo. No puede copiar ni imprimir. ⇒ Il le voit pendant 1 heure pour comparer, puis il se masque tout seul. Il ne peut ni copier ni imprimer.
+Lo ves hasta las ⇒ Vous le voyez jusqu'à
+Marcar ⇒ Cocher
+Ningún local coincide. ⇒ Aucun magasin ne correspond.
+No se pudieron cargar tus grupos. ⇒ Impossible de charger vos groupes.
+No se pudo borrar. ⇒ Impossible de supprimer.
+No se pudo conectar. ⇒ Connexion impossible.
+No se pudo guardar el grupo. ⇒ Impossible d'enregistrer le groupe.
+Nombre del grupo ⇒ Nom du groupe
+Otro supervisor ⇒ Autre superviseur
+PIN activo ⇒ PIN actif
+Parcial: un control en el medio del mes. No cambia el stock. ⇒ Partiel : un contrôle en milieu de mois. Il ne modifie pas le stock.
+Permite que el responsable lo vuelva a contar una vez. El original se conserva. ⇒ Permet au responsable de le recompter une fois. L'original est conservé.
+Permite un ajuste. El inicial original se conserva. ⇒ Permet un ajustement. L'inventaire initial d'origine est conservé.
+Podés contar y volver a contar las veces que quieras. Desde el 1/12 cada conteo guardado queda cerrado 🔒. ⇒ Vous pouvez compter et recompter autant de fois que vous voulez. À partir du 1/12, chaque comptage enregistré est verrouillé 🔒.
+Primero contá la cámara ⇒ Comptez d'abord la chambre froide
+Quitados de « ⇒ Retirés de «
+Resumen del conteo ⇒ Résumé du comptage
+Retiros ⇒ Sorties
+Salió hoy ⇒ Sorti aujourd'hui
+Se la mandás a otro local. ⇒ Vous l'envoyez à un autre magasin.
+Se muestra solo desde las 12:00. ⇒ Affiché seulement à partir de 12 h 00.
+Se rompió, cayó o venció. Pide motivo. ⇒ Cassé, tombé ou périmé. Demande un motif.
+Sin PIN ⇒ Sans PIN
+Sin color: sin reconteo ⇒ Sans couleur : aucun recomptage
+Sin conteo hace 30+ días ⇒ Sans comptage depuis 30+ jours
+Sin solicitud ⇒ Sans demande
+Solicitar ⇒ Demander
+Solicitar cierre ⇒ Demander la clôture
+Solicitar conteo ⇒ Demander un comptage
+Solicitar conteo a los ⇒ Demander un comptage aux
+Solicitar parcial ⇒ Demander un partiel
+Solicitar un conteo nuevo a este local: ⇒ Demander un nouveau comptage à ce magasin :
+Solicitud ⇒ Demande
+Solicitud de conteo inicial ⇒ Demande d'inventaire initial
+Solicitud enviada a ⇒ Demande envoyée à
+Solicitud enviada: el responsable de ⇒ Demande envoyée : le responsable de
+Solicitá un conteo a un local, o armá grupos de locales y solicitalo a todo el grupo. ⇒ Demandez un comptage à un magasin, ou créez des groupes de magasins et demandez-le à tout le groupe.
+Supervisión solicitó el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene. ⇒ La supervision a demandé le comptage de clôture de ce magasin (chambre froide + magasin). Il rend le stock égal à ce qui a été compté et devient l'inventaire initial du mois suivant.
+Supervisión solicitó el conteo inicial de este local: es el stock de arranque (cámara + local). Primero contá la cámara y después el local. Queda cerrado. ⇒ La supervision a demandé l'inventaire initial de ce magasin : c'est le stock de départ (chambre froide + magasin). Comptez d'abord la chambre froide, puis le magasin. Il est verrouillé.
+Supervisión solicitó un conteo de este local (cámara + local). ⇒ La supervision a demandé un comptage de ce magasin (chambre froide + magasin).
+Todavía no creó su PIN ⇒ N'a pas encore créé son PIN
+Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo». ⇒ Vous n'avez pas encore de groupes. Cochez des magasins et choisissez « Déplacer vers… », ou touchez « Nouveau ».
+Todos ya tienen su conteo inicial ⇒ Tous ont déjà leur inventaire initial
+Ya estaban en « ⇒ Déjà dans «
+Ya se pidieron ⇒ Déjà demandés
+Ya tiene su conteo inicial ⇒ A déjà son inventaire initial
+ajuste supervisión ⇒ ajustement supervision
+bajo mínimo ⇒ sous le minimum
+con error ( ⇒ en erreur (
+conteo inicial ⇒ inventaire initial
+corregido × ⇒ corrigé ×
+de 2 pasos hechos ⇒ sur 2 étapes terminées
+de CIERRE ⇒ de CLÔTURE
+del grupo ya no existe ⇒ du groupe n'existe plus
+del grupo « ⇒ du groupe «
+en « ⇒ dans «
+fuera del filtro: no se incluyen ⇒ hors du filtre : non inclus
+la ve al entrar ⇒ la voit en entrant
+locales marcados? ⇒ magasins cochés ?
+min). Después se oculta solo. ⇒ min). Ensuite, il se masque tout seul.
+otro supervisor ⇒ autre superviseur
+sin conteos ⇒ sans comptages
+ya lo tenían ⇒ l'avaient déjà
+ya tienen su conteo inicial: si pedís inicial, a esos no se les solicita. ⇒ ont déjà leur inventaire initial : si vous demandez l'initial, ils ne sont pas sollicités.
+· grupo de ⇒ · groupe de
+· motivo: « ⇒ · motif : «
+· tocá para ver el desglose ⇒ · touchez pour voir le détail
+» creado ⇒ » créé
+»? Los locales no se borran. ⇒ » ? Les magasins ne sont pas supprimés.
+¿Anular las solicitudes pendientes de los ⇒ Annuler les demandes en attente des
+¿Borrar el grupo « ⇒ Supprimer le groupe «
+¿Quitar ⇒ Retirer
+¿Qué conteo le solicitás a ⇒ Quel comptage demandez-vous à
+¿Qué conteo les solicitás a ⇒ Quel comptage demandez-vous aux
+último conteo hace ⇒ dernier comptage il y a
+«—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ⇒ « — » signifie que le magasin ne le propose pas. C'est le stock que chaque magasin a dans l'application aujourd'hui ; si un magasin n'a jamais fait d'inventaire physique, il peut ne pas correspondre à ce qu'il y a dans la chambre froide. Données
