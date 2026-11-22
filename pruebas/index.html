@@ -915,6 +915,18 @@ body:has(.etiqOv){overflow:hidden}
 .hkg small{font-family:Manrope,sans-serif;font-size:.78rem;font-weight:700;opacity:.65}
 .hubTile.stkOff{opacity:1;cursor:default}
 .hubTile.espera{opacity:.6}
+/* Tarjetas de Stock y Conteo mejoradas: Pedido en verde con halo y Conteo en marrón con contorno dorado */
+:root:not([data-tema="dorado"]) .stkHero{background:radial-gradient(circle at 92% 0%,rgba(255,255,255,.7),transparent 45%),linear-gradient(160deg,#E2F6E9,#C6E8D2);border:1.5px solid #34B672;color:#17432A;box-shadow:inset 0 1.5px 0 #fff,0 0 0 4px rgba(52,182,114,.14),0 0 34px rgba(52,182,114,.38),0 16px 30px -18px rgba(23,67,42,.5)}
+:root:not([data-tema="dorado"]) .shIco{background:linear-gradient(145deg,#fff,#BFE7CD);color:#16803F;border:1.5px solid #34B672;box-shadow:0 0 14px rgba(52,182,114,.55)}
+:root:not([data-tema="dorado"]) .stkHero .shChip{background:#fff;color:#B3342A;border:1.5px solid #E0675B}
+:root[data-tema="dorado"] .stkHero{border-width:1.5px;box-shadow:0 0 0 4px rgba(88,180,124,.12),0 0 34px rgba(88,180,124,.3),0 14px 32px rgba(10,20,10,.4)}
+.stkCI,.hubRes{background:radial-gradient(circle at 92% 0%,rgba(224,192,122,.38),transparent 52%),radial-gradient(circle at 0% 100%,rgba(232,100,122,.16),transparent 50%),#2D221B;border:1.5px solid #E8C97F;color:#F6ECDC;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),0 0 0 4px rgba(224,192,122,.14),0 0 34px rgba(224,192,122,.36),0 16px 30px -16px rgba(0,0,0,.7)}
+.stkCI .ciIco,.hubRes .htIco{background:rgba(224,192,122,.22);color:#F0D58F;border:1.5px solid #E8C97F;box-shadow:0 0 14px rgba(224,192,122,.55)}
+.stkCI .ciChip,.hubRes .htChip{background:rgba(224,192,122,.25);color:#F0D58F;border:1.5px solid rgba(232,201,127,.7)}
+.hubTile:not(.stkOff){background:linear-gradient(150deg,#fff,#FBF5EA);border:1.5px solid #D9B25A;box-shadow:0 0 0 3px rgba(217,178,90,.12),0 0 26px rgba(217,178,90,.32)}
+.hubTile .htIco{background:#F6E7C8;color:#74421F;border:1.5px solid #D9B25A;box-shadow:0 0 10px rgba(217,178,90,.45)}
+.hubTile .htAcc:not(.off):not(.ghost){box-shadow:0 0 18px rgba(116,66,31,.5)}
+.hubTile.espera{box-shadow:none}
 .salMenu{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .salMenu .salTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:168px;padding:18px;border-radius:22px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 10px 26px rgba(74,63,56,.08)}
 .salTile b{font-family:Fraunces,serif;font-weight:600;font-size:1.45rem;line-height:1.1}
@@ -1750,7 +1762,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.203.6";
+const FRONTEND_VERSION = "1.204.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
