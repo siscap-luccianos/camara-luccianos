@@ -110,3 +110,4 @@ ya tienen su conteo inicial: si pedís inicial, a esos no se les solicita. ⇒ o
 ¿Qué conteo les solicitás a ⇒ Quel comptage demandez-vous aux
 último conteo hace ⇒ dernier comptage il y a
 «—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ⇒ « — » signifie que le magasin ne le propose pas. C'est le stock que chaque magasin a dans l'application aujourd'hui ; si un magasin n'a jamais fait d'inventaire physique, il peut ne pas correspondre à ce qu'il y a dans la chambre froide. Données
+Producido hoy ⇒ Produit aujourd'hui

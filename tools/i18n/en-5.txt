@@ -110,3 +110,4 @@ ya tienen su conteo inicial: si pedís inicial, a esos no se les solicita. ⇒ a
 ¿Qué conteo les solicitás a ⇒ Which count do you request from
 último conteo hace ⇒ last count
 «—» es que el local no lo lleva. Es el stock que cada local tiene en la app hoy; si un local nunca hizo un conteo físico puede no coincidir con lo que hay en la cámara. Datos ⇒ "—" means the store doesn't carry it. It is the stock each store has in the app today; if a store has never done a physical count it may not match what is in the cold room. Data
+Producido hoy ⇒ Produced today

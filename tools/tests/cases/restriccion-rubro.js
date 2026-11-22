@@ -29,6 +29,7 @@ const { chromium } = require("playwright");
   ok(!/La chocolatería no se saca acá|Registrar consumo/.test(await page.innerText("main")), "Salida no menciona la chocolatería");
   await page.click("#ayudaBtn"); await page.waitForTimeout(400);
   ok(!/Registrar consumo/.test(await page.innerText("#ayudaOv")), "la ayuda no ofrece «Registrar consumo»");
+  ok(!/Vencimientos/.test(await page.innerText("#ayudaOv")) && (await page.evaluate(() => saboresConVencimiento().length)) === 0, "sin chocolatería: sin tema de Vencimientos ni lotes por vencer");
   ok(err.length===0, "sin errores de consola" + (err.length ? ": " + err[0] : ""));
   await b.close(); console.log(fallos.length ? "FALLAS " + fallos.length : "FALLAS 0"); process.exit(fallos.length ? 1 : 0);
 })();
