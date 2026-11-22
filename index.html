@@ -903,6 +903,7 @@ body:has(.etiqOv){overflow:hidden}
 .hkg{font-family:Fraunces,serif;font-weight:600;font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
 .hkg small{font-family:Manrope,sans-serif;font-size:.78rem;font-weight:700;opacity:.65}
 .hubTile.stkOff{opacity:1;cursor:default}
+.hubTile.espera{opacity:.6}
 .salMenu{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .salMenu .salTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:168px;padding:18px;border-radius:22px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 10px 26px rgba(74,63,56,.08)}
 .salTile b{font-family:Fraunces,serif;font-weight:600;font-size:1.45rem;line-height:1.1}
@@ -1735,7 +1736,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.202.3";
+const FRONTEND_VERSION = "1.203.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -5205,11 +5206,11 @@ function conteoInicialHubHTML(){
   const nota=S.cobertura&&S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>${S.cobertura.tipo==="final"?"Arranca con el cierre del "+fch(S.cobertura.ts):"Este mes ya tiene su conteo inicial ("+fch(S.cobertura.ts)+")"} 🔒</b> Otro conteo: lo pide supervisión.</div>`:(!S.conteoBloqueado?`<div class="note" style="margin:0 0 12px"><b>Período de práctica.</b> Podés contar y volver a contar las veces que quieras. Desde el 1/12 cada conteo guardado queda cerrado 🔒.</div>`:"");
   const kg=v=>`<span class="hkg">${v?kgTxt(v):"—"} <small>kg</small></span>`;
   const quien=ts=>ini&&ts&&!(S.camaraBloqueada&&!S.inicialMes)?`<span class="htWho">Contada el ${fch(ts)}${ini.emp?" por "+esc(ini.emp):""}</span>`:"";
-  const tile=(hecho,cerrado,id,tit,icono,pend,v,paso,desc,verbo,ts)=>{
+  const tile=(hecho,cerrado,id,tit,icono,pend,v,paso,desc,verbo,ts,espera)=>{
     const chip=cerrado?"Hecho · 🔒":hecho?"✓ Hecho":pend;
-    const accion=cerrado?`<span class="htAcc off">Cerrado: lo desbloquea supervisión</span>`:`<span class="htAcc${hecho?" ghost":""}">${hecho?"Repetir (práctica)":verbo}</span>`;
+    const accion=cerrado?`<span class="htAcc off">Cerrado: lo desbloquea supervisión</span>`:espera?`<span class="htAcc off">Primero contá la cámara</span>`:`<span class="htAcc${hecho?" ghost":""}">${hecho?"Repetir (práctica)":verbo}</span>`;
     const cuerpo=`<span class="htTop"><span class="htIco">${ic(icono)}</span><span class="htChip ${hecho?"ok":"warn"}">${chip}</span></span><span class="htTx"><small>${paso}</small><b>${tit}</b><em class="htDesc">${desc}</em></span>${hecho?kg(v)+quien(ts):""}${accion}`;
-    return cerrado?`<div class="hubTile stkOff" aria-disabled="true">${cuerpo}</div>`:`<button type="button" class="hubTile" id="${id}" aria-label="${verbo}">${cuerpo}</button>`;
+    return (cerrado||espera)?`<div class="hubTile stkOff${espera?" espera":""}" aria-disabled="true">${cuerpo}</div>`:`<button type="button" class="hubTile" id="${id}" aria-label="${verbo}">${cuerpo}</button>`;
   };
   const hechos=(camHecho?1:0)+(locHecho?1:0);
   const estado=hechos===2?"Completo":camHecho?"Falta el local":locHecho?"Falta la cámara":"Pendiente";
@@ -5224,7 +5225,7 @@ function conteoInicialHubHTML(){
       <span class="hubKg">${ini?kgTxt(ini.tot):"—"} <small>kg</small></span></button>
     <div class="hubDes">
       ${tile(camHecho,camOff,"conteoBtn","Cámara",'<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.6"/>',"Pendiente",ini&&ini.cam,"Paso 1 · Lo que hay en la cámara","Contás lo que hay dentro de la cámara. Hacelo primero.","Contar la cámara",ini&&ini.camTs)}
-      ${tile(locHecho,locOff,"invBtn","Local",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',invHayBorrador()?"Sin terminar":"Pendiente",ini&&ini.loc,"Paso 2 · Lo que hay afuera","Contás lo que está en el local, fuera de la cámara.","Contar el local",ini&&ini.ts)}
+      ${tile(locHecho,locOff,"invBtn","Local",'<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',invHayBorrador()?"Sin terminar":"Pendiente",ini&&ini.loc,"Paso 2 · Lo que hay afuera","Contás lo que está en el local, fuera de la cámara.","Contar el local",ini&&ini.ts,!camHecho&&!locHecho)}
     </div>
   </div>`;
 }
