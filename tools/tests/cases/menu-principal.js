@@ -19,7 +19,7 @@ const { chromium } = require("playwright");
     await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(400);
     ok(await page.$(".menuHero")!==null,n+": Salida muestra la tarjeta grande");
     ok((await page.$$(".menuRow")).length>=1,n+": Salida muestra las otras acciones");
-    ok(/Retiro de cámara/.test(await page.innerText(".menuHero")),n+": la grande es «Retiro de cámara»");
+    ok(/Retiros/.test(await page.innerText(".menuHero")),n+": la grande es «Retiros»");
     ok(await page.$(".menuAvisos")!==null,n+": hay avisos de stock");
     ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),n+": sin scroll horizontal");
     await page.screenshot({path:"menu-salida-"+n+".png"});

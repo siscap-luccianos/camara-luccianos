@@ -1732,7 +1732,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.202.0";
+const FRONTEND_VERSION = "1.202.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4506,12 +4506,12 @@ function menuResumenHoyHTML(tipo){
 function menuPrincipalHTML(sec, tipo, tiles, boton){
   const ico=(k,extra="")=>`<span class="ib" ${extra} aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MENU_ICONOS[k]}</svg></span>`;
   const [m,...rest]=tiles;
-  const hero=`<button type="button" class="menuHero" ${m.attr}>${ico(m.ic)}<span class="mhTx"><span class="mhTit">${m.tit}</span><span class="mhSub">${m.sub}</span></span><span class="mhMeta">${menuResumenHoyHTML(tipo)}</span>${menuAvisosHTML()}<span class="mhBtn">${boton}</span></button>`;
+  const hero=`<button type="button" class="menuHero" ${m.attr}>${ico(m.ic)}<span class="mhTx"><span class="mhTit">${m.tit}</span>${m.sub?`<span class="mhSub">${m.sub}</span>`:""}</span><span class="mhMeta">${menuResumenHoyHTML(tipo)}</span>${menuAvisosHTML()}<span class="mhBtn">${boton}</span></button>`;
   const filas=rest.map(r=>{const c=MENU_COLOR[r.ic]||"#7B3F1E"; return `<button type="button" class="menuRow" ${r.attr}>${ico(r.ic,`style="color:${c}"`)}<span class="mrTx"><b>${r.tit}</b><small>${r.sub}</small></span></button>`}).join("");
   return `<p class="sec">${sec}</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="menuGrid${rest.length?"":" solo"}">${hero}${rest.length?`<div class="menuSide">${filas}</div>`:""}</div>`;
 }
 function menuSalidaHTML(){
-  const t=[{attr:'data-sal-menu="comun"',ic:"up",tit:"Retiro de cámara",sub:"Lo que sacás para vender o usar."},
+  const t=[{attr:'data-sal-menu="comun"',ic:"up",tit:"Retiros",sub:""},
            {attr:'data-sal-menu="desp"',ic:"trash",tit:"Desperdicio",sub:"Se rompió, cayó o venció. Pide motivo."}];
   if(puedeTransferir()) t.push({attr:'data-sal-menu="transf"',ic:"tr",tit:"Transferencia enviada",sub:"Se la mandás a otro local."});
   return menuPrincipalHTML("Salida","salida",t,"Empezar el retiro");
