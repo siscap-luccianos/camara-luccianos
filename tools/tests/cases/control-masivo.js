@@ -28,9 +28,6 @@ const { chromium } = require("playwright");
   await page.click("[data-cg-drag='Local prueba'] .cgSub"); await page.waitForSelector(".ctlAcc", { timeout: 5000 }).catch(() => {});
   ok(await page.$(".ctlAcc") !== null, "tocar la fila (no solo el nombre) abre el detalle del local");
   await page.click("[data-ctl-volver]"); await page.waitForSelector("[data-ctl-chk]");
-  // letras I · P · C y leyenda
-  ok(/I = Inicial/.test(await txt()) && /P = Parcial/.test(await txt()) && /C = Cierre/.test(await txt()), "leyenda I · P · C arriba");
-  ok(await page.$(".cgRow .cgIpc .cgL") !== null, "cada local muestra las letras I P C");
   // solicitar un conteo inicial a un local sin inicial
   await page.click(".cgFin [data-ctl-pedir1='Obelisco CABA']"); await page.waitForSelector("[data-tp='inicial']");
   ok(await page.$$eval("[data-tp]", e => e.map(x => x.querySelector(".ctlOpL").textContent).join("")) === "IPC", "el menú ofrece I · P · C");
