@@ -1526,7 +1526,7 @@ body.invBlur .invProt>*:not(.invMarca){filter:blur(16px)}
 .cgRow input[type=checkbox]{appearance:none;-webkit-appearance:none;width:24px;height:24px;border-radius:50%;border:2px solid #c7c7cc;margin:0;display:grid;place-items:center;background:transparent;cursor:pointer}
 .cgRow input[type=checkbox]:checked{background:var(--cg-act);border-color:var(--cg-act)}.cgRow input[type=checkbox]:checked::after{content:"✓";color:#fff;font-size:.82rem;font-weight:700}
 .cgTx{display:flex;flex-direction:column;min-width:0;align-items:flex-start}.cgTx .ctlLocBtn{font-weight:600;text-align:left}
-.cgIpc{display:inline-flex;gap:4px;margin-top:4px}.cgL{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font:700 .68rem system-ui,sans-serif;background:#efe9e0;color:#9a8f86}.cgL.ok{background:#dff1e6;color:#2e7d4f}.cgL.pen{background:#ffe9c2;color:#b36b00;outline:1.5px solid #b36b00}.cgLey{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--cg-mut,#7a6b60);align-items:center;margin-top:6px}.cgLey b{color:inherit}.cgLey i.cgL{width:13px;height:13px;border-radius:4px}.ctlOps{display:flex;flex-direction:column;gap:8px}.ctlOp{display:flex;gap:10px;align-items:center;text-align:left;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;background:transparent;color:inherit;font:inherit}.ctlOp[aria-pressed="true"]{border-color:#0a84ff;background:rgba(10,132,255,.08)}.ctlOpL{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;background:#efe9e0;color:#2a1f19}.ctlOp[aria-pressed="true"] .ctlOpL{background:#0a84ff;color:#fff}
+.ctlOps{display:flex;flex-direction:column;gap:8px}.ctlOp{display:flex;gap:10px;align-items:center;text-align:left;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;background:transparent;color:inherit;font:inherit}.ctlOp[aria-pressed="true"]{border-color:#0a84ff;background:rgba(10,132,255,.08)}.ctlOpL{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;background:#efe9e0;color:#2a1f19}.ctlOp[aria-pressed="true"] .ctlOpL{background:#0a84ff;color:#fff}
 .cgSub{font-size:.8rem;color:var(--cg-mut)}
 .cgFin{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .cgChip{border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:600;white-space:nowrap}
@@ -1545,7 +1545,7 @@ body.invBlur .invProt>*:not(.invMarca){filter:blur(16px)}
 @media(prefers-reduced-motion:no-preference){.cgHoja{animation:cgSube .28s cubic-bezier(.2,.8,.2,1)}@keyframes cgSube{from{transform:translateY(16px);opacity:.6}}}
 @media print{.cgSide,.cgBarra{display:none!important}.cgLay{grid-template-columns:1fr}}
 .ctlMini{font-size:.82rem;font-weight:600;opacity:.85;background:none;border:0;padding:0;margin:0}
-.ctlMasivo{position:sticky}.ctlCerrar{position:absolute;top:8px;right:10px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;font-size:1rem;cursor:pointer}.ctlMasivo b{padding-right:40px}
+.cgBarra .ctlCerrar{position:static;flex:0 0 auto;width:30px;height:30px;font-size:.95rem;line-height:1;padding:0;display:grid;place-items:center;border-color:rgba(255,255,255,.45);color:#fff}.ctlMasivo{position:sticky}.ctlCerrar{position:absolute;top:8px;right:10px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:transparent;color:inherit;font-size:1rem;cursor:pointer}.ctlMasivo b{padding-right:40px}
 .ctlGLista{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto}.ctlGFila{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}.ctlGFila[aria-checked="true"]{border-color:var(--accent,#C9A24A);box-shadow:0 0 0 2px rgba(201,162,74,.35)}.ctlGPto{width:14px;height:14px;border-radius:50%;border:2px solid var(--line)}.ctlGFila[aria-checked="true"] .ctlGPto{background:#C9A24A;border-color:#C9A24A}.ctlGMas{width:14px;text-align:center;font-weight:800}.ctlGIn{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
 .ctlGrupos{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:2px 0 8px}.ctlGrp{display:inline-flex;align-items:center;gap:2px}.ctlGx{border:0;background:none;color:var(--muted);cursor:pointer;font-size:.8rem;padding:4px 6px}
 .ctlChips,.ctlMasTipo,.ctlMasAcc{display:flex;gap:6px;flex-wrap:wrap}
@@ -1719,7 +1719,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.201.0";
+const FRONTEND_VERSION = "1.201.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3878,13 +3878,6 @@ function ctlDetalleHTML(){
     <div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Total del local",sub:C.det,lineaHTML:esc(tipoTxt)+" · "+esc(ctlFechaHora(c.ts))+" · generado por "+esc(S.empleado.nombre)})}${informePieHTML("Control de stock · "+C.det)}</div>
   </div>`;
 }
-/** Letras I · P · C de cada local: verde = ya hecho, naranja = solicitado, gris = sin hacer. */
-function ipcLetras(f){
-  const tipos=(f.conteos||[]).map(x=>x.tipo), pend=f.pedido&&f.pedido.tipo;
-  const est=(hecho,t)=>hecho?"ok":(pend===t?"pen":"");
-  const L=(l,e,tit)=>`<span class="cgL ${e}" title="${tit}">${l}</span>`;
-  return `<span class="cgIpc noPrint" aria-label="Conteos del local">${L("I",est(!!f.base,"inicial"),"Inicial")}${L("P",est(tipos.indexOf("parcial")>=0,"parcial"),"Parcial")}${L("C",est(tipos.indexOf("final")>=0,"final"),"Cierre")}</span>`;
-}
 function controlView(){
   const C=controlEstado();
   if(C.det) return ctlDetalleHTML();
@@ -3924,13 +3917,13 @@ function controlView(){
     const abierto=C.swOpen===f.local;
     return `<div class="cgSw" data-sw="${esc(f.local)}"><div class="cgSwAcc noPrint"><button type="button" class="mv" data-cg-mover1="${esc(f.local)}">Mover</button>${f.pedido?`<button type="button" class="pd" data-ctl-cancel="${esc(f.local)}">Anular</button>`:`<button type="button" class="pd" data-ctl-pedir1="${esc(f.local)}">Solicitar</button>`}</div>
       <div class="cgRow${C.sel[f.local]?" sel":""}${abierto?" abierto":""}" draggable="true" data-cg-drag="${esc(f.local)}"><input type="checkbox" data-ctl-chk="${esc(f.local)}"${C.sel[f.local]?" checked":""} aria-label="Marcar ${esc(f.local)}">
-      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos"].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}${ipcLetras(f)}</div>
+      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos"].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}</div>
       <div class="cgFin">${est}${f.pedido?`<button type="button" class="cgLink noPrint" data-ctl-cancel="${esc(f.local)}">Anular</button>`:`<button type="button" class="cgLink noPrint" data-ctl-pedir1="${esc(f.local)}">Solicitar</button>`}<span class="cgChev" aria-hidden="true">›</span></div></div></div>`;
   };
   const titulo=grupo?grupo.nombre:({todos:"Todos los locales",propios:"Propios",fran:"Franquicias",viejo:"Sin conteo hace 30+ días",sin:"Sin solicitud",pend:"Con solicitud"}[C.f]||"Todos los locales");
   const barra=marcados.length?`<div class="cgBarra noPrint"><button type="button" class="ctlCerrar" data-ctl-nada aria-label="Cancelar la selección" title="Cancelar la selección">✕</button><b>${marcados.length} seleccionado${marcados.length>1?"s":""}${ocultos>0?`<span class="cgMini">${ocultos} fuera del filtro: no se incluyen</span>`:""}</b><button type="button" class="cgLink" data-ctl-masivo>Solicitar conteo</button><button type="button" class="cgLink" data-cg-mover>Mover a…</button>${grupo&&grupo.propio?`<button type="button" class="cgLink rojo" data-cg-quitar>Quitar</button>`:""}<button type="button" class="cgLink" data-ctl-cancelmas>Anular solicitudes</button></div>`:"";
   return `<div class="rlv ctl cgApp">
-    <div class="noPrint"><h1 class="cgH1">Control de stock</h1><p class="cgNota">Solicitá un conteo a un local, o armá grupos de locales y solicitalo a todo el grupo.</p><div class="cgLey noPrint"><span><b>I</b> = Inicial</span><span><b>P</b> = Parcial</span><span><b>C</b> = Cierre</span><span><i class="cgL ok"></i>hecho</span><span><i class="cgL pen"></i>solicitado</span><span><i class="cgL"></i>sin hacer</span></div></div>
+    <div class="noPrint"><h1 class="cgH1">Control de stock</h1><p class="cgNota">Solicitá un conteo a un local, o armá grupos de locales y solicitalo a todo el grupo.</p></div>
     <div class="cgLay">
      <aside class="cgSide noPrint">
       <div class="cgTiles">${tile("todos","Todos","t-todos")}${tile("sin","Sin solicitud","t-sin")}${tile("pend","Con solicitud","t-con")}${tile("viejo","Sin conteo 30+ días","t-viejo")}${tile("propios","Propios","t-prop")}${tile("fran","Franquicias","t-fran")}</div>
