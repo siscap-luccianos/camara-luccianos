@@ -28,18 +28,27 @@ const { chromium } = require("playwright");
   await page.click("[data-cg-drag='Local prueba'] .cgSub"); await page.waitForSelector(".ctlAcc", { timeout: 5000 }).catch(() => {});
   ok(await page.$(".ctlAcc") !== null, "tocar la fila (no solo el nombre) abre el detalle del local");
   await page.click("[data-ctl-volver]"); await page.waitForSelector("[data-ctl-chk]");
+  // letras I · P · C y leyenda
+  ok(/I = Inicial/.test(await txt()) && /P = Parcial/.test(await txt()) && /C = Cierre/.test(await txt()), "leyenda I · P · C arriba");
+  ok(await page.$(".cgRow .cgIpc .cgL") !== null, "cada local muestra las letras I P C");
+  // solicitar un conteo inicial a un local sin inicial
+  await page.click(".cgFin [data-ctl-pedir1='Obelisco CABA']"); await page.waitForSelector("[data-tp='inicial']");
+  ok(await page.$$eval("[data-tp]", e => e.map(x => x.querySelector(".ctlOpL").textContent).join("")) === "IPC", "el menú ofrece I · P · C");
+  await page.click("[data-tp='inicial']"); await page.click("[data-si]"); await page.waitForTimeout(400);
+  ok(/Solicitud inicial/.test(await txt()), "queda «Solicitud inicial» en la fila");
+  await page.click(".cgFin [data-ctl-cancel='Obelisco CABA']"); await page.waitForTimeout(400);
   // pedido individual
   await page.click(".cgFin [data-ctl-pedir1='Recoleta CABA']"); await page.click("[data-tp='final']"); await page.click("[data-si]"); await page.waitForTimeout(400);
-  ok(/Pedido de cierre/.test(await txt()), "pedido individual de cierre queda marcado");
+  ok(/Solicitud de cierre/.test(await txt()), "pedido individual de cierre queda marcado");
   // pedido a varios
   await page.check("[data-ctl-chk='Obelisco CABA']"); await page.check("[data-ctl-chk='Santa Rosa La Pampa']"); await page.waitForTimeout(150);
   ok(/2 seleccionados/.test(await txt()), "se marcan con las casillas redondas");
   await page.click("[data-ctl-masivo]"); await page.click("[data-si]"); await page.waitForTimeout(500);
-  ok((await txt()).match(/Pedido parcial/g)?.length === 2, "pedido a varios: parcial a los 2 marcados");
+  ok((await txt()).match(/Solicitud parcial/g)?.length === 2, "pedido a varios: parcial a los 2 marcados");
   await page.click("[data-ctl-f='pend']"); ok(await n() === 3, "tarjeta Con pedido");
   await page.check("[data-ctl-chk='Obelisco CABA']"); await page.click("[data-ctl-cancelmas]"); await page.waitForTimeout(500);
   await page.click("[data-ctl-f='todos']");
-  ok((await txt()).match(/Pedido parcial/g)?.length === 1, "cancelar los pedidos de lo marcado");
+  ok((await txt()).match(/Solicitud parcial/g)?.length === 1, "cancelar los pedidos de lo marcado");
   // grupos: mover a… / grupo nuevo
   await page.check("[data-ctl-chk='Obelisco CABA']"); await page.check("[data-ctl-chk='Santa Rosa La Pampa']");
   await page.click("[data-cg-mover]"); await page.waitForSelector(".cgHoja");
@@ -48,9 +57,9 @@ const { chromium } = require("playwright");
   ok(/CABA de Laura/.test(await page.innerText(".cgSide")) && /Laura/.test(await page.innerText(".cgSide")), "el admin ve el grupo de otro supervisor con su nombre");
   const gid = await page.$$eval("[data-cg-g]", e => e.find(x => /Mis locales/.test(x.textContent)).dataset.cgG);
   await page.click("[data-cg-g='" + gid + "']"); await page.waitForTimeout(200);
-  ok(await n() === 2 && /Pedir conteo a los 2/.test(await txt()), "abrir el grupo muestra sus 2 locales y «Pedir conteo a los 2»");
+  ok(await n() === 2 && /Solicitar conteo a los 2/.test(await txt()), "abrir el grupo muestra sus 2 locales y «Solicitar conteo a los 2»");
   await page.click("[data-cg-pedirg]"); await page.click("[data-si]"); await page.waitForTimeout(500);
-  ok((await txt()).match(/Pedido parcial/g)?.length === 2, "pedir conteo a todo el grupo");
+  ok((await txt()).match(/Solicitud parcial/g)?.length === 2, "pedir conteo a todo el grupo");
   // arrastrar un local desde Todos sobre el grupo
   await page.click("[data-ctl-f='todos']"); await page.waitForTimeout(200);
   await page.dragAndDrop("[data-cg-drag='Recoleta CABA']", "[data-cg-drop='" + gid + "']"); await page.waitForTimeout(500);

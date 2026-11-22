@@ -1515,6 +1515,7 @@ body.invBlur .invProt>*:not(.invMarca){filter:blur(16px)}
 .cgRow input[type=checkbox]{appearance:none;-webkit-appearance:none;width:24px;height:24px;border-radius:50%;border:2px solid #c7c7cc;margin:0;display:grid;place-items:center;background:transparent;cursor:pointer}
 .cgRow input[type=checkbox]:checked{background:var(--cg-act);border-color:var(--cg-act)}.cgRow input[type=checkbox]:checked::after{content:"✓";color:#fff;font-size:.82rem;font-weight:700}
 .cgTx{display:flex;flex-direction:column;min-width:0;align-items:flex-start}.cgTx .ctlLocBtn{font-weight:600;text-align:left}
+.cgIpc{display:inline-flex;gap:4px;margin-top:4px}.cgL{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font:700 .68rem system-ui,sans-serif;background:#efe9e0;color:#9a8f86}.cgL.ok{background:#dff1e6;color:#2e7d4f}.cgL.pen{background:#ffe9c2;color:#b36b00;outline:1.5px solid #b36b00}.cgLey{display:flex;gap:12px;flex-wrap:wrap;font-size:.72rem;color:var(--cg-mut,#7a6b60);align-items:center;margin-top:6px}.cgLey b{color:inherit}.cgLey i.cgL{width:13px;height:13px;border-radius:4px}.ctlOps{display:flex;flex-direction:column;gap:8px}.ctlOp{display:flex;gap:10px;align-items:center;text-align:left;border:1.5px solid var(--line);border-radius:14px;padding:10px 12px;background:transparent;color:inherit;font:inherit}.ctlOp[aria-pressed="true"]{border-color:#0a84ff;background:rgba(10,132,255,.08)}.ctlOpL{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;background:#efe9e0;color:#2a1f19}.ctlOp[aria-pressed="true"] .ctlOpL{background:#0a84ff;color:#fff}
 .cgSub{font-size:.8rem;color:var(--cg-mut)}
 .cgFin{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .cgChip{border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:600;white-space:nowrap}
@@ -1706,7 +1707,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.200.7";
+const FRONTEND_VERSION = "1.201.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3814,7 +3815,7 @@ function ctlDetalleHTML(){
   const volver=`<div class="noPrint" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button type="button" class="btn volver" data-ctl-volver>‹ Volver a Control</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button></div>`;
   if(C.detError) return `<div class="rlv ctl">${volver}<div class="note">${esc(C.detError)}</div></div>`;
   if(D===undefined||D===null) return `<div class="rlv ctl">${volver}<div class="note">Cargando…</div></div>`;
-  if(!D.conteo) return `<div class="rlv ctl">${volver}<div class="note">Este local todavía no tiene conteos guardados.</div>${D.pedido?`<div class="ctlPedir noPrint" style="margin-top:12px"><span><b>Hay un pedido de ${D.pedido.tipo==="final"?"cierre":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Cancelar pedido</button></div>`:""}</div>`;
+  if(!D.conteo) return `<div class="rlv ctl">${volver}<div class="note">Este local todavía no tiene conteos guardados.</div>${D.pedido?`<div class="ctlPedir noPrint" style="margin-top:12px"><span><b>Hay una solicitud de ${D.pedido.tipo==="final"?"cierre":D.pedido.tipo==="inicial"?"conteo inicial":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Anular solicitud</button></div>`:""}</div>`;
   const c=D.conteo, base=D.base, desb=c.desbloqueado_hasta>Date.now(), fijo=c.fijo;
   const tipoTxt=CTL_TIPO[c.tipo]||"Conteo", esCmp=c.tipo!=="inicial"&&!!D.dif;
   const chips=D.conteos.map(x=>`<button type="button" class="chip" data-ctl-sel="${esc(x.id)}" aria-pressed="${String(x.id)===String(c.id)}">${x.fijo?"🔒 ":((x.desbloqueado_hasta||0)>Date.now()?"🔓 ":"")}${CTL_TIPO[x.tipo]||x.tipo} · ${ctlFecha(x.ts)}</button>`).join("");
@@ -3848,7 +3849,7 @@ function ctlDetalleHTML(){
     if(esCmp) cuerpo+=ctlLeyendaCorr();
   }
   const pend=D.pedido;
-  const pedir=pend?`<span><b>Hay un pedido de ${pend.tipo==="final"?"cierre":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Cancelar pedido</button>`:`<span><b>Pedir un conteo nuevo a este local:</b></span><button type="button" class="rlvBtn" data-ctl-pedir="${esc(C.det)}">Pedir parcial</button><button type="button" class="rlvBtn" data-ctl-pedirfinal="${esc(C.det)}">Pedir cierre</button>`;
+  const pedir=pend?`<span><b>Hay una solicitud de ${pend.tipo==="final"?"cierre":pend.tipo==="inicial"?"conteo inicial":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Anular solicitud</button>`:`<span><b>Solicitar un conteo nuevo a este local:</b></span><button type="button" class="rlvBtn" data-ctl-pedir="${esc(C.det)}">Solicitar parcial</button><button type="button" class="rlvBtn" data-ctl-pedirfinal="${esc(C.det)}">Solicitar cierre</button>`;
   return `<div class="rlv ctl" data-ctl-n="${esc(C.det)}">
     ${volver}
     <div class="noPrint"><div class="cntKick">CONTROL › ${esc(String(C.det).toUpperCase())}</div></div>
@@ -3864,6 +3865,13 @@ function ctlDetalleHTML(){
     <div class="ctlNota">La diferencia se mide sobre el <b>total</b> (cámara + local) y siempre contra el <b>inicial</b>: Inicial + Ingresos − Salidas − Merma = Esperado. La <b>merma</b> incluye el desperdicio de cualquier rubro y la merma en kilos que cargan los responsables; una diferencia que nadie explica sigue siendo merma sin registrar.</div>
     <div class="ctlPrint">${informeCabHTML({etiqueta:"Informe de control",titulo:"Total del local",sub:C.det,lineaHTML:esc(tipoTxt)+" · "+esc(ctlFechaHora(c.ts))+" · generado por "+esc(S.empleado.nombre)})}${informePieHTML("Control de stock · "+C.det)}</div>
   </div>`;
+}
+/** Letras I · P · C de cada local: verde = ya hecho, naranja = solicitado, gris = sin hacer. */
+function ipcLetras(f){
+  const tipos=(f.conteos||[]).map(x=>x.tipo), pend=f.pedido&&f.pedido.tipo;
+  const est=(hecho,t)=>hecho?"ok":(pend===t?"pen":"");
+  const L=(l,e,tit)=>`<span class="cgL ${e}" title="${tit}">${l}</span>`;
+  return `<span class="cgIpc noPrint" aria-label="Conteos del local">${L("I",est(!!f.base,"inicial"),"Inicial")}${L("P",est(tipos.indexOf("parcial")>=0,"parcial"),"Parcial")}${L("C",est(tipos.indexOf("final")>=0,"final"),"Cierre")}</span>`;
 }
 function controlView(){
   const C=controlEstado();
@@ -3898,29 +3906,29 @@ function controlView(){
   const fila=f=>{
     const d=dias(f), par=f.conteos.filter(x=>x.tipo==="parcial"), cie=f.conteos.filter(x=>x.tipo==="final");
     const ultP=par.length?par[par.length-1]:null, ultC=cie.length?cie[cie.length-1]:null;
-    const est=f.pedido?`<span class="cgChip con">Pedido ${f.pedido.tipo==="final"?"de cierre":"parcial"}</span>`:!f.base?`<span class="cgChip viejo">Sin conteo inicial</span>`:(d!==null&&d>=30)?`<span class="cgChip viejo">Sin conteo reciente</span>`:`<span class="cgChip sin">Al día</span>`;
+    const est=f.pedido?`<span class="cgChip con">Solicitud ${f.pedido.tipo==="final"?"de cierre":f.pedido.tipo==="inicial"?"inicial":"parcial"}</span>`:!f.base?`<span class="cgChip viejo">Sin conteo inicial</span>`:(d!==null&&d>=30)?`<span class="cgChip viejo">Sin conteo reciente</span>`:`<span class="cgChip sin">Al día</span>`;
     const datos=[f.base?"Inicial "+ctlKg(f.base.camKg)+" kg":"",ultP?"Parcial "+ctlKg(ultP.camKg)+" kg":"",ultC?"Cierre "+ctlKg(ultC.camKg)+" kg":""].filter(Boolean).join(" · ");
     const dif=ctlDifFila(f); 
     const abierto=C.swOpen===f.local;
-    return `<div class="cgSw" data-sw="${esc(f.local)}"><div class="cgSwAcc noPrint"><button type="button" class="mv" data-cg-mover1="${esc(f.local)}">Mover</button>${f.pedido?`<button type="button" class="pd" data-ctl-cancel="${esc(f.local)}">Cancelar</button>`:`<button type="button" class="pd" data-ctl-pedir1="${esc(f.local)}">Pedir</button>`}</div>
+    return `<div class="cgSw" data-sw="${esc(f.local)}"><div class="cgSwAcc noPrint"><button type="button" class="mv" data-cg-mover1="${esc(f.local)}">Mover</button>${f.pedido?`<button type="button" class="pd" data-ctl-cancel="${esc(f.local)}">Anular</button>`:`<button type="button" class="pd" data-ctl-pedir1="${esc(f.local)}">Solicitar</button>`}</div>
       <div class="cgRow${C.sel[f.local]?" sel":""}${abierto?" abierto":""}" draggable="true" data-cg-drag="${esc(f.local)}"><input type="checkbox" data-ctl-chk="${esc(f.local)}"${C.sel[f.local]?" checked":""} aria-label="Marcar ${esc(f.local)}">
-      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos"].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}</div>
-      <div class="cgFin">${est}${f.pedido?`<button type="button" class="cgLink noPrint" data-ctl-cancel="${esc(f.local)}">Cancelar</button>`:`<button type="button" class="cgLink noPrint" data-ctl-pedir1="${esc(f.local)}">Pedir</button>`}<span class="cgChev" aria-hidden="true">›</span></div></div></div>`;
+      <div class="cgTx"><button type="button" class="ctlLocBtn" data-ctl-ver="${esc(f.local)}">${esc(f.local)}</button><span class="cgSub">${[f.region?"#"+esc(f.region):"",esc(f.grupo||""),d!==null?"último conteo hace "+d+" d":"sin conteos"].filter(Boolean).join(" · ")}</span>${datos?`<span class="cgSub">${datos}</span>`:""}${ipcLetras(f)}</div>
+      <div class="cgFin">${est}${f.pedido?`<button type="button" class="cgLink noPrint" data-ctl-cancel="${esc(f.local)}">Anular</button>`:`<button type="button" class="cgLink noPrint" data-ctl-pedir1="${esc(f.local)}">Solicitar</button>`}<span class="cgChev" aria-hidden="true">›</span></div></div></div>`;
   };
-  const titulo=grupo?grupo.nombre:({todos:"Todos los locales",propios:"Propios",fran:"Franquicias",viejo:"Sin conteo hace 30+ días",sin:"Sin pedido",pend:"Con pedido"}[C.f]||"Todos los locales");
-  const barra=marcados.length?`<div class="cgBarra noPrint"><button type="button" class="ctlCerrar" data-ctl-nada aria-label="Cancelar la selección" title="Cancelar la selección">✕</button><b>${marcados.length} seleccionado${marcados.length>1?"s":""}${ocultos>0?`<span class="cgMini">${ocultos} fuera del filtro: no se incluyen</span>`:""}</b><button type="button" class="cgLink" data-ctl-masivo>Pedir conteo</button><button type="button" class="cgLink" data-cg-mover>Mover a…</button>${grupo&&grupo.propio?`<button type="button" class="cgLink rojo" data-cg-quitar>Quitar</button>`:""}<button type="button" class="cgLink" data-ctl-cancelmas>Anular pedidos</button></div>`:"";
+  const titulo=grupo?grupo.nombre:({todos:"Todos los locales",propios:"Propios",fran:"Franquicias",viejo:"Sin conteo hace 30+ días",sin:"Sin solicitud",pend:"Con solicitud"}[C.f]||"Todos los locales");
+  const barra=marcados.length?`<div class="cgBarra noPrint"><button type="button" class="ctlCerrar" data-ctl-nada aria-label="Cancelar la selección" title="Cancelar la selección">✕</button><b>${marcados.length} seleccionado${marcados.length>1?"s":""}${ocultos>0?`<span class="cgMini">${ocultos} fuera del filtro: no se incluyen</span>`:""}</b><button type="button" class="cgLink" data-ctl-masivo>Solicitar conteo</button><button type="button" class="cgLink" data-cg-mover>Mover a…</button>${grupo&&grupo.propio?`<button type="button" class="cgLink rojo" data-cg-quitar>Quitar</button>`:""}<button type="button" class="cgLink" data-ctl-cancelmas>Anular solicitudes</button></div>`:"";
   return `<div class="rlv ctl cgApp">
-    <div class="noPrint"><h1 class="cgH1">Control de stock</h1><p class="cgNota">Pedí un conteo a un local, o armá grupos de locales y pedilo a todo el grupo.</p></div>
+    <div class="noPrint"><h1 class="cgH1">Control de stock</h1><p class="cgNota">Solicitá un conteo a un local, o armá grupos de locales y solicitalo a todo el grupo.</p><div class="cgLey noPrint"><span><b>I</b> = Inicial</span><span><b>P</b> = Parcial</span><span><b>C</b> = Cierre</span><span><i class="cgL ok"></i>hecho</span><span><i class="cgL pen"></i>solicitado</span><span><i class="cgL"></i>sin hacer</span></div></div>
     <div class="cgLay">
      <aside class="cgSide noPrint">
-      <div class="cgTiles">${tile("todos","Todos","t-todos")}${tile("sin","Sin pedido","t-sin")}${tile("pend","Con pedido","t-con")}${tile("viejo","Sin conteo 30+ días","t-viejo")}${tile("propios","Propios","t-prop")}${tile("fran","Franquicias","t-fran")}</div>
+      <div class="cgTiles">${tile("todos","Todos","t-todos")}${tile("sin","Sin solicitud","t-sin")}${tile("pend","Con solicitud","t-con")}${tile("viejo","Sin conteo 30+ días","t-viejo")}${tile("propios","Propios","t-prop")}${tile("fran","Franquicias","t-fran")}</div>
       <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${C.gruposError?`<div class="cgVacio" role="status">No se pudieron cargar tus grupos. <button type="button" class="cgLink" data-ctl-gruposreint>Reintentar</button></div>`:""}${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
       ${(()=>{ const por={}; ajenos.forEach(g=>{ const k=g.owner||"Otro supervisor"; (por[k]=por[k]||[]).push(g) }); return Object.keys(por).sort().map(k=>`<div><div class="cgSec"><b>Grupos de ${esc(k)}</b></div><div class="cgLista">${por[k].map(gfila).join("")}</div></div>`).join("") })()}
       ${regiones.length?`<div><div class="cgSec"><b>Regiones</b></div><div class="cgTags">${regiones.map(r=>`<button type="button" class="cgTag" data-cg-reg="${esc(r)}" aria-pressed="${C.reg===r}">#${esc(r)}</button>`).join("")}</div></div>`:""}
       <div class="cgAyuda"><button type="button" class="cgLink" data-ctl-refresh>↻ Actualizar</button><button type="button" class="cgLink" data-ctl-como>Cómo funciona</button></div>
      </aside>
      <main class="cgMain">
-      <div class="cgCab"><div><h2>${esc(titulo)}${C.reg?" · #"+esc(C.reg):""}</h2><div class="cgSubT">${vis.length} local${vis.length===1?"":"es"}${grupo&&!grupo.propio?" · grupo de "+esc(grupo.owner||"otro supervisor")+" (solo lectura)":""}</div></div>${grupo&&vis.length?`<button type="button" class="cgBtn noPrint" data-cg-pedirg>Pedir conteo a los ${vis.length}</button>`:""}${grupo&&grupo.propio?`<button type="button" class="cgLink noPrint" data-cg-borrarg>Borrar grupo</button>`:""}</div>
+      <div class="cgCab"><div><h2>${esc(titulo)}${C.reg?" · #"+esc(C.reg):""}</h2><div class="cgSubT">${vis.length} local${vis.length===1?"":"es"}${grupo&&!grupo.propio?" · grupo de "+esc(grupo.owner||"otro supervisor")+" (solo lectura)":""}</div></div>${grupo&&vis.length?`<button type="button" class="cgBtn noPrint" data-cg-pedirg>Solicitar conteo a los ${vis.length}</button>`:""}${grupo&&grupo.propio?`<button type="button" class="cgLink noPrint" data-cg-borrarg>Borrar grupo</button>`:""}</div>
       <input type="search" id="ctlQ" class="cgBuscar noPrint" placeholder="Buscar local" aria-label="Buscar local" value="${esc(C.q)}" autocomplete="off">
       <div class="cgFilas">${vis.map(fila).join("")||`<div class="cgVacio">${grupo?"Este grupo está vacío. Arrastrá locales desde «Todos» o usá «Mover a…».":"Ningún local coincide."}</div>`}</div>
       ${barra}
@@ -4121,21 +4129,23 @@ async function ctlAgregarAGrupo(gid,locales){
   if(await ctlGuardarGrupoSrv(g.nombre,g.locales.concat(nuevos))){ renderApp(); toast(nuevos.length+" agregado"+(nuevos.length>1?"s":"")+" a «"+g.nombre+"»") }
 }
 function ctlPedirUno(local){
-  ctlElegirTipo("¿Qué conteo le pedís a "+local+"?", async tipo=>{
-    const r=await api(tipo==="final"?"pedirConteoFinal":"pedirConteoParcial",{local});
-    toast(r&&r.ok?"Pedido enviado: el responsable de "+local+" lo ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar();
+  ctlElegirTipo("¿Qué conteo le solicitás a "+local+"?", async tipo=>{
+    const r=await api(tipo==="final"?"pedirConteoFinal":tipo==="inicial"?"pedirConteoInicial":"pedirConteoParcial",{local});
+    toast(r&&r.ok?"Solicitud enviada: el responsable de "+local+" la ve al entrar":(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":(r&&r.error)||"No se pudo pedir."); ctlRefrescar();
   });
 }
 function ctlElegirTipo(titulo, ok){
   const ov=document.createElement("div"); ov.className="mantenerOv"; ov.setAttribute("role","dialog");
+  const NOTAS={inicial:"Inicial: el stock de arranque del local (cámara + local). Queda cerrado.",parcial:"Parcial: un control en el medio del mes. No cambia el stock.",final:"Cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene."};
+  const op=(t,l,n)=>`<button type="button" class="ctlOp" data-tp="${t}" aria-pressed="${t==="parcial"}"><span class="ctlOpL">${l}</span><span><b>${n}</b></span></button>`;
   ov.innerHTML=`<div class="mantenerBox"><h3 style="margin:0 0 8px">${esc(titulo)}</h3>
-    <div class="ctlMasTipo" style="margin-bottom:10px"><button type="button" class="chip" data-tp="parcial" aria-pressed="true">Conteo parcial</button><button type="button" class="chip" data-tp="final" aria-pressed="false">Conteo de cierre</button></div>
-    <p class="note" id="ctlTpNota" style="margin:0 0 12px">Parcial: un control en el medio del mes. No cambia el stock.</p>
-    <div class="mantAcc"><button type="button" class="btn ghost" data-no>Cancelar</button><button type="button" class="btn" data-si>Pedir</button></div></div>`;
+    <div class="ctlOps" style="margin-bottom:10px">${op("inicial","I","Conteo inicial")}${op("parcial","P","Conteo parcial")}${op("final","C","Conteo de cierre")}</div>
+    <p class="note" id="ctlTpNota" style="margin:0 0 12px">${NOTAS.parcial}</p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-no>Cancelar</button><button type="button" class="btn" data-si>Solicitar</button></div></div>`;
   document.body.appendChild(ov); let tipo="parcial";
   ov.addEventListener("click",e=>{
     const b=e.target.closest("[data-tp]");
-    if(b){ tipo=b.dataset.tp; ov.querySelectorAll("[data-tp]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); ov.querySelector("#ctlTpNota").textContent=tipo==="final"?"Cierre del mes: deja el stock de la cámara igual a lo contado, queda bloqueado y pasa a ser el conteo inicial del mes que viene.":"Parcial: un control en el medio del mes. No cambia el stock."; return }
+    if(b){ tipo=b.dataset.tp; ov.querySelectorAll("[data-tp]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))); ov.querySelector("#ctlTpNota").textContent=NOTAS[tipo]; return }
     if(e.target===ov||e.target.closest("[data-no]")){ ov.remove(); return }
     if(e.target.closest("[data-si]")){ ov.remove(); ok(tipo) }
   });
@@ -4156,10 +4166,10 @@ async function ctlEnLotes(accion, ls, extra, boton){
 function ctlPedirMasivo(){ ctlPedirA(ctlMarcadosVisibles()) }
 function ctlPedirA(ls){
   const C=controlEstado(); if(!ls||!ls.length) return;
-  ctlElegirTipo("¿Qué conteo les pedís a "+ls.length+" local"+(ls.length>1?"es":"")+"?", tipo=>{
+  ctlElegirTipo("¿Qué conteo les solicitás a "+ls.length+" local"+(ls.length>1?"es":"")+"?", tipo=>{
     (async()=>{
       const r=await ctlEnLotes("pedirConteoMasivo",ls,{tipo},document.querySelector("[data-ctl-masivo]"));
-      if(r&&r.ok){ const rep=r.repetidos.length, er=r.errores.length; toast("Pedido enviado a "+r.pedidos+" local"+(r.pedidos===1?"":"es")+(rep?" · "+rep+" ya lo tenían":"")+(er?" · "+er+" con error ("+r.errores.slice(0,3).map(x=>x.local).join(", ")+(er>3?"…":"")+"): "+r.errores[0].error:"")); ctlGuardarGrupoSrv("__ultimo__",ls.slice()); ls.forEach(n=>{ if(!r.errores.some(x=>x.local===n)) delete C.sel[n] }); }
+      if(r&&r.ok){ const rep=r.repetidos.length, er=r.errores.length; toast("Solicitud enviada a "+r.pedidos+" local"+(r.pedidos===1?"":"es")+(rep?" · "+rep+" ya lo tenían":"")+(er?" · "+er+" con error ("+r.errores.slice(0,3).map(x=>x.local).join(", ")+(er>3?"…":"")+"): "+r.errores[0].error:"")); ctlGuardarGrupoSrv("__ultimo__",ls.slice()); ls.forEach(n=>{ if(!r.errores.some(x=>x.local===n)) delete C.sel[n] }); }
       else toast((r&&/desconocida/i.test(r.error||""))?CTL_NOFALTA:((r&&r.error)||"No se pudo pedir.")+((r&&r.parcial&&r.parcial.pedidos)?" Ya se pidieron "+r.parcial.pedidos+": revisá la lista.":""));
       ctlRefrescar();
     })();
@@ -4167,8 +4177,8 @@ function ctlPedirA(ls){
 }
 function ctlCancelarMasivo(){
   const C=controlEstado(), ls=ctlMarcadosVisibles(); if(!ls.length) return;
-  if(!confirm("¿Anular los pedidos pendientes de los "+ls.length+" locales marcados?")) return;
-  (async()=>{ const r=await ctlEnLotes("cancelarPedidosMasivo",ls,null,document.querySelector("[data-ctl-cancelmas]")); toast(r&&r.ok?r.cancelados+" pedido"+(r.cancelados===1?"":"s")+" cancelado"+(r.cancelados===1?"":"s"):(/desconocida/i.test((r&&r.error)||"")?CTL_NOFALTA:(r&&r.error)||"No se pudo cancelar.")); if(r&&r.ok) ls.forEach(n=>delete C.sel[n]); ctlRefrescar() })();
+  if(!confirm("¿Anular las solicitudes pendientes de los "+ls.length+" locales marcados?")) return;
+  (async()=>{ const r=await ctlEnLotes("cancelarPedidosMasivo",ls,null,document.querySelector("[data-ctl-cancelmas]")); toast(r&&r.ok?r.cancelados+" solicitud"+(r.cancelados===1?"":"es")+" anulada"+(r.cancelados===1?"":"s"):(/desconocida/i.test((r&&r.error)||"")?CTL_NOFALTA:(r&&r.error)||"No se pudo cancelar.")); if(r&&r.ok) ls.forEach(n=>delete C.sel[n]); ctlRefrescar() })();
 }
 (function(){
   const bloquea=e=>{ if(e.target.closest&&e.target.closest(".invProt")) e.preventDefault() };
@@ -4234,8 +4244,8 @@ async function cargarPedidoConteo(){
 function pedidoConteoBannerHTML(){
   if(!S.pedidoConteo || !S.empleado || ["encargado","turno","produccion","admin","supervisor"].indexOf(S.empleado.rol)===-1) return "";
   if(S.hubInicial && !S.inv) return ""; // adentro del Conteo inicial no se mezcla con el control que pidió supervisión
-  const fin=S.pedidoConteo.tipo==="final";
-  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo de cierre del mes":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión pidió el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene.":"Supervisión pidió un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
+  const fin=S.pedidoConteo.tipo==="final", ini=S.pedidoConteo.tipo==="inicial";
+  return `<div class="avisoNovedad" role="note"><span class="avisoIco">🔔</span><div class="avisoTx"><b>${fin?"Solicitud de conteo de cierre del mes":ini?"Solicitud de conteo inicial":"Solicitud de nuevo conteo parcial"}</b><span>${fin?"Supervisión solicitó el conteo de cierre de este local (cámara + local). Deja el stock igual a lo contado y es el conteo inicial del mes que viene.":ini?"Supervisión solicitó el conteo inicial de este local: es el stock de arranque (cámara + local). Primero contá la cámara y después el local. Queda cerrado.":"Supervisión solicitó un conteo de este local (cámara + local)."}</span></div><button type="button" class="btn" id="pedidoConteoHacer">Hacer el conteo</button></div>`;
 }
 
 function relevarClick(t){
@@ -7662,7 +7672,7 @@ document.addEventListener("click", async e=>{
   if(relevarClick(t)) return;
   if(t.dataset.supToggle!==undefined){ S.supAbierta=!S.supAbierta; renderApp(); return }
   if(controlClick(t)) return;
-  if(t.id==="pedidoConteoHacer"){ S.tab="stock"; S.hubInicial=true; S.inv=null; invIniciarParcial(S.pedidoConteo&&S.pedidoConteo.id, S.pedidoConteo&&S.pedidoConteo.tipo); return }
+  if(t.id==="pedidoConteoHacer"){ S.tab="stock"; S.hubInicial=true; S.inv=null; if(S.pedidoConteo&&S.pedidoConteo.tipo==="inicial"){ renderApp(); window.scrollTo(0,0); cargarConteoBloqueado(); return } invIniciarParcial(S.pedidoConteo&&S.pedidoConteo.id, S.pedidoConteo&&S.pedidoConteo.tipo); return }
   if(t.dataset.t){ S.inv=null; S.gvDef=null; S.tab=t.dataset.t; if(!S.local && esOperador()) ls.set("tabOperaciones", S.tab); S.verVencimientos=false; S.confirm=false; S.needEmp=false; S.modoDevolucion=false; S.modoCambio=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoProduccion=false; S.catAbierta=false; S.hubInicial=false; if(!Object.values(S.cart.salida||{}).some(q=>q>0)) resetSalidaMenu(); if(!Object.keys(S.cart.ingreso||{}).length) resetIngresoMenu(); else { S.devPor=null; S.devCompa=false; S.devMotivo="" } if(S.tab==="gestion") cargarPrecios(); renderApp(); return }
   if(t.dataset.add){
     const id=t.dataset.add, c=S.cart.salida, disponible=vendibleDe(id);

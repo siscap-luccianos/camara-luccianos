@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.109.2";
+const BACKEND_VERSION = "1.110.0";
 
 function doPost(e) {
   let resultado;
@@ -127,6 +127,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "pedirConteoMasivo": return pedirConteoMasivo(body.locales, body.tipo, empleado);
     case "cancelarPedidosMasivo": return cancelarPedidosMasivo(body.locales, empleado);
     case "pedirConteoFinal": return pedirConteo(body.local, "final", empleado);
+    case "pedirConteoInicial": return pedirConteo(body.local, "inicial", empleado);
     case "cancelarPedidoConteo": return cancelarPedidoConteo(body.local, empleado);
     case "pedidoConteo": return pedidoConteo(body.local, empleado);
     case "liberarInventario": return liberarInventario(body.local, body.inventarioId, body.pin, body.mostrar !== false, empleado);
@@ -2651,7 +2652,10 @@ function _invPermiso(empleado, local) {
 function guardarInventario(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada) {
   if (!pedidoId && empleado && empleado.rol !== "admin" && empleado.rol !== "supervisor" && _candadoActivo()) {
     const cob = _coberturaMes(local);
-    if (cob) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo de cierre del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
+    if (cob) {
+      let pi = null; try { pi = _pedidoPendiente(local); } catch (e) { pi = null; } // (1.110.0) una solicitud de inicial de supervisión habilita el conteo aunque ya hubiera uno
+      if (!(pi && _tipoPedido(pi.tipo) === "inicial")) return { ok: false, error: cob.tipo === "final" ? "Este mes arranca con el conteo de cierre del mes anterior: no hace falta hacer un conteo inicial." : "Este mes ya tiene su conteo inicial: no se hace otro." };
+    }
   }
   const r = _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, pedidoId, camaraContada);
   if (r && r.ok && r._final) {
@@ -2762,6 +2766,7 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
       tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", pedido_id: pedidoFila ? pedidoFila.id : "",
     });
     if (pedidoFila) _actualizarCrudo("PedidosConteo", pedidoFila.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre });
+    else { try { const pi = _pedidoPendiente(local); if (pi && _tipoPedido(pi.tipo) === "inicial") _actualizarCrudo("PedidosConteo", pi.id, { estado: "hecho", inventario_id: r.id, hecho_ts: ts, hecho_por: empleado.nombre }); } catch (e) { /* cerrar la solicitud no debe tumbar el guardado */ } }
     _auditar(pedidoFila ? (String(pedidoFila.tipo) === "final" ? "conteo_final_inventario" : "conteo_parcial_inventario") : "guardar_inventario", empleado.id, empleado.nombre, local + ": " + (pedidoFila ? "conteo " + (String(pedidoFila.tipo) === "final" ? "de cierre del mes" : "parcial") + " pedido por supervisión" : "inventario del local") + " (" + Object.keys(contados).length + " productos con algo en el local)");
     const _pub = {ok: true, _final: (pedidoFila && String(pedidoFila.tipo) === "final") ? _armarStockFinal(catalogo, camara) : null, inventario: _inventarioPublico({ id: r.id, ts: ts, fecha: fecha, local: local, empleado: empleado.nombre, camara_ts: camaraTs, fuera_jornada: fueraJornada ? "SI" : "NO", tipo: pedidoFila ? (String(pedidoFila.tipo) === "final" ? "final" : "parcial") : "inicial", items: JSON.stringify(contados), camara: JSON.stringify(camara), precios: Object.keys(precios).length ? JSON.stringify(precios) : "", valor_total: valor, aprox: aprox ? "SI" : "NO", cambios: "[]" }, _invVerValor(filaLocal, empleado)) };
     if (!_soloSupervision(empleado) && (_pub.inventario.tipo === "parcial" || _pub.inventario.tipo === "final") && !_esVerdadero(filaLocal && filaLocal.ver_diferencias)) _pub.inventario = { id: _pub.inventario.id, ts: _pub.inventario.ts, local: _pub.inventario.local, tipo: _pub.inventario.tipo, oculto: true };
@@ -2854,7 +2859,10 @@ function _hojaPedidosConteo() {
   return sh;
 }
 
-function _pedidoPublico(q) { return q ? { id: q.id, local: q.local, ts: Number(q.ts) || 0, por: q.pedido_por || "", estado: q.estado || "", tipo: String(q.tipo) === "final" ? "final" : "parcial" } : null; }
+/** (1.110.0) Tipos de solicitud de conteo: «inicial» (stock de arranque), «parcial» (control del mes) y «final» (cierre). */
+function _tipoPedido(t) { t = String(t || ""); return t === "final" ? "final" : t === "inicial" ? "inicial" : "parcial"; }
+const _TXT_TIPO_PEDIDO = { inicial: "inicial", parcial: "parcial", final: "de cierre" };
+function _pedidoPublico(q) { return q ? { id: q.id, local: q.local, ts: Number(q.ts) || 0, por: q.pedido_por || "", estado: q.estado || "", tipo: _tipoPedido(q.tipo) } : null; }
 
 function _pedidoPendiente(local) {
   _hojaPedidosConteo();
@@ -2867,8 +2875,8 @@ function _soloSupervision(empleado) {
 
 /** Supervisión pide un conteo a un local: «parcial» (control en el medio del mes) o «final» (cierre del mes: queda como el conteo inicial del mes que viene). */
 function pedirConteo(local, tipo, empleado) {
-  tipo = tipo === "final" ? "final" : "parcial";
-  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede pedir un conteo parcial." };
+  tipo = _tipoPedido(tipo);
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede solicitar un conteo." };
   if (!local) return { ok: false, error: "Falta el local." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   if (!filaLocal || _esVerdadero(filaLocal.operaciones) === true) return { ok: false, error: "No se encontró ese local." };
@@ -2877,11 +2885,12 @@ function pedirConteo(local, tipo, empleado) {
   try {
     const ya = _pedidoPendiente(local);
     if (ya) {
-      if ((String(ya.tipo) === "final") !== (tipo === "final")) return { ok: false, error: "Ya hay un pedido de conteo " + (String(ya.tipo) === "final" ? "de cierre" : "parcial") + " para este local: cancelalo primero." };
+      if (_tipoPedido(ya.tipo) !== tipo) return { ok: false, error: "Ya hay una solicitud de conteo " + _TXT_TIPO_PEDIDO[_tipoPedido(ya.tipo)] + " para este local: anulala primero." };
       return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
     }
+    if (tipo === "inicial" && _coberturaMes(local)) return { ok: false, error: "Este local ya tiene su conteo inicial de este mes." };
     const r = _escribirCrudo("PedidosConteo", { local: local, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo });
-    _auditar(tipo === "final" ? "pedir_conteo_final" : "pedir_conteo_parcial", empleado.id, empleado.nombre, local + ": pidió un conteo " + tipo);
+    _auditar("pedir_conteo_" + tipo, empleado.id, empleado.nombre, local + ": solicitó un conteo " + tipo);
     return { ok: true, pedido: _pedidoPublico(Object.assign({ id: r.id, local: local, ts: Date.now(), pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo })) };
   } finally {
     lock.releaseLock();
@@ -2950,8 +2959,8 @@ function borrarGrupoConteo(id, empleado) {
 /** (1.104.0) Pedido de conteo a varios locales de una vez: un solo candado, una lectura de Locales y de PedidosConteo y UNA fila de Auditoría
  *  (antes de esto, cada local hacía todo eso por separado y 130 locales no entraban en el tiempo). */
 function pedirConteoMasivo(locales, tipo, empleado) {
-  tipo = tipo === "final" ? "final" : "parcial";
-  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede pedir un conteo." };
+  tipo = _tipoPedido(tipo);
+  if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede solicitar un conteo." };
   if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
   if (locales.length > 200) return { ok: false, error: "Demasiados locales de una vez." };
   const validos = {};
@@ -2971,14 +2980,15 @@ function pedirConteoMasivo(locales, tipo, empleado) {
       if (!validos[l]) { res.errores.push({ local: l, error: "No se encontró ese local." }); return; }
       const ya = pendientes[l];
       if (ya) {
-        if ((String(ya.tipo) === "final") !== (tipo === "final")) res.errores.push({ local: l, error: "Ya tiene un pedido " + (String(ya.tipo) === "final" ? "de cierre" : "parcial") + ": cancelalo primero." });
+        if (_tipoPedido(ya.tipo) !== tipo) res.errores.push({ local: l, error: "Ya tiene una solicitud " + _TXT_TIPO_PEDIDO[_tipoPedido(ya.tipo)] + ": anulala primero." });
         else res.repetidos.push(l);
         return;
       }
+      if (tipo === "inicial" && _coberturaMes(l)) { res.errores.push({ local: l, error: "Ya tiene su conteo inicial de este mes." }); return; }
       _escribirCrudo("PedidosConteo", { local: l, ts: Date.now(), pedido_por_id: empleado.id, pedido_por: empleado.nombre, estado: "pendiente", tipo: tipo });
       res.pedidos++; hechos.push(l);
     });
-    if (hechos.length) _auditar(tipo === "final" ? "pedir_conteo_final" : "pedir_conteo_parcial", empleado.id, empleado.nombre, "Pidió un conteo " + tipo + " a " + hechos.length + " locales: " + hechos.join(", ").slice(0, 900));
+    if (hechos.length) _auditar("pedir_conteo_" + tipo, empleado.id, empleado.nombre, "Solicitó un conteo " + tipo + " a " + hechos.length + " locales: " + hechos.join(", ").slice(0, 900));
     return res;
   } finally {
     lock.releaseLock();
@@ -3014,7 +3024,7 @@ function cancelarPedidoConteo(local, empleado) {
     const q = _pedidoPendiente(local);
     if (!q) return { ok: true, sinPedido: true };
     _actualizarCrudo("PedidosConteo", q.id, { estado: "cancelado", hecho_ts: Date.now(), hecho_por: empleado.nombre });
-    _auditar("cancelar_pedido_conteo", empleado.id, empleado.nombre, local + ": canceló el pedido de conteo parcial");
+    _auditar("cancelar_pedido_conteo", empleado.id, empleado.nombre, local + ": anuló la solicitud de conteo");
     return { ok: true };
   } finally {
     lock.releaseLock();

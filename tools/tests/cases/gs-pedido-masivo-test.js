@@ -14,6 +14,7 @@ sb._leerCrudo = h => h === "Locales" ? locales : h === "PedidosConteo" ? pedidos
 sb._escribirCrudo = (h, o) => { const f = Object.assign({}, o, { id: String(100 + pedidos.length) }); pedidos.push(f); return { id: f.id } };
 sb._actualizarCrudo = (h, id, c) => { pedidos.filter(q => q.id === id).forEach(q => Object.assign(q, c)); return { ok: true } };
 sb._auditar = (...a) => audit.push(a);
+sb._coberturaMes = (l) => (l === "C" ? { tipo: "inicial" } : null);
 const run = c => vm.runInContext(c, sb);
 let f = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) f++ };
 sb.sup = { id: "9", nombre: "Super", rol: "supervisor" }; sb.enc = { id: "8", nombre: "Enc", rol: "encargado" };
@@ -27,4 +28,11 @@ r = run(`cancelarPedidosMasivo(["A","B"],sup)`);
 ok(r.ok && r.cancelados === 2 && audit.length === 2, "cancela A y B con una auditoría más");
 ok(pedidos.filter(q => q.estado === "pendiente").map(q => q.local).join() === "C", "queda pendiente solo C");
 ok(!run(`pedirConteoMasivo([],"parcial",sup)`).ok, "lista vacía rechazada");
+
+// (1.110.0) solicitud de conteo INICIAL
+pedidos = [{ id: "1", local: "B", estado: "pendiente", tipo: "parcial" }]; audit = [];
+r = run(`pedirConteoMasivo(["A","B","C"],"inicial",sup)`);
+ok(r.ok && r.pedidos === 1 && pedidos.some((q) => q.local === "A" && q.tipo === "inicial"), "pide un inicial a A: " + JSON.stringify(r));
+ok(r.errores.some((e) => e.local === "B" && /parcial/.test(e.error)) && r.errores.some((e) => e.local === "C" && /ya tiene su conteo inicial/i.test(e.error)), "B ya tiene una solicitud parcial y C ya tiene su inicial del mes");
+ok(run(`_pedidoPublico({id:"9",local:"A",ts:1,tipo:"inicial"})`).tipo === "inicial", "la solicitud pública conserva el tipo inicial");
 console.log("FALLAS " + f); process.exit(f ? 1 : 0);
