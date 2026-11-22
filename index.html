@@ -913,6 +913,34 @@ body:has(.etiqOv){overflow:hidden}
 .ingTile{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:20px 22px;min-height:136px;border-radius:20px;background:var(--surface);border:1px solid var(--line,#E8DFD2);box-shadow:0 8px 24px rgba(74,63,56,.06)}
 .ingTile:active{transform:scale(.985)}.ingTile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ingTile .ingIc{font-size:1.9rem;line-height:1}.ingTile b{font-size:1.05rem}.ingTile span:last-child{font-size:.85rem;color:var(--muted);line-height:1.35}
+/* Menú principal de Salida e Ingreso: tarjeta grande con contorno y difuminado + acciones al costado */
+.menuGrid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;align-items:stretch}
+.menuGrid.solo{grid-template-columns:1fr;max-width:640px}
+@media (max-width:760px){.menuGrid{grid-template-columns:1fr}}
+.menuHero{all:unset;box-sizing:border-box;cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:14px;min-height:300px;padding:24px;border-radius:26px;color:#FFF7E8;
+ background:radial-gradient(circle at 92% 4%,rgba(224,192,122,.55),transparent 58%),radial-gradient(circle at 4% 100%,rgba(232,100,122,.34),transparent 55%),radial-gradient(circle at 55% 45%,rgba(53,167,201,.22),transparent 50%),linear-gradient(150deg,rgba(255,255,255,.16),rgba(255,255,255,0) 60%),#51453D;
+ border:1.5px solid rgba(255,224,138,.85);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.4),0 0 0 5px rgba(224,192,122,.14),0 0 38px rgba(224,192,122,.35),0 22px 44px -18px rgba(60,35,10,.65)}
+.menuHero .ib{width:56px;height:56px;border-radius:18px;display:grid;place-items:center;flex:none;background:rgba(201,169,97,.2);color:#E0C07A;border:1.5px solid rgba(255,224,138,.8);box-shadow:0 0 16px rgba(255,224,138,.45)}
+.menuHero .ib svg{width:28px;height:28px}
+.menuHero .mhTx{display:flex;flex-direction:column;gap:6px}
+.menuHero .mhTit{font-family:Fraunces,serif;font-weight:600;font-size:1.7rem;line-height:1.1}
+.menuHero .mhSub{font-size:.95rem;color:#D6C8B6;max-width:34ch}
+.menuHero .mhMeta{display:flex;flex-direction:column;gap:8px;margin-top:auto;font-size:.82rem;color:#D6C8B6}
+.menuHero .mhCap{font-weight:700;letter-spacing:.02em}
+.menuHero .mhCols{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,112px));gap:10px 16px;justify-content:start}
+.menuHero .mhCols div{min-width:0}
+.menuHero .mhMeta b{display:block;font-family:Fraunces,serif;font-weight:700;font-size:1.5rem;line-height:1.1;color:#E0C07A}
+.menuAvisos{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;font-weight:700}
+.menuAvisos span{display:flex;align-items:center;gap:7px}
+.menuAvisos i{width:9px;height:9px;border-radius:50%;display:inline-block;box-shadow:0 0 0 3px rgba(255,255,255,.18),0 0 10px currentColor}
+.menuHero .mhBtn{align-self:flex-start;border-radius:999px;padding:12px 22px;font-weight:800;font-size:.92rem;background:#E0C07A;color:#2A1A0A;box-shadow:0 0 20px rgba(224,192,122,.5)}
+.menuSide{display:flex;flex-direction:column;gap:12px}
+.menuRow{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:20px;background:linear-gradient(145deg,#fff,#fbf6ec);color:#2E2018;border:1.5px solid rgba(224,192,122,.55);box-shadow:inset 0 1px 0 #fff,0 0 22px rgba(224,192,122,.28),0 12px 26px -16px rgba(74,47,29,.5)}
+.menuRow .ib{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;flex:none;background:rgba(255,255,255,.7);border:1.5px solid currentColor;box-shadow:0 0 0 3px color-mix(in srgb,currentColor 16%,transparent),0 0 14px color-mix(in srgb,currentColor 40%,transparent)}
+.menuRow .mrTx b{display:block;font-family:Fraunces,serif;font-weight:700;font-size:1.02rem;line-height:1.15;color:#2E2018}
+.menuRow .mrTx small{display:block;margin-top:2px;font-size:.82rem;line-height:1.3;color:#7B6B5E}
+.menuHero:active,.menuRow:active{transform:scale(.99)}
+.menuHero:focus-visible,.menuRow:focus-visible{outline:3px solid #E0C07A;outline-offset:3px}
 .devCompa{margin:0 0 12px}.devMotivoBox{margin:14px 0}.devMotivoBox label{display:block;font-weight:700;margin-bottom:6px}.devMotivoBox input{width:100%;box-sizing:border-box;height:44px;border-radius:12px;border:1px solid var(--line,#E0D5C6);padding:0 14px;font:inherit;background:var(--surface);color:var(--ink)}
 .cgPor{display:inline-block;margin-left:6px;font-size:.7rem;font-weight:700;color:#6B521C;background:#FBF3DF;border:1px solid #E7D49C;border-radius:8px;padding:1px 7px}
 .segIng{display:inline-flex;padding:4px;border-radius:999px;background:rgba(var(--accent-rgb),.12);gap:4px;margin:0 0 12px}
@@ -1707,7 +1735,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.201.3";
+const FRONTEND_VERSION = "1.202.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4443,12 +4471,56 @@ function chocoBarraHTML(){
   return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
+/** Menú principal (Salida e Ingreso): una tarjeta grande con la acción de todos los días, el resumen de hoy y
+ *  los avisos de stock; al costado, las otras acciones con su ícono de color. Los botones conservan sus data-* de siempre. */
+const MENU_ICONOS={
+  up:'<path d="M12 15V4M8 8l4-4 4 4M4 15v4h16v-4"/>', trash:'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>', tr:'<path d="M4 8h14l-3-3M20 16H6l3 3"/>',
+  down:'<path d="M12 4v11M8 11l4 4 4-4M4 15v4h16v-4"/>', box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10"/>',
+  undo:'<path d="M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3"/>', swap:'<path d="M4 12a8 8 0 0114-5l2 2M20 4v5h-5M20 12a8 8 0 01-14 5l-2-2M4 20v-5h5"/>',
+  prod:'<path d="M3 21V9l6 4V9l6 4V5h6v16z"/>'
+};
+const MENU_COLOR={up:"#C98A10",trash:"#C98A10",tr:"#2F6F9F",down:"#2E7D4F",box:"#2E7D4F",undo:"#2F6F9F",swap:"#8A5AA8",prod:"#B5552B"};
+function menuAvisosHTML(){
+  let sin=0, bajo=0, venc=0;
+  try{
+    const st=stockMap();
+    for(const s of saboresDelLocalBase()){ const e=estadoSabor(s.id,st); if(!e) continue; if(e.tier==="sinstock") sin++; else bajo++ }
+    const rv=resumenVenc(); venc=rv.rojo.l+rv.amarillo.l;
+  }catch(e){}
+  const p=[];
+  if(sin) p.push(`<span><i style="background:#D9533F;color:#D9533F"></i>${sin} sin stock</span>`);
+  if(bajo) p.push(`<span><i style="background:#E0A21B;color:#E0A21B"></i>${bajo} bajo mínimo</span>`);
+  if(venc) p.push(`<span><i style="background:#9A8F86;color:#9A8F86"></i>${venc} por vencer</span>`);
+  if(!p.length) p.push(`<span><i style="background:#3FB27A;color:#3FB27A"></i>Todo en orden</span>`);
+  return `<div class="menuAvisos">${p.join("")}</div>`;
+}
+function menuResumenHoyHTML(tipo){
+  // Unidades de hoy por rubro (solo los rubros que lleva el local), en columnas parejas.
+  const desde=jornadaDe(), por={};
+  for(const r of regsActivos()){
+    if(r.tipo!==tipo||r.ts<desde) continue;
+    if(tipo==="salida"&&(r.subtipo==="transferencia"||r.subtipo==="desperdicio")) continue;
+    if(tipo==="ingreso"&&(r.subtipo==="devolucion"||r.subtipo==="produccion")) continue;
+    for(const [id,q] of Object.entries(r.items||{})){ const sb=S.saboresPorId[String(id)]; if(!sb) continue; const g=grupoProductoDe(sb); por[g]=(por[g]||0)+(+q||0) }
+  }
+  const lleva=new Set(saboresDelLocalBase().map(grupoProductoDe));
+  const grupos=GRUPO_PRODUCTO_ORDEN.filter(g=>lleva.has(g)||por[g]);
+  const lab=g=>(GRUPO_PRODUCTO_LABEL[g]||"Geladot").toLowerCase();
+  const cols=grupos.map(g=>`<div><b>${por[g]||0}</b>${lab(g)}</div>`).join("");
+  return `<span class="mhCap">${tipo==="salida"?"Salió hoy":"Entró hoy"}</span><span class="mhCols">${cols||"<div><b>0</b>unidades</div>"}</span>`;
+}
+function menuPrincipalHTML(sec, tipo, tiles, boton){
+  const ico=(k,extra="")=>`<span class="ib" ${extra} aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${MENU_ICONOS[k]}</svg></span>`;
+  const [m,...rest]=tiles;
+  const hero=`<button type="button" class="menuHero" ${m.attr}>${ico(m.ic)}<span class="mhTx"><span class="mhTit">${m.tit}</span>${m.sub?`<span class="mhSub">${m.sub}</span>`:""}</span><span class="mhMeta">${menuResumenHoyHTML(tipo)}</span>${menuAvisosHTML()}<span class="mhBtn">${boton}</span></button>`;
+  const filas=rest.map(r=>{const c=MENU_COLOR[r.ic]||"#7B3F1E"; return `<button type="button" class="menuRow" ${r.attr}>${ico(r.ic,`style="color:${c}"`)}<span class="mrTx"><b>${r.tit}</b><small>${r.sub}</small></span></button>`}).join("");
+  return `<p class="sec">${sec}</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="menuGrid${rest.length?"":" solo"}">${hero}${rest.length?`<div class="menuSide">${filas}</div>`:""}</div>`;
+}
 function menuSalidaHTML(){
-  const tile=(k,svg,tit,chip)=>`<button type="button" class="ingTile salTile" data-sal-menu="${k}"><span class="salTop"><span class="salIc" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${svg}</svg></span><span class="salChip">${chip}</span></span><b>${tit}</b></button>`;
-  const t=[tile("comun",'<path d="M12 15V4M8 8l4-4 4 4M4 15v4h16v-4"/>',"Retiro de cámara","Cámara"),
-           tile("desp",'<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>',"Desperdicio","Pide motivo")];
-  if(puedeTransferir()) t.push(tile("transf",'<path d="M4 8h14l-3-3M20 16H6l3 3"/>',"Transferencia enviada","Otro local"));
-  return `<p class="sec">Salida</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu salMenu">${t.join("")}</div>`;
+  const t=[{attr:'data-sal-menu="comun"',ic:"up",tit:"Retiros",sub:""},
+           {attr:'data-sal-menu="desp"',ic:"trash",tit:"Desperdicio",sub:"Se rompió, cayó o venció. Pide motivo."}];
+  if(puedeTransferir()) t.push({attr:'data-sal-menu="transf"',ic:"tr",tit:"Transferencia enviada",sub:"Se la mandás a otro local."});
+  return menuPrincipalHTML("Salida","salida",t,"Empezar el retiro");
 }
 function gridSalida(st){
   if(S.modoDesperdicio) return gridDesperdicio(st);
@@ -4939,14 +5011,14 @@ function accionesIngresoHTML(hayPendiente,soloProd,soloEsc){
 /** Menú «¿Qué vas a hacer?»: primero se elige la acción, recién después aparece la lista de sabores. */
 function menuIngresoHTML(){
   const rol=S.empleado.rol, resp=puedeDevolverPorOtro(), t=[];
-  const tile=(k,ic,tit,sub)=>`<button type="button" class="ingTile" data-ing-menu="${k}"><span class="ingIc" aria-hidden="true">${ic}</span><b>${tit}</b><span>${sub}</span></button>`;
-  if(rol!=="colaborador") t.push(tile("merc","📦","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito."));
-  t.push(tile("dev","↩️","Devolución","Lo que sacó cualquiera del equipo y vuelve a la cámara."));
-  if(puedeTransferir()) t.push(tile("transf","🔁","Transferencia recibida","Te la mandó otro local. Local de origen y lector."));
-  if(puedeCambioSabor()) t.push(tile("cambio","🔄","Llegó un sabor mal rotulado","Cambio de sabor: figura uno y era otro."));
-  if(S.produccionLocal) t.push(tile("prod","🏭","Producción","Lo que fabricás en el local (kilos y vasquetas)."));
-  if(resp) t.push(tile("compa","↩️","Devolver por un compañero","Se fue y dejó algo pendiente: lo devolvés a su nombre."));
-  return `<p class="sec">Ingreso</p><h2 class="ingPreg">¿Qué vas a hacer?</h2><div class="ingMenu">${t.join("")}</div>`;
+  const tile=(k,ic,tit,sub)=>t.push({attr:`data-ing-menu="${k}"`,ic,tit,sub});
+  if(rol!=="colaborador") tile("merc","box","Mercadería que llegó","Con remito de fábrica, lector de foto o motivo escrito.");
+  tile("dev","undo","Devolución","Lo que sacó cualquiera del equipo y vuelve a la cámara.");
+  if(puedeTransferir()) tile("transf","tr","Transferencia recibida","Te la mandó otro local. Local de origen y lector.");
+  if(puedeCambioSabor()) tile("cambio","swap","Llegó un sabor mal rotulado","Cambio de sabor: figura uno y era otro.");
+  if(S.produccionLocal) tile("prod","prod","Producción","Lo que fabricás en el local (kilos y vasquetas).");
+  if(resp) tile("compa","undo","Devolver por un compañero","Se fue y dejó algo pendiente: lo devolvés a su nombre.");
+  return menuPrincipalHTML("Ingreso","ingreso",t,rol!=="colaborador"?"Cargar mercadería":"Cargar devolución");
 }
 function gridIngreso(st){
   if(S.lectorRemito) return lectorRemitoView();
