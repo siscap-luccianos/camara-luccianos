@@ -111,4 +111,15 @@ ok(r.ok&&inv[0].desbloqueado_hasta===0,"todo el local: una corrección y se vuel
 // 5) cliente viejo: sin rubro
 const antesPed=ped.length;
 E("supervisor","Laura"); ped.length=0; r=run(`pedirConteoParcial("A",emp)`); ok(r.ok&&r.pedido.rubro==="","pedirConteoParcial sin rubro sigue andando");
+// 6) (1.114.0) varios rubros en un mismo pedido
+E("supervisor","Laura"); ped.length=0;
+r=run(`pedirConteo("A","parcial",emp,"icepops, vasquetas")`);
+ok(r.ok&&r.pedido.rubro==="vasquetas,icepops"&&ped[0].rubro==="vasquetas,icepops","dos rubros: se guardan normalizados y en orden fijo");
+ok(run(`pedirConteo("A","parcial",emp,"vasquetas,icepops")`).repetido===true,"el mismo par de rubros es repetido");
+ok(!run(`pedirConteo("A","parcial",emp,"vasquetas")`).ok,"un solo rubro con un par pendiente: avisa");
+ok(!run(`pedirConteo("A","final",emp,"vasquetas,icepops")`).ok,"el cierre rechaza varios rubros");
+ok(!run(`pedirConteo("A","parcial",emp,"vasquetas,helados")`).ok,"un rubro inexistente en la lista se rechaza");
+ok(!run(`pedirConteo("B","parcial",emp,"vasquetas,baldes")`).ok,"si el local no lleva uno de los rubros, lo rechaza");
+ok(run(`_rubroEnLista({familia:"icepops"},"vasquetas,icepops")`)===true&&run(`_rubroEnLista({familia:"chocolateria"},"vasquetas,icepops")`)===false,"_rubroEnLista acepta cualquiera de los rubros y rechaza el resto");
+ok(run(`_txtRubro("vasquetas,icepops")`)==="Vasquetas + Icepops","el texto une los nombres");
 console.log("FALLAS "+f); process.exit(f?1:0);

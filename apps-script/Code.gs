@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.113.0";
+const BACKEND_VERSION = "1.114.0";
 
 function doPost(e) {
   let resultado;
@@ -2753,10 +2753,10 @@ function _guardarInventarioInterno(clienteId, local, items, camaraKg, empleado, 
       if (!pedidoFila) return { ok: false, error: "Ese pedido de conteo ya no está pendiente." };
     }
     // (1.113.0) Parcial de un solo rubro: lo contado (local y cámara) tiene que ser solo de ese rubro.
-    const rubroPedido = pedidoFila ? String(pedidoFila.rubro || "").trim() : "";
+    const rubroPedido = pedidoFila ? _normRubros(pedidoFila.rubro) : "";
     if (rubroPedido) {
       const fuera = [];
-      const fueraDeRubro = (id, n) => { const sb = catalogo[String(id)]; if (sb && n > 0 && _rubroDeSabor(sb) !== rubroPedido) fuera.push(sb.nombre); };
+      const fueraDeRubro = (id, n) => { const sb = catalogo[String(id)]; if (sb && n > 0 && !_rubroEnLista(sb, rubroPedido)) fuera.push(sb.nombre); };
       Object.keys(items).forEach((id) => fueraDeRubro(id, Number(items[id]) || 0));
       Object.keys(camaraContada || {}).forEach((id) => { const d = camaraContada[id] || {}; fueraDeRubro(id, (Number(d.u) || 0) + (Number(d.k) || 0)); });
       if (fuera.length) return { ok: false, error: "Esta solicitud es solo de " + _txtRubro(rubroPedido) + ". Sacá de la carga: " + fuera.slice(0, 5).join(", ") + "." };
@@ -2847,9 +2847,9 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
     const desbloqueado = (Number(fila.desbloqueado_hasta) || 0) > Date.now();
     if (!desbloqueado) return { ok: false, error: "El conteo tiene candado: no se puede corregir. Supervisión lo desbloquea con su PIN y un motivo; después de guardar una corrección vuelve a cerrarse." };
     // (1.113.0) Reconteo habilitado para un solo rubro: solo se pueden corregir productos de ese rubro. El candado sigue abierto (hasta que vence) para recontar el rubro entero.
-    const rubroHab = String(fila.desbloqueo_rubro || "").trim();
+    const rubroHab = _normRubros(fila.desbloqueo_rubro);
     const rubroDelProducto = _rubroDeSabor(sab);
-    if (rubroHab && rubroDelProducto !== rubroHab) return { ok: false, error: "El reconteo está habilitado solo para " + _txtRubro(rubroHab) + ". " + sab.nombre + " es de " + _txtRubro(rubroDelProducto) + "." };
+    if (rubroHab && !_rubroEnLista(sab, rubroHab)) return { ok: false, error: "El reconteo está habilitado solo para " + _txtRubro(rubroHab) + ". " + sab.nombre + " es de " + _txtRubro(rubroDelProducto) + "." };
     const items = _jsonObj(fila.items, {}), camara = _jsonObj(fila.camara, {}), cambios = _jsonObj(fila.cambios, []);
     const antes = Number(items[String(saborId)]) || 0;
     if (antes === nuevo) return { ok: true, sinCambios: true, inventario: _inventarioPublico(fila, _invVerValor(filaLocal, empleado)) };
@@ -2925,14 +2925,25 @@ function _hojaPedidosConteo() {
 /** (1.113.0) Rubros que se pueden pedir en un parcial de un solo rubro (los mismos que ve el responsable en el Conteo). */
 const RUBROS_PEDIDO = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria"];
 const _TXT_RUBRO = { vasquetas: "Vasquetas", baldes: "Baldes", icepops: "Icepops", glutenfree: "Gluten Free", chocolateria: "Chocolatería", pasteleria: "Pastelería", bolleria: "Bollería", geladot: "Geladot" };
-function _txtRubro(r) { return _TXT_RUBRO[String(r)] || String(r); }
+function _txtRubro(r) { return _listaRubros(r).map((x) => _TXT_RUBRO[x] || x).join(" + ") || String(r); }
+/** (1.114.0) El rubro de un conteo puede ser uno o varios (texto separado por coma). Devuelve la lista limpia, sin repetidos y en orden fijo. */
+function _listaRubros(r) {
+  const v = String(r || "").split(",").map((x) => x.trim()).filter(Boolean);
+  const orden = RUBROS_PEDIDO.concat(["geladot"]);
+  return v.filter((x, i) => v.indexOf(x) === i).sort((a, b) => orden.indexOf(a) - orden.indexOf(b));
+}
+function _normRubros(r) { return _listaRubros(r).join(","); }
+/** ¿El sabor es de alguno de los rubros de la lista? (lista vacía = todo el local) */
+function _rubroEnLista(sab, r) { const l = _listaRubros(r); return !l.length || l.indexOf(_rubroDeSabor(sab)) !== -1; }
 /** "" si el rubro pedido es válido para ese tipo y el local lo lleva; si no, el mensaje de error. Sin rubro (vacío) siempre es válido: es todo el local. */
 function _errorRubroPedido(rubro, tipo, filaLocal) {
-  rubro = String(rubro || "").trim();
-  if (!rubro) return "";
+  const lista = _listaRubros(rubro);
+  if (!lista.length) return "";
   if (_tipoPedido(tipo) !== "parcial") return "El rubro solo se elige en el conteo parcial: el inicial y el cierre son siempre de todo el local.";
-  if (RUBROS_PEDIDO.indexOf(rubro) === -1) return "Ese rubro no existe.";
-  if (filaLocal && _rubrosApagados(filaLocal).indexOf(rubro) !== -1) return "Este local no lleva " + _txtRubro(rubro) + ".";
+  for (let i = 0; i < lista.length; i++) {
+    if (RUBROS_PEDIDO.indexOf(lista[i]) === -1) return "Ese rubro no existe.";
+    if (filaLocal && _rubrosApagados(filaLocal).indexOf(lista[i]) !== -1) return "Este local no lleva " + _txtRubro(lista[i]) + ".";
+  }
   return "";
 }
 
@@ -2958,6 +2969,7 @@ function pedirConteo(local, tipo, empleado, rubro) {
   if (!local) return { ok: false, error: "Falta el local." };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   if (!filaLocal || _esVerdadero(filaLocal.operaciones) === true) return { ok: false, error: "No se encontró ese local." };
+  rubro = _normRubros(rubro);
   const errRubro = _errorRubroPedido(rubro, tipo, filaLocal);
   if (errRubro) return { ok: false, error: errRubro };
   const lock = LockService.getScriptLock();
@@ -2966,7 +2978,7 @@ function pedirConteo(local, tipo, empleado, rubro) {
     const ya = _pedidoPendiente(local);
     if (ya) {
       if (_tipoPedido(ya.tipo) !== tipo) return { ok: false, error: "Ya hay una solicitud de conteo " + _TXT_TIPO_PEDIDO[_tipoPedido(ya.tipo)] + " para este local: anulala primero." };
-      if (String(ya.rubro || "") !== rubro) return { ok: false, error: "Ya hay una solicitud de conteo parcial " + (ya.rubro ? "de " + _txtRubro(ya.rubro) : "de todo el local") + " para este local: anulala primero." };
+      if (_normRubros(ya.rubro) !== rubro) return { ok: false, error: "Ya hay una solicitud de conteo parcial " + (ya.rubro ? "de " + _txtRubro(ya.rubro) : "de todo el local") + " para este local: anulala primero." };
       return { ok: true, repetido: true, pedido: _pedidoPublico(ya) };
     }
     if (tipo === "inicial" && _coberturaMes(local)) return { ok: false, error: "Este local ya tiene su conteo inicial de este mes." };
@@ -3041,7 +3053,7 @@ function borrarGrupoConteo(id, empleado) {
  *  (antes de esto, cada local hacía todo eso por separado y 130 locales no entraban en el tiempo). */
 function pedirConteoMasivo(locales, tipo, empleado, rubro) {
   tipo = _tipoPedido(tipo);
-  rubro = String(rubro || "").trim();
+  rubro = _normRubros(rubro);
   const errRubroM = _errorRubroPedido(rubro, tipo, null);
   if (errRubroM) return { ok: false, error: errRubroM };
   if (!_soloSupervision(empleado)) return { ok: false, error: "Solo supervisión puede solicitar un conteo." };
@@ -3062,11 +3074,12 @@ function pedirConteoMasivo(locales, tipo, empleado, rubro) {
       if (!l || vistos[l]) return;
       vistos[l] = 1;
       if (!validos[l]) { res.errores.push({ local: l, error: "No se encontró ese local." }); return; }
-      if (rubro && _rubrosApagados(validos[l]).indexOf(rubro) !== -1) { res.sinRubro.push(l); res.errores.push({ local: l, error: "No lleva " + _txtRubro(rubro) + ": se omite." }); return; }
+      const _apL = _listaRubros(rubro).filter((x) => _rubrosApagados(validos[l]).indexOf(x) !== -1);
+      if (_apL.length) { res.sinRubro.push(l); res.errores.push({ local: l, error: "No lleva " + _txtRubro(_apL.join(",")) + ": se omite." }); return; }
       const ya = pendientes[l];
       if (ya) {
         if (_tipoPedido(ya.tipo) !== tipo) res.errores.push({ local: l, error: "Ya tiene una solicitud " + _TXT_TIPO_PEDIDO[_tipoPedido(ya.tipo)] + ": anulala primero." });
-        else if (String(ya.rubro || "") !== rubro) res.errores.push({ local: l, error: "Ya tiene una solicitud parcial " + (ya.rubro ? "de " + _txtRubro(ya.rubro) : "de todo el local") + ": anulala primero." });
+        else if (_normRubros(ya.rubro) !== rubro) res.errores.push({ local: l, error: "Ya tiene una solicitud parcial " + (ya.rubro ? "de " + _txtRubro(ya.rubro) : "de todo el local") + ": anulala primero." });
         else res.repetidos.push(l);
         return;
       }
@@ -3173,14 +3186,17 @@ function desbloquearInventario(local, inventarioId, pin, motivo, empleado, rubro
     const fila = _leerCrudo("Inventarios").filter((r) => String(r.id) === String(inventarioId))[0];
     if (!fila || String(fila.local).trim() !== String(local).trim()) return { ok: false, error: "No se encontró ese conteo." };
     // (1.113.0) Reconteo de un solo rubro: los demás rubros, sus kilos y sus vencimientos quedan como están. Un parcial de un solo rubro solo se recuenta de ese rubro.
-    rubro = String(rubro || "").trim();
-    const rubroConteo = String(fila.rubro || "").trim();
+    rubro = _normRubros(rubro);
+    const rubroConteo = _normRubros(fila.rubro);
     if (rubroConteo && !rubro) rubro = rubroConteo;
     if (rubro) {
-      if (rubroConteo && rubro !== rubroConteo) return { ok: false, error: "Este conteo es solo de " + _txtRubro(rubroConteo) + ": solo se puede habilitar el reconteo de ese rubro." };
-      if (RUBROS_PEDIDO.indexOf(rubro) === -1) return { ok: false, error: "Ese rubro no existe." };
+      const lr = _listaRubros(rubro);
+      if (rubroConteo && lr.some((x) => _listaRubros(rubroConteo).indexOf(x) === -1)) return { ok: false, error: "Este conteo es solo de " + _txtRubro(rubroConteo) + ": solo se puede habilitar el reconteo de esos rubros." };
       const filaLocalD = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
-      if (filaLocalD && _rubrosApagados(filaLocalD).indexOf(rubro) !== -1) return { ok: false, error: "Este local no lleva " + _txtRubro(rubro) + "." };
+      for (let i = 0; i < lr.length; i++) {
+        if (RUBROS_PEDIDO.indexOf(lr[i]) === -1) return { ok: false, error: "Ese rubro no existe." };
+        if (filaLocalD && _rubrosApagados(filaLocalD).indexOf(lr[i]) !== -1) return { ok: false, error: "Este local no lleva " + _txtRubro(lr[i]) + "." };
+      }
     }
     const ahora = Date.now();
     const hasta = ahora + 24 * 3600 * 1000;
@@ -3378,11 +3394,11 @@ function _compararConteoTotal(base, conteo, local, catalogo, regs) {
   Object.keys(esp).forEach((id) => { ids[id] = 1; });
   Object.keys(cont).forEach((id) => { ids[id] = 1; });
   const out = {};
-  const rb = String(conteo.rubro || "").trim(); // (1.113.0) un parcial de un solo rubro se compara solo en ese rubro
+  const rb = _normRubros(conteo.rubro); // (1.113.0/1.114.0) un parcial de uno o más rubros se compara solo en esos rubros
   Object.keys(ids).forEach((id) => {
     const sab = catalogo[id];
     if (!sab) return;
-    if (rb && _rubroDeSabor(sab) !== rb) return;
+    if (rb && !_rubroEnLista(sab, rb)) return;
     const e = esp[id] || { kg: _invEsKg(sab), ini: 0, ing: 0, sal: 0, merma: 0, esperado: 0 };
     const c = cont[id] ? cont[id].v : 0;
     out[id] = { kg: e.kg, ini: e.ini, ing: e.ing, sal: e.sal, merma: e.merma, esperado: e.esperado, cont: c, dif: Math.round((c - e.esperado) * 100) / 100, locIni: Number(baseLoc[id]) || 0, locCont: Number(contLoc[id]) || 0 };
@@ -3398,11 +3414,11 @@ function _compararConteo(base, conteo, local, catalogo, regs) {
   Object.keys(debe).forEach((id) => { ids[id] = 1; });
   Object.keys(conto).forEach((id) => { ids[id] = 1; });
   const items = {};
-  const rb = String(conteo.rubro || "").trim(); // (1.113.0) un parcial de un solo rubro se compara solo en ese rubro
+  const rb = _normRubros(conteo.rubro); // (1.113.0/1.114.0) un parcial de uno o más rubros se compara solo en esos rubros
   Object.keys(ids).forEach((id) => {
     const sab = catalogo[id];
     if (!sab) return;
-    if (rb && _rubroDeSabor(sab) !== rb) return;
+    if (rb && !_rubroEnLista(sab, rb)) return;
     const e = debe[id] ? debe[id].v : 0, c = conto[id] ? conto[id].v : 0;
     items[id] = { esperado: Math.round(e * 100) / 100, cam: Math.round(c * 100) / 100, dif: Math.round((c - e) * 100) / 100, kg: _invEsKg(sab) };
   });
