@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.109.1";
+const BACKEND_VERSION = "1.109.2";
 
 function doPost(e) {
   let resultado;
@@ -3354,7 +3354,7 @@ function controlDetalle(local, inventarioId, empleado) {
   _leerCrudo("Sabores").forEach((sb) => { if (_saborEnPais(sb, pais)) catalogo[String(sb.id)] = sb; });
   catalogo["0"] = { id: "0", nombre: "Sin sabor específico", tipo: "v", familia: "vasquetas", peso: 0 }; // merma sin sabor: cuenta en el total del helado
   const mios = _leerCrudo("Inventarios").filter((r) => String(r.local || "").trim() === String(local).trim()).sort((a, b) => Number(a.ts) - Number(b.ts));
-  if (!mios.length) return { ok: true, conteos: [], grupos: [] };
+  if (!mios.length) return { ok: true, conteos: [], grupos: [], pedido: _pedidoPublico(_pedidoPendiente(local)) }; // (1.109.2) con el pedido, para poder cancelarlo aunque no haya ningún conteo
   const elegido = inventarioId ? mios.filter((r) => String(r.id) === String(inventarioId))[0] : mios[mios.length - 1];
   if (!elegido) return { ok: false, error: "No se encontró ese conteo." };
   const esCmp = String(elegido.tipo) === "parcial" || String(elegido.tipo) === "final";
