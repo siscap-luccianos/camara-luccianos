@@ -25,7 +25,7 @@ const { chromium } = require("playwright");
 
   // decodificación pura
   const p = await S_(() => parseCodigoRotulo("9900090003550083529092621015"));
-  ok(p && p.tipo === "caja" && p.codigo === "0009" && p.kg === 8.35 && p.lote === "29/09/2026 · Operario 15 · mañana", "28 dígitos: caja, producto 0009, 8,35 kg, lote 29/09/2026, operario 15, turno mañana");
+  ok(p && p.tipo === "caja" && p.codigo === "0009" && p.kg === 8.35 && p.lote === "29/09/2026 · Operario 15", "28 dígitos: caja, producto 0009, 8,35 kg, lote 29/09/2026, operario 15");
   const pv = await S_(() => parseCodigoRotulo("00200036429092622031"));
   ok(pv && pv.tipo === "vasq" && pv.codigo === "0020" && pv.kg === 3.64, "20 dígitos sigue siendo vasqueta");
   ok(await S_(() => parseCodigoRotulo("98" + "0".repeat(26))) === null, "28 dígitos que no empiezan con 99 se rechazan");

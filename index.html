@@ -1752,7 +1752,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.212.0";
+const FRONTEND_VERSION = "1.213.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -6222,10 +6222,10 @@ function pesosEntradas(r,id){
   const lista=((r.pesos&&r.pesos[id])||[]).map(x=>{ const caja=typeof x==="string"&&x.indexOf("c:")===0; return {kg:+(caja?x.slice(2):x)||0, caja} });
   return {lista, n:lista.reduce((a,x)=>a+(x.caja?2:1),0), kg:lista.reduce((a,x)=>a+x.kg,0)};
 }
-/** Debajo de las fichas de peso: lote (LC), operario y turno de cada vasqueta que se escaneó (las pesadas a mano no tienen). */
+/** Debajo de las fichas de peso: lote (LC) y operario de cada vasqueta que se escaneó (las pesadas a mano no tienen). */
 function rotulosHistHTML(r,id,pe){
   const rot=(r.rotulos&&r.rotulos[id])||[]; if(!rot.some(Boolean)) return "";
-  const filas=rot.map((c,i)=>{ const d=datosRotulo(c); if(!d) return ""; const kg=pe[i]?(pe[i].caja?"caja ×2 · ":"")+fmtKg(pe[i].kg)+" kg · ":""; return `<div class="hRot">${esc(kg)}${esc(d.lc)} · Operario ${esc(d.operario)} · ${esc(d.turno)}</div>` }).filter(Boolean);
+  const filas=rot.map((c,i)=>{ const d=datosRotulo(c); if(!d) return ""; const kg=pe[i]?(pe[i].caja?"caja ×2 · ":"")+fmtKg(pe[i].kg)+" kg · ":""; return `<div class="hRot">${esc(kg)}${esc(d.lc)} · Operario ${esc(d.operario)}</div>` }).filter(Boolean);
   return filas.length?`<div class="hRots"><span class="hLbl">LOTE Y OPERARIO</span>${filas.join("")}</div>`:"";
 }
 function lineaMovHTML(r,id,q){
@@ -8876,21 +8876,20 @@ function parseCodigoRotulo(txt){
     if(d.slice(0,2)!=="99") return null;
     const kg=Number(d.slice(12,17))/100, dd=+d.slice(17,19), mm=+d.slice(19,21);
     if(!(kg>0&&kg<=60)||dd<1||dd>31||mm<1||mm>12) return null;
-    return {tipo:"caja", codigo:d.slice(2,6), kg, lote:d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23)+" · Operario "+(+d.slice(25,28))+" · "+turnoRotulo(d.slice(23,25)), crudo:d};
+    return {tipo:"caja", codigo:d.slice(2,6), kg, lote:d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23)+" · Operario "+(+d.slice(25,28)), crudo:d};
   }
   if(d.length!==20) return null;
   const kg=Number(d.slice(4,9))/100, dd=+d.slice(9,11), mm=+d.slice(11,13);
   if(!(kg>0&&kg<=30)||dd<1||dd>31||mm<1||mm>12) return null;
   // (1.210.0) El lote que se muestra trae también el LC (fecha + turno + operario), el operario y el turno, que salen del mismo código.
-  return {tipo:"vasq", codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15)+" · LC"+d.slice(9,20)+" · Operario "+(+d.slice(17,20))+" · "+turnoRotulo(d.slice(15,17)), crudo:d};
+  return {tipo:"vasq", codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15)+" · LC"+d.slice(9,20)+" · Operario "+(+d.slice(17,20)), crudo:d};
 }
-function turnoRotulo(t){ return t==="21"?"mañana":t==="22"?"tarde":"turno "+t }
 /** Datos del rótulo de una vasqueta (20 dígitos): LC = fecha del lote + turno + operario (los últimos 11 dígitos). */
 function datosRotulo(crudo){
   const d=String(crudo||"").replace(/\D/g,"");
-  if(d.length===28){ const g=d.slice(23,25); return {lc:"Lote "+d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23), operario:String(+d.slice(25,28)), turno:turnoRotulo(g)} } // caja (2 vasquetas)
+  if(d.length===28){ return {lc:"Lote "+d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23), operario:String(+d.slice(25,28))} } // caja (2 vasquetas)
   if(d.length!==20) return null;
-  return {lc:"LC"+d.slice(9,20), operario:String(+d.slice(17,20)), turno:turnoRotulo(d.slice(15,17))};
+  return {lc:"LC"+d.slice(9,20), operario:String(+d.slice(17,20))};
 }
 function pitido(ok){
   try{
