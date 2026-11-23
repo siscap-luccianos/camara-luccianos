@@ -1962,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.223.0";
+const FRONTEND_VERSION = "1.223.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3482,7 +3482,9 @@ function iniciarConteo(conBorrador, alcance){
 const CONTEO_CERO_MIN=5, CONTEO_SALTO_X=3, CONTEO_SALTO_DIF=10;
 /** Conteo parcial: «solo un rubro» (decidido por Gabi 08/11/2026). Reemplaza el stock de los sabores de ESE rubro y no toca el resto. */
 function conteoParcialActivo(){ return !!S.conteo && !!S.conteoAlcance && S.conteoAlcance!=="todo" }
-function saboresDelConteo(){ const l=saboresDelLocal(); return conteoParcialActivo() ? l.filter(s=>grupoProductoDe(s)===S.conteoAlcance) : l }
+/** Rubros con el conteo cerrado este mes: no se vuelven a contar ni con «Poner el mismo número» ni en la revisión. */
+function rubroCerradoDe(s){ return !!s && (S.rubrosCerrados||[]).includes(grupoProductoDe(s)) }
+function saboresDelConteo(){ const l=saboresDelLocal(), c=conteoParcialActivo() ? l.filter(s=>grupoProductoDe(s)===S.conteoAlcance) : l; return (S.rubrosCerrados||[]).length ? c.filter(s=>!rubroCerradoDe(s)) : c }
 function etiquetaRubroConteo(){ return conteoParcialActivo() ? (GRUPO_PRODUCTO_LABEL[S.conteoAlcance]||S.conteoAlcance) : "todo el local" }
 function claveBorradorConteo(){ return "conteoBorrador:"+S.local }
 function descartarBorradorConteo(){ try{ ls.del(claveBorradorConteo()) }catch(e){} }
@@ -8804,7 +8806,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="aplicarTodos"){
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     // «Todo el local» o solo lo que se está viendo (rubro y subcategoría elegidos, ej. Icepops › Frutales).
-    const objetivo=(S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap());
+    const objetivo=((S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap())).filter(x=>!rubroCerradoDe(x)); // un rubro cerrado no se toca
     objetivo.forEach(x=>{ ceMano(x.id); S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id]; delete S.kilosConteo[x.id]; if(S.conteoPesos) delete S.conteoPesos[x.id]; delete S.vencConteo[x.id] }); // los kilos y vencimientos de antes ya no valen con el número nuevo. No cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }

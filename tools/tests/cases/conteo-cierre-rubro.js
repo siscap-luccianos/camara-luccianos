@@ -38,6 +38,12 @@ const { chromium } = require("playwright");
   ok(/cerrado este mes/.test(await page.innerText("main")) && await page.$("[data-c='4']") === null, "al volver, Vasquetas muestra el candado y no deja contar");
   await page.click(".tabCat:has-text('Icepops')").catch(() => {}); await page.waitForTimeout(300);
   ok(await page.$("[data-c]") !== null, "los otros rubros (Icepops) siguen abiertos para contar");
+  // «Poner el mismo número» en todo el local no toca el rubro cerrado ni lo mete en la revisión
+  const antes4 = await page.evaluate(() => S.conteo["4"]);
+  await page.click('[data-apl="todo"]').catch(() => {}); await page.fill("#aplicarTodosValor", "0"); await page.click("#aplicarTodos"); await page.waitForTimeout(300);
+  ok(await page.evaluate(() => S.conteo["4"]) === antes4, "«Poner 0 en todo el local» no cambió las vasquetas del rubro cerrado");
+  await page.click("#go"); await page.waitForTimeout(400);
+  ok(!/Banana Split/.test(await page.innerText("main")), "la revisión no lista sabores del rubro cerrado");
   console.log("errores:", err.length ? err : "ninguno");
   console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); await b.close(); process.exit(fallas || err.length ? 1 : 0);
 })();
