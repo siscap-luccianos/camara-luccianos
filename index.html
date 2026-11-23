@@ -1962,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.223.1";
+const FRONTEND_VERSION = "1.223.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7958,7 +7958,7 @@ function renderBar(){
     const rc=conteoResumen();
     if(S.conteoRevisar){
       const pend=conteoFaltaConfirmar(rc);
-      inn.innerHTML=`<div class="sum"><div class="note" style="margin:0 0 8px"><b>Todavía no se guardó nada.</b> Revisá lo cargado: si está bien, tocá «Guardar definitivo»; si querés cambiar algo, «Seguir contando».</div>${rc.bloqueos.length?`<div class="warn">Corregí ${rc.bloqueos.length} ${rc.bloqueos.length===1?"número imposible":"números imposibles"} para poder guardar.</div>`:pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Seguir contando</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":((rc.sinContar.length||(S.rubrosCerrados||[]).length)?"Guardar definitivo 🔒":"Guardar conteo")}</button>`;
+      inn.innerHTML=`<div class="sum"><div class="note" style="margin:0 0 8px"><b>Todavía no se guardó nada.</b> Revisá lo cargado: si está bien, tocá «Guardar definitivo»; si querés cambiar algo, «Seguir contando».</div>${rc.bloqueos.length?`<div class="warn">Corregí ${rc.bloqueos.length} ${rc.bloqueos.length===1?"número imposible":"números imposibles"} para poder guardar.</div>`:pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Seguir contando</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":"Guardar definitivo 🔒"}</button>`;
     } else {
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar lo cargado</button>`;
     }
@@ -8210,7 +8210,10 @@ async function guardarContado(terminar,definitivo){
   } finally { S.busy=false; renderApp() }
 }
 async function guardarConteo(){
-  if(S.busy) return; S.busy=true; renderBar();
+  if(S.busy) return;
+  const rubrosTodos=[...new Set(saboresDelConteo().map(grupoProductoDe))];
+  if(!conteoParcialActivo() && !confirm("GUARDAR DEFINITIVO 🔒\nEsto cambia el stock ahora: se guarda el conteo de todo el local y se CIERRA el conteo de: "+rubrosTodos.map(g=>GRUPO_PRODUCTO_LABEL[g]||g).join(", ")+".\n\nDespués no vas a poder volver a contar esos rubros este mes (solo lo reabre supervisión).\n\n¿Cerrar definitivamente?")) return;
+  S.busy=true; renderBar();
   try{
   const parcial=conteoParcialActivo();
   const items={}; (parcial?saboresDelConteo().filter(s=>idsContados().indexOf(String(s.id))!==-1):S.sabores).forEach(s=>items[s.id]=S.conteo[s.id]||0);
@@ -8230,7 +8233,9 @@ async function guardarConteo(){
   } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined, pesos: Object.keys(pesosC).length ? pesosC : undefined, rotulos: Object.keys(rotC).length ? rotC : undefined};
   const r = await api(accion, payload);
   if(r && r.ok){
-    toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
+    let cierreMsg="";
+    if(!parcial){ const rc2=await api("cerrarConteoRubro",{local:S.local,rubros:rubrosTodos}); if(rc2&&rc2.ok){ S.rubrosCerrados=rc2.rubrosCerrados||[]; cierreMsg=" Rubros cerrados 🔒" } else cierreMsg=(rc2&&/desconocida/i.test(rc2.error||""))?" Falta actualizar el servidor para cerrar los rubros.":" No se pudieron cerrar los rubros." }
+    toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado."+cierreMsg);
     S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
     await cargarDatos();
