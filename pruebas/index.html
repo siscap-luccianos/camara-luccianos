@@ -650,6 +650,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .laAcc2[open]>summary .chev{transform:rotate(90deg)}
 .laChs{display:flex;flex-wrap:wrap;gap:6px}.laChs span{background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:3px 10px;font:700 .74rem var(--body)}
 .laCupo[data-off]{opacity:.65}
+.laOpt.laOff{opacity:.5}.laSw:disabled{cursor:not-allowed}
 .toastAcc{margin-left:12px;border:0;background:var(--bg);color:var(--ink);font:800 .9rem var(--body);border-radius:9px;padding:5px 11px;cursor:pointer}
 .laH1{font:700 1.9rem/1.1 var(--display);margin:4px 0 0;color:var(--ink)}
 .laSub{color:var(--muted);font-size:.9rem;margin:0}
@@ -1872,7 +1873,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.218.0";
+const FRONTEND_VERSION = "1.218.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4500,7 +4501,7 @@ const LA_OPCIONES=[
  ["Operación",[["activo","Local activo","Si se apaga, el local deja de poder entrar."],["venta_dia","Venta del día","Chocolatería se saca con «Salida de chocolatería» al cierre."],["control_equipos","Control de dispositivos","Los dispositivos nuevos se vinculan con un código de 6 números."],["stock_valorizado","Gestión con valores (responsable)","El responsable de local ve la solapa Gestión."],["ver_diferencias","Ver diferencias de conteo","El responsable ve el resultado de los conteos que pide supervisión."]]],
  ["Rubros que lleva",[["lleva_vasquetas","Vasquetas"],["lleva_baldes","Baldes"],["lleva_icepops","Icepops"],["lleva_glutenfree","Gluten Free"],["lleva_chocolateria","Chocolatería"],["lleva_pasteleria","Pastelería"],["lleva_bolleria","Bollería"]]],
  ["Escáner y kilos",[["kilos_reales","Kilos reales","Las vasquetas se cuentan en kilos en vez de unidades."],["escaner","Escáner","Leer el rótulo de la vasqueta con el lector o la cámara."]]],
- ["Producción",[["produccion","Produce helado","Aparece la pantalla de Producción."],["ingreso_solo_produccion","Ingreso = Producción","Solo fabrica: no recibe remito."],["produce_vasquetas","Produce vasquetas","Qué rubros fabrica (solo vale con «Produce helado»)."],["produce_baldes","Produce baldes"],["produce_icepops","Produce icepops"],["produce_glutenfree","Produce gluten free"],["produce_chocolateria","Produce chocolatería"]]]
+ ["Producción",[["produccion","Produce helado","Aparece la pantalla de Producción."],["ingreso_solo_produccion","Ingreso = Producción","Solo fabrica: no recibe remito."],["produce_vasquetas","Produce vasquetas","Se habilitan al prender «Produce helado»."],["produce_baldes","Produce baldes"],["produce_icepops","Produce icepops"],["produce_glutenfree","Produce gluten free"],["produce_chocolateria","Produce chocolatería"]]]
 ];
 const LA_DET={
  activo:"<b>Qué hace:</b> el local puede entrar y operar. Al apagarlo (baja), nadie del local puede entrar. <b>Qué se conserva:</b> todos los movimientos y el historial. Se puede volver a dar de alta cuando quieras.",
@@ -4513,7 +4514,7 @@ const LA_DET={
  produccion:"<b>Qué hace:</b> aparece la pantalla de Producción en Ingreso: se cargan los kilos fabricados y las vasquetas resultantes (los Icepops, por unidades). Habilita el rol Producción.",
  ingreso_solo_produccion:"<b>Qué hace:</b> el Ingreso es directamente Producción, sin remito ni lector de fotos. <b>Cuándo:</b> locales que solo fabrican, como Marruecos. Solo vale si «Produce helado» está prendido."
 };
-const LA_PROD_DET="<b>Qué hace:</b> en la pantalla de Producción del local solo aparecen los rubros que fabrica. Debe quedar al menos uno. <b>Aclaración:</b> solo tiene efecto si «Produce helado» está prendido; el resto de los rubros se sigue recibiendo por Ingreso como siempre.";
+const LA_PROD_DET="<b>Qué hace:</b> en la pantalla de Producción del local solo aparecen los rubros que fabrica. Debe quedar al menos uno. <b>Cuándo se pueden tocar:</b> solo con «Produce helado» prendido; si está apagado, los rubros quedan apagados y no se pueden cambiar. El resto de los rubros se sigue recibiendo por Ingreso como siempre.";
 const LA_PROD_TXT={vasquetas:"vasquetas",baldes:"baldes",icepops:"icepops",glutenfree:"gluten free",chocolateria:"chocolatería"};
 const LA_RUBRO_DET="<b>Qué hace:</b> si se apaga, el rubro desaparece de este local: Salida, Ingreso, Stock, Conteo y Pedido. No toca el catálogo ni a otros locales. Para volver a verlo se prende de nuevo.";
 const LA_RUBROS_TXT={vasquetas:"vasquetas",baldes:"baldes",icepops:"icepops",glutenfree:"gluten free",chocolateria:"chocolatería",pasteleria:"pastelería",bolleria:"bollería"};
@@ -4611,7 +4612,7 @@ function laAbrir(nombre){
     <div class="laSec laCampos"><label class="laCampo"><span>Nombre</span><input id="laN" value="${esc(base.nombre)}" placeholder="Ej. Palermo CABA"${nuevo?"":" readonly"} maxlength="60" autocomplete="off"></label><label class="laCampo"><span>Región</span><input id="laR" value="${esc(base.region)}" placeholder="Ej. CABA" maxlength="40" autocomplete="off"></label>
     <div class="laCampo col"><span>Tipo</span><div class="laSegs" role="group" aria-label="Tipo de local">${["Propios","Franquicias"].map(g=>`<button type="button" class="laSeg" data-la-tipo="${g}" aria-pressed="${tipo===g}">${g}</button>`).join("")}</div></div>
     <div class="laCampo col"><span>País</span><div class="laChips" role="group" aria-label="País">${paises.map(p=>`<button type="button" class="laChip" data-la-paisset="${esc(p)}" aria-pressed="${pais===p}">${esc(p)}</button>`).join("")}<button type="button" class="laChip" data-la-paisotro aria-pressed="false">Otro…</button></div><input id="laPOtro" placeholder="Escribí el país" maxlength="30" autocomplete="off" hidden style="border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)"></div></div>
-    ${LA_OPCIONES.map(([t,os])=>`<details class="laAcc2" data-sec="${t}"${t==="Operación"?" open":""}><summary><span>${t}</span><span class="res" data-res></span><span class="chev" aria-hidden="true">›</span></summary><div class="laSec">${os.map(([k,tit,d])=>laInterruptor(base,k,tit,d,k==="control_equipos"?cupoHTML:"")).join("")}</div></details>`).join("")}
+    ${LA_OPCIONES.map(([t,os])=>`<details class="laAcc2" data-sec="${t}"><summary><span>${t}</span><span class="res" data-res></span><span class="chev" aria-hidden="true">›</span></summary><div class="laSec">${os.map(([k,tit,d])=>laInterruptor(base,k,tit,d,k==="control_equipos"?cupoHTML:"")).join("")}</div></details>`).join("")}
     ${nuevo?`<p class="laNota">Al crearlo, el local arranca con todos los rubros, sin contraseña y con control de dispositivos prendido. Después generás el código de 6 números desde Equipo.</p>`:""}
     <div class="laCambios" id="laCam" hidden></div><p class="laErr" id="laErr" hidden></p>
     ${nuevo?"":`<div class="laSec" style="padding:0">${laOn(base,"activo")?`<button class="laAcc rojo" type="button" data-la-baja>Dar de baja este local</button>`:`<button class="laAcc" type="button" data-la-alta>Dar de alta este local</button>`}<div class="laConf" id="laConf" hidden><p>Para dar de baja escribí el nombre del local: <b>${esc(base.nombre)}</b>. Los movimientos y el historial se conservan.</p><input id="laConfN" placeholder="Nombre del local" autocomplete="off"><button class="btn" type="button" data-la-baja-ok disabled>Confirmar baja</button></div></div>`}
@@ -4622,6 +4623,7 @@ function laAbrir(nombre){
   const err=m=>{ const e=q("#laErr"); e.textContent=m; e.hidden=!m };
   const paisFinal=()=>otro?q("#laPOtro").value.trim():pais;
   const cambios=()=>{ const lista=[]; ov.querySelectorAll("[data-la-k]").forEach(sw=>{ if(!!base.opciones[sw.dataset.laK]!==sw.checked) lista.push([sw.dataset.laK,sw.checked,sw.getAttribute("aria-label")]) }); return lista };
+  const dependeProd=()=>{ const on=q("[data-la-k='produccion']").checked; ov.querySelectorAll("[data-la-k^='produce_'],[data-la-k='ingreso_solo_produccion']").forEach(sw=>{ sw.disabled=!on; const fila=sw.closest(".laOpt"); if(fila) fila.classList.toggle("laOff",!on) }) };
   const resSec=()=>ov.querySelectorAll("[data-sec]").forEach(d=>{ const t=d.dataset.sec, sws=[...d.querySelectorAll("[data-la-k]")], on=sws.filter(x=>x.checked).length; d.querySelector("[data-res]").textContent=t==="Operación"?(q("[data-la-k='activo']").checked?"Activo":"De baja"):t==="Rubros que lleva"?on+" de "+sws.length:t==="Producción"?(q("[data-la-k='produccion']").checked?(()=>{ const n=sws.filter(x=>x.dataset.laK.indexOf("produce_")===0&&x.checked).map(x=>LA_PROD_TXT[x.dataset.laK.slice(8)]); return n.length&&n.length<5?"Produce "+n.join(", "):"Produce" })():"No produce"):(on?on+" prendido"+(on===1?"":"s"):"Nada prendido") });
   const resumen=()=>{ resSec(); const c=cambios(), cu=cupo!==(base.maxEquipos||3), e=q("#laCam"); const tx=c.map(x=>x[2]+": "+(x[1]?"SÍ":"NO")).concat(cu?["Dispositivos permitidos: "+cupo]:[]); e.hidden=nuevo||!tx.length; e.textContent=tx.length?"Vas a cambiar: "+tx.join(" · "):"" };
   const guardar=async(extra)=>{
@@ -4640,7 +4642,7 @@ function laAbrir(nombre){
     if(r&&r.ok){ ov.remove(); L.datos=null; cargarLocalesAdm(); toast(nuevo?"Local creado":(r.sinCambios?"Sin cambios":"Cambios guardados")); return }
     err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":((r&&r.error)||"No se pudo guardar."));
   };
-  ov.addEventListener("change",e=>{ if(e.target.matches("[data-la-k]")){ if(e.target.dataset.laK==="control_equipos"){ const cp=q("#laCupo"); cp.toggleAttribute("data-off",!e.target.checked); q("#laCupoSub").textContent=e.target.checked?"de 1 a 20":"Queda guardado, pero solo rige si prendés el control de dispositivos." } resumen() } });
+  ov.addEventListener("change",e=>{ if(e.target.matches("[data-la-k]")){ if(e.target.dataset.laK==="control_equipos"){ const cp=q("#laCupo"); cp.toggleAttribute("data-off",!e.target.checked); q("#laCupoSub").textContent=e.target.checked?"de 1 a 20":"Queda guardado, pero solo rige si prendés el control de dispositivos." } if(e.target.dataset.laK==="produccion") dependeProd(); resumen() } });
   ov.addEventListener("input",e=>{ if(e.target.id==="laConfN"){ const b=q("[data-la-baja-ok]"); if(b) b.disabled=e.target.value.trim().toLowerCase()!==base.nombre.toLowerCase() } });
   ov.addEventListener("click",e=>{
     if(e.target===ov||e.target.closest("[data-la-cerrar]")){ ov.remove(); return }
@@ -4656,7 +4658,7 @@ function laAbrir(nombre){
     if(e.target.closest("[data-la-alta]")){ guardar({activo:true}); return }
   });
   ov.addEventListener("keydown",e=>{ if(e.key==="Escape") ov.remove() });
-  resSec();
+  dependeProd(); resSec();
 }
 /** Aviso con «Deshacer» después de un cambio en varios locales: vuelve cada opción tocada a lo que tenía cada local. */
 function laAvisoDeshacer(previo,kSel,cupoSel,cambiados){
@@ -4677,7 +4679,7 @@ function laAvisoDeshacer(previo,kSel,cupoSel,cambiados){
 }
 function laMasivo(){
   const L=laEstado(), C=controlEstado(), ls=Object.keys(C.sel||{}).filter(n=>C.sel[n]); if(!ls.length) return;
-  let cupo; const sel={}; let conf=false; const abierto={"Operación":true}; // cupo = undefined (no cambiar) o 1–20; sel[k] = true (prender) | false (apagar) | sin definir (no cambiar)
+  let cupo; const sel={}; let conf=false; const abierto={}; // cupo = undefined (no cambiar) o 1–20; sel[k] = true (prender) | false (apagar) | sin definir (no cambiar)
   const ov=document.createElement("div"); ov.className="mantenerOv"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
   const conteo=()=>{ const ks=Object.keys(sel); let cambios=0, locs=0; ls.forEach(n=>{ const l=L.datos.find(x=>x.nombre===n); if(!l) return; const c=ks.filter(k=>laOn(l,k)!==sel[k]).length+((cupo!==undefined&&(l.maxEquipos||3)!==cupo)?1:0); if(c){ locs++; cambios+=c } }); return {ks,cambios,locs,n:ks.length+(cupo!==undefined?1:0)} };
   const pintar=()=>{
