@@ -1,0 +1,158 @@
+// Panel de locales (solo admin): lista, filtros, hoja con interruptores y «Qué hace», alta, baja con confirmación, cambio en varios, grupos
+// y legibilidad: el contraste de cada texto se mide en el tema crema y en el dorado.
+const { chromium } = require("playwright");
+(async () => {
+  const b = await chromium.launch();
+  const page = await (await b.newContext({ viewport: { width: 1100, height: 900 } })).newPage();
+  const err = [], posts = [];
+  page.on("pageerror", e => err.push(e.message)); page.on("console", m => { if (m.type() === "error" && !/Failed to load|ERR_|fonts|404/.test(m.text())) err.push(m.text()) });
+  page.on("request", q => { if (q.method() === "POST") { try { const j = JSON.parse(q.postData() || "{}"); if (/LocalAdmin|localesAdmin/.test(j.accion || "")) posts.push(j) } catch (e) {} } });
+  let fallas = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) fallas++ };
+  await page.addInitScript(() => localStorage.setItem("idioma", "es"));
+  await page.goto("http://localhost:8999/"); await page.waitForSelector("#authLocal");
+  await page.fill("#authLocal", "Operaciones"); await page.click("#authLocalOk");
+  await page.fill("#authClave", "op2024"); await page.click("#authClaveOk");
+  await page.waitForSelector("[data-authemp]"); await page.click("[data-authemp]");
+  if (await page.waitForSelector("[data-tecla]", { timeout: 900 }).catch(() => null)) { for (const d of "1234") await page.click('[data-tecla="' + d + '"]') }
+  await page.waitForSelector("header"); await page.waitForTimeout(400);
+  const txt = () => page.innerText("#main");
+
+  // --- contraste: cada texto contra el fondo real que tiene detrás ---
+  const contraste = async (nombre) => {
+    const r = await page.evaluate(() => {
+      const num = s => (s.match(/[\d.]+/g) || []).map(Number);
+      const mez = (f, b) => { const a = f[3] === undefined ? 1 : f[3]; return [f[0] * a + b[0] * (1 - a), f[1] * a + b[1] * (1 - a), f[2] * a + b[2] * (1 - a), 1] };
+      const lum = c => { const v = c.slice(0, 3).map(x => { x /= 255; return x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4) }); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2] };
+      const hex = h => { h = h.trim().replace("#", ""); return h.length === 6 ? [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), 1] : [255, 255, 255, 1] };
+      const raizBg = hex(getComputedStyle(document.documentElement).getPropertyValue("--bg"));
+      // Posibles fondos de un elemento: con degradé se consideran todos sus colores (se toma el peor caso).
+      const fondos = el => { for (let e = el; e; e = e.parentElement) { const cs = getComputedStyle(e), c = num(cs.backgroundColor), gi = cs.backgroundImage;
+        if (/gradient/.test(gi)) { const cols = (gi.match(/rgba?\([^)]*\)/g) || []).map(num).filter(x => x.length >= 3 && (x[3] === undefined || x[3] > 0)); if (cols.length) { const base = e.parentElement ? fondos(e.parentElement)[0] : raizBg; return cols.map(x => mez(x, base)) } }
+        if (c.length >= 3 && (c[3] === undefined || c[3] > 0)) { if (c[3] === undefined || c[3] >= 1) return [[c[0], c[1], c[2], 1]]; const base = fondos(e.parentElement || document.documentElement)[0]; return [mez(c, base)] } }
+        return [raizBg] };
+      const raiz = [...document.querySelectorAll(".la, .laBox")];
+      const malos = []; let n = 0;
+      raiz.forEach(rz => rz.querySelectorAll("*").forEach(el => {
+        if (el.hidden || el.closest("[hidden]")) return;
+        const cs = getComputedStyle(el); if (cs.visibility === "hidden" || cs.display === "none") return;
+        const tieneTexto = [...el.childNodes].some(x => x.nodeType === 3 && x.textContent.trim()) || (/INPUT|SELECT/.test(el.tagName) && el.type !== "checkbox" && (el.value || "").trim());
+        if (!tieneTexto) return;
+        const r = el.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+        let ratio = 99; fondos(el).forEach(bg => { const fg = mez(num(cs.color), bg), a = lum(fg), c = lum(bg); ratio = Math.min(ratio, (Math.max(a, c) + .05) / (Math.min(a, c) + .05)) });
+        const px = parseFloat(cs.fontSize), grande = px >= 24 || (px >= 18.66 && +cs.fontWeight >= 700);
+        n++; if (ratio < (grande ? 3 : 4.5)) malos.push({ t: ((el.textContent || el.value || "").trim()).slice(0, 40), ratio: Math.round(ratio * 100) / 100, cls: el.className })
+      }));
+      return { n, malos };
+    });
+    ok(r.n > 10 && r.malos.length === 0, "contraste (" + nombre + "): " + r.n + " textos medidos, " + r.malos.length + " con poco contraste " + JSON.stringify(r.malos.slice(0, 5)));
+  };
+
+  // 1) la pestaña existe solo para admin y carga la lista
+  ok(await page.$("#tabs [data-t='locales']") !== null, "admin ve la pestaña «Locales» en Operaciones");
+  await page.click("#tabs [data-t='locales']"); await page.waitForSelector("[data-la-l]");
+  ok((await page.$$("[data-la-l]")).length === 4, "lista los 4 locales activos");
+  ok(/Activos\s*4/.test(await txt()) && /De baja\s*1/.test(await txt()), "los contadores dicen Activos 4 y De baja 1");
+  ok(await page.$eval("[data-la-l='Torreon Mar del Plata']", e => /Kilos reales/.test(e.innerText) && /Escáner/.test(e.innerText)), "Torreón muestra sus etiquetas (Kilos reales, Escáner)");
+  ok(await page.$eval("[data-la-l='Obelisco CABA']", e => /Sin baldes/.test(e.innerText)), "Obelisco muestra «Sin baldes»");
+  await contraste("lista, crema");
+
+  // 2) filtros
+  await page.click("[data-la-f='baja']"); await page.waitForTimeout(150);
+  ok((await page.$$("[data-la-l]")).length === 1 && /Bllis/.test(await txt()), "«De baja» muestra solo Bllis");
+  await page.click("[data-la-f='todos']");
+  await page.fill("#laQ", "uni"); await page.waitForTimeout(200);
+  ok((await page.$$("[data-la-l]")).length === 1 && /Unicenter/.test(await txt()), "el buscador filtra («uni» → Unicenter)");
+  await page.fill("#laQ", ""); await page.waitForTimeout(150);
+  await page.click("[data-la-of='kilos_reales']"); await page.waitForTimeout(150);
+  ok((await page.$$("[data-la-l]")).length === 1, "«Con kilos reales» deja solo a Torreón");
+  await page.click("[data-la-of='kilos_reales']");
+
+  // 3) hoja: interruptores, «Qué hace», cambios y guardado
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox");
+  ok(await page.$eval("[data-la-k='kilos_reales']", e => e.checked) && await page.$eval("[data-la-k='escaner_salida']", e => e.checked), "la hoja muestra los interruptores prendidos de Torreón");
+  ok(await page.$eval("#ladt-kilos_reales", e => e.hidden), "el «Qué hace» arranca contraído");
+  await page.click("[data-la-mas='kilos_reales']");
+  ok(!(await page.$eval("#ladt-kilos_reales", e => e.hidden)) && /Conteo con kilos/.test(await page.innerText("#ladt-kilos_reales")), "«Qué hace» se despliega y explica la recomendación");
+  await page.click("[data-la-todo]");
+  ok((await page.$$eval(".laDt", e => e.filter(x => !x.hidden).length)) >= 18, "«Desplegar todos los detalles» abre todas las explicaciones");
+  await contraste("hoja con todo desplegado, crema");
+  await page.click("[data-la-todo]");
+  await page.click("[data-la-k='escaner_salida']");
+  ok(/Vas a cambiar: Escáner en Salida: NO/.test(await page.innerText("#laCam")), "antes de guardar avisa qué va a cambiar");
+  posts.length = 0; await page.click("[data-la-guardar]"); await page.waitForTimeout(700);
+  const pg = posts.find(p => p.accion === "guardarLocalAdmin");
+  ok(pg && pg.local === "Torreon Mar del Plata" && pg.opciones.escaner_salida === false && Object.keys(pg.opciones).length === 1, "manda solo lo que cambió: " + JSON.stringify(pg && pg.opciones));
+  ok(await page.$(".laBox") === null && posts.some(p => p.accion === "localesAdmin") && (await page.$("[data-la-l='Torreon Mar del Plata']")) !== null, "se cierra y la lista se vuelve a pedir al servidor");
+
+  // 4) alta de un local nuevo
+  await page.click("[data-la-nuevo]"); await page.waitForSelector("#laN");
+  await page.fill("#laN", "Palermo CABA"); await page.fill("#laR", "CABA");
+  posts.length = 0; await page.click("[data-la-guardar]"); await page.waitForTimeout(800);
+  ok(posts.some(p => p.accion === "crearLocalAdmin" && p.nombre === "Palermo CABA") && (await page.$("[data-la-l='Palermo CABA']")) !== null, "el local nuevo se crea y aparece en la lista");
+  await page.click("[data-la-nuevo]"); await page.waitForSelector("#laN"); await page.fill("#laN", "palermo caba");
+  await page.click("[data-la-guardar]"); await page.waitForTimeout(500);
+  ok(/Ya existe/.test(await page.innerText("#laErr")) && await page.$(".laBox") !== null, "un nombre repetido avisa y no cierra la hoja");
+  await page.click("[data-la-cerrar]");
+
+  // 5) baja con confirmación escribiendo el nombre
+  await page.click("[data-la-l='Obelisco CABA']"); await page.waitForSelector(".laBox");
+  await page.click("[data-la-baja]");
+  ok(!(await page.$eval("#laConf", e => e.hidden)) && await page.$eval("[data-la-baja-ok]", e => e.disabled), "dar de baja pide escribir el nombre y el botón arranca apagado");
+  await contraste("hoja con la confirmación de baja, crema");
+  await page.fill("#laConfN", "Obelisco"); ok(await page.$eval("[data-la-baja-ok]", e => e.disabled), "con el nombre incompleto sigue apagado");
+  await page.fill("#laConfN", "obelisco caba");
+  ok(!(await page.$eval("[data-la-baja-ok]", e => e.disabled)), "con el nombre completo se habilita");
+  posts.length = 0; await page.click("[data-la-baja-ok]"); await page.waitForTimeout(700);
+  ok(posts.some(p => p.accion === "guardarLocalAdmin" && p.local === "Obelisco CABA" && p.opciones.activo === false), "manda activo=false (baja)");
+  await page.click("[data-la-f='baja']"); await page.waitForTimeout(150);
+  ok(await page.$("[data-la-l='Obelisco CABA']") !== null, "el local dado de baja aparece en «De baja»");
+  await page.click("[data-la-f='todos']");
+
+  // 6) cambiar una opción en varios
+  await page.check("[data-la-ck='Unicenter']"); await page.check("[data-la-ck='Marruecos']"); await page.waitForTimeout(150);
+  ok(/2 marcados/.test(await page.innerText(".laBarra")), "la barra dice «2 marcados»");
+  await page.click("[data-la-masivo]"); await page.waitForSelector("[data-la-m]");
+  ok(await page.$eval("[data-la-ok]", e => e.disabled), "sin elegir ningún cambio, «Aplicar» está apagado");
+  await page.click("[data-la-m='kilos_reales'][data-v='1']"); await page.click("[data-la-m='escaner_salida'][data-v='1']"); await page.click("[data-la-m='lleva_baldes'][data-v='0']");
+  ok(/Cambia 3 opciones en 2 de 2 locales/.test(await page.innerText("#laMres")), "se pueden elegir varias opciones juntas y avisa cuántas cambian: " + (await page.innerText("#laMres")));
+  await contraste("cambio en varios, crema");
+  await page.click("[data-la-m='activo'][data-v='0']");
+  ok(await page.$eval("[data-la-ok]", e => e.disabled) && await page.$("#laMconf") !== null, "elegir «baja» pide confirmar y apaga «Aplicar» hasta marcarlo");
+  await contraste("cambio en varios con baja, crema");
+  await page.click("[data-la-m='activo'][data-v='']");
+  ok(await page.$("#laMconf") === null && !(await page.$eval("[data-la-ok]", e => e.disabled)), "al volver a «No cambiar» la confirmación desaparece");
+  posts.length = 0; await page.click("[data-la-ok]"); await page.waitForTimeout(800);
+  const pm = posts.find(p => p.accion === "localesAdminMasivo");
+  ok(pm && pm.locales.length === 2 && pm.opciones.kilos_reales === true && pm.opciones.escaner_salida === true && pm.opciones.lleva_baldes === false && !("activo" in pm.opciones), "manda las 3 opciones y solo a los 2 locales: " + JSON.stringify(pm && pm.opciones));
+  ok(await page.$(".laBarra") === null, "la selección se limpia");
+
+  // 6b) baja y alta de varios de una vez
+  await page.click("[data-la-f='fran']"); await page.waitForTimeout(150);
+  await page.check("[data-la-ck='Marruecos']"); await page.click("[data-la-masivo]"); await page.waitForSelector("[data-la-m]");
+  await page.click("[data-la-m='activo'][data-v='0']"); await page.check("#laMconf");
+  posts.length = 0; await page.click("[data-la-ok]"); await page.waitForTimeout(800);
+  ok(posts.some(p => p.accion === "localesAdminMasivo" && p.opciones.activo === false), "la baja de varios manda activo=false");
+  await page.click("[data-la-f='todos']"); await page.waitForTimeout(100);
+
+  // 7) grupos (los mismos de Control)
+  await page.check("[data-la-ck='Unicenter']");
+  await page.click("[data-la-agrupar]"); await page.waitForSelector(".cgHoja");
+  ok(/Mover a/.test(await page.innerText(".cgHoja")), "«Agrupar» abre la hoja para elegir o crear un grupo");
+  await page.click("[data-no]"); await page.click("[data-la-nada]");
+  ok(await page.$("[data-la-gnuevo]") !== null, "hay un botón «+ Grupo» para crear un grupo vacío");
+
+  // 8) tema dorado
+  await page.evaluate(() => document.documentElement.setAttribute("data-tema", "dorado")); await page.waitForTimeout(200);
+  await contraste("lista, dorado");
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await page.click("[data-la-todo]");
+  await contraste("hoja con todo desplegado, dorado");
+  await page.click("[data-la-cerrar]");
+  await page.evaluate(() => document.documentElement.removeAttribute("data-tema"));
+
+  // 9) un supervisor no ve la pestaña
+  await page.evaluate(() => { S.empleado.rol = "supervisor"; renderApp() }); await page.waitForTimeout(200);
+  ok(await page.$("#tabs [data-t='locales']") === null, "el supervisor no ve la pestaña «Locales»");
+
+  console.log("errores:", err.length ? err : "ninguno"); await b.close();
+  console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); process.exit(fallas || err.length ? 1 : 0);
+})();

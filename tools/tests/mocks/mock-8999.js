@@ -125,6 +125,19 @@ function resp(b){
       grupos:[{g:"vasquetas",kg:true,cam:c.camKg,loc:26.5,tot:c.camKg+26.5,esperado:esCmp?188.9:null,dif:esCmp?-18.9:null,pct:esCmp?-9.4:null,productos:[prod("4","Banana Split",20.5,2,23.7,25,5,6,0.3),prod("20","Frutilla",9.8,1,9.5,8,4,2,0.5)],ini:33,ing:9,sal:8,merma:0.8,locIni:2},
         {g:"icepops",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1240:null,dif:esCmp?0:null,pct:esCmp?0:null,productos:[{id:"49",nombre:"Frutilla icepop",kg:false,cam:1240,loc:96,tot:1336,esperado:esCmp?1336:null,dif:esCmp?0:null,ini:esCmp?1300:null,ing:esCmp?300:null,sal:esCmp?264:null,merma:esCmp?0:null}],ini:1300,ing:300,sal:264,merma:0}],varLocal:esCmp?{kg:1.5,u:-4}:null}; }
   if(a==="inventarios") return {ok:true,verValor:true,verDiferencias:true,inventarios:db.inv.filter(x=>x.local===b.local).slice().reverse()};
+  if(a==="localesAdmin"||a==="guardarLocalAdmin"||a==="crearLocalAdmin"||a==="localesAdminMasivo"){
+    db.la=db.la||[
+      {nombre:"Torreon Mar del Plata",grupo:"Propios",region:"Mar del Plata",pais:"Argentina",opciones:{activo:true,kilos_reales:true,escaner_salida:true,escaner_conteo:true,venta_dia:true,control_equipos:true,ver_diferencias:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}},
+      {nombre:"Obelisco CABA",grupo:"Propios",region:"CABA",pais:"Argentina",opciones:{activo:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:false,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}},
+      {nombre:"Unicenter",grupo:"Propios",region:"GBA",pais:"Argentina",opciones:{activo:true,produccion:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}},
+      {nombre:"Marruecos",grupo:"Franquicias",region:"Marruecos",pais:"Marruecos",opciones:{activo:true,produccion:true,ingreso_solo_produccion:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:false,lleva_pasteleria:true,lleva_bolleria:true}},
+      {nombre:"Bllis",grupo:"Franquicias",region:"GBA",pais:"Argentina",opciones:{activo:false,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}}];
+    console.log("LOCALESADMIN",a,JSON.stringify(b).slice(0,160));
+    if(a==="localesAdmin") return {ok:true,locales:db.la};
+    if(a==="crearLocalAdmin"){ if(db.la.some(l=>l.nombre.toLowerCase()===String(b.nombre).toLowerCase())) return {ok:false,error:"Ya existe un local con ese nombre."}; db.la.push({nombre:b.nombre,grupo:b.grupo,region:b.region||"",pais:b.pais||"Argentina",opciones:{activo:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}}); return {ok:true}; }
+    if(a==="guardarLocalAdmin"){ const l=db.la.find(x=>x.nombre===b.local); if(!l) return {ok:false,error:"No se encontró ese local."}; Object.assign(l.opciones,b.opciones||{}); if(b.grupo) l.grupo=b.grupo; if(b.region!==undefined) l.region=b.region; if(b.pais) l.pais=b.pais; return {ok:true}; }
+    if(a==="localesAdminMasivo"){ let c=0; (b.locales||[]).forEach(n=>{ const l=db.la.find(x=>x.nombre===n); if(l&&!!l.opciones[b.clave]!==!!b.valor){ l.opciones[b.clave]=!!b.valor; c++ } }); return {ok:true,cambiados:c,iguales:0,noEncontrados:[]}; }
+  }
   if(a==="registrar"){
     if(l.kilosReales && b.subtipo!=="transferencia"){
       const ids=Object.keys(b.items).filter(i=>vasq(i)&&b.items[i]>0);

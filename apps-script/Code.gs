@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.117.0";
+const BACKEND_VERSION = "1.118.1";
 
 function doPost(e) {
   let resultado;
@@ -154,6 +154,10 @@ function _despacharConSesion(accion, body, empleado) {
     case "saborPaisMasivo": return saborPaisMasivo(body.ids, body.pais, body.modo, empleado);
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
+    case "localesAdmin": return localesAdmin(empleado);
+    case "guardarLocalAdmin": return guardarLocalAdmin(body.local, body.opciones, body.grupo, body.region, body.pais, empleado);
+    case "crearLocalAdmin": return crearLocalAdmin(body.nombre, body.grupo, body.region, body.pais, empleado);
+    case "localesAdminMasivo": return localesAdminMasivo(body.locales, body.clave, body.valor, empleado, body.opciones);
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
     case "guardarProduccionSabores": return guardarProduccionSabores(body.local, body.ids, empleado);
     case "equiposLocal": return equiposLocal(body.local, empleado);
@@ -4126,6 +4130,130 @@ function adminLocal(local, empleado) {
     }
     _auditar("admin_local", empleado.id, empleado.nombre, "Local " + local.nombre);
     return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** (1.118.0) Panel de locales (solo admin): opciones que se prenden y apagan por local, en vez de editar la hoja a mano. */
+const LOCAL_OPCIONES = ["activo", "venta_dia", "control_equipos", "stock_valorizado", "ver_diferencias", "kilos_reales", "escaner_salida", "escaner_conteo", "sin_escaner", "produccion", "ingreso_solo_produccion"]
+  .concat(RUBROS_PEDIDO.map((r) => "lleva_" + r));
+const LOCAL_GRUPOS = ["Propios", "Franquicias"];
+/** Valor de cada opción de un local. Vacío = su valor por defecto: «activo» y los rubros (lleva_…) arrancan en SÍ; el resto en NO. */
+function _opcionesDeLocal(fila) {
+  const o = {};
+  LOCAL_OPCIONES.forEach((k) => { const v = _esVerdadero(fila[k]); o[k] = v === null ? (k === "activo" || k.indexOf("lleva_") === 0) : v; });
+  return o;
+}
+function _soloAdminLocales(empleado) { return empleado.rol === "admin" ? null : { ok: false, error: "Solo un administrador puede editar los locales." }; }
+function localesAdmin(empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  const filas = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() && _esVerdadero(l.operaciones) !== true);
+  return { ok: true, locales: filas.map((l) => ({ nombre: String(l.nombre).trim(), grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(), pais: _paisDeLocal(l), opciones: _opcionesDeLocal(l) })) };
+}
+/** Escribe valores en la fila de un local de la hoja Locales, por nombre de columna. Devuelve {ok} o {ok:false, error} si falta una columna. */
+function _escribirEnLocal(nombre, valores) {
+  const sheet = _sheet("Locales");
+  const filas = sheet.getDataRange().getValues();
+  const headers = filas[0].map((h) => String(h).trim());
+  const colNombre = headers.indexOf("nombre");
+  let idx = -1;
+  for (let i = 1; i < filas.length; i++) if (String(filas[i][colNombre]).trim() === String(nombre).trim()) { idx = i; break; }
+  if (idx < 0) return { ok: false, error: "No se encontró el local " + nombre + "." };
+  const faltan = Object.keys(valores).filter((k) => headers.indexOf(k) < 0);
+  if (faltan.length) return { ok: false, error: "Falta la columna «" + faltan.join("», «") + "» en la hoja Locales." };
+  Object.keys(valores).forEach((k) => _escribirCeldaSinAdivinar(sheet.getRange(idx + 1, headers.indexOf(k) + 1), valores[k]));
+  if (HOJAS_CACHE["Locales"]) _invalidarHojaCache("Locales");
+  return { ok: true };
+}
+function _siNo(b) { return b ? "SI" : "NO"; }
+function guardarLocalAdmin(local, opciones, grupo, region, pais, empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  local = String(local || "").trim();
+  if (!local) return { ok: false, error: "Falta el local." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === local)[0];
+    if (!fila || _esVerdadero(fila.operaciones) === true) return { ok: false, error: "No se encontró ese local." };
+    const antes = _opcionesDeLocal(fila), valores = {}, detalle = [];
+    Object.keys(opciones || {}).forEach((k) => {
+      if (LOCAL_OPCIONES.indexOf(k) === -1) return;
+      const nuevo = opciones[k] === true || opciones[k] === "SI";
+      if (nuevo !== antes[k]) { valores[k] = _siNo(nuevo); detalle.push(k + ": " + _siNo(antes[k]) + " → " + _siNo(nuevo)); }
+    });
+    if (grupo !== undefined && grupo !== null && String(grupo).trim() !== String(fila.grupo || "").trim()) {
+      if (LOCAL_GRUPOS.indexOf(String(grupo).trim()) === -1) return { ok: false, error: "El tipo de local es Propios o Franquicias." };
+      valores.grupo = String(grupo).trim(); detalle.push("grupo → " + valores.grupo);
+    }
+    if (region !== undefined && region !== null && String(region).trim().slice(0, 40) !== String(fila.region || "").trim()) { valores.region = String(region).trim().slice(0, 40); detalle.push("región → " + valores.region); }
+    if (pais !== undefined && pais !== null && String(pais).trim().slice(0, 30) !== _paisDeLocal(fila)) { valores.pais = String(pais).trim().slice(0, 30); detalle.push("país → " + valores.pais); }
+    if (!Object.keys(valores).length) return { ok: true, sinCambios: true };
+    const r = _escribirEnLocal(local, valores);
+    if (!r.ok) return r;
+    _auditar("admin_local_opciones", empleado.id, empleado.nombre, local + ": " + detalle.join("; "));
+    const nueva = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === local)[0];
+    return { ok: true, local: { nombre: local, grupo: String(nueva.grupo || "").trim(), region: String(nueva.region || "").trim(), pais: _paisDeLocal(nueva), opciones: _opcionesDeLocal(nueva) } };
+  } finally {
+    lock.releaseLock();
+  }
+}
+function crearLocalAdmin(nombre, grupo, region, pais, empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  nombre = String(nombre || "").trim();
+  if (nombre.length < 2 || nombre.length > 60) return { ok: false, error: "Poné el nombre del local (entre 2 y 60 letras)." };
+  if (/[,|]/.test(nombre)) return { ok: false, error: "El nombre no puede llevar comas." };
+  grupo = String(grupo || "Franquicias").trim();
+  if (LOCAL_GRUPOS.indexOf(grupo) === -1) return { ok: false, error: "El tipo de local es Propios o Franquicias." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const ya = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim().toLowerCase() === nombre.toLowerCase())[0];
+    if (ya) return { ok: false, error: "Ya existe un local con ese nombre." };
+    const sheet = _sheet("Locales");
+    const headers = sheet.getDataRange().getValues()[0].map((h) => String(h).trim());
+    const base = { nombre: nombre, grupo: grupo, activo: "SI", region: String(region || "").trim().slice(0, 40), pais: String(pais || "Argentina").trim().slice(0, 30), control_equipos: "SI", venta_dia: "SI", max_equipos: 3 };
+    RUBROS_PEDIDO.forEach((r) => { base["lleva_" + r] = "SI"; });
+    if (headers.indexOf("pais") < 0) return { ok: false, error: "Falta la columna «pais» en la hoja Locales." };
+    const destino = sheet.getLastRow() + 1;
+    headers.forEach((h, i) => _escribirCeldaSinAdivinar(sheet.getRange(destino, i + 1), base[h] !== undefined ? base[h] : ""));
+    if (HOJAS_CACHE["Locales"]) _invalidarHojaCache("Locales");
+    _auditar("crear_local", empleado.id, empleado.nombre, nombre + " (" + grupo + ", " + base.pais + ")");
+    const nueva = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === nombre)[0];
+    return { ok: true, local: { nombre: nombre, grupo: grupo, region: base.region, pais: base.pais, opciones: _opcionesDeLocal(nueva || {}) } };
+  } finally {
+    lock.releaseLock();
+  }
+}
+/** Cambia una o varias opciones en varios locales de una vez (hasta 200 por pedido). `opciones` = {clave: true|false}; sin eso, `clave`/`valor` (una sola). */
+function localesAdminMasivo(locales, clave, valor, empleado, opciones) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  let pedido = {};
+  if (opciones && typeof opciones === "object" && Object.keys(opciones).length) Object.keys(opciones).forEach((k) => { pedido[k] = opciones[k] === true || opciones[k] === "SI"; });
+  else if (clave) pedido[clave] = valor === true || valor === "SI";
+  const claves = Object.keys(pedido);
+  if (!claves.length || claves.some((k) => LOCAL_OPCIONES.indexOf(k) === -1)) return { ok: false, error: "Esa opción no existe." };
+  if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
+  if (locales.length > 200) return { ok: false, error: "Demasiados locales de una vez." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    const filas = {};
+    _leerCrudo("Locales").forEach((l) => { filas[String(l.nombre || "").trim()] = l; });
+    const cambiados = [], iguales = [], noEncontrados = [];
+    locales.forEach((n) => {
+      n = String(n || "").trim();
+      const f = filas[n];
+      if (!f || _esVerdadero(f.operaciones) === true) { noEncontrados.push(n); return; }
+      const antes = _opcionesDeLocal(f), valores = {};
+      claves.forEach((k) => { if (antes[k] !== pedido[k]) valores[k] = _siNo(pedido[k]); });
+      if (!Object.keys(valores).length) { iguales.push(n); return; }
+      const r = _escribirEnLocal(n, valores);
+      if (!r.ok) { noEncontrados.push(n); return; }
+      cambiados.push(n);
+    });
+    if (cambiados.length) _auditar("admin_local_masivo", empleado.id, empleado.nombre, claves.map((k) => k + " → " + _siNo(pedido[k])).join("; ") + " en " + cambiados.length + " locales: " + cambiados.join(", ").slice(0, 400));
+    return { ok: true, cambiados: cambiados.length, iguales: iguales.length, noEncontrados: noEncontrados };
   } finally {
     lock.releaseLock();
   }
