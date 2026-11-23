@@ -55,6 +55,8 @@ const { chromium } = require("playwright");
   ok(await page.$eval("[data-la-l='Torreon Mar del Plata']", e => /Kilos reales/.test(e.innerText) && /Escáner/.test(e.innerText)), "Torreón muestra sus etiquetas (Kilos reales, Escáner)");
   ok(await page.$eval("[data-la-l='Obelisco CABA']", e => /Sin baldes/.test(e.innerText)), "Obelisco muestra «Sin baldes»");
   await contraste("lista, crema");
+  ok(await page.$eval("[data-la-l='Obelisco CABA']", e => /3 dispositivos/.test(e.innerText)), "un local con el cupo por defecto (celda vacía) muestra «3 dispositivos» en la lista");
+  ok(await page.$eval("[data-la-l='Unicenter']", e => /3 dispositivos/.test(e.innerText)) && await page.$eval("[data-la-l='Torreon Mar del Plata']", e => /3 dispositivos/.test(e.innerText)), "todos los que tienen control de dispositivos muestran su cupo");
   ok(await page.$("main select, #main select") === null || (await page.$$eval("#main .la select", e => e.length)) === 0, "la pantalla no tiene menús desplegables recuadrados (<select>)");
   const ch = await page.evaluate(() => [...document.querySelectorAll(".laChips")].map(c => ({ cortado: c.scrollWidth > c.clientWidth + 1, fuera: [...c.children].some(b => b.getBoundingClientRect().right > window.innerWidth + 1) })));
   ok(ch.length >= 3 && ch.every(c => !c.cortado && !c.fuera), "los filtros se ven completos: ninguno queda cortado ni fuera de la pantalla (" + ch.length + " filas)");
