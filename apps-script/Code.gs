@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.119.0";
+const BACKEND_VERSION = "1.120.0";
 
 function doPost(e) {
   let resultado;
@@ -4137,12 +4137,33 @@ function adminLocal(local, empleado) {
 
 /** (1.118.0) Panel de locales (solo admin): opciones que se prenden y apagan por local, en vez de editar la hoja a mano. */
 const LOCAL_OPCIONES = ["activo", "venta_dia", "control_equipos", "stock_valorizado", "ver_diferencias", "kilos_reales", "escaner_salida", "escaner_conteo", "sin_escaner", "produccion", "ingreso_solo_produccion"]
-  .concat(RUBROS_PEDIDO.map((r) => "lleva_" + r));
+  .concat(RUBROS_PEDIDO.map((r) => "lleva_" + r))
+  .concat(["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria"].map((r) => "produce_" + r));
+/** (1.120.0) Rubros que fabrica un local: la columna Locales.produccion_rubros es una lista («vasquetas,icepops»; vacía = todos). En el panel se ven como un interruptor por rubro (produce_<rubro>). */
+const RUBROS_PRODUCCION = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria"];
+function _produceDeFila(fila) { const l = _rubrosProduccion(fila && fila.produccion_rubros); return l.length ? l : RUBROS_PRODUCCION.slice(); }
+/** Aplica los pedidos produce_<rubro> sobre la lista actual del local. Devuelve {lista, igual}: la lista nueva (en orden fijo) y si no cambia nada. */
+function _aplicarProduce(fila, pedido) {
+  const antes = _produceDeFila(fila);
+  const set = antes.slice();
+  Object.keys(pedido).forEach((k) => {
+    if (k.indexOf("produce_") !== 0) return;
+    const r = k.slice(8), i = set.indexOf(r);
+    if (pedido[k] && i < 0) set.push(r);
+    if (!pedido[k] && i >= 0) set.splice(i, 1);
+  });
+  const lista = RUBROS_PRODUCCION.filter((r) => set.indexOf(r) >= 0);
+  return { lista: lista, igual: lista.join(",") === RUBROS_PRODUCCION.filter((r) => antes.indexOf(r) >= 0).join(",") };
+}
 const LOCAL_GRUPOS = ["Propios", "Franquicias"];
 /** Valor de cada opción de un local. Vacío = su valor por defecto: «activo» y los rubros (lleva_…) arrancan en SÍ; el resto en NO. */
 function _opcionesDeLocal(fila) {
   const o = {};
-  LOCAL_OPCIONES.forEach((k) => { const v = _esVerdadero(fila[k]); o[k] = v === null ? (k === "activo" || k.indexOf("lleva_") === 0) : v; });
+  const prod = _produceDeFila(fila);
+  LOCAL_OPCIONES.forEach((k) => {
+    if (k.indexOf("produce_") === 0) { o[k] = prod.indexOf(k.slice(8)) >= 0; return; }
+    const v = _esVerdadero(fila[k]); o[k] = v === null ? (k === "activo" || k.indexOf("lleva_") === 0) : v;
+  });
   return o;
 }
 /** Cupo de dispositivos de un local (columna max_equipos: vacía o fuera de 1–20 = el de siempre). */
@@ -4180,12 +4201,18 @@ function guardarLocalAdmin(local, opciones, grupo, region, pais, empleado, maxEq
   try {
     const fila = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === local)[0];
     if (!fila || _esVerdadero(fila.operaciones) === true) return { ok: false, error: "No se encontró ese local." };
-    const antes = _opcionesDeLocal(fila), valores = {}, detalle = [];
+    const antes = _opcionesDeLocal(fila), valores = {}, detalle = [], pedidoProd = {};
     Object.keys(opciones || {}).forEach((k) => {
       if (LOCAL_OPCIONES.indexOf(k) === -1) return;
       const nuevo = opciones[k] === true || opciones[k] === "SI";
+      if (k.indexOf("produce_") === 0) { pedidoProd[k] = nuevo; return; }
       if (nuevo !== antes[k]) { valores[k] = _siNo(nuevo); detalle.push(k + ": " + _siNo(antes[k]) + " → " + _siNo(nuevo)); }
     });
+    if (Object.keys(pedidoProd).length) {
+      const rp = _aplicarProduce(fila, pedidoProd);
+      if (!rp.lista.length) return { ok: false, error: "Dejá al menos un rubro que produce el local." };
+      if (!rp.igual) { valores.produccion_rubros = rp.lista.join(","); detalle.push("rubros que produce → " + rp.lista.join(", ")); }
+    }
     if (grupo !== undefined && grupo !== null && String(grupo).trim() !== String(fila.grupo || "").trim()) {
       if (LOCAL_GRUPOS.indexOf(String(grupo).trim()) === -1) return { ok: false, error: "El tipo de local es Propios o Franquicias." };
       valores.grupo = String(grupo).trim(); detalle.push("grupo → " + valores.grupo);
@@ -4257,7 +4284,12 @@ function localesAdminMasivo(locales, clave, valor, empleado, opciones, cupo) {
       const f = filas[n];
       if (!f || _esVerdadero(f.operaciones) === true) { noEncontrados.push(n); return; }
       const antes = _opcionesDeLocal(f), valores = {};
-      claves.forEach((k) => { if (antes[k] !== pedido[k]) valores[k] = _siNo(pedido[k]); });
+      claves.forEach((k) => { if (k.indexOf("produce_") !== 0 && antes[k] !== pedido[k]) valores[k] = _siNo(pedido[k]); });
+      if (claves.some((k) => k.indexOf("produce_") === 0)) {
+        const rp = _aplicarProduce(f, pedido);
+        if (!rp.lista.length) { noEncontrados.push(n + " (quedaría sin rubros que producir)"); return; }
+        if (!rp.igual) valores.produccion_rubros = rp.lista.join(",");
+      }
       if (cupoNuevo && _cupoDeFila(f) !== cupoNuevo) valores.max_equipos = cupoNuevo;
       if (!Object.keys(valores).length) { iguales.push(n); return; }
       const r = _escribirEnLocal(n, valores);

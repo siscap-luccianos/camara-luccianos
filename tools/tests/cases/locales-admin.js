@@ -125,6 +125,17 @@ const { chromium } = require("playwright");
   ok(pc && pc.maxEquipos === 5, "guarda el cupo (5): " + JSON.stringify(pc && pc.maxEquipos));
   ok(/5 dispositivos/.test(await page.innerText("[data-la-l='Torreon Mar del Plata']")), "la lista muestra la etiqueta «5 dispositivos»");
 
+  // 3c) rubros que produce el local
+  ok(await page.$eval("[data-la-l='Unicenter']", e => /Produce vasquetas/.test(e.innerText)) && await page.$eval("[data-la-l='Marruecos']", e => /Produce vasquetas, icepops/.test(e.innerText)), "la lista dice qué rubros produce cada local (Unicenter: vasquetas; Marruecos: vasquetas, icepops)");
+  await page.click("[data-la-l='Unicenter']"); await page.waitForSelector(".laBox"); await abrirTodo();
+  ok((await page.$eval("[data-sec='Producción'] [data-res]", e => e.textContent)) === "Produce vasquetas", "la sección Producción cerrada resume qué produce");
+  ok(await page.$eval("[data-la-k='produce_vasquetas']", e => e.checked) && !(await page.$eval("[data-la-k='produce_icepops']", e => e.checked)), "la hoja muestra un interruptor por rubro que produce");
+  await page.click("[data-la-k='produce_icepops']");
+  ok(/Produce icepops: SÍ/.test(await page.innerText("#laCam")) && /Produce vasquetas, icepops/.test(await page.$eval("[data-sec='Producción'] [data-res]", e => e.textContent)), "prender un rubro lo muestra en el resumen de cambios y de la sección");
+  posts.length = 0; await page.click("[data-la-guardar]"); await page.waitForTimeout(700);
+  const pp = posts.find(p => p.accion === "guardarLocalAdmin");
+  ok(pp && pp.local === "Unicenter" && pp.opciones.produce_icepops === true && Object.keys(pp.opciones).length === 1, "manda solo el rubro que cambió: " + JSON.stringify(pp && pp.opciones));
+
   // 4) alta de un local nuevo
   await page.click("[data-la-nuevo]"); await page.waitForSelector("#laN");
   await page.fill("#laN", "Palermo CABA"); await page.fill("#laR", "CABA");

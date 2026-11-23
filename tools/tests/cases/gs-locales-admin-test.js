@@ -5,7 +5,7 @@ const sb={console,Date,Math,JSON,String,Number,Array,Object,
  PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
  SpreadsheetApp:{flush(){}},LockService:{getScriptLock:()=>({tryLock(){},releaseLock(){}})},Utilities:{}};
 vm.createContext(sb); vm.runInContext(fs.readFileSync(require("path").join(__dirname,"..","..","..","apps-script/Code.gs"),"utf8"),sb);
-const H=["nombre","grupo","activo","clave","operaciones","region","pais","control_equipos","venta_dia","kilos_reales","lleva_baldes","lleva_chocolateria","lleva_vasquetas","lleva_icepops","lleva_glutenfree","lleva_pasteleria","lleva_bolleria","produccion","escaner_salida","escaner_conteo","sin_escaner","stock_valorizado","ver_diferencias","ingreso_solo_produccion","max_equipos"];
+const H=["nombre","grupo","activo","clave","operaciones","region","pais","control_equipos","venta_dia","kilos_reales","lleva_baldes","lleva_chocolateria","lleva_vasquetas","lleva_icepops","lleva_glutenfree","lleva_pasteleria","lleva_bolleria","produccion","escaner_salida","escaner_conteo","sin_escaner","stock_valorizado","ver_diferencias","ingreso_solo_produccion","max_equipos","produccion_rubros"];
 const T=[H.slice(),
  ["Operaciones","Gestion","SI","x","SI"],
  ["Torreon","Propios","SI","","","Mar del Plata","Argentina","SI","SI","SI"],
@@ -64,4 +64,16 @@ r=run(`localesAdminMasivo(["Torreon","Obelisco","Palermo CABA"],undefined,undefi
 ok(r.ok&&r.cambiados===3&&T[3][H.indexOf("max_equipos")]===10&&T[T.length-1][H.indexOf("max_equipos")]===10,"cupo de varios locales de una vez");
 r=run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,{control_equipos:true},10)`); ok(r.ok&&r.iguales===1&&r.cambiados===0,"lo que ya estaba así no cuenta como cambio");
 ok(!run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,undefined,21)`).ok&&!run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,undefined,undefined)`).ok,"cupo fuera de rango o pedido vacío se rechaza");
+// (1.120.0) Rubros que produce un local: interruptores produce_<rubro> sobre la lista Locales.produccion_rubros
+r=run(`localesAdmin(admin)`); let t0=r.locales.find(l=>l.nombre==="Torreon");
+ok(["vasquetas","baldes","icepops","glutenfree","chocolateria"].every(x=>t0.opciones["produce_"+x]===true),"lista vacía = produce todos los rubros");
+r=run(`guardarLocalAdmin("Torreon",{produce_icepops:false,produce_chocolateria:false},undefined,undefined,undefined,admin)`);
+ok(r.ok&&T[2][H.indexOf("produccion_rubros")]==="vasquetas,baldes,glutenfree"&&r.local.opciones.produce_icepops===false&&r.local.opciones.produce_vasquetas===true&&!("produce_icepops" in {})&&aud.some(a=>/rubros que produce → vasquetas, baldes, glutenfree/.test(a.d)),"apagar rubros guarda la lista en orden fijo y lo deja en la bitácora: "+T[2][H.indexOf("produccion_rubros")]);
+r=run(`guardarLocalAdmin("Torreon",{produce_icepops:true},undefined,undefined,undefined,admin)`);
+ok(r.ok&&T[2][H.indexOf("produccion_rubros")]==="vasquetas,baldes,icepops,glutenfree","prender un rubro lo suma a la lista");
+r=run(`guardarLocalAdmin("Torreon",{produce_icepops:true},undefined,undefined,undefined,admin)`); ok(r.ok&&r.sinCambios,"sin cambios no escribe");
+r=run(`guardarLocalAdmin("Torreon",{produce_vasquetas:false,produce_baldes:false,produce_icepops:false,produce_glutenfree:false},undefined,undefined,undefined,admin)`);
+ok(!r.ok&&/al menos un rubro/.test(r.error)&&T[2][H.indexOf("produccion_rubros")]==="vasquetas,baldes,icepops,glutenfree","no deja un local sin ningún rubro que produce");
+r=run(`localesAdminMasivo(["Torreon","Obelisco"],undefined,undefined,admin,{produce_baldes:false})`);
+ok(r.ok&&r.cambiados===2&&T[2][H.indexOf("produccion_rubros")]==="vasquetas,icepops,glutenfree"&&T[3][H.indexOf("produccion_rubros")]==="vasquetas,icepops,glutenfree,chocolateria","apagar un rubro en varios locales respeta lo que tenía cada uno");
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);

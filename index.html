@@ -1860,7 +1860,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.217.1";
+const FRONTEND_VERSION = "1.218.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4488,7 +4488,7 @@ const LA_OPCIONES=[
  ["Operación",[["activo","Local activo","Si se apaga, el local deja de poder entrar."],["venta_dia","Venta del día","Chocolatería se saca con «Salida de chocolatería» al cierre."],["control_equipos","Control de dispositivos","Los dispositivos nuevos se vinculan con un código de 6 números."],["stock_valorizado","Gestión con valores (responsable)","El responsable de local ve la solapa Gestión."],["ver_diferencias","Ver diferencias de conteo","El responsable ve el resultado de los conteos que pide supervisión."]]],
  ["Rubros que lleva",[["lleva_vasquetas","Vasquetas"],["lleva_baldes","Baldes"],["lleva_icepops","Icepops"],["lleva_glutenfree","Gluten Free"],["lleva_chocolateria","Chocolatería"],["lleva_pasteleria","Pastelería"],["lleva_bolleria","Bollería"]]],
  ["Escáner y kilos",[["kilos_reales","Kilos reales","Las vasquetas se cuentan en kilos en vez de unidades."],["escaner","Escáner","Leer el rótulo de la vasqueta con el lector o la cámara."]]],
- ["Producción",[["produccion","Produce helado","Aparece la pantalla de Producción."],["ingreso_solo_produccion","Ingreso = Producción","Solo fabrica: no recibe remito."]]]
+ ["Producción",[["produccion","Produce helado","Aparece la pantalla de Producción."],["ingreso_solo_produccion","Ingreso = Producción","Solo fabrica: no recibe remito."],["produce_vasquetas","Produce vasquetas","Qué rubros fabrica (solo vale con «Produce helado»)."],["produce_baldes","Produce baldes"],["produce_icepops","Produce icepops"],["produce_glutenfree","Produce gluten free"],["produce_chocolateria","Produce chocolatería"]]]
 ];
 const LA_DET={
  activo:"<b>Qué hace:</b> el local puede entrar y operar. Al apagarlo (baja), nadie del local puede entrar. <b>Qué se conserva:</b> todos los movimientos y el historial. Se puede volver a dar de alta cuando quieras.",
@@ -4501,6 +4501,8 @@ const LA_DET={
  produccion:"<b>Qué hace:</b> aparece la pantalla de Producción en Ingreso: se cargan los kilos fabricados y las vasquetas resultantes (los Icepops, por unidades). Habilita el rol Producción.",
  ingreso_solo_produccion:"<b>Qué hace:</b> el Ingreso es directamente Producción, sin remito ni lector de fotos. <b>Cuándo:</b> locales que solo fabrican, como Marruecos. Solo vale si «Produce helado» está prendido."
 };
+const LA_PROD_DET="<b>Qué hace:</b> en la pantalla de Producción del local solo aparecen los rubros que fabrica. Debe quedar al menos uno. <b>Aclaración:</b> solo tiene efecto si «Produce helado» está prendido; el resto de los rubros se sigue recibiendo por Ingreso como siempre.";
+const LA_PROD_TXT={vasquetas:"vasquetas",baldes:"baldes",icepops:"icepops",glutenfree:"gluten free",chocolateria:"chocolatería"};
 const LA_RUBRO_DET="<b>Qué hace:</b> si se apaga, el rubro desaparece de este local: Salida, Ingreso, Stock, Conteo y Pedido. No toca el catálogo ni a otros locales. Para volver a verlo se prende de nuevo.";
 const LA_RUBROS_TXT={vasquetas:"vasquetas",baldes:"baldes",icepops:"icepops",glutenfree:"gluten free",chocolateria:"chocolatería",pasteleria:"pastelería",bolleria:"bollería"};
 const LA_PAISES=["Argentina","Chile","Uruguay","Paraguay","España","USA","Marruecos","Italia"];
@@ -4525,7 +4527,7 @@ function laTagsHTML(l){
   if(!laOn(l,"activo")) t.push('<span class="laTag x">De baja</span>');
   if(laOn(l,"kilos_reales")) t.push('<span class="laTag k">Kilos reales</span>');
   if(laOn(l,"escaner")) t.push('<span class="laTag k">Escáner</span>');
-  if(laOn(l,"produccion")) t.push('<span class="laTag v">Produce</span>');
+  if(laOn(l,"produccion")){ const pr=Object.keys(LA_PROD_TXT).filter(r=>laOn(l,"produce_"+r)), definido=Object.keys(LA_PROD_TXT).some(r=>l.opciones&&("produce_"+r) in l.opciones); t.push('<span class="laTag v">'+(definido&&pr.length&&pr.length<5?"Produce "+pr.map(r=>LA_PROD_TXT[r]).join(", "):"Produce")+'</span>') }
   if(laOn(l,"control_equipos")){ const n=l.maxEquipos||3; t.push('<span class="laTag">'+n+(n===1?' dispositivo':' dispositivos')+'</span>') } // siempre se ve el cupo, también el de 3 (el valor por defecto de una celda vacía)
   const off=Object.keys(LA_RUBROS_TXT).filter(r=>!laOn(l,"lleva_"+r));
   if(off.length) t.push('<span class="laTag x">Sin '+off.map(r=>LA_RUBROS_TXT[r]).join(", ")+'</span>');
@@ -4579,7 +4581,7 @@ function localesAdmView(){
   </div>`;
 }
 function laInterruptor(l,k,tit,desc,extra){
-  const dt=LA_DET[k]||(k.indexOf("lleva_")===0?LA_RUBRO_DET:"");
+  const dt=LA_DET[k]||(k.indexOf("lleva_")===0?LA_RUBRO_DET:k.indexOf("produce_")===0?LA_PROD_DET:"");
   return `<div class="laOpt"><div class="d"><b>${tit}</b>${desc?`<span class="sub">${desc}</span>`:""}${dt?`<button class="laMas" type="button" data-la-mas="${k}" aria-expanded="false" aria-controls="ladt-${k}">Qué hace</button><div class="laDt" id="ladt-${k}" hidden>${dt}</div>`:""}${extra||""}</div><input class="laSw" type="checkbox" role="switch" data-la-k="${k}"${l.opciones[k]?" checked":""} aria-label="${tit}"></div>`;
 }
 /** Hoja de un local (o de uno nuevo). Estado propio, sin tocar la pantalla de atrás hasta guardar. */
@@ -4608,7 +4610,7 @@ function laAbrir(nombre){
   const err=m=>{ const e=q("#laErr"); e.textContent=m; e.hidden=!m };
   const paisFinal=()=>otro?q("#laPOtro").value.trim():pais;
   const cambios=()=>{ const lista=[]; ov.querySelectorAll("[data-la-k]").forEach(sw=>{ if(!!base.opciones[sw.dataset.laK]!==sw.checked) lista.push([sw.dataset.laK,sw.checked,sw.getAttribute("aria-label")]) }); return lista };
-  const resSec=()=>ov.querySelectorAll("[data-sec]").forEach(d=>{ const t=d.dataset.sec, sws=[...d.querySelectorAll("[data-la-k]")], on=sws.filter(x=>x.checked).length; d.querySelector("[data-res]").textContent=t==="Operación"?(q("[data-la-k='activo']").checked?"Activo":"De baja"):t==="Rubros que lleva"?on+" de "+sws.length:(on?on+" prendido"+(on===1?"":"s"):"Nada prendido") });
+  const resSec=()=>ov.querySelectorAll("[data-sec]").forEach(d=>{ const t=d.dataset.sec, sws=[...d.querySelectorAll("[data-la-k]")], on=sws.filter(x=>x.checked).length; d.querySelector("[data-res]").textContent=t==="Operación"?(q("[data-la-k='activo']").checked?"Activo":"De baja"):t==="Rubros que lleva"?on+" de "+sws.length:t==="Producción"?(q("[data-la-k='produccion']").checked?(()=>{ const n=sws.filter(x=>x.dataset.laK.indexOf("produce_")===0&&x.checked).map(x=>LA_PROD_TXT[x.dataset.laK.slice(8)]); return n.length&&n.length<5?"Produce "+n.join(", "):"Produce" })():"No produce"):(on?on+" prendido"+(on===1?"":"s"):"Nada prendido") });
   const resumen=()=>{ resSec(); const c=cambios(), cu=cupo!==(base.maxEquipos||3), e=q("#laCam"); const tx=c.map(x=>x[2]+": "+(x[1]?"SÍ":"NO")).concat(cu?["Dispositivos permitidos: "+cupo]:[]); e.hidden=nuevo||!tx.length; e.textContent=tx.length?"Vas a cambiar: "+tx.join(" · "):"" };
   const guardar=async(extra)=>{
     err("");
