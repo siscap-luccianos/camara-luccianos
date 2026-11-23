@@ -1763,7 +1763,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.207.0";
+const FRONTEND_VERSION = "1.208.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3930,7 +3930,7 @@ function controlView(){
   if(C.datos===null || C.datos===undefined) return `<div class="rlv ctl"><h1>Control de stock</h1><div class="note">Cargando…</div></div>`;
   C.sel=C.sel||{}; C.f=C.f||"todos"; C.q=C.q||""; C.g=C.g||"";
   const G=ctlGruposLeer(), grupos=G.grupos||[];
-  const grupo=C.g?grupos.find(x=>String(x.id)===String(C.g)):null; if(C.g&&!grupo) C.g="";
+  const grupo=C.g==="__ultimo__"?{id:"__ultimo__",nombre:"Último pedido",locales:(G.ultimo||[]).slice(),propio:true,virtual:true}:C.g?grupos.find(x=>String(x.id)===String(C.g)):null; if(C.g&&!grupo) C.g="";
   const ultTs=f=>Math.max(0,(f.base&&f.base.ts)||0,...f.conteos.map(x=>x.ts||0));
   const dias=f=>{const t=ultTs(f);return t?Math.floor((Date.now()-t)/864e5):null};
   const quita=x=>String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -3971,13 +3971,13 @@ function controlView(){
     <div class="cgLay">
      <aside class="cgSide noPrint">
       <div class="cgTiles">${tile("todos","Todos","t-todos")}${tile("sin","Sin solicitud","t-sin")}${tile("pend","Con solicitud","t-con")}${tile("viejo","Sin conteo 30+ días","t-viejo")}${tile("propios","Propios","t-prop")}${tile("fran","Franquicias","t-fran")}</div>
-      <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${C.gruposError?`<div class="cgVacio" role="status">No se pudieron cargar tus grupos. <button type="button" class="cgLink" data-ctl-gruposreint>Reintentar</button></div>`:""}${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
+      <div><div class="cgSec"><b>Mis grupos</b><button type="button" class="cgLink" data-cg-nuevo>Nuevo</button></div>${C.gruposError?`<div class="cgVacio" role="status">No se pudieron cargar tus grupos. <button type="button" class="cgLink" data-ctl-gruposreint>Reintentar</button></div>`:""}${(G.ultimo||[]).length?`<div class="cgLista" style="margin-bottom:8px"><button type="button" class="cgG" data-ctl-gultimo aria-pressed="${C.g==='__ultimo__'}"><span class="cgDot" style="background:#8e8e93">↺</span><b>Último pedido</b><span class="c">${G.ultimo.length}</span></button><button type="button" class="cgLink" data-ctl-gultimo-quitar title="Sacar «Último pedido» de la lista" aria-label="Sacar Último pedido de la lista" style="margin-left:6px">Quitar</button></div>`:""}${propios.length?`<div class="cgLista">${propios.map(gfila).join("")}</div>`:`<div class="cgVacio">Todavía no tenés grupos. Marcá locales y elegí «Mover a…», o tocá «Nuevo».</div>`}</div>
       ${(()=>{ const por={}; ajenos.forEach(g=>{ const k=g.owner||"Otro supervisor"; (por[k]=por[k]||[]).push(g) }); return Object.keys(por).sort().map(k=>`<div><div class="cgSec"><b>Grupos de ${esc(k)}</b></div><div class="cgLista">${por[k].map(gfila).join("")}</div></div>`).join("") })()}
       ${regiones.length?`<div><div class="cgSec"><b>Regiones</b></div><div class="cgTags">${regiones.map(r=>`<button type="button" class="cgTag" data-cg-reg="${esc(r)}" aria-pressed="${C.reg===r}">#${esc(r)}</button>`).join("")}</div></div>`:""}
       <div class="cgAyuda"><button type="button" class="cgLink" data-ctl-refresh>↻ Actualizar</button><button type="button" class="cgLink" data-ctl-como>Cómo funciona</button></div>
      </aside>
      <main class="cgMain">
-      <div class="cgCab"><div><h2>${esc(titulo)}${C.reg?" · #"+esc(C.reg):""}</h2><div class="cgSubT">${vis.length} local${vis.length===1?"":"es"}${grupo&&!grupo.propio?" · grupo de "+esc(grupo.owner||"otro supervisor")+" (solo lectura)":""}</div></div>${grupo&&vis.length?`<button type="button" class="cgBtn noPrint" data-cg-pedirg>Solicitar conteo a los ${vis.length}</button>`:""}${grupo&&grupo.propio?`<button type="button" class="cgLink noPrint" data-cg-borrarg>Borrar grupo</button>`:""}</div>
+      <div class="cgCab"><div><h2>${esc(titulo)}${C.reg?" · #"+esc(C.reg):""}</h2><div class="cgSubT">${vis.length} local${vis.length===1?"":"es"}${grupo&&grupo.virtual?" · a los que les pediste el último conteo":""}${grupo&&!grupo.propio?" · grupo de "+esc(grupo.owner||"otro supervisor")+" (solo lectura)":""}</div></div>${grupo&&vis.length?`<button type="button" class="cgBtn noPrint" data-cg-pedirg>Solicitar conteo a los ${vis.length}</button>`:""}${grupo&&grupo.virtual?`<button type="button" class="cgLink noPrint" data-ctl-gultimo-quitar>Quitar de la lista</button>`:""}${grupo&&grupo.propio&&!grupo.virtual?`<button type="button" class="cgLink noPrint" data-cg-borrarg>Borrar grupo</button>`:""}</div>
       <input type="search" id="ctlQ" class="cgBuscar noPrint" placeholder="Buscar local" aria-label="Buscar local" value="${esc(C.q)}" autocomplete="off">
       <div class="cgFilas">${vis.map(fila).join("")||`<div class="cgVacio">${grupo?"Este grupo está vacío. Arrastrá locales desde «Todos» o usá «Mover a…».":"Ningún local coincide."}</div>`}</div>
       ${barra}
@@ -4108,7 +4108,8 @@ function controlClick(t){
   if(t.dataset.ctlChk!==undefined){ C.sel=C.sel||{}; if(t.checked) C.sel[t.dataset.ctlChk]=true; else delete C.sel[t.dataset.ctlChk]; renderApp(); return true }
   if(t.dataset.ctlNada!==undefined){ C.sel={}; renderApp(); return true }
   if(t.dataset.ctlTodos!==undefined){ C.sel=C.sel||{}; document.querySelectorAll("[data-ctl-chk]").forEach(x=>{ C.sel[x.dataset.ctlChk]=true }); renderApp(); return true }
-  if(t.dataset.ctlGultimo!==undefined){ ctlAplicarGrupo(ctlGruposLeer().ultimo); return true }
+  if(t.dataset.ctlGultimoQuitar!==undefined){ (async()=>{ if(await ctlGuardarGrupoSrv("__ultimo__",[])){ const C1=controlEstado(); if(C1.g==="__ultimo__") C1.g=""; C1.sel={}; renderApp(); toast("Listo: «Último pedido» se sacó de la lista.") } })(); return true }
+  if(t.dataset.ctlGultimo!==undefined){ const C0=controlEstado(); C0.g=(C0.g==="__ultimo__"?"":"__ultimo__"); C0.sel={}; C0.swOpen=null; C0.q=""; renderApp(); return true }
   if(t.dataset.ctlGsel!==undefined){ const g=ctlGruposLeer().grupos[+t.dataset.ctlGsel]; if(g) ctlAplicarGrupo(g.locales); return true }
   if(t.dataset.ctlGdel!==undefined){ const g=ctlGruposLeer(), x=g.grupos[+t.dataset.ctlGdel]; if(x&&confirm("¿Borrar el grupo «"+x.nombre+"»?")){ (async()=>{ const r=await api("borrarGrupoConteo",{id:x.id}); if(r&&r.ok){ await ctlGruposCargar(); renderApp() } else toast((r&&r.error)||"No se pudo borrar.") })() } return true }
   if(t.dataset.cgG!==undefined){ C.g=(C.g===t.dataset.cgG?"":t.dataset.cgG); C.sel={}; C.swOpen=null; renderApp(); return true }
