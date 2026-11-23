@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.120.0";
+const BACKEND_VERSION = "1.121.0";
 
 function doPost(e) {
   let resultado;
@@ -155,6 +155,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "localesAdmin": return localesAdmin(empleado);
+    case "informeAlertas": return informeAlertas(empleado);
     case "guardarLocalAdmin": return guardarLocalAdmin(body.local, body.opciones, body.grupo, body.region, body.pais, empleado, body.maxEquipos);
     case "crearLocalAdmin": return crearLocalAdmin(body.nombre, body.grupo, body.region, body.pais, empleado);
     case "localesAdminMasivo": return localesAdminMasivo(body.locales, body.clave, body.valor, empleado, body.opciones, body.cupo);
@@ -4301,6 +4302,28 @@ function localesAdminMasivo(locales, clave, valor, empleado, opciones, cupo) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** (1.121.0) Informe de salud (solo admin): devuelve lo que escribe el auditor en la hoja «Alertas». Si la hoja todavía no existe,
+ *  devuelve la lista vacía (no es un error). Solo lectura: nunca escribe. Las más nuevas primero, hasta 200. */
+function informeAlertas(empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Alertas");
+  if (!sh) return { ok: true, alertas: [], sinHoja: true, backend: BACKEND_VERSION };
+  const filas = _filasComoObjetos(sh).filter((f) => String(f.id || "").trim() !== "");
+  const alertas = filas.map((f) => ({
+    id: Number(f.id) || 0,
+    ts: Number(f.ts) || 0,
+    jornada: String(f.jornada || "").trim(),
+    local: String(f.local || "").trim(),
+    severidad: String(f.severidad || "").trim().toLowerCase(),
+    regla: String(f.regla || "").trim(),
+    titulo: String(f.titulo || "").trim(),
+    detalle: String(f.detalle || "").trim(),
+    sugerencia: String(f.sugerencia || "").trim(),
+    estado: String(f.estado || "pendiente").trim().toLowerCase()
+  })).sort((a, b) => b.id - a.id).slice(0, 200);
+  return { ok: true, alertas: alertas, backend: BACKEND_VERSION };
 }
 
 /** El Resp. de local prende/apaga qué sabores del catálogo tiene SU
