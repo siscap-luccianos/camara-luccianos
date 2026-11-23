@@ -3,7 +3,8 @@ const { chromium } = require("playwright");
 (async () => {
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1100, height: 900 } })).newPage();
-  const err = []; page.on("pageerror", e => err.push(e.message)); page.on("console", m => { if (m.type() === "error" && !/404|ERR_/.test(m.text())) err.push(m.text()) });
+  const err = [], posts = []; page.on("pageerror", e => err.push(e.message));
+  page.on("request", q => { if (q.method() === "POST") { try { const b = JSON.parse(q.postData() || "{}"); if (b.accion === "registrar" && b.subtipo === "transferencia") posts.push(b) } catch (e) {} } }); page.on("console", m => { if (m.type() === "error" && !/404|ERR_/.test(m.text())) err.push(m.text()) });
   let fallas = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) fallas++ };
   page.on("dialog", d => d.accept());
   await page.goto("http://localhost:8998/"); await page.waitForSelector("#authLocal");
@@ -65,6 +66,8 @@ const { chromium } = require("playwright");
   const reg2 = await page.evaluate(() => S.regs.filter(r => r.subtipo === "transferencia" && r.tipo === "ingreso").pop());
   ok(reg2 && reg2.items["4"] === 2 && reg2.items["20"] === 2 && reg2.kilos["4"] === 7.8 && reg2.pesos["20"].length === 2, "ingreso por transferencia guardado con kilos y pesos: " + JSON.stringify(reg2 && { i: reg2.items, k: reg2.kilos, p: reg2.pesos }));
 
+  const pt = posts[posts.length - 1] || {};
+  ok(pt.rotulos && Object.values(pt.rotulos).flat().filter(Boolean).length >= 2 && Object.entries(pt.rotulos).every(([id, l]) => l.length === (pt.pesos[id] || []).length), "la transferencia recibida manda los códigos escaneados alineados con los pesos: " + JSON.stringify(pt.rotulos));
   // ---------- HISTORIAL por jornada ----------
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(500);
   await page.click('[data-rango-hist="d60"]'); await page.waitForTimeout(400);

@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.116.0";
+const BACKEND_VERSION = "1.117.0";
 
 function doPost(e) {
   let resultado;
@@ -1340,7 +1340,7 @@ function _normalizarRotulos(rotulos, pesos2) {
     const lista = Array.isArray(rotulos[id]) ? rotulos[id] : [];
     const n = (pesos2[id] || []).length;
     const limpia = [];
-    for (let i = 0; i < n; i++) { const c = String(lista[i] || "").replace(/\D/g, ""); limpia.push(/^\d{20}$/.test(c) ? c : ""); }
+    for (let i = 0; i < n; i++) { const c = String(lista[i] || "").replace(/\D/g, ""); limpia.push(/^(\d{20}|\d{28})$/.test(c) ? c : ""); }
     if (limpia.some((c) => c)) out[id] = limpia;
   });
   return out;
@@ -1397,7 +1397,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const normPesos = _normalizarPesos(pesos, items);
   if (!normPesos.ok) return normPesos;
   const pesos2 = normPesos.pesos;
-  const rotulos2 = (tipo === "salida") ? _normalizarRotulos(rotulos, pesos2) : {};
+  const rotulos2 = (tipo === "salida" || (tipo === "ingreso" && subtipo === "transferencia")) ? _normalizarRotulos(rotulos, pesos2) : {};
   if (Object.keys(pesos2).length) {
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true && _esVerdadero(filaLocalPeso.escaner_salida) !== true)) return { ok: false, error: "Este local no tiene el escáner activado." };

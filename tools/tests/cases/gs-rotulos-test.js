@@ -26,5 +26,7 @@ ok(run(`_registroPublico({id:"1",tipo:"salida",local:"x",items:"{}",ts:1})`).rot
 const nc=run(`_normalizarRotulosConteo({"4":["00040039313102622057","9900090003550083529092621015","123"]},{"4":[3.93,"c:8.35",3.0]})`);
 ok(nc["4"]&&nc["4"][0]==="00040039313102622057"&&nc["4"][1]==="9900090003550083529092621015"&&nc["4"][2]==="","conteo: acepta rótulos de 20 (vasqueta) y 28 (caja) dígitos y descarta lo demás");
 ok(Object.keys(run(`_normalizarRotulosConteo({"4":["1"]},{"4":[3.9]})`)).length===0&&Object.keys(run(`_normalizarRotulosConteo(undefined,{"4":[3.9]})`)).length===0,"conteo: sin rótulos válidos no guarda nada");
+r=run(`registrar("c-tr","ingreso","L salida",{"4":2},"",emp,"","transferencia","Transferencia de X",undefined,{},{"4":[3.9,4.0]},undefined,undefined,undefined,{"4":["00040039313102622057","9900090003550083529092621015"]})`);
+ok(r.ok&&JSON.parse(filas[filas.length-1].rotulos)["4"].length===2&&JSON.parse(filas[filas.length-1].rotulos)["4"][1]==="9900090003550083529092621015","transferencia recibida: guarda rótulos de vasqueta (20) y de caja (28): "+JSON.stringify(r));
 console.log(f?"FALLAS "+f:"FALLAS 0");
 process.exit(f?1:0);

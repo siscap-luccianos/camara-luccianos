@@ -1764,7 +1764,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.211.0";
+const FRONTEND_VERSION = "1.212.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -7417,6 +7417,9 @@ async function guardarMovimiento(){
     if((tipo==="salida"&&!enVenta) || (enDevolucion&&S.kilosReales) || enTransfIn) for(const id of Object.keys(items)){ const a=(pesosDe(cartKey)[id]||[]).slice(0,items[id]); if(a.length) pesosEnv[id]=a; }
     // (1.209.0) De cada vasqueta escaneada en una Salida queda su código (lote, turno y operario) alineado con su peso; las pesadas a mano van con "".
     const rotEnv={};
+    if(enTransfIn){ // transferencia recibida: cada peso lleva el código de la vasqueta o caja escaneada (una caja aporta dos pesos con el mismo código)
+      const usados=new Set(); const seq=[]; S.escItemsIng.forEach(x=>(x.pesos||[x.kg]).forEach(k=>seq.push({id:String(x.id),kg:k,crudo:x.crudo})));
+      for(const id of Object.keys(pesosEnv)){ const l=pesosEnv[id].map(kg=>{ const i=seq.findIndex((e,j)=>e.id===String(id)&&e.kg===kg&&!usados.has(j)&&/^(\d{20}|\d{28})$/.test(e.crudo||"")); if(i>=0){ usados.add(i); return seq[i].crudo } return "" }); if(l.some(Boolean)) rotEnv[id]=l; } }
     if(tipo==="salida"&&!enVenta){ const usados=new Set(); for(const id of Object.keys(pesosEnv)){
       const l=pesosEnv[id].map(kg=>{ const x=S.escItems.find(e=>String(e.id)===String(id)&&e.kg===kg&&!usados.has(e.n)&&/^\d{20}$/.test(e.crudo||"")); if(x){ usados.add(x.n); return x.crudo } return "" });
       if(l.some(Boolean)) rotEnv[id]=l; } }
