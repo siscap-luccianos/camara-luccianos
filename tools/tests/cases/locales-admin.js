@@ -88,7 +88,7 @@ const { chromium } = require("playwright");
 
   // 3) hoja: interruptores, «Qué hace», cambios y guardado
   await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox");
-  ok((await page.$$eval(".laBox details", d => d.length)) === 4 && (await page.$$eval(".laBox details[open]", d => d.map(x => x.dataset.sec).join())) === "Operación", "la hoja trae 4 secciones y solo Operación abierta (rubros, escáner y producción cerrados)");
+  ok((await page.$$eval(".laBox details", d => d.length)) === 4 && (await page.$$eval(".laBox details[open]", d => d.map(x => x.dataset.sec).join())) === "", "la hoja trae 4 secciones y todas cerradas (Operación, rubros, escáner y producción)");
   ok(/de 7/.test(await page.$eval("[data-sec='Rubros que lleva'] [data-res]", e => e.textContent)) && /Activo/.test(await page.$eval("[data-sec='Operación'] [data-res]", e => e.textContent)), "cada sección cerrada muestra su resumen sin abrirla");
   await abrirTodo();
   ok(await page.$eval("[data-la-k='kilos_reales']", e => e.checked) && await page.$eval("[data-la-k='escaner']", e => e.checked), "la hoja muestra los interruptores prendidos de Torreón");
@@ -112,7 +112,7 @@ const { chromium } = require("playwright");
   ok(await page.$(".laBox") === null && posts.some(p => p.accion === "localesAdmin") && (await page.$("[data-la-l='Torreon Mar del Plata']")) !== null, "se cierra y la lista se vuelve a pedir al servidor");
 
   // 3b) cupo de dispositivos (de 1 a 20)
-  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector("#laCupoN");
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await abrirTodo(); await page.waitForSelector("#laCupoN");
   await page.click("[data-la-cupo='1']"); await page.click("[data-la-cupo='1']");
   ok((await page.innerText("#laCupoN")) === "5" && /Dispositivos permitidos: 5/.test(await page.innerText("#laCam")), "el cupo sube de a 1 y el resumen lo muestra");
   for (let i = 0; i < 20; i++) await page.click("[data-la-cupo='1']");
@@ -130,11 +130,20 @@ const { chromium } = require("playwright");
   await page.click("[data-la-l='Unicenter']"); await page.waitForSelector(".laBox"); await abrirTodo();
   ok((await page.$eval("[data-sec='Producción'] [data-res]", e => e.textContent)) === "Produce vasquetas", "la sección Producción cerrada resume qué produce");
   ok(await page.$eval("[data-la-k='produce_vasquetas']", e => e.checked) && !(await page.$eval("[data-la-k='produce_icepops']", e => e.checked)), "la hoja muestra un interruptor por rubro que produce");
+  ok(await page.$$eval("[data-la-k^='produce_']", e => e.every(i => !i.disabled)), "con «Produce helado» prendido se pueden tocar los rubros que produce");
+  await page.click("[data-la-k='produccion']");
+  ok(await page.$$eval("[data-la-k^='produce_'],[data-la-k='ingreso_solo_produccion']", e => e.every(i => i.disabled)), "al apagar «Produce helado» los rubros y «Ingreso = Producción» quedan apagados y no se pueden tocar");
+  await page.click("[data-la-k='produccion']");
+  ok(await page.$$eval("[data-la-k^='produce_']", e => e.every(i => !i.disabled)), "al volver a prenderlo se habilitan otra vez");
   await page.click("[data-la-k='produce_icepops']");
   ok(/Produce icepops: SÍ/.test(await page.innerText("#laCam")) && /Produce vasquetas, icepops/.test(await page.$eval("[data-sec='Producción'] [data-res]", e => e.textContent)), "prender un rubro lo muestra en el resumen de cambios y de la sección");
   posts.length = 0; await page.click("[data-la-guardar]"); await page.waitForTimeout(700);
   const pp = posts.find(p => p.accion === "guardarLocalAdmin");
   ok(pp && pp.local === "Unicenter" && pp.opciones.produce_icepops === true && Object.keys(pp.opciones).length === 1, "manda solo el rubro que cambió: " + JSON.stringify(pp && pp.opciones));
+
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await abrirTodo();
+  ok(await page.$$eval("[data-la-k^='produce_']", e => e.every(i => i.disabled)) && /No produce/.test(await page.$eval("[data-sec='Producción'] [data-res]", e => e.textContent)), "un local que no produce muestra los rubros apagados y bloqueados, y la sección dice «No produce»");
+  await page.click("[data-la-cerrar]");
 
   // 4) alta de un local nuevo
   await page.click("[data-la-nuevo]"); await page.waitForSelector("#laN");
@@ -163,8 +172,8 @@ const { chromium } = require("playwright");
   // 6) cambiar una opción en varios
   await page.check("[data-la-ck='Unicenter']"); await page.check("[data-la-ck='Marruecos']"); await page.waitForTimeout(150);
   ok(/2 marcados/.test(await page.innerText(".laBarra")), "la barra dice «2 marcados»");
-  await page.click("[data-la-masivo]"); await page.waitForSelector("[data-la-m]");
-  ok((await page.$$eval(".laBox details[open]", d => d.map(x => x.dataset.sec).join())) === "Operación" && (await page.$$eval(".laChs span", x => x.length)) === 2, "el cambio masivo arranca con solo Operación abierta y lista los 2 locales marcados");
+  await page.click("[data-la-masivo]"); await page.waitForSelector(".laBox");
+  ok((await page.$$eval(".laBox details[open]", d => d.length)) === 0 && (await page.$$eval(".laChs span", x => x.length)) === 2, "el cambio masivo arranca con todas las secciones cerradas y lista los 2 locales marcados");
   await abrirTodo();
   ok(await page.$eval("[data-la-ok]", e => e.disabled), "sin elegir ningún cambio, «Aplicar» está apagado");
   await page.click("[data-la-m='kilos_reales'][data-v='1']"); await page.click("[data-la-m='escaner'][data-v='1']"); await page.click("[data-la-m='lleva_baldes'][data-v='0']");
@@ -191,7 +200,7 @@ const { chromium } = require("playwright");
 
   // 6b) baja y alta de varios de una vez
   await page.click("[data-la-f='fran']"); await page.waitForTimeout(150);
-  await page.check("[data-la-ck='Marruecos']"); await page.click("[data-la-masivo]"); await page.waitForSelector("[data-la-m]");
+  await page.check("[data-la-ck='Marruecos']"); await page.click("[data-la-masivo]"); await page.waitForSelector(".laBox");
   await abrirTodo();
   await page.click("[data-la-m='activo'][data-v='0']"); await page.check("#laMconf");
   posts.length = 0; await page.click("[data-la-ok]"); await page.waitForTimeout(800);
