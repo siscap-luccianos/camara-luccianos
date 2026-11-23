@@ -1962,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.221.1";
+const FRONTEND_VERSION = "1.221.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4627,7 +4627,7 @@ async function cargarLocalesAdm(){
   const L=laEstado(); L.cargando=true; L.error="";
   const [r]=await Promise.all([api("localesAdmin",{}), controlEstado().grupos?null:ctlGruposCargar()]);
   L.cargando=false;
-  if(r&&r.ok){ L.datos=r.locales||[]; L.datos.forEach(l=>{ const o=l.opciones||(l.opciones={}); o.escaner=!o.sin_escaner&&!!(o.escaner_salida||o.escaner_conteo||o.kilos_reales) }) } // un solo «Escáner»: prendido si no está «Sin escáner» y hay escáner en Salida o Conteo (o kilos reales, que lo prendía antes)
+  if(r&&r.ok){ L.datos=r.locales||[]; L.datos.forEach(l=>{ const o=l.opciones||(l.opciones={}); const sal=!o.sin_escaner&&!!(o.escaner_salida||o.kilos_reales), con=!o.sin_escaner&&!!(o.escaner_conteo||o.kilos_reales); o.escaner=sal&&con; o.escanerParcial=(sal||con)&&!(sal&&con)?(sal?"Salida":"Conteo"):"" }) } // un solo «Escáner»: prendido solo si está en Salida Y en Conteo (kilos reales prende los dos); si está en uno solo, el panel lo marca «solo en …» en vez de decir que está prendido
   else L.error=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para usar este panel.":((r&&r.error)||"No se pudo cargar. Probá de nuevo.");
   if(!S.local&&S.tab==="locales") renderApp();
 }
@@ -4643,6 +4643,7 @@ function laTagsHTML(l){
   if(!laOn(l,"activo")) t.push('<span class="laTag x">De baja</span>');
   if(laOn(l,"kilos_reales")) t.push('<span class="laTag k">Kilos reales</span>');
   if(laOn(l,"escaner")) t.push('<span class="laTag k">Escáner</span>');
+  else if(l.opciones&&l.opciones.escanerParcial) t.push('<span class="laTag x">Escáner solo en '+l.opciones.escanerParcial+'</span>');
   if(laOn(l,"produccion")){ const pr=Object.keys(LA_PROD_TXT).filter(r=>laOn(l,"produce_"+r)), definido=Object.keys(LA_PROD_TXT).some(r=>l.opciones&&("produce_"+r) in l.opciones); t.push('<span class="laTag v">'+(definido&&pr.length&&pr.length<5?"Produce "+pr.map(r=>LA_PROD_TXT[r]).join(", "):"Produce")+'</span>') }
   if(laOn(l,"control_equipos")){ const n=l.maxEquipos||3; t.push('<span class="laTag">'+n+(n===1?' dispositivo':' dispositivos')+'</span>') } // siempre se ve el cupo, también el de 3 (el valor por defecto de una celda vacía)
   const off=Object.keys(LA_RUBROS_TXT).filter(r=>!laOn(l,"lleva_"+r));
