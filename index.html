@@ -663,6 +663,46 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 :root .infSl .kpi span{color:#5E5044}:root .infSl .kpi.r b{color:#C80E3B}:root .infSl .kpi.n b{color:#B25E00}:root .infSl .kpi.v b{color:#1B7F43}:root .infSl .kpi.a b{color:#0A6FD6}
 :root .infSl .col h3{color:#2B2118}:root .infSl .col.r h3{color:#C80E3B}:root .infSl .col.n h3{color:#B25E00}:root .infSl .col.a h3{color:#0A6FD6}
 :root .infSl .pill{color:#fff}:root .infSl .pasos li small{color:#5E5044}
+.audSeg{display:flex;gap:6px;margin-left:auto}
+:root[data-tema="dorado"] .audBar,:root[data-tema="dorado"] .audK,:root[data-tema="dorado"] .audProb,:root[data-tema="dorado"] .audVacio{--ink:#2B2118;--mut:#5E5044;--line:#E3D7C4;--bg:#F4EEE4;--card:#fff;--warn-soft:#F7ECCD;background:#fff !important;background-image:none !important;color:#2B2118}
+:root[data-tema="dorado"] .audBar .chip,:root[data-tema="dorado"] .audProb .chip{background:#F4EEE4 !important;background-image:none !important;color:#2B2118 !important;border-color:#E3D7C4}
+:root[data-tema="dorado"] .audBar .chip[aria-pressed="true"],:root[data-tema="dorado"] .audProb .chip[aria-pressed="true"]{background:#4F4439 !important;color:#F5EFE6 !important}
+:root[data-tema="dorado"] .audSeg .chip{background:#26201A !important;background-image:none !important;color:#F5EFE6 !important;border-color:#43382E}
+:root[data-tema="dorado"] .audSeg .chip[aria-pressed="true"]{background:#E3C372 !important;color:#1A1612 !important}
+:root[data-tema="dorado"] .audOp{background:#fff;color:#2B2118}
+:root[data-tema="dorado"] .audOp[aria-pressed="true"]{background:#E8F4EC;color:#14301F}
+.audBar{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.audFila{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.audLbl{font:800 .72rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--mut);min-width:84px}
+.audNota{color:var(--mut);font-size:.85rem;font-weight:600}
+.audTag{display:inline-flex;gap:4px;align-items:center;background:var(--warn-soft);border-radius:999px;padding:4px 6px 4px 12px;font:700 .8rem var(--body);color:var(--ink)}
+.audTag button{border:0;background:transparent;color:var(--ink);font-size:1rem;cursor:pointer;padding:0 6px}
+.audBar input[type=text],.audBar input[type=date],.audIdea{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:8px 10px;font:600 .9rem var(--body);min-width:0}
+.audRes{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.audK{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center;color:var(--ink)}
+.audK b{display:block;font:800 1.7rem/1 var(--body)}.audK span{font:700 .78rem var(--body);color:var(--mut)}
+.audK.r b{color:#B00B33}.audK.n b{color:#8F4A00}.audK.g b{color:#14612F}
+.audProb{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0;color:var(--ink)}
+.audProb h3{font:700 1.15rem/1.2 var(--display);margin:6px 0 0}
+.audSev{display:inline-block;border-radius:999px;padding:3px 12px;font:800 .72rem var(--body);color:#fff}
+.audSev.r{background:#C80E3B}.audSev.n{background:#B25E00}.audSev.a{background:#0A6FD6}
+.audEv{color:var(--mut);font-weight:600}
+.audLocs{margin:0;padding-left:18px;font-size:.88rem}.audLocs li{margin:3px 0}
+.audCausa{background:var(--bg);border-radius:10px;padding:10px 12px;font-weight:600}
+.audCausa small{display:block;font:800 .7rem var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
+.audProps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.audOp{all:unset;box-sizing:border-box;cursor:pointer;border:2px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--card);color:var(--ink);min-width:0}
+.audOp:hover{border-color:#B8892B}
+.audOp:focus-visible{outline:3px solid #0A6FD6;outline-offset:2px}
+.audOp[aria-pressed="true"]{border-color:#1B7F43;background:#E8F4EC;color:#14301F}
+.audAg{font:800 .68rem var(--body);letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+.audOp b{font:700 1rem var(--display)}.audD{font-size:.84rem}
+.audM{display:flex;gap:6px;flex-wrap:wrap;font:700 .72rem var(--body)}.audM i{font-style:normal;background:rgba(0,0,0,.07);border-radius:999px;padding:2px 8px}
+.audOk{display:none;font:800 .78rem var(--body);color:#14612F}.audOp[aria-pressed="true"] .audOk{display:block}
+.audDec{padding:4px 0}.audMeta{color:var(--mut);font-size:.8rem;font-weight:600}
+.audVacio{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:22px;text-align:center;color:var(--ink)}
+.audIdea{flex:1 1 180px}
+@media (max-width:720px){.audProps{grid-template-columns:1fr}.audRes{grid-template-columns:1fr 1fr}.audLbl{min-width:100%}}
 .infCtl{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
 .infCtl span{font:700 .9rem var(--body);color:var(--ink);min-width:64px;text-align:center}
 .infLista{display:flex;flex-direction:column;gap:14px}
@@ -1922,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.220.2";
+const FRONTEND_VERSION = "1.221.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4855,7 +4895,7 @@ const INF_FOTO={
  cargas:[["n","Dot CABA: dos ingresos del 17/11 con el remito «remito de fabrica» (texto genérico, no un N° real)."],["n","Vencimientos con año 0002 en Dot CABA (ingreso 1186) y Galerías Pacífico (1189); la app ya lo valida."],["n","Id 414 repetido en Local prueba y Unicenter: anular por id puede pegarle al equivocado."],["n","19 anulaciones sin motivo (11 de Santa Rosa)."],["v","Ninguna anulación dejó el stock negativo y no hay negativos vigentes."]],
  pasos:[["Alto Rosario, Torreón y Recoleta: confirmar el físico y hacer un solo conteo por rubro.","Alfajores y conitos primero."],["Preguntarle a Oroño qué rubros vende y apagar los que no.","Locales › Oroño › Rubros que lleva."],["Calle Corrientes: revisar si cargan todas las salidas de Icepops.",""],["Pegar Code.gs 1.121.0 en producción y en pruebas.","Sin eso este informe usa la copia del 23/11 en vez de la hoja Alertas."]]
 };
-function infEstado(){ return S.inf||(S.inf={datos:null,cargando:false,error:"",i:0,lista:null}) }
+function infEstado(){ return S.inf||(S.inf={datos:null,cargando:false,error:"",i:0,lista:null,vista:"control"}) }
 async function cargarInforme(){
   const I=infEstado(); I.cargando=true; I.error="";
   const r=await api("informeAlertas",{});
@@ -4898,22 +4938,138 @@ function infSlides(){
 }
 function informeView(){
   const I=infEstado();
+  const seg=`<div class="audSeg" role="group" aria-label="Vista"><button type="button" class="chip" data-inf-vista="control" aria-pressed="${I.vista!=="slides"}">Control</button><button type="button" class="chip" data-inf-vista="slides" aria-pressed="${I.vista==="slides"}">Presentación</button></div>`;
+  if(I.vista!=="slides") return `<div class="inf"><div class="infBar"><h1>Auditoría</h1>${seg}</div><div class="infAviso infPruebas" role="note"><b>Gestión en etapa de pruebas.</b> Mucho de lo que se ve acá pasa porque estamos probando: cuentan y recuentan para confirmar que la app les da bien. Esto sirve para medir cómo funciona, detectar inconsistencias y decidir una corrección para cada una, así cuando pasemos al conteo fijo no se repiten.</div>${audControlHTML()}</div>`;
   if(I.datos===null&&!I.cargando&&!I.error) cargarInforme();
   const sl=infSlides(), lista=I.lista===null?window.innerWidth<760:I.lista;
   I.i=Math.max(0,Math.min(sl.length-1,I.i));
   const aviso=I.error&&I.error!=="sin-servidor"?`<div class="infAviso">${esc(I.error)} <button class="btn ghost" data-inf-act type="button">Reintentar</button></div>`:(I.error==="sin-servidor"?`<div class="infAviso">Falta actualizar el servidor (Code.gs 1.121.0): por ahora se ve la copia del ${INF_FOTO.fecha}. Cuando lo pegues, las alertas se leen en vivo.</div>`:"");
   const pruebas=`<div class="infAviso infPruebas" role="note"><b>Gestión en etapa de pruebas.</b> Este informe sirve para detectar inconsistencias ahora, así cuando pasemos al conteo fijo no se repiten estos problemas.</div>`;
   const hojas=sl.map((x,j)=>`<section class="infSl${x.cls||""}${!lista&&j===I.i?" on":""}">${x.html}${x.pie}</section>`).join("");
-  return `<div class="inf"><div class="infBar"><h1>Auditoría</h1><button class="btn ghost" data-inf-act type="button">${I.cargando?"Actualizando…":"Actualizar"}</button><button class="btn ghost" data-inf-modo type="button">${lista?"Ver como diapositivas":"Ver como lista"}</button></div>${pruebas}${aviso}
+  return `<div class="inf"><div class="infBar"><h1>Auditoría</h1>${seg}<button class="btn ghost" data-inf-act type="button">${I.cargando?"Actualizando…":"Actualizar"}</button><button class="btn ghost" data-inf-modo type="button">${lista?"Ver como diapositivas":"Ver como lista"}</button></div>${pruebas}${aviso}
     ${lista?`<div class="infLista">${hojas}</div>`:`<div class="infBox" id="infBox"><div class="infStage" id="infStage">${hojas}</div></div><div class="infCtl"><button class="btn ghost" data-inf-ant type="button"${I.i===0?" disabled":""}>‹ Anterior</button><span>${I.i+1} / ${sl.length}</span><button class="btn ghost" data-inf-sig type="button"${I.i===sl.length-1?" disabled":""}>Siguiente ›</button></div>`}</div>`;
 }
 function infAjustar(){
   const b=document.getElementById("infBox"), st=document.getElementById("infStage"); if(!b||!st) return;
   const k=b.clientWidth/1920; st.style.transform="scale("+k+")"; b.style.height=(1080*k)+"px";
 }
+/* ---- Auditoría · Control: filtros de fechas y locales, problemas del período y decisión por problema ---- */
+const AUD_PROPUESTAS={
+ rafaga:{causa:"Usan «guardar» como si fuera «guardar y seguir» y cuentan de nuevo para confirmar que la app les da bien.",ops:[
+  {ag:"Proceso",t:"Un solo conteo por jornada",d:"El sistema acepta un conteo completo por día y por local. El segundo pide el código de supervisor.",m:["Corta de raíz","Cambia el hábito"]},
+  {ag:"Capacitación",t:"Guía y aviso al guardar",d:"Al guardar muestra «Esto reemplaza el stock. ¿Seguro?» y un video corto en el «?». No bloquea.",m:["Sin bloqueos","Depende de la gente"]},
+  {ag:"Control",t:"Aviso al supervisor desde el 2.º conteo",d:"Se permite, pero desde el segundo conteo del día le llega una alerta al supervisor con lo que cambió.",m:["Intermedio","Supervisor revisa"]}]},
+ unidades:{causa:"Mezclan cajas con unidades sueltas al tipear la cantidad.",ops:[
+  {ag:"Proceso",t:"Tope por producto",d:"Si la cantidad supera 5 veces lo habitual, pide escribir el número otra vez para confirmar.",m:["Corta de raíz","Se arma en 1 semana"]},
+  {ag:"Capacitación",t:"Mostrar «cajas + sueltas»",d:"Debajo del campo dice «799 = 13 cajas + 19 sueltas». El error se ve antes de guardar.",m:["Muy claro","Sin bloqueos"]},
+  {ag:"Control",t:"Alerta el mismo día",d:"Las cantidades fuera de lo normal llegan a Auditoría esa misma jornada.",m:["Solo avisa","Rápido"]}]},
+ pisados:{causa:"Hacen un conteo completo cuando solo querían corregir un rubro.",ops:[
+  {ag:"Proceso",t:"Conteo completo solo en Inicial y Cierre",d:"El resto del mes se cuenta solo por rubro. Todo el local queda para el primer y el último día.",m:["Corta de raíz","Cambia el hábito"]},
+  {ag:"Capacitación",t:"«¿Qué vas a contar?» más claro",d:"La pantalla ya existe: se agranda el texto «Todo el local reemplaza todo» y se pide confirmar.",m:["Ya está hecha","Falta insistir"]},
+  {ag:"Control",t:"Revisión de «queda en 0»",d:"Si un rubro entero queda en 0, no deja guardar sin confirmar rubro por rubro.",m:["Intermedio"]}]},
+ sinsalidas:{causa:"No cargan los retiros cuando están apurados.",ops:[
+  {ag:"Proceso",t:"Cierre de jornada",d:"Al cerrar el día, el responsable confirma «hoy cargamos todo» o avisa que hubo retiros sin cargar.",m:["Corta de raíz","1 toque por día"]},
+  {ag:"Capacitación",t:"Recordatorio a las 20 h",d:"Aviso en la app: «Hoy no hay retiros cargados. ¿Fue un día sin movimiento?».",m:["Simple"]},
+  {ag:"Control",t:"Conteo parcial semanal",d:"Un conteo por rubro fijo cada semana para ajustar lo que no se cargó.",m:["Corrige después"]}]},
+ datos:{causa:"Cargan fechas a mano con el teclado del navegador y faltan códigos de fábrica.",ops:[
+  {ag:"Proceso",t:"Validar al tipear",d:"Ya existe para el año del vencimiento. Se suma lo mismo para códigos y cantidades.",m:["Ya está en parte"]},
+  {ag:"Capacitación",t:"Completar el catálogo",d:"Terminar los códigos de fábrica que faltan y las fotos.",m:["Lo hace Gabi"]},
+  {ag:"Control",t:"Lista de datos raros por local",d:"Una tarjeta en Auditoría con los datos que no pasan la validación.",m:["Solo avisa"]}]}
+};
+const AUD_SEV={r:["Urgente","r"],n:["Para revisar","n"],a:["Informativo","a"]};
+function audHoyISO(){ return isoDeFecha(new Date(jornadaDe())) }
+function audRestarDias(iso,n){ const f=new Date(isoALocal(iso)); f.setDate(f.getDate()-n); return isoDeFecha(f) }
+function audEstado(){
+  const I=infEstado();
+  if(!I.aud){ const h=audHoyISO(); I.aud={preset:"7",desde:audRestarDias(h,6),hasta:h,locs:[],datos:null,cargando:false,error:"",decis:{},decisCargadas:false,abiertos:{},guardando:""} }
+  return I.aud;
+}
+async function audCargar(){
+  const A=audEstado(); A.cargando=true; A.error=""; infRepintar();
+  const r=await api("auditoriaDatos",{desde:A.desde,hasta:A.hasta,locales:A.locs});
+  A.cargando=false;
+  if(r&&r.ok) A.datos=r; else A.error=(r&&/desconocida/i.test(r.error||""))?"sin-servidor":((r&&r.error)||"No se pudo cargar. Probá de nuevo.");
+  if(!A.decisCargadas){ const d=await api("auditoriaDecisiones",{}); if(d&&d.ok){ A.decisCargadas=true; A.decis={}; d.decisiones.forEach(x=>{ A.decis[x.clave]=x }) } }
+  infRepintar();
+}
+function infRepintar(){ if(!S.local&&S.tab==="informe") renderApp() }
+function audPeriodo(preset){
+  const A=audEstado(), h=audHoyISO(); A.preset=preset;
+  if(preset==="ayer"){ A.desde=A.hasta=audRestarDias(h,1) }
+  else if(preset==="7"){ A.desde=audRestarDias(h,6); A.hasta=h }
+  else if(preset==="30"){ A.desde=audRestarDias(h,29); A.hasta=h }
+  if(preset!=="rango"){ A.datos=null; audCargar() } else infRepintar();
+}
+function audTxtFecha(iso){ const [y,m,d]=iso.split("-"); return d+"/"+m+"/"+y }
+function audControlHTML(){
+  const A=audEstado();
+  if(A.datos===null&&!A.cargando&&!A.error) audCargar();
+  const sel=A.locs.map(l=>`<span class="audTag">${esc(l)} <button type="button" data-aud-quitar="${esc(l)}" aria-label="Quitar ${esc(l)}">×</button></span>`).join("");
+  const nombres=(S.locales||[]).filter(l=>!/^(Operaciones|Local prueba)$/.test(l.nombre)).map(l=>`<option value="${esc(l.nombre)}">`).join("");
+  const filtros=`<section class="audBar" aria-label="Filtros de la auditoría">
+    <div class="audFila"><span class="audLbl">Fechas</span>
+      ${[["ayer","Ayer"],["7","Últimos 7 días"],["30","Últimos 30 días"],["rango","Elegir fechas…"]].map(([k,t])=>`<button class="chip" type="button" data-aud-p="${k}" aria-pressed="${A.preset===k}">${t}</button>`).join("")}
+    </div>
+    ${A.preset==="rango"?`<div class="audFila"><span class="audLbl"></span><label>Desde <input type="date" id="audD1" value="${A.desde}" max="${audHoyISO()}"></label><label>Hasta <input type="date" id="audD2" value="${A.hasta}" max="${audHoyISO()}"></label><button class="btn" type="button" data-aud-aplicar>Aplicar</button></div>`:""}
+    <div class="audFila"><span class="audLbl">Locales</span>
+      <button class="chip" type="button" data-aud-todos aria-pressed="${!A.locs.length}">Todos</button>
+      <input type="text" id="audBuscar" list="audLocs" placeholder="Buscar local…" autocomplete="off"><datalist id="audLocs">${nombres}</datalist>
+      <button class="chip" type="button" data-aud-add>Agregar</button>${sel}
+    </div>
+    <div class="audNota">Período: <b>${audTxtFecha(A.desde)}</b> a <b>${audTxtFecha(A.hasta)}</b> · ${A.locs.length?A.locs.length+" local"+(A.locs.length>1?"es":""):"todos los locales"}</div>
+  </section>`;
+  let cuerpo="";
+  if(A.error==="sin-servidor") cuerpo=`<div class="infAviso">Falta actualizar el servidor (Code.gs 1.122.0). Pegalo en Apps Script y hacé «Nueva implementación».</div>`;
+  else if(A.error) cuerpo=`<div class="infAviso">${esc(A.error)} <button class="btn ghost" type="button" data-aud-act>Reintentar</button></div>`;
+  else if(A.cargando&&!A.datos) cuerpo=`<div class="audNota">Revisando los movimientos del período…</div>`;
+  else if(A.datos){
+    const P=A.datos.problemas, dec=P.filter(p=>A.decis[p.clave]).length;
+    const kp=(n,t,c)=>`<div class="audK ${c}"><b>${n}</b><span>${t}</span></div>`;
+    const resumen=`<div class="audRes">${kp(P.filter(p=>p.severidad==="r").length,"Urgentes","r")}${kp(P.filter(p=>p.severidad==="n").length,"Para revisar","n")}${kp(P.reduce((a,p)=>a+p.cantLocales,0),"Casos en locales","")}${kp(dec+" / "+P.length,"Con decisión","g")}</div>`;
+    const tarjetas=P.length?P.map(audTarjetaHTML).join(""):`<div class="audVacio"><b>No se detectó nada en este período.</b><br>Probá con más días o con todos los locales.</div>`;
+    const decididas=P.filter(p=>A.decis[p.clave]);
+    const sum=`<section class="audBar"><h2>Decisiones tomadas</h2>${decididas.length?decididas.map(p=>{const d=A.decis[p.clave];return `<div class="audDec"><b>${esc(p.nombre)}:</b> ${esc(d.titulo)} <span class="audMeta">${new Date(d.ts).toLocaleDateString("es-AR")} · ${esc(d.por)}</span></div>`}).join(""):`<div class="audNota">Todavía no elegiste ninguna propuesta.</div>`}</section>`;
+    cuerpo=resumen+`<div class="audFila" style="justify-content:space-between"><h2>Problemas que se repiten</h2><span class="audNota">${dec} de ${P.length} decididos</span></div>`+tarjetas+sum;
+  }
+  return filtros+cuerpo;
+}
+function audTarjetaHTML(p){
+  const A=audEstado(), cat=AUD_PROPUESTAS[p.clave]||{causa:"",ops:[]}, dec=A.decis[p.clave], ab=!!A.abiertos[p.clave];
+  const sev=AUD_SEV[p.severidad]||AUD_SEV.a;
+  const locs=p.locales.slice(0,ab?12:3).map(l=>`<li><b>${esc(l.local)}</b>: ${l.detalle.map(esc).join(" · ")}</li>`).join("");
+  return `<article class="audProb"><div><span class="audSev ${sev[1]}">${sev[0]}</span><h3>${esc(p.nombre)}</h3><div class="audEv">${p.casos} caso${p.casos>1?"s":""} en ${p.cantLocales} local${p.cantLocales>1?"es":""}</div></div>
+    <ul class="audLocs">${locs}</ul>${p.locales.length>3?`<button class="chip" type="button" data-aud-ver="${p.clave}">${ab?"Ver menos":"Ver todos los locales"}</button>`:""}
+    <div class="audCausa"><small>Causa más probable</small>${esc(cat.causa)}</div>
+    <div class="audProps">${cat.ops.map((o,j)=>{const id="ABC"[j];return `<button class="audOp" type="button" data-aud-op="${p.clave}|${id}|${j}" aria-pressed="${!!dec&&dec.opcion===id}"><span class="audAg">${o.ag} · Propuesta ${id}</span><b>${esc(o.t)}</b><span class="audD">${esc(o.d)}</span><span class="audM">${o.m.map(x=>`<i>${esc(x)}</i>`).join("")}</span><span class="audOk">✓ Elegida</span></button>`}).join("")}</div>
+    <div class="audFila"><span class="audNota">${dec?"Decisión: "+esc(dec.titulo):"Elegí una propuesta, o escribí otra idea."}</span>
+      <input type="text" class="audIdea" id="audIdea-${p.clave}" placeholder="Otra idea…" maxlength="140"><button class="chip" type="button" data-aud-idea="${p.clave}">Guardar mi idea</button></div></article>`;
+}
+async function audDecidir(clave,opcion,titulo,nombre){
+  const A=audEstado();
+  const r=await api("auditoriaDecidir",{clave:clave,problema:nombre,opcion:opcion,titulo:titulo,nota:"",desde:A.desde,hasta:A.hasta});
+  if(r&&r.ok){ A.decis[clave]={clave:clave,opcion:opcion,titulo:titulo,problema:nombre,ts:Date.now(),por:(S.empleado&&S.empleado.nombre)||""}; toast("Decisión guardada."); infRepintar() }
+  else toast((r&&r.error)||"No se pudo guardar.");
+}
+function audClick(t){
+  if(S.local||S.tab!=="informe") return false;
+  const I=infEstado(); if(I.vista==="slides") return false;
+  const A=audEstado();
+  if(t.dataset.audP){ audPeriodo(t.dataset.audP); return true }
+  if(t.dataset.audAplicar!==undefined){ const d1=$("#audD1").value, d2=$("#audD2").value; if(!d1||!d2||d1>d2){ toast("Revisá las fechas."); return true } A.desde=d1; A.hasta=d2; A.datos=null; audCargar(); return true }
+  if(t.dataset.audTodos!==undefined){ A.locs=[]; A.datos=null; audCargar(); return true }
+  if(t.dataset.audAdd!==undefined){ const v=($("#audBuscar").value||"").trim(); const ok=(S.locales||[]).some(l=>l.nombre===v); if(!v||!ok){ toast("Elegí un local de la lista."); return true } if(A.locs.indexOf(v)===-1) A.locs.push(v); A.datos=null; audCargar(); return true }
+  if(t.dataset.audQuitar){ A.locs=A.locs.filter(x=>x!==t.dataset.audQuitar); A.datos=null; audCargar(); return true }
+  if(t.dataset.audVer){ A.abiertos[t.dataset.audVer]=!A.abiertos[t.dataset.audVer]; infRepintar(); return true }
+  if(t.dataset.audAct!==undefined){ A.datos=null; A.error=""; audCargar(); return true }
+  if(t.dataset.audOp){ const [clave,id,j]=t.dataset.audOp.split("|"); const p=(A.datos&&A.datos.problemas||[]).find(x=>x.clave===clave); const o=AUD_PROPUESTAS[clave].ops[+j]; audDecidir(clave,id,o.t,p?p.nombre:clave); return true }
+  if(t.dataset.audIdea){ const c=t.dataset.audIdea, v=(($("#audIdea-"+c)||{}).value||"").trim(); if(v.length<4){ toast("Escribí la idea."); return true } const p=(A.datos&&A.datos.problemas||[]).find(x=>x.clave===c); audDecidir(c,"otra",v,p?p.nombre:c); return true }
+  return false;
+}
 function infClick(t){
   if(S.local||S.tab!=="informe") return false;
   const I=infEstado();
+  if(t.dataset.infVista){ I.vista=t.dataset.infVista; renderApp(); return true }
+  if(audClick(t)) return true;
   if(t.dataset.infAct!==undefined){ I.datos=null; I.error=""; cargarInforme(); renderApp(); return true }
   if(t.dataset.infModo!==undefined){ const ahora=I.lista===null?window.innerWidth<760:I.lista; I.lista=!ahora; renderApp(); return true }
   if(t.dataset.infAnt!==undefined){ I.i=Math.max(0,I.i-1); renderApp(); return true }

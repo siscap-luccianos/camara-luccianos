@@ -18,7 +18,7 @@ const { chromium } = require("playwright");
   await entrar(page);
 
   ok(await page.$("#tabs [data-t='informe']") !== null, "el admin ve la pestaña «Auditoría» en Operaciones");
-  await page.click("#tabs [data-t='informe']"); await page.waitForSelector("#infBox"); await page.waitForTimeout(500);
+  await page.click("#tabs [data-t='informe']"); await page.waitForSelector(".audBar"); await page.click("[data-inf-vista='slides']"); await page.waitForSelector("#infBox"); await page.waitForTimeout(500);
   const aviso = await page.innerText(".infPruebas");
   ok(/etapa de pruebas/i.test(aviso) && /conteo fijo/i.test(aviso), "arriba hay un aviso fijo: gestión en etapa de pruebas para detectar inconsistencias antes del conteo fijo");
   const n = await page.$$eval(".infSl", s => s.length);
@@ -62,7 +62,7 @@ const { chromium } = require("playwright");
   const cel = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
   cel.on("pageerror", e => err.push(e.message));
   await entrar(cel);
-  await cel.click("#tabs [data-t='informe']"); await cel.waitForSelector(".infLista"); await cel.waitForTimeout(300);
+  await cel.click("#tabs [data-t='informe']"); await cel.waitForSelector(".audBar"); await cel.click("[data-inf-vista='slides']"); await cel.waitForSelector(".infLista"); await cel.waitForTimeout(300);
   ok((await cel.$$(".infLista .infSl")).length === 11, "en el celular se ve como lista con las 11 secciones");
   ok(await cel.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), "el celular no se desborda a los costados");
   await cel.click("[data-inf-modo]"); await cel.waitForSelector("#infBox"); await cel.waitForTimeout(200);

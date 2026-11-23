@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.121.0";
+const BACKEND_VERSION = "1.122.0";
 
 function doPost(e) {
   let resultado;
@@ -156,6 +156,9 @@ function _despacharConSesion(accion, body, empleado) {
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "localesAdmin": return localesAdmin(empleado);
     case "informeAlertas": return informeAlertas(empleado);
+    case "auditoriaDatos": return auditoriaDatos(body, empleado);
+    case "auditoriaDecisiones": return auditoriaDecisiones(empleado);
+    case "auditoriaDecidir": return auditoriaDecidir(body.clave, body.problema, body.opcion, body.titulo, body.nota, body.desde, body.hasta, empleado);
     case "guardarLocalAdmin": return guardarLocalAdmin(body.local, body.opciones, body.grupo, body.region, body.pais, empleado, body.maxEquipos);
     case "crearLocalAdmin": return crearLocalAdmin(body.nombre, body.grupo, body.region, body.pais, empleado);
     case "localesAdminMasivo": return localesAdminMasivo(body.locales, body.clave, body.valor, empleado, body.opciones, body.cupo);
@@ -4324,6 +4327,163 @@ function informeAlertas(empleado) {
     estado: String(f.estado || "pendiente").trim().toLowerCase()
   })).sort((a, b) => b.id - a.id).slice(0, 200);
   return { ok: true, alertas: alertas, backend: BACKEND_VERSION };
+}
+
+/* ============================================================
+   AUDITORÍA (solo admin): detecta en el período y los locales elegidos los problemas que se repiten y guarda
+   la decisión tomada para cada uno. Solo LEE Registros/Sabores/Locales; lo único que escribe es la hoja «Decisiones».
+   ============================================================ */
+const AUD_NO_LOCALES = ["Operaciones", "Local prueba", "Dot simulado"];
+const AUD_RUBROS = ["vasquetas", "baldes", "icepops", "glutenfree", "chocolateria", "pasteleria", "bolleria", "geladot"];
+
+function _audTsDeJornada(iso, fin) {
+  // 04:00 de Argentina (UTC-3) = 07:00 UTC. El fin es exclusivo (04:00 del día siguiente).
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "")); if (!m) return 0;
+  return Date.UTC(+m[1], +m[2] - 1, +m[3], 7, 0, 0) + (fin ? 86400000 : 0);
+}
+function _audMediana(arr) { if (!arr.length) return 0; const a = arr.slice().sort((x, y) => x - y); const k = Math.floor(a.length / 2); return a.length % 2 ? a[k] : (a[k - 1] + a[k]) / 2; }
+
+function auditoriaDatos(p, empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  p = p || {};
+  const hoy = _jornadaClave(Date.now());
+  const hasta = /^\d{4}-\d{2}-\d{2}$/.test(String(p.hasta || "")) ? String(p.hasta) : hoy;
+  let desde = /^\d{4}-\d{2}-\d{2}$/.test(String(p.desde || "")) ? String(p.desde) : "";
+  if (!desde) desde = _jornadaClave(_audTsDeJornada(hasta, false) - 6 * 86400000 + 3600000);
+  const t0 = _audTsDeJornada(desde, false), t1 = _audTsDeJornada(hasta, true);
+  if (!t0 || !t1 || t1 <= t0) return { ok: false, error: "Revisá las fechas." };
+  if (t1 - t0 > 62 * 86400000) return { ok: false, error: "Elegí un período de hasta 60 días." };
+  const sel = Array.isArray(p.locales) ? p.locales.map((x) => String(x)) : [];
+  const enSel = (l) => !AUD_NO_LOCALES.some((n) => n === l) && (!sel.length || sel.indexOf(l) !== -1);
+
+  const sabores = {}; _leerCrudo("Sabores").forEach((s) => { sabores[String(s.id)] = s; });
+  const rubroDe = (id) => { const s = sabores[String(id)]; return s ? _rubroDeSabor(s) : ""; };
+  const regs = [];
+  _leerCrudo("Registros").forEach((r) => {
+    const ts = Number(r.ts) || 0; if (!ts || String(r.anulado_por || "").trim() !== "") return;
+    const tipo = String(r.tipo || ""); if (tipo === "etiquetado") return;
+    regs.push({ id: String(r.id), ts: ts, tipo: tipo, sub: String(r.subtipo || ""), local: String(r.local || "").trim(), items: _jsonObj(r.items, {}), venc: String(r.vencimientos || ""), emp: String(r.empleado || "") });
+  });
+  regs.sort((a, b) => a.ts - b.ts);
+  const jor = (ts) => _jornadaClave(ts);
+  const fmt = (ts) => Utilities.formatDate(new Date(ts), "America/Argentina/Buenos_Aires", "dd/MM HH:mm");
+  const problemas = {};
+  const agregar = (clave, nombre, sev, local, detalle, peso) => {
+    if (!problemas[clave]) problemas[clave] = { clave: clave, nombre: nombre, severidad: sev, locales: {}, casos: 0 };
+    const pr = problemas[clave]; pr.casos += (peso || 1);
+    if (!pr.locales[local]) pr.locales[local] = [];
+    if (pr.locales[local].length < 6) pr.locales[local].push(detalle);
+  };
+
+  // 1) Conteos en ráfaga: 3 o más conteos del mismo local en la misma jornada (o 3 en 60 minutos).
+  const conteosPorLocalJor = {};
+  regs.forEach((r) => {
+    if (r.tipo !== "conteo" && !(r.tipo === "cambio" && r.sub === "conteo_parcial")) return;
+    if (r.ts < t0 || r.ts >= t1 || !enSel(r.local)) return;
+    const k = r.local + "|" + jor(r.ts); (conteosPorLocalJor[k] = conteosPorLocalJor[k] || []).push(r);
+  });
+  Object.keys(conteosPorLocalJor).forEach((k) => {
+    const L = conteosPorLocalJor[k]; if (L.length < 3) return;
+    const loc = k.split("|")[0], dia = k.split("|")[1];
+    const dif = Math.round((L[L.length - 1].ts - L[0].ts) / 60000);
+    agregar("rafaga", "Conteos en ráfaga", L.length >= 6 ? "r" : "n", loc, L.length + " conteos el " + dia.split("-").reverse().slice(0, 2).join("/") + " en " + dif + " min", 1);
+  });
+
+  // 2) Unidades equivocadas: cantidad muy por encima de lo habitual de ese producto (mediana de todos los locales).
+  const hist = {};
+  regs.forEach((r) => {
+    if (r.tipo !== "ingreso" && r.tipo !== "salida") return;
+    Object.keys(r.items).forEach((id) => { const q = Number(r.items[id]) || 0; if (q > 0) (hist[id] = hist[id] || []).push(q); });
+  });
+  const med = {}; Object.keys(hist).forEach((id) => { med[id] = _audMediana(hist[id]); });
+  regs.forEach((r) => {
+    if (r.tipo !== "ingreso" && r.tipo !== "salida" && r.tipo !== "conteo") return;
+    if (r.ts < t0 || r.ts >= t1 || !enSel(r.local)) return;
+    Object.keys(r.items).forEach((id) => {
+      const s = sabores[String(id)]; if (!s) return;
+      const t = String(s.tipo || "v"); if (t === "g" || t === "k") return; // Geladot va en gramos y Crumble/Granella en kilos
+      const q = Number(r.items[id]) || 0, m = med[id] || 0;
+      if (q >= 300 && q > 5 * Math.max(m, 10)) agregar("unidades", "Unidades equivocadas", "r", r.local, String(s.nombre || id) + ": " + q + " (" + r.tipo + " del " + fmt(r.ts) + "; lo normal es ~" + Math.round(m) + ")", 1);
+    });
+  });
+
+  // 3) Rubros pisados: un conteo completo deja en 0 un rubro que en el conteo anterior tenía stock.
+  const ultConteo = {};
+  regs.forEach((r) => {
+    if (r.tipo !== "conteo") return;
+    const prev = ultConteo[r.local];
+    if (prev && r.ts >= t0 && r.ts < t1 && enSel(r.local)) {
+      const suma = (items) => { const o = {}; Object.keys(items).forEach((id) => { const rb = rubroDe(id); if (!rb || rb === "geladot") return; o[rb] = (o[rb] || 0) + (Number(items[id]) || 0); }); return o; };
+      const a = suma(prev.items), b = suma(r.items);
+      Object.keys(a).forEach((rb) => { if (a[rb] >= 10 && !(b[rb] > 0)) agregar("pisados", "Rubros pisados", "n", r.local, rb + " pasó de " + a[rb] + " a 0 en el conteo del " + fmt(r.ts), 1); });
+    }
+    ultConteo[r.local] = r;
+  });
+
+  // 4) Salidas sin cargar: 3 o más jornadas seguidas sin ninguna salida en un local que sí tuvo movimiento en el período.
+  const diasSal = {}, activo = {};
+  regs.forEach((r) => {
+    if (r.ts < t0 || r.ts >= t1 || !enSel(r.local)) return;
+    activo[r.local] = true;
+    if (r.tipo === "salida" && r.sub !== "transferencia") (diasSal[r.local] = diasSal[r.local] || {})[jor(r.ts)] = true;
+  });
+  const dias = []; for (let t = t0; t < t1; t += 86400000) dias.push(jor(t + 3600000));
+  Object.keys(activo).forEach((loc) => {
+    let racha = 0, mejor = 0;
+    dias.forEach((d) => { if (diasSal[loc] && diasSal[loc][d]) racha = 0; else { racha++; if (racha > mejor) mejor = racha; } });
+    if (mejor >= 3 && dias.length >= 5) agregar("sinsalidas", "Salidas sin cargar", mejor >= 5 ? "n" : "a", loc, mejor + " jornadas seguidas sin ninguna salida cargada", 1);
+  });
+
+  // 5) Datos mal cargados: vencimientos con año imposible.
+  regs.forEach((r) => {
+    if (r.ts < t0 || r.ts >= t1 || !enSel(r.local) || !r.venc) return;
+    const ms = r.venc.match(/\b(\d{4})-\d{2}-\d{2}\b/g) || [];
+    const mal = ms.filter((x) => +x.slice(0, 4) < 2020 || +x.slice(0, 4) > 2040);
+    if (mal.length) agregar("datos", "Datos mal cargados", "a", r.local, "Vencimiento con año " + mal[0].slice(0, 4) + " (" + r.tipo + " del " + fmt(r.ts) + ")", 1);
+  });
+
+  const SEV = { r: 0, n: 1, a: 2 };
+  const lista = Object.keys(problemas).map((k) => {
+    const pr = problemas[k];
+    const locs = Object.keys(pr.locales).map((l) => ({ local: l, detalle: pr.locales[l] })).sort((x, y) => y.detalle.length - x.detalle.length);
+    return { clave: pr.clave, nombre: pr.nombre, severidad: pr.severidad, casos: pr.casos, cantLocales: locs.length, locales: locs.slice(0, 12) };
+  }).sort((x, y) => (SEV[x.severidad] - SEV[y.severidad]) || (y.casos - x.casos));
+  return { ok: true, desde: desde, hasta: hasta, locales: sel, problemas: lista, backend: BACKEND_VERSION };
+}
+
+const COLUMNAS_DECISIONES = ["id", "ts", "clave", "problema", "opcion", "titulo", "nota", "por", "desde", "hasta"];
+function _hojaDecisiones() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName("Decisiones");
+  if (!sh) {
+    sh = ss.insertSheet("Decisiones");
+    sh.getRange(1, 1, 1, COLUMNAS_DECISIONES.length).setValues([COLUMNAS_DECISIONES]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function auditoriaDecisiones(empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Decisiones");
+  if (!sh) return { ok: true, decisiones: [] };
+  const ult = {};
+  _filasComoObjetos(sh).forEach((f) => { ult[String(f.clave)] = { clave: String(f.clave), problema: String(f.problema || ""), opcion: String(f.opcion), titulo: String(f.titulo || ""), nota: String(f.nota || ""), por: String(f.por || ""), ts: Number(f.ts) || 0, desde: String(f.desde || ""), hasta: String(f.hasta || "") }; });
+  return { ok: true, decisiones: Object.keys(ult).map((k) => ult[k]).filter((d) => d.opcion !== "quitar") };
+}
+
+function auditoriaDecidir(clave, problema, opcion, titulo, nota, desde, hasta, empleado) {
+  const e = _soloAdminLocales(empleado); if (e) return e;
+  clave = String(clave || "").trim(); if (!/^[a-z]{3,20}$/.test(clave)) return { ok: false, error: "Problema inválido." };
+  opcion = String(opcion || "").trim().slice(0, 20); if (!opcion) return { ok: false, error: "Elegí una propuesta." };
+  const lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    const sh = _hojaDecisiones();
+    const id = Math.max(0, sh.getLastRow() - 1) + 1;
+    sh.appendRow([id, Date.now(), clave, String(problema || "").slice(0, 80), opcion, String(titulo || "").slice(0, 160), String(nota || "").slice(0, 500), empleado.nombre || "", String(desde || ""), String(hasta || "")]);
+    _auditar("auditoria_decision", empleado.id, empleado.nombre, clave + " → " + opcion);
+  } finally { lock.releaseLock(); }
+  return { ok: true };
 }
 
 /** El Resp. de local prende/apaga qué sabores del catálogo tiene SU
