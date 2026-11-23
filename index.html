@@ -1962,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.223.2";
+const FRONTEND_VERSION = "1.223.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2286,7 +2286,11 @@ function kilosMap(hasta){
   S.sabores.forEach(s=>{ if(!esVasquetaKilos(s.id)) return;
     out[s.id] = !bts ? 0 : (+kb[s.id]>0 ? +kb[s.id] : (+base[s.id]>0 ? null : 0)); });
   for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts || r.ts>hasta) continue;
-    if(r.tipo==="cambio"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]+=(+k||0) } continue }
+    if(r.tipo==="cambio"){ const parcial=r.subtipo==="conteo_parcial";
+      for(const [id,k] of Object.entries(r.kilos||{})){ if(!(id in out)) continue;
+        if(out[id]!==null) out[id]+=(+k||0);
+        else if(parcial && +k>0) out[id]=+k; // el conteo parcial fija los kilos de ese sabor aunque el último conteo completo no los tuviera (antes quedaban «sin kilos cargados» para siempre)
+      } continue }
     if(r.subtipo==="merma_camara"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]-=(+k||0) } continue } // merma en kilos de la cámara: resta kilos, no vasquetas
     if(r.tipo!=="ingreso" && r.tipo!=="salida") continue;
     for(const [id,q] of Object.entries(r.items||{})){ if(!(id in out) || out[id]===null || !(+q>0)) continue;
