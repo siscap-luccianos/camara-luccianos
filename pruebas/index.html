@@ -640,7 +640,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .laBusca{flex:1;min-width:150px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 12px;font:600 .95rem var(--body)}
 .laBusca::placeholder{color:var(--muted)}
 .laSel{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px;font:600 .88rem var(--body)}
-.laChips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;align-items:center}.laChips::-webkit-scrollbar{display:none}
+.laChips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .laChip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:700 .78rem var(--body);cursor:pointer;white-space:nowrap;flex:none}
 .laChip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .laChip.grupo b{color:var(--muted);font-weight:700}.laChip.grupo[aria-pressed="true"] b{color:var(--accent-ink)}
@@ -690,9 +690,17 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .laDt{background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:10px 12px;margin-top:6px;font-size:.82rem;line-height:1.5}
 .laDt[hidden]{display:none}.laDt b{color:var(--accent);font-weight:800}
 .laTodo{border:0;background:none;color:var(--accent);font:700 .84rem var(--body);cursor:pointer;align-self:flex-start;padding:0 4px}
-.laF2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 0}
-.laF2 label{font-size:.74rem;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:4px}
-.laF2 input,.laF2 select{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px;font:600 .95rem var(--body)}
+.laCampos{padding:0 14px}
+.laCampo{display:flex;align-items:center;gap:12px;padding:12px 0;min-width:0}.laCampo+.laCampo{border-top:1px solid var(--line)}
+.laCampo>span{font-size:.8rem;font-weight:700;color:var(--muted);width:76px;flex:none}
+.laCampo input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:600 1rem var(--body);padding:2px 0}
+.laCampo input::placeholder{color:var(--muted)}.laCampo input[readonly]{color:var(--ink)}
+.laCampo.col{flex-direction:column;align-items:stretch;gap:8px}.laCampo.col>span{width:auto}
+.laCupo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}.laCupo[hidden]{display:none}
+.laCupo>span{font-size:.82rem;font-weight:700;color:var(--ink)}.laCupo .sub{font-weight:600;color:var(--muted)}
+.laStep{display:inline-flex;align-items:center;background:var(--accent-soft);border-radius:10px;overflow:hidden}
+.laStep button{border:0;background:transparent;color:var(--accent);font:700 1.2rem var(--body);width:38px;height:36px;cursor:pointer;padding:0}
+.laStep b{min-width:34px;text-align:center;color:var(--ink);font-size:1rem}
 .laAcc{width:100%;border:0;background:none;font:700 1rem var(--body);color:var(--accent);padding:14px;text-align:center;cursor:pointer}
 .laAcc.rojo{color:var(--alert)}
 .laCambios{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:.84rem;font-weight:700}
@@ -1841,7 +1849,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.214.1";
+const FRONTEND_VERSION = "1.215.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4504,6 +4512,7 @@ function laTagsHTML(l){
   if(laOn(l,"escaner_salida")||laOn(l,"escaner_conteo")) t.push('<span class="laTag k">Escáner</span>');
   if(laOn(l,"produccion")) t.push('<span class="laTag v">Produce</span>');
   if(laOn(l,"venta_dia")) t.push('<span class="laTag">Venta del día</span>');
+  if(laOn(l,"control_equipos")&&(l.maxEquipos||3)!==3) t.push('<span class="laTag">'+l.maxEquipos+' dispositivos</span>');
   const off=Object.keys(LA_RUBROS_TXT).filter(r=>!laOn(l,"lleva_"+r));
   if(off.length) t.push('<span class="laTag x">Sin '+off.map(r=>LA_RUBROS_TXT[r]).join(", ")+'</span>');
   return t.join("");
@@ -4536,7 +4545,8 @@ function localesAdmView(){
     <div class="laTop">
       <div class="laCab"><p class="laCuenta" style="margin-right:auto">Operaciones · solo admin</p><button class="btn" data-la-nuevo type="button">+ Nuevo local</button></div>
       <div class="laSegs" role="group" aria-label="Tipo de local">${[["todos","Activos"],["propios","Propios"],["fran","Franquicias"],["baja","De baja"]].map(([k,t])=>`<button type="button" class="laSeg" data-la-f="${k}" aria-pressed="${L.f===k}">${t} <span class="n">${cnt(k)}</span></button>`).join("")}</div>
-      <div class="laCab"><input id="laQ" class="laBusca" type="search" placeholder="Buscar local" aria-label="Buscar local" value="${esc(L.q)}" autocomplete="off"><select id="laPais" class="laSel" aria-label="País"><option value="">Todos los países</option>${paises.map(p=>`<option${L.pais===p?" selected":""}>${esc(p)}</option>`).join("")}</select></div>
+      <div class="laCab"><input id="laQ" class="laBusca" type="search" placeholder="Buscar local" aria-label="Buscar local" value="${esc(L.q)}" autocomplete="off"></div>
+      <div class="laChips" role="group" aria-label="País"><button type="button" class="laChip" data-la-pais="" aria-pressed="${!L.pais}">Todos los países</button>${paises.map(p=>`<button type="button" class="laChip" data-la-pais="${esc(p)}" aria-pressed="${L.pais===p}">${esc(p)}</button>`).join("")}</div>
       <div class="laChips" aria-label="Mis grupos">${grupos.map(g=>`<button type="button" class="laChip grupo" data-la-g="${esc(g.id)}" aria-pressed="${String(L.g)===String(g.id)}">${esc(g.nombre)} <b>${g.locales.length}</b></button>`).join("")}<button type="button" class="laChip" data-la-gnuevo>+ Grupo</button></div>
       <div class="laChips" aria-label="Filtrar por opción">${filtros.map(([k,t])=>`<button type="button" class="laChip" data-la-of="${k}" aria-pressed="${L.of===k}">${t}</button>`).join("")}</div>
     </div>
@@ -4547,21 +4557,26 @@ function localesAdmView(){
     ${marcados.length?`<div class="laBarra" role="toolbar" aria-label="Acciones sobre los marcados"><b>${marcados.length} marcado${marcados.length===1?"":"s"}</b><button type="button" data-la-nada>Cancelar</button><button type="button" data-la-agrupar>Agrupar</button><button type="button" class="fuerte" data-la-masivo>Cambiar una opción</button></div>`:""}
   </div>`;
 }
-function laInterruptor(l,k,tit,desc){
+function laInterruptor(l,k,tit,desc,extra){
   const dt=LA_DET[k]||(k.indexOf("lleva_")===0?LA_RUBRO_DET:"");
-  return `<div class="laOpt"><div class="d"><b>${tit}</b>${desc?`<span class="sub">${desc}</span>`:""}${dt?`<button class="laMas" type="button" data-la-mas="${k}" aria-expanded="false" aria-controls="ladt-${k}">Qué hace</button><div class="laDt" id="ladt-${k}" hidden>${dt}</div>`:""}</div><input class="laSw" type="checkbox" role="switch" data-la-k="${k}"${l.opciones[k]?" checked":""} aria-label="${tit}"></div>`;
+  return `<div class="laOpt"><div class="d"><b>${tit}</b>${desc?`<span class="sub">${desc}</span>`:""}${dt?`<button class="laMas" type="button" data-la-mas="${k}" aria-expanded="false" aria-controls="ladt-${k}">Qué hace</button><div class="laDt" id="ladt-${k}" hidden>${dt}</div>`:""}${extra||""}</div><input class="laSw" type="checkbox" role="switch" data-la-k="${k}"${l.opciones[k]?" checked":""} aria-label="${tit}"></div>`;
 }
 /** Hoja de un local (o de uno nuevo). Estado propio, sin tocar la pantalla de atrás hasta guardar. */
 function laAbrir(nombre){
   const L=laEstado(), nuevo=!nombre;
-  const base=nuevo?{nombre:"",grupo:"Franquicias",region:"",pais:"Argentina",opciones:{activo:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}}:L.datos.find(x=>x.nombre===nombre);
+  const base=nuevo?{nombre:"",grupo:"Franquicias",region:"",pais:"Argentina",maxEquipos:3,opciones:{activo:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}}:L.datos.find(x=>x.nombre===nombre);
   if(!base) return;
+  let tipo=base.grupo||"Franquicias", pais=base.pais||"Argentina", otro=false, cupo=base.maxEquipos||3;
+  const paises=Array.from(new Set(LA_PAISES.concat(base.pais?[base.pais]:[])));
   const ov=document.createElement("div"); ov.className="mantenerOv"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+  const cupoHTML=`<div class="laCupo" id="laCupo"${base.opciones.control_equipos?"":" hidden"}><span>Dispositivos permitidos</span><span class="laStep"><button type="button" data-la-cupo="-1" aria-label="Un dispositivo menos">−</button><b id="laCupoN" aria-live="polite">${cupo}</b><button type="button" data-la-cupo="1" aria-label="Un dispositivo más">+</button></span><span class="sub">de 1 a 20</span></div>`;
   const pintar=()=>{
     ov.innerHTML=`<div class="mantenerBox laBox"><div class="laNav"><button class="laPlano" data-la-cerrar type="button">Cancelar</button><h3>${nuevo?"Nuevo local":esc(base.nombre)}</h3><button class="laPlano fuerte" data-la-guardar type="button">${nuevo?"Crear":"Listo"}</button></div>
     <div class="laCuerpo"><button class="laTodo" type="button" data-la-todo aria-pressed="false">Desplegar todos los detalles</button>
-    <div class="laSec" style="padding:0 14px"><div class="laF2"><label>Nombre<input id="laN" value="${esc(base.nombre)}" placeholder="Ej. Palermo CABA"${nuevo?"":" readonly"} maxlength="60"></label><label>Tipo<select id="laG">${["Propios","Franquicias"].map(g=>`<option${base.grupo===g?" selected":""}>${g}</option>`).join("")}</select></label><label>Región<input id="laR" value="${esc(base.region)}" placeholder="Ej. CABA" maxlength="40"></label><label>País<select id="laP">${Array.from(new Set(LA_PAISES.concat(base.pais?[base.pais]:[]))).map(p=>`<option${base.pais===p?" selected":""}>${esc(p)}</option>`).join("")}</select></label></div></div>
-    ${LA_OPCIONES.map(([t,os])=>`<div class="laSec"><h4>${t}</h4>${os.map(([k,tit,d])=>laInterruptor(base,k,tit,d)).join("")}</div>`).join("")}
+    <div class="laSec laCampos"><label class="laCampo"><span>Nombre</span><input id="laN" value="${esc(base.nombre)}" placeholder="Ej. Palermo CABA"${nuevo?"":" readonly"} maxlength="60" autocomplete="off"></label><label class="laCampo"><span>Región</span><input id="laR" value="${esc(base.region)}" placeholder="Ej. CABA" maxlength="40" autocomplete="off"></label>
+    <div class="laCampo col"><span>Tipo</span><div class="laSegs" role="group" aria-label="Tipo de local">${["Propios","Franquicias"].map(g=>`<button type="button" class="laSeg" data-la-tipo="${g}" aria-pressed="${tipo===g}">${g}</button>`).join("")}</div></div>
+    <div class="laCampo col"><span>País</span><div class="laChips" role="group" aria-label="País">${paises.map(p=>`<button type="button" class="laChip" data-la-paisset="${esc(p)}" aria-pressed="${pais===p}">${esc(p)}</button>`).join("")}<button type="button" class="laChip" data-la-paisotro aria-pressed="false">Otro…</button></div><input id="laPOtro" placeholder="Escribí el país" maxlength="30" autocomplete="off" hidden style="border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)"></div></div>
+    ${LA_OPCIONES.map(([t,os])=>`<div class="laSec"><h4>${t}</h4>${os.map(([k,tit,d])=>laInterruptor(base,k,tit,d,k==="control_equipos"?cupoHTML:"")).join("")}</div>`).join("")}
     ${nuevo?`<p class="laNota">Al crearlo, el local arranca con todos los rubros, sin contraseña y con control de dispositivos prendido. Después generás el código de 6 números desde Equipo.</p>`:""}
     <div class="laCambios" id="laCam" hidden></div><p class="laErr" id="laErr" hidden></p>
     ${nuevo?"":`<div class="laSec" style="padding:0">${laOn(base,"activo")?`<button class="laAcc rojo" type="button" data-la-baja>Dar de baja este local</button>`:`<button class="laAcc" type="button" data-la-alta>Dar de alta este local</button>`}<div class="laConf" id="laConf" hidden><p>Para dar de baja escribí el nombre del local: <b>${esc(base.nombre)}</b>. Los movimientos y el historial se conservan.</p><input id="laConfN" placeholder="Nombre del local" autocomplete="off"><button class="btn" type="button" data-la-baja-ok disabled>Confirmar baja</button></div></div>`}
@@ -4570,27 +4585,34 @@ function laAbrir(nombre){
   pintar(); document.body.appendChild(ov);
   const q=s=>ov.querySelector(s);
   const err=m=>{ const e=q("#laErr"); e.textContent=m; e.hidden=!m };
+  const paisFinal=()=>otro?q("#laPOtro").value.trim():pais;
   const cambios=()=>{ const lista=[]; ov.querySelectorAll("[data-la-k]").forEach(sw=>{ if(!!base.opciones[sw.dataset.laK]!==sw.checked) lista.push([sw.dataset.laK,sw.checked,sw.getAttribute("aria-label")]) }); return lista };
-  const resumen=()=>{ const c=cambios(), e=q("#laCam"); e.hidden=nuevo||!c.length; e.textContent=c.length?"Vas a cambiar: "+c.map(x=>x[2]+": "+(x[1]?"SÍ":"NO")).join(" · "):"" };
+  const resumen=()=>{ const c=cambios(), cu=q("[data-la-k='control_equipos']").checked&&cupo!==(base.maxEquipos||3), e=q("#laCam"); const tx=c.map(x=>x[2]+": "+(x[1]?"SÍ":"NO")).concat(cu?["Dispositivos permitidos: "+cupo]:[]); e.hidden=nuevo||!tx.length; e.textContent=tx.length?"Vas a cambiar: "+tx.join(" · "):"" };
   const guardar=async(extra)=>{
     err("");
     const btn=q("[data-la-guardar]"); btn.disabled=true;
     const opc={}; cambios().forEach(([k,v])=>{ opc[k]=v }); if(extra) Object.assign(opc,extra);
+    const pf=paisFinal(); if(!pf){ err("Escribí el país."); btn.disabled=false; return }
+    const cupoEnv=q("[data-la-k='control_equipos']").checked&&cupo!==(base.maxEquipos||3)?cupo:undefined;
     let r;
     if(nuevo){
       const n=q("#laN").value.trim(); if(n.length<2){ err("Poné el nombre del local."); btn.disabled=false; return }
-      r=await api("crearLocalAdmin",{nombre:n,grupo:q("#laG").value,region:q("#laR").value.trim(),pais:q("#laP").value});
-      if(r&&r.ok&&Object.keys(opc).length){ r=await api("guardarLocalAdmin",{local:n,opciones:opc}) }
-    } else r=await api("guardarLocalAdmin",{local:base.nombre,opciones:opc,grupo:q("#laG").value,region:q("#laR").value.trim(),pais:q("#laP").value});
+      r=await api("crearLocalAdmin",{nombre:n,grupo:tipo,region:q("#laR").value.trim(),pais:pf});
+      if(r&&r.ok&&(Object.keys(opc).length||cupoEnv)){ r=await api("guardarLocalAdmin",{local:n,opciones:opc,maxEquipos:cupoEnv}) }
+    } else r=await api("guardarLocalAdmin",{local:base.nombre,opciones:opc,grupo:tipo,region:q("#laR").value.trim(),pais:pf,maxEquipos:cupoEnv});
     btn.disabled=false;
     if(r&&r.ok){ ov.remove(); L.datos=null; cargarLocalesAdm(); toast(nuevo?"Local creado":(r.sinCambios?"Sin cambios":"Cambios guardados")); return }
     err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":((r&&r.error)||"No se pudo guardar."));
   };
-  ov.addEventListener("change",e=>{ if(e.target.matches("[data-la-k]")) resumen() });
+  ov.addEventListener("change",e=>{ if(e.target.matches("[data-la-k]")){ if(e.target.dataset.laK==="control_equipos") q("#laCupo").hidden=!e.target.checked; resumen() } });
   ov.addEventListener("input",e=>{ if(e.target.id==="laConfN"){ const b=q("[data-la-baja-ok]"); if(b) b.disabled=e.target.value.trim().toLowerCase()!==base.nombre.toLowerCase() } });
   ov.addEventListener("click",e=>{
     if(e.target===ov||e.target.closest("[data-la-cerrar]")){ ov.remove(); return }
     const mas=e.target.closest("[data-la-mas]"); if(mas){ const d=q("#ladt-"+mas.dataset.laMas), ab=mas.getAttribute("aria-expanded")==="true"; mas.setAttribute("aria-expanded",String(!ab)); d.hidden=ab; return }
+    const tp=e.target.closest("[data-la-tipo]"); if(tp){ tipo=tp.dataset.laTipo; ov.querySelectorAll("[data-la-tipo]").forEach(b=>b.setAttribute("aria-pressed",String(b===tp))); return }
+    const ps=e.target.closest("[data-la-paisset]"); if(ps){ pais=ps.dataset.laPaisset; otro=false; q("#laPOtro").hidden=true; ov.querySelectorAll("[data-la-paisset],[data-la-paisotro]").forEach(b=>b.setAttribute("aria-pressed",String(b===ps))); return }
+    if(e.target.closest("[data-la-paisotro]")){ otro=true; q("#laPOtro").hidden=false; q("#laPOtro").focus(); ov.querySelectorAll("[data-la-paisset]").forEach(b=>b.setAttribute("aria-pressed","false")); q("[data-la-paisotro]").setAttribute("aria-pressed","true"); return }
+    const cu=e.target.closest("[data-la-cupo]"); if(cu){ cupo=Math.max(1,Math.min(20,cupo+(+cu.dataset.laCupo))); q("#laCupoN").textContent=cupo; resumen(); return }
     if(e.target.closest("[data-la-todo]")){ const t=q("[data-la-todo]"), abre=t.getAttribute("aria-pressed")!=="true"; t.setAttribute("aria-pressed",String(abre)); t.textContent=abre?"Contraer todos los detalles":"Desplegar todos los detalles"; ov.querySelectorAll("[data-la-mas]").forEach(m=>{ m.setAttribute("aria-expanded",String(abre)); q("#ladt-"+m.dataset.laMas).hidden=!abre }); return }
     if(e.target.closest("[data-la-guardar]")){ guardar(); return }
     if(e.target.closest("[data-la-baja]")){ q("#laConf").hidden=false; q("#laConfN").focus(); return }
@@ -4601,15 +4623,16 @@ function laAbrir(nombre){
 }
 function laMasivo(){
   const L=laEstado(), C=controlEstado(), ls=Object.keys(C.sel||{}).filter(n=>C.sel[n]); if(!ls.length) return;
-  const sel={}; let conf=false; // sel[k] = true (prender) | false (apagar) | sin definir (no cambiar)
+  let cupo; const sel={}; let conf=false; // cupo = undefined (no cambiar) o 1–20; sel[k] = true (prender) | false (apagar) | sin definir (no cambiar)
   const ov=document.createElement("div"); ov.className="mantenerOv"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
-  const conteo=()=>{ const ks=Object.keys(sel); let cambios=0, locs=0; ls.forEach(n=>{ const l=L.datos.find(x=>x.nombre===n); if(!l) return; const c=ks.filter(k=>laOn(l,k)!==sel[k]).length; if(c){ locs++; cambios+=c } }); return {ks,cambios,locs} };
+  const conteo=()=>{ const ks=Object.keys(sel); let cambios=0, locs=0; ls.forEach(n=>{ const l=L.datos.find(x=>x.nombre===n); if(!l) return; const c=ks.filter(k=>laOn(l,k)!==sel[k]).length+((cupo!==undefined&&(l.maxEquipos||3)!==cupo)?1:0); if(c){ locs++; cambios+=c } }); return {ks,cambios,locs,n:ks.length+(cupo!==undefined?1:0)} };
   const pintar=()=>{
     const c=conteo(), baja=sel.activo===false, alta=sel.activo===true;
-    ov.innerHTML=`<div class="mantenerBox laBox"><div class="laNav"><button class="laPlano" data-la-cerrar type="button">Cancelar</button><h3>Cambiar en ${ls.length} local${ls.length===1?"":"es"}</h3><button class="laPlano fuerte" data-la-ok type="button"${(!c.ks.length||(baja&&!conf))?" disabled":""}>Aplicar</button></div>
+    ov.innerHTML=`<div class="mantenerBox laBox"><div class="laNav"><button class="laPlano" data-la-cerrar type="button">Cancelar</button><h3>Cambiar en ${ls.length} local${ls.length===1?"":"es"}</h3><button class="laPlano fuerte" data-la-ok type="button"${(!c.n||(baja&&!conf))?" disabled":""}>Aplicar</button></div>
     <div class="laCuerpo"><p class="laNota">Elegí qué prender y qué apagar. Lo que dejes en «No cambiar» queda como está en cada local.</p>
+    <div class="laSec"><h4>Dispositivos</h4><div class="laOpt" style="align-items:center"><div class="d"><b>Dispositivos permitidos</b><span class="sub">Cuántos dispositivos puede vincular cada local (de 1 a 20).</span></div><div class="laCupo" style="margin:0"><button type="button" class="laChip" data-la-mc="x" aria-pressed="${cupo===undefined}">No cambiar</button><span class="laStep"><button type="button" data-la-mc="-" aria-label="Un dispositivo menos">−</button><b aria-live="polite">${cupo===undefined?"—":cupo}</b><button type="button" data-la-mc="+" aria-label="Un dispositivo más">+</button></span></div></div></div>
     ${LA_OPCIONES.map(([t,os])=>`<div class="laSec"><h4>${t}</h4>${os.map(([k,tit])=>`<div class="laOpt" style="align-items:center"><div class="d"><b>${tit}</b></div><div class="laTri" role="group" aria-label="${tit}"><button type="button" data-la-m="${k}" data-v="" aria-pressed="${sel[k]===undefined}">No cambiar</button><button type="button" class="si" data-la-m="${k}" data-v="1" aria-pressed="${sel[k]===true}">Sí</button><button type="button" class="no" data-la-m="${k}" data-v="0" aria-pressed="${sel[k]===false}">No</button></div></div>`).join("")}</div>`).join("")}
-    <div class="laCambios" id="laMres">${c.ks.length?`Cambia ${c.ks.length} ${c.ks.length===1?"opción":"opciones"} en ${c.locs} de ${ls.length} local${ls.length===1?"":"es"} (${c.cambios} cambio${c.cambios===1?"":"s"} en total; el resto ya estaba así).`:"Todavía no elegiste ningún cambio."}</div>
+    <div class="laCambios" id="laMres">${c.n?`Cambia ${c.n} ${c.n===1?"opción":"opciones"} en ${c.locs} de ${ls.length} local${ls.length===1?"":"es"} (${c.cambios} cambio${c.cambios===1?"":"s"} en total; el resto ya estaba así).`:"Todavía no elegiste ningún cambio."}</div>
     ${baja?`<label class="laConfBaja"><input type="checkbox" id="laMconf"${conf?" checked":""}> Confirmo que se dan de baja ${ls.length} local${ls.length===1?"":"es"}. Sus movimientos y su historial se conservan.</label>`:""}
     ${alta?`<p class="laNota">Se dan de alta ${ls.length} local${ls.length===1?"":"es"}: vuelven a poder entrar.</p>`:""}
     <p class="laErr" id="laMerr" hidden></p></div></div>`;
@@ -4619,11 +4642,13 @@ function laMasivo(){
   ov.addEventListener("change",e=>{ if(e.target.id==="laMconf"){ conf=e.target.checked; const cont=ov.querySelector(".laCuerpo"), y=cont?cont.scrollTop:0; pintar(); const c2=ov.querySelector(".laCuerpo"); if(c2) c2.scrollTop=y } });
   ov.addEventListener("click",async e=>{
     if(e.target===ov||e.target.closest("[data-la-cerrar]")){ ov.remove(); return }
+    const mc=e.target.closest("[data-la-mc]");
+    if(mc){ const v=mc.dataset.laMc; if(v==="x") cupo=undefined; else cupo=cupo===undefined?3:Math.max(1,Math.min(20,cupo+(v==="+"?1:-1))); const cont=ov.querySelector(".laCuerpo"), y=cont?cont.scrollTop:0; pintar(); const c2=ov.querySelector(".laCuerpo"); if(c2) c2.scrollTop=y; return }
     const m=e.target.closest("[data-la-m]");
     if(m){ const k=m.dataset.laM, v=m.dataset.v; if(v==="") delete sel[k]; else sel[k]=v==="1"; if(sel.activo!==false) conf=false; const cont=ov.querySelector(".laCuerpo"), y=cont?cont.scrollTop:0; pintar(); const c2=ov.querySelector(".laCuerpo"); if(c2) c2.scrollTop=y; return }
     if(e.target.closest("[data-la-ok]")){
       const b=q("[data-la-ok]"); if(b.disabled) return; b.disabled=true; let cambiados=0;
-      for(let i=0;i<ls.length;i+=25){ b.textContent="Aplicando "+Math.min(i+25,ls.length)+" de "+ls.length+"…"; const r=await api("localesAdminMasivo",{locales:ls.slice(i,i+25),opciones:sel},90000);
+      for(let i=0;i<ls.length;i+=25){ b.textContent="Aplicando "+Math.min(i+25,ls.length)+" de "+ls.length+"…"; const r=await api("localesAdminMasivo",{locales:ls.slice(i,i+25),opciones:sel,cupo:cupo},90000);
         if(!(r&&r.ok)){ b.disabled=false; b.textContent="Aplicar"; const em=q("#laMerr"); em.textContent=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":((r&&r.error)||"No se pudo aplicar.")+(cambiados?" Ya se cambiaron "+cambiados+".":""); em.hidden=false; return }
         cambiados+=r.cambiados||0 }
       ov.remove(); C.sel={}; L.datos=null; cargarLocalesAdm(); toast("Cambio aplicado a "+cambiados+" local"+(cambiados===1?"":"es"));
@@ -4636,6 +4661,7 @@ function laClick(t){
   const L=laEstado(), C=controlEstado(); C.sel=C.sel||{};
   if(t.dataset.laReint!==undefined){ cargarLocalesAdm(); renderApp(); return true }
   if(t.dataset.laF){ L.f=t.dataset.laF; renderApp(); return true }
+  if(t.dataset.laPais!==undefined){ L.pais=t.dataset.laPais; renderApp(); return true }
   if(t.dataset.laOf){ L.of=L.of===t.dataset.laOf?"":t.dataset.laOf; renderApp(); return true }
   if(t.dataset.laG){ L.g=String(L.g)===String(t.dataset.laG)?"":t.dataset.laG; renderApp(); return true }
   if(t.dataset.laGnuevo!==undefined){ ctlNuevoGrupoVacio(); return true }
@@ -4660,10 +4686,9 @@ document.addEventListener("change",e=>{
   const C=controlEstado(); C.sel=C.sel||{}; if(c.checked) C.sel[c.dataset.laCk]=true; else delete C.sel[c.dataset.laCk]; renderApp();
 });
 document.addEventListener("input",e=>{
-  const t=e.target; if(!t||(t.id!=="laQ"&&t.id!=="laPais")) return;
-  const L=laEstado(); if(t.id==="laQ"){ L.q=t.value; const p=t.selectionStart; renderApp(); const q=document.getElementById("laQ"); if(q){ q.focus(); try{ q.setSelectionRange(p,p) }catch(_){} } } else { L.pais=t.value; renderApp() }
+  const t=e.target; if(!t||t.id!=="laQ") return;
+  const L=laEstado(); L.q=t.value; const p=t.selectionStart; renderApp(); const q=document.getElementById("laQ"); if(q){ q.focus(); try{ q.setSelectionRange(p,p) }catch(_){} }
 });
-document.addEventListener("change",e=>{ const t=e.target; if(t&&t.id==="laPais"){ laEstado().pais=t.value; renderApp() } });
 /** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
 function avisoConteoInicialHTML(){
   if(Date.now()>=Date.parse("2026-12-01T00:00:00-03:00")) return ""; // fijo hasta el fin del 30/11 (00:00 del 1/12), sin botón para cerrarlo

@@ -56,4 +56,12 @@ ok(r.ok&&r.cambiados===2&&T[2][H.indexOf("activo")]==="NO"&&T[3][H.indexOf("acti
 r=run(`localesAdminMasivo(["Torreon","Obelisco","Bllis"],undefined,undefined,admin,{activo:true})`);
 ok(r.ok&&r.cambiados===3&&T[2][H.indexOf("activo")]==="SI","dar de alta a varios de una vez");
 ok(!run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,{clave:true})`).ok,"una de las opciones no existe: rechaza todo y no escribe nada");
+ok(run(`localesAdmin(admin)`).locales.find(l=>l.nombre==="Torreon").maxEquipos===3,"el cupo de dispositivos vacío figura como 3 (el de siempre)");
+r=run(`guardarLocalAdmin("Torreon",{},undefined,undefined,undefined,admin,5)`);
+ok(r.ok&&T[2][H.indexOf("max_equipos")]===5&&r.local.maxEquipos===5&&aud.some(a=>/dispositivos permitidos: 3 → 5/.test(a.d)),"guarda el cupo de dispositivos (5) y lo deja en la bitácora");
+ok(!run(`guardarLocalAdmin("Torreon",{},undefined,undefined,undefined,admin,25)`).ok&&!run(`guardarLocalAdmin("Torreon",{},undefined,undefined,undefined,admin,0)`).ok&&!run(`guardarLocalAdmin("Torreon",{},undefined,undefined,undefined,admin,2.5)`).ok,"el cupo solo acepta enteros de 1 a 20 (25, 0 y 2,5 se rechazan)");
+r=run(`localesAdminMasivo(["Torreon","Obelisco","Palermo CABA"],undefined,undefined,admin,undefined,10)`);
+ok(r.ok&&r.cambiados===3&&T[3][H.indexOf("max_equipos")]===10&&T[T.length-1][H.indexOf("max_equipos")]===10,"cupo de varios locales de una vez");
+r=run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,{control_equipos:true},10)`); ok(r.ok&&r.iguales===1&&r.cambiados===0,"lo que ya estaba así no cuenta como cambio");
+ok(!run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,undefined,21)`).ok&&!run(`localesAdminMasivo(["Torreon"],undefined,undefined,admin,undefined,undefined)`).ok,"cupo fuera de rango o pedido vacío se rechaza");
 console.log(f?"FALLAS "+f:"FALLAS 0"); process.exit(f?1:0);

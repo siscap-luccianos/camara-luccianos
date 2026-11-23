@@ -55,6 +55,10 @@ const { chromium } = require("playwright");
   ok(await page.$eval("[data-la-l='Torreon Mar del Plata']", e => /Kilos reales/.test(e.innerText) && /Escáner/.test(e.innerText)), "Torreón muestra sus etiquetas (Kilos reales, Escáner)");
   ok(await page.$eval("[data-la-l='Obelisco CABA']", e => /Sin baldes/.test(e.innerText)), "Obelisco muestra «Sin baldes»");
   await contraste("lista, crema");
+  ok(await page.$("main select, #main select") === null || (await page.$$eval("#main .la select", e => e.length)) === 0, "la pantalla no tiene menús desplegables recuadrados (<select>)");
+  const ch = await page.evaluate(() => [...document.querySelectorAll(".laChips")].map(c => ({ cortado: c.scrollWidth > c.clientWidth + 1, fuera: [...c.children].some(b => b.getBoundingClientRect().right > window.innerWidth + 1) })));
+  ok(ch.length >= 3 && ch.every(c => !c.cortado && !c.fuera), "los filtros se ven completos: ninguno queda cortado ni fuera de la pantalla (" + ch.length + " filas)");
+  ok(await page.$("[data-la-pais='Argentina']") !== null && await page.$("[data-la-pais='Marruecos']") !== null, "el país se filtra con botones, uno por país");
 
   // 2) filtros
   await page.click("[data-la-f='baja']"); await page.waitForTimeout(150);
@@ -71,6 +75,11 @@ const { chromium } = require("playwright");
   await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox");
   ok(await page.$eval("[data-la-k='kilos_reales']", e => e.checked) && await page.$eval("[data-la-k='escaner_salida']", e => e.checked), "la hoja muestra los interruptores prendidos de Torreón");
   ok(await page.$eval("#ladt-kilos_reales", e => e.hidden), "el «Qué hace» arranca contraído");
+  ok((await page.$$eval(".laBox select", e => e.length)) === 0, "la hoja tampoco tiene menús recuadrados: Tipo y País son botones");
+  ok(await page.$eval("[data-la-tipo='Propios']", e => e.getAttribute("aria-pressed") === "true"), "el tipo del local aparece marcado");
+  ok(await page.$eval("#laCupo", e => !e.hidden) && (await page.innerText("#laCupoN")) === "3", "con control de dispositivos prendido se ve «Dispositivos permitidos» (3)");
+  await page.click("[data-la-k='control_equipos']"); ok(await page.$eval("#laCupo", e => e.hidden), "si se apaga el control de dispositivos, el cupo se esconde");
+  await page.click("[data-la-k='control_equipos']");
   await page.click("[data-la-mas='kilos_reales']");
   ok(!(await page.$eval("#ladt-kilos_reales", e => e.hidden)) && /Conteo con kilos/.test(await page.innerText("#ladt-kilos_reales")), "«Qué hace» se despliega y explica la recomendación");
   await page.click("[data-la-todo]");
@@ -83,6 +92,20 @@ const { chromium } = require("playwright");
   const pg = posts.find(p => p.accion === "guardarLocalAdmin");
   ok(pg && pg.local === "Torreon Mar del Plata" && pg.opciones.escaner_salida === false && Object.keys(pg.opciones).length === 1, "manda solo lo que cambió: " + JSON.stringify(pg && pg.opciones));
   ok(await page.$(".laBox") === null && posts.some(p => p.accion === "localesAdmin") && (await page.$("[data-la-l='Torreon Mar del Plata']")) !== null, "se cierra y la lista se vuelve a pedir al servidor");
+
+  // 3b) cupo de dispositivos (de 1 a 20)
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector("#laCupoN");
+  await page.click("[data-la-cupo='1']"); await page.click("[data-la-cupo='1']");
+  ok((await page.innerText("#laCupoN")) === "5" && /Dispositivos permitidos: 5/.test(await page.innerText("#laCam")), "el cupo sube de a 1 y el resumen lo muestra");
+  for (let i = 0; i < 20; i++) await page.click("[data-la-cupo='1']");
+  ok((await page.innerText("#laCupoN")) === "20", "el cupo se frena en 20");
+  for (let i = 0; i < 25; i++) await page.click("[data-la-cupo='-1']");
+  ok((await page.innerText("#laCupoN")) === "1", "y en 1 hacia abajo");
+  for (let i = 0; i < 4; i++) await page.click("[data-la-cupo='1']");
+  posts.length = 0; await page.click("[data-la-guardar]"); await page.waitForTimeout(700);
+  const pc = posts.find(p => p.accion === "guardarLocalAdmin");
+  ok(pc && pc.maxEquipos === 5, "guarda el cupo (5): " + JSON.stringify(pc && pc.maxEquipos));
+  ok(/5 dispositivos/.test(await page.innerText("[data-la-l='Torreon Mar del Plata']")), "la lista muestra la etiqueta «5 dispositivos»");
 
   // 4) alta de un local nuevo
   await page.click("[data-la-nuevo]"); await page.waitForSelector("#laN");
@@ -116,6 +139,11 @@ const { chromium } = require("playwright");
   await page.click("[data-la-m='kilos_reales'][data-v='1']"); await page.click("[data-la-m='escaner_salida'][data-v='1']"); await page.click("[data-la-m='lleva_baldes'][data-v='0']");
   ok(/Cambia 3 opciones en 2 de 2 locales/.test(await page.innerText("#laMres")), "se pueden elegir varias opciones juntas y avisa cuántas cambian: " + (await page.innerText("#laMres")));
   await contraste("cambio en varios, crema");
+  await page.click("[data-la-mc='+']");
+  ok(/Cambia 4 opciones/.test(await page.innerText("#laMres")), "elegir un cupo de dispositivos suma una opción al resumen: " + (await page.innerText("#laMres")));
+  await page.click("[data-la-mc='x']");
+  ok(/Cambia 3 opciones/.test(await page.innerText("#laMres")), "«No cambiar» en el cupo la saca del resumen");
+  await page.click("[data-la-mc='+']"); await page.click("[data-la-mc='+']");
   await page.click("[data-la-m='activo'][data-v='0']");
   ok(await page.$eval("[data-la-ok]", e => e.disabled) && await page.$("#laMconf") !== null, "elegir «baja» pide confirmar y apaga «Aplicar» hasta marcarlo");
   await contraste("cambio en varios con baja, crema");
@@ -123,7 +151,7 @@ const { chromium } = require("playwright");
   ok(await page.$("#laMconf") === null && !(await page.$eval("[data-la-ok]", e => e.disabled)), "al volver a «No cambiar» la confirmación desaparece");
   posts.length = 0; await page.click("[data-la-ok]"); await page.waitForTimeout(800);
   const pm = posts.find(p => p.accion === "localesAdminMasivo");
-  ok(pm && pm.locales.length === 2 && pm.opciones.kilos_reales === true && pm.opciones.escaner_salida === true && pm.opciones.lleva_baldes === false && !("activo" in pm.opciones), "manda las 3 opciones y solo a los 2 locales: " + JSON.stringify(pm && pm.opciones));
+  ok(pm && pm.locales.length === 2 && pm.opciones.kilos_reales === true && pm.opciones.escaner_salida === true && pm.opciones.lleva_baldes === false && !("activo" in pm.opciones) && pm.cupo === 4, "manda las 3 opciones, el cupo (4) y solo a los 2 locales: " + JSON.stringify(pm && pm.opciones));
   ok(await page.$(".laBarra") === null, "la selección se limpia");
 
   // 6b) baja y alta de varios de una vez

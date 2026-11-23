@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.118.1";
+const BACKEND_VERSION = "1.119.0";
 
 function doPost(e) {
   let resultado;
@@ -155,9 +155,9 @@ function _despacharConSesion(accion, body, empleado) {
     case "saboresAdmin": return saboresAdmin(empleado);
     case "adminLocal": return adminLocal(body.localDatos, empleado);
     case "localesAdmin": return localesAdmin(empleado);
-    case "guardarLocalAdmin": return guardarLocalAdmin(body.local, body.opciones, body.grupo, body.region, body.pais, empleado);
+    case "guardarLocalAdmin": return guardarLocalAdmin(body.local, body.opciones, body.grupo, body.region, body.pais, empleado, body.maxEquipos);
     case "crearLocalAdmin": return crearLocalAdmin(body.nombre, body.grupo, body.region, body.pais, empleado);
-    case "localesAdminMasivo": return localesAdminMasivo(body.locales, body.clave, body.valor, empleado, body.opciones);
+    case "localesAdminMasivo": return localesAdminMasivo(body.locales, body.clave, body.valor, empleado, body.opciones, body.cupo);
     case "toggleSaborLocal": return toggleSaborLocal(body.saborId, body.local, empleado);
     case "guardarProduccionSabores": return guardarProduccionSabores(body.local, body.ids, empleado);
     case "equiposLocal": return equiposLocal(body.local, empleado);
@@ -4145,11 +4145,15 @@ function _opcionesDeLocal(fila) {
   LOCAL_OPCIONES.forEach((k) => { const v = _esVerdadero(fila[k]); o[k] = v === null ? (k === "activo" || k.indexOf("lleva_") === 0) : v; });
   return o;
 }
+/** Cupo de dispositivos de un local (columna max_equipos: vacía o fuera de 1–20 = el de siempre). */
+function _cupoDeFila(fila) { const n = Math.floor(Number(fila && fila.max_equipos)); return n >= 1 && n <= 20 ? n : EQUIPOS_MAX; }
+function _cupoValido(v) { const n = Math.floor(Number(v)); return n >= 1 && n <= 20 && String(Math.floor(Number(v))) === String(Number(v)) ? n : 0; }
+function _localPublico(l) { return { nombre: String(l.nombre).trim(), grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(), pais: _paisDeLocal(l), maxEquipos: _cupoDeFila(l), opciones: _opcionesDeLocal(l) }; }
 function _soloAdminLocales(empleado) { return empleado.rol === "admin" ? null : { ok: false, error: "Solo un administrador puede editar los locales." }; }
 function localesAdmin(empleado) {
   const e = _soloAdminLocales(empleado); if (e) return e;
   const filas = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() && _esVerdadero(l.operaciones) !== true);
-  return { ok: true, locales: filas.map((l) => ({ nombre: String(l.nombre).trim(), grupo: String(l.grupo || "").trim(), region: String(l.region || "").trim(), pais: _paisDeLocal(l), opciones: _opcionesDeLocal(l) })) };
+  return { ok: true, locales: filas.map(_localPublico) };
 }
 /** Escribe valores en la fila de un local de la hoja Locales, por nombre de columna. Devuelve {ok} o {ok:false, error} si falta una columna. */
 function _escribirEnLocal(nombre, valores) {
@@ -4167,7 +4171,7 @@ function _escribirEnLocal(nombre, valores) {
   return { ok: true };
 }
 function _siNo(b) { return b ? "SI" : "NO"; }
-function guardarLocalAdmin(local, opciones, grupo, region, pais, empleado) {
+function guardarLocalAdmin(local, opciones, grupo, region, pais, empleado, maxEquipos) {
   const e = _soloAdminLocales(empleado); if (e) return e;
   local = String(local || "").trim();
   if (!local) return { ok: false, error: "Falta el local." };
@@ -4188,12 +4192,17 @@ function guardarLocalAdmin(local, opciones, grupo, region, pais, empleado) {
     }
     if (region !== undefined && region !== null && String(region).trim().slice(0, 40) !== String(fila.region || "").trim()) { valores.region = String(region).trim().slice(0, 40); detalle.push("región → " + valores.region); }
     if (pais !== undefined && pais !== null && String(pais).trim().slice(0, 30) !== _paisDeLocal(fila)) { valores.pais = String(pais).trim().slice(0, 30); detalle.push("país → " + valores.pais); }
+    if (maxEquipos !== undefined && maxEquipos !== null && maxEquipos !== "") {
+      const c = _cupoValido(maxEquipos);
+      if (!c) return { ok: false, error: "El cupo de dispositivos es un número de 1 a 20." };
+      if (c !== _cupoDeFila(fila)) { valores.max_equipos = c; detalle.push("dispositivos permitidos: " + _cupoDeFila(fila) + " → " + c); }
+    }
     if (!Object.keys(valores).length) return { ok: true, sinCambios: true };
     const r = _escribirEnLocal(local, valores);
     if (!r.ok) return r;
     _auditar("admin_local_opciones", empleado.id, empleado.nombre, local + ": " + detalle.join("; "));
     const nueva = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === local)[0];
-    return { ok: true, local: { nombre: local, grupo: String(nueva.grupo || "").trim(), region: String(nueva.region || "").trim(), pais: _paisDeLocal(nueva), opciones: _opcionesDeLocal(nueva) } };
+    return { ok: true, local: _localPublico(nueva) };
   } finally {
     lock.releaseLock();
   }
@@ -4220,19 +4229,21 @@ function crearLocalAdmin(nombre, grupo, region, pais, empleado) {
     if (HOJAS_CACHE["Locales"]) _invalidarHojaCache("Locales");
     _auditar("crear_local", empleado.id, empleado.nombre, nombre + " (" + grupo + ", " + base.pais + ")");
     const nueva = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === nombre)[0];
-    return { ok: true, local: { nombre: nombre, grupo: grupo, region: base.region, pais: base.pais, opciones: _opcionesDeLocal(nueva || {}) } };
+    return { ok: true, local: _localPublico(nueva || { nombre: nombre, grupo: grupo, region: base.region, pais: base.pais }) };
   } finally {
     lock.releaseLock();
   }
 }
 /** Cambia una o varias opciones en varios locales de una vez (hasta 200 por pedido). `opciones` = {clave: true|false}; sin eso, `clave`/`valor` (una sola). */
-function localesAdminMasivo(locales, clave, valor, empleado, opciones) {
+function localesAdminMasivo(locales, clave, valor, empleado, opciones, cupo) {
   const e = _soloAdminLocales(empleado); if (e) return e;
   let pedido = {};
   if (opciones && typeof opciones === "object" && Object.keys(opciones).length) Object.keys(opciones).forEach((k) => { pedido[k] = opciones[k] === true || opciones[k] === "SI"; });
   else if (clave) pedido[clave] = valor === true || valor === "SI";
   const claves = Object.keys(pedido);
-  if (!claves.length || claves.some((k) => LOCAL_OPCIONES.indexOf(k) === -1)) return { ok: false, error: "Esa opción no existe." };
+  let cupoNuevo = 0;
+  if (cupo !== undefined && cupo !== null && cupo !== "") { cupoNuevo = _cupoValido(cupo); if (!cupoNuevo) return { ok: false, error: "El cupo de dispositivos es un número de 1 a 20." }; }
+  if ((!claves.length && !cupoNuevo) || claves.some((k) => LOCAL_OPCIONES.indexOf(k) === -1)) return { ok: false, error: "Esa opción no existe." };
   if (!Array.isArray(locales) || !locales.length) return { ok: false, error: "Elegí al menos un local." };
   if (locales.length > 200) return { ok: false, error: "Demasiados locales de una vez." };
   const lock = LockService.getScriptLock();
@@ -4247,12 +4258,13 @@ function localesAdminMasivo(locales, clave, valor, empleado, opciones) {
       if (!f || _esVerdadero(f.operaciones) === true) { noEncontrados.push(n); return; }
       const antes = _opcionesDeLocal(f), valores = {};
       claves.forEach((k) => { if (antes[k] !== pedido[k]) valores[k] = _siNo(pedido[k]); });
+      if (cupoNuevo && _cupoDeFila(f) !== cupoNuevo) valores.max_equipos = cupoNuevo;
       if (!Object.keys(valores).length) { iguales.push(n); return; }
       const r = _escribirEnLocal(n, valores);
       if (!r.ok) { noEncontrados.push(n); return; }
       cambiados.push(n);
     });
-    if (cambiados.length) _auditar("admin_local_masivo", empleado.id, empleado.nombre, claves.map((k) => k + " → " + _siNo(pedido[k])).join("; ") + " en " + cambiados.length + " locales: " + cambiados.join(", ").slice(0, 400));
+    if (cambiados.length) _auditar("admin_local_masivo", empleado.id, empleado.nombre, claves.map((k) => k + " → " + _siNo(pedido[k])).concat(cupoNuevo ? ["dispositivos permitidos → " + cupoNuevo] : []).join("; ") + " en " + cambiados.length + " locales: " + cambiados.join(", ").slice(0, 400));
     return { ok: true, cambiados: cambiados.length, iguales: iguales.length, noEncontrados: noEncontrados };
   } finally {
     lock.releaseLock();

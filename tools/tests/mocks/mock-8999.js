@@ -135,8 +135,8 @@ function resp(b){
     console.log("LOCALESADMIN",a,JSON.stringify(b).slice(0,160));
     if(a==="localesAdmin") return {ok:true,locales:db.la};
     if(a==="crearLocalAdmin"){ if(db.la.some(l=>l.nombre.toLowerCase()===String(b.nombre).toLowerCase())) return {ok:false,error:"Ya existe un local con ese nombre."}; db.la.push({nombre:b.nombre,grupo:b.grupo,region:b.region||"",pais:b.pais||"Argentina",opciones:{activo:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}}); return {ok:true}; }
-    if(a==="guardarLocalAdmin"){ const l=db.la.find(x=>x.nombre===b.local); if(!l) return {ok:false,error:"No se encontró ese local."}; Object.assign(l.opciones,b.opciones||{}); if(b.grupo) l.grupo=b.grupo; if(b.region!==undefined) l.region=b.region; if(b.pais) l.pais=b.pais; return {ok:true}; }
-    if(a==="localesAdminMasivo"){ let c=0; (b.locales||[]).forEach(n=>{ const l=db.la.find(x=>x.nombre===n); if(l&&!!l.opciones[b.clave]!==!!b.valor){ l.opciones[b.clave]=!!b.valor; c++ } }); return {ok:true,cambiados:c,iguales:0,noEncontrados:[]}; }
+    if(a==="guardarLocalAdmin"){ const l=db.la.find(x=>x.nombre===b.local); if(!l) return {ok:false,error:"No se encontró ese local."}; Object.assign(l.opciones,b.opciones||{}); if(b.maxEquipos) l.maxEquipos=b.maxEquipos; if(b.grupo) l.grupo=b.grupo; if(b.region!==undefined) l.region=b.region; if(b.pais) l.pais=b.pais; return {ok:true}; }
+    if(a==="localesAdminMasivo"){ let c=0; (b.locales||[]).forEach(n=>{ const l=db.la.find(x=>x.nombre===n); if(!l) return; let ch=false; Object.keys(b.opciones||{}).forEach(k=>{ if(!!l.opciones[k]!==!!b.opciones[k]){ l.opciones[k]=!!b.opciones[k]; ch=true } }); if(b.cupo&&(l.maxEquipos||3)!==b.cupo){ l.maxEquipos=b.cupo; ch=true } if(ch) c++ }); return {ok:true,cambiados:c,iguales:0,noEncontrados:[]}; }
   }
   if(a==="registrar"){
     if(l.kilosReales && b.subtipo!=="transferencia"){
