@@ -1962,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.221.2";
+const FRONTEND_VERSION = "1.221.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -8173,7 +8173,8 @@ async function guardarContado(terminar){
   const txt=terminar
     ? "¿Solo es esto?\nContaste "+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+".\nLos otros "+resto+" quedan como están en el sistema.\n\nAceptar = guardar solo esto. Cancelar = seguir contando."
     : "Se guarda el stock de "+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+".\nLo que no contaste no se toca y podés seguir contando. ¿Guardar?";
-  if(!confirm(txt)) return;
+  const aviso="\n\n⚠ ESTO QUEDA GRABADO AHORA, no es un borrador. Después no vas a poder volver a modificar estos sabores"+((S.conteoBloqueado||S.camaraBloqueada)?" (es irreversible).":" desde el 1/12 (hoy es período de práctica).");
+  if(!confirm(txt+aviso)) return;
   S.busy=true; renderBar();
   let ok=0, offline=false;
   try{
