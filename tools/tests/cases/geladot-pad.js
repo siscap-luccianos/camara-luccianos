@@ -21,7 +21,7 @@ const { chromium } = require("playwright");
   await abrirGeladot();
   ok(!!(await page.$('[data-add="194"]')) && !!(await page.$('[data-add="195"]')), "Salida: tarjetas de los 2 Geladot");
   // 2) stock «3 cajas (1 abierta)»
-  ok(/3 cajas \(1 abierta\)/.test(await txt('[data-add="194"]')), "Salida: stock «3 cajas (1 abierta)» — " + await txt('[data-add="194"]'));
+  ok(/3\s*cajas\s*·\s*1 abierta/.test(await txt('[data-add="194"]')), "Salida: la tarjeta dice «3 cajas · 1 abierta» chico, como las demás — " + await txt('[data-add="194"]'));
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(300);
   ok(!!(await page.$('[data-familia="geladot"]')), "Stock: pill Geladot");
   await abrirGeladot();
