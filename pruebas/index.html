@@ -1974,7 +1974,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.221.0";
+const FRONTEND_VERSION = "1.221.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2248,7 +2248,7 @@ function totalBarTxt(ent,cart,tot){ const g=(ent||[]).filter(x=>esGel(x)), r=(en
 /** Ayuda del conteo de Geladot: lo que se escribe son gramos; acá se ve cuánto es en cajas y en kilos. */
 function gelAyudaTxt(g){ g=Math.round(Number(g)||0); return g>0?`= <b>${g.toLocaleString("es-AR")} g</b> · ${fmtGel(g)}`:`Escribí los <b>kilos</b> como los marca la balanza. Ej.: 0,030 = 30 g · 2,500 = 1 caja.` }
 document.addEventListener("input",e=>{ const i=e.target; if(!i||!i.matches||!i.matches("input[data-c]")) return; const h=document.querySelector(`[data-gelhelp="${i.dataset.c}"]`); if(h) h.innerHTML=gelAyudaTxt(gDeKgStr(i.value)) });
-function pstockHTML(id,n){ return esGel(id)?`<b>${fmtGel(n)}</b>`:`<b>${n}</b><span>${unidad(id,n)}</span>` }
+function pstockHTML(id,n){ if(esGel(id)){ n=Math.round(Number(n)||0); const c=Math.ceil(n/GEL_CAJA), ab=n%GEL_CAJA!==0; return `<b>${c}</b><span>${c===1?"caja":"cajas"}${ab?" · 1 abierta":""}</span>` } return `<b>${n}</b><span>${unidad(id,n)}</span>` }
 function unidad(id,n){ const l=UNIDAD_LABEL[tipoDe(id)]||UNIDAD_LABEL.v; return n===1?l[0]:l[1] }
 const TIPO_LABEL = { v:"Vasqueta", b:"Balde", i:"Icepop", m:"Mini icepops (caja x4)", p:"Pote individual", c:"Unidad (chocolatería, pastelería, bollería)", k:"Kilos (granella, crumble: el stock es la cantidad de kilos)" };
 
