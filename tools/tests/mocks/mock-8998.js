@@ -47,6 +47,9 @@ function resp(b){
     const r={id:String(db.nextId++),clienteId:b.clienteId,tipo:"cambio",subtipo:"cambio",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items,kilos:kil,pesos:{},total:n,motivo:b.motivo,ts:Date.now()};
     db.regs.push(r); console.log("CAMBIO",JSON.stringify({d:b.desde,h:b.hacia,n,kilos:b.kilos,motivo:b.motivo})); return {ok:true,id:r.id};
   }
+  if(a==="inventarios") return {ok:true,inventarios:[],ocultos:[],conteoBloqueado:false,camaraBloqueada:false,cobertura:null,rubrosCerrados:(db.cerrados&&db.cerrados[b.local])||[]};
+  if(a==="__resetCierres"){ db.cerrados={}; return {ok:true} }
+  if(a==="cerrarConteoRubro"){ db.cerrados=db.cerrados||{}; const L=db.cerrados[b.local]=db.cerrados[b.local]||[]; (b.rubros||[]).forEach(r=>{ if(!L.includes(r)) L.push(r) }); return {ok:true,rubrosCerrados:L} }
   if(a==="conteoParcial"){
     const items=b.items||{}, reg=db.regs.filter(r=>r.local===b.local&&!r.anulado), bs=db.stock[b.local]||{}, base=bs.base||{}, bts=bs.ts||0, deltas={};
     Object.keys(items).forEach(id=>{ let st=+base[id]||0; reg.forEach(r=>{ if(r.ts<=bts) return; const sg=(r.tipo==="ingreso"||r.tipo==="cambio")?1:r.tipo==="salida"?-1:0; st+=sg*(+((r.items||{})[id])||0) }); const d=(+items[id])-st; if(d) deltas[id]=d });

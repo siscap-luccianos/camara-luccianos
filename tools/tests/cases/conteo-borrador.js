@@ -84,7 +84,7 @@ const { chromium } = require("playwright");
   ok(await page.$(".cBorrador") === null, "ya no aparece el aviso de conteo sin terminar");
 
   // 7) descartar
-  await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(300);
+  await page.evaluate(async()=>{ await api("__resetCierres",{}); S.rubrosCerrados=[]; S._inicialLocal=null }); await (await page.$("#conteoInicialBtn"))?.click(); await page.click("#conteoBtn"); if (await page.$("[data-ce-empezar]") || await page.waitForSelector("[data-ce-empezar]",{timeout:700}).catch(()=>null)) await page.click("[data-ce-empezar]"); await page.waitForTimeout(300);
   await cargar(20, 7);
   await page.waitForTimeout(800);
   await page.click("#cancelConteo"); await page.waitForTimeout(300);

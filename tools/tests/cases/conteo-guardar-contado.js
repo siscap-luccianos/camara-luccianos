@@ -24,7 +24,7 @@ const { chromium } = require("playwright");
   await page.click("#go"); await page.waitForTimeout(400);
   for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   ok(await page.$("#okContado") !== null && !(await page.$eval("#okContado", e => e.disabled)), "aparece «Guardar y seguir contando» habilitado");
-  ok(!(await page.$eval("#ok", e => e.disabled)) && /Guardar lo contado/.test(await page.innerText("#ok")), "«Guardar lo contado» NO queda bloqueado por los sabores sin contar");
+  ok(!(await page.$eval("#ok", e => e.disabled)) && /Guardar definitivo/.test(await page.innerText("#ok")), "«Guardar definitivo» NO queda bloqueado por los sabores sin contar");
   await page.click("#okContado"); await page.waitForTimeout(1200);
   ok(await stock("4") === 30, "Banana Split quedó en 30 en el sistema");
   ok(await stock("5") === s5 && await stock("20") === s20, "los sabores no contados no se tocaron");
@@ -42,7 +42,9 @@ const { chromium } = require("playwright");
   for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   let pregunta = ""; page.removeAllListeners("dialog"); page.on("dialog", d => { pregunta = d.message(); d.accept() });
   await page.click("#ok"); await page.waitForTimeout(1200);
-  ok(/¿Solo es esto\?/.test(pregunta) && /quedan como están/.test(pregunta), "pregunta «¿Solo es esto?» y avisa que el resto queda como está");
+  ok(/GUARDAR DEFINITIVO/.test(pregunta) && /queda como está/.test(pregunta) && /no vas a poder volver a contar/.test(pregunta), "«Guardar definitivo» avisa que cierra el rubro y que el resto queda como está");
+  ok(await page.evaluate(() => (S.rubrosCerrados||[]).includes("vasquetas")), "Vasquetas quedó cerrado 🔒");
+  await page.evaluate(async () => { await api("__resetCierres", {}); S.rubrosCerrados = []; S._inicialLocal = null });
   ok(await stock("5") === 11 && await stock("20") === 7 && await stock("4") === 30, "guardó solo lo contado (Cheesecake 11)");
   ok(await page.evaluate(() => !S.conteo), "y el conteo se cerró");
   // --- «Solo un rubro → Vasquetas»: contar un solo sabor y guardar (caso real de Gabi: Dubai)

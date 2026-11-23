@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.122.0";
+const BACKEND_VERSION = "1.123.0";
 
 function doPost(e) {
   let resultado;
@@ -120,6 +120,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado, body.pedidoId, body.camaraContada);
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
+    case "cerrarConteoRubro": return cerrarConteoRubro(body.local, body.rubros, empleado);
     case "pedirConteoParcial": return pedirConteo(body.local, "parcial", empleado, body.rubro);
     case "gruposConteo": return gruposConteo(empleado);
     case "guardarGrupoConteo": return guardarGrupoConteo(body.nombre, body.locales, empleado);
@@ -2545,6 +2546,7 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
   if (_conteoSueltoBloqueado(local, empleado)) return { ok: false, error: MSJ_CONTEO_SUELTO };
   const filaLocal = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
   if (filaLocal && _rubrosApagados(filaLocal).indexOf(rubro) !== -1) return { ok: false, error: "Este local no lleva ese rubro." };
+  if (!_soloSupervision(empleado) && _rubrosCerrados(local).indexOf(rubro) !== -1) return { ok: false, error: "El conteo de este rubro ya se cerró (guardado definitivo). Lo reabre supervisión." };
   const pais = _paisDeLocal(filaLocal);
   const catalogo = _leerCrudo("Sabores");
   const deRubro = {};
@@ -2914,6 +2916,46 @@ function corregirInventario(local, inventarioId, saborId, valor, motivo, emplead
 }
 
 /** Últimos inventarios guardados de un local (los precios y el valor solo los ve quien puede ver el stock valorizado). */
+/** (1.123.0) Cierre definitivo del conteo por rubro: «Guardar definitivo» cierra el candado de ese rubro en ese local durante el mes (hoja CierresConteo). Hasta entonces «Guardar y seguir contando» se puede repetir. Supervisión puede seguir contando. */
+const COLUMNAS_CIERRES = ["id", "ts", "local", "rubro", "mes", "empleadoId", "empleado"];
+function _hojaCierres() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName("CierresConteo");
+  if (!sh) {
+    sh = ss.insertSheet("CierresConteo");
+    sh.getRange(1, 1, 1, COLUMNAS_CIERRES.length).setValues([COLUMNAS_CIERRES]).setFontWeight("bold").setBackground("#2A1E17").setFontColor("#FFFFFF");
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+function _mesClave(ts) { return Utilities.formatDate(new Date(ts), "America/Argentina/Buenos_Aires", "yyyy-MM"); }
+/** Rubros con el conteo cerrado este mes en ese local. */
+function _rubrosCerrados(local) {
+  const mes = _mesClave(Date.now()), out = [];
+  let filas = [];
+  try { if (SpreadsheetApp.getActiveSpreadsheet().getSheetByName("CierresConteo")) filas = _leerCrudo("CierresConteo"); } catch (e) { filas = []; } // sin la hoja (todavía nadie cerró) no hay cierres
+  filas.forEach((r) => { if (String(r.local || "").trim() === String(local).trim() && String(r.mes) === mes && out.indexOf(String(r.rubro)) === -1) out.push(String(r.rubro)); });
+  return out;
+}
+function cerrarConteoRubro(local, rubros, empleado) {
+  if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para cerrar el conteo." };
+  if (!local) return { ok: false, error: "Falta el local." };
+  if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
+  const lista = (Array.isArray(rubros) ? rubros : [rubros]).map(String).filter((r) => RUBROS_LOCAL.indexOf(r) !== -1);
+  if (!lista.length) return { ok: false, error: "Elegí el rubro que querés cerrar." };
+  const lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  try {
+    _hojaCierres();
+    const ya = _rubrosCerrados(local), ts = Date.now();
+    lista.forEach((rb) => { if (ya.indexOf(rb) === -1) { _escribirCrudo("CierresConteo", { ts: ts, local: local, rubro: rb, mes: _mesClave(ts), empleadoId: empleado.id, empleado: empleado.nombre }); ya.push(rb); } });
+    _auditar("cerrar_conteo_rubro", empleado.id, empleado.nombre, local + ": conteo cerrado de " + lista.join(", "));
+    return { ok: true, rubrosCerrados: _rubrosCerrados(local) };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function inventarios(local, empleado) {
   const err = _invPermiso(empleado, local);
   if (err) return { ok: false, error: err };
@@ -2928,7 +2970,7 @@ function inventarios(local, empleado) {
   const lista = todos.filter((r) => _visibleParaResponsable(r, verTodo)).map((r) => _inventarioPublico(r, verValor));
   // Lo que todavía no se le muestra al responsable: solo que existe (tipo, fecha y si se libera sola), sin kilos.
   const ocultos = todos.filter((r) => !_visibleParaResponsable(r, verTodo)).map((r) => ({ id: r.id, empleado: r.empleado || "", tipo: String(r.tipo) === "final" ? "final" : "parcial", rubro: String(r.rubro || ""), ts: Number(r.ts) || 0, libera_ts: String(r.tipo) === "final" ? _liberaCierreTs(r.ts) : 0 }));
-  return { ok: true, inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: _candadoActivo() && !_soloSupervision(empleado) && !!_coberturaMes(local), camaraBloqueada: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
+  return { ok: true, rubrosCerrados: _rubrosCerrados(local), inventarios: lista, ocultos: ocultos, verValor: verValor, conteoBloqueado: _candadoActivo() && !_soloSupervision(empleado) && !!_coberturaMes(local), camaraBloqueada: _conteoSueltoBloqueado(local, empleado), cobertura: _coberturaMes(local), verDiferencias: _soloSupervision(empleado) || _esVerdadero(filaLocal && filaLocal.ver_diferencias) === true };
 }
 
 
