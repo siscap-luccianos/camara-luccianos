@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.114.0";
+const BACKEND_VERSION = "1.115.0";
 
 function doPost(e) {
   let resultado;
@@ -113,7 +113,7 @@ function _despacharConSesion(accion, body, empleado) {
     case "datos": return datos(body.local, empleado);
     case "relevar": return relevar(empleado);
     case "preciosStock": return preciosStock(body.local, empleado);
-    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha, body.paraEmpleadoId, body.modoLibre);
+    case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha, body.paraEmpleadoId, body.modoLibre, body.rotulos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
     case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos, body.pesos);
     case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta, body.pesos);
@@ -1173,11 +1173,13 @@ function _registroPublico(r) {
   try { vencimientos = JSON.parse(r.vencimientos || "{}"); } catch (e) { vencimientos = {}; }
   let pesos = {};
   try { pesos = JSON.parse(r.pesos || "{}"); } catch (e) { pesos = {}; }
+  let rotulos = {};
+  try { rotulos = JSON.parse(r.rotulos || "{}"); } catch (e) { rotulos = {}; }
   return {
     id: String(r.id), tipo: r.tipo, local: r.local, empleadoId: String(r.empleadoId || ""), empleado: r.empleado, items: items,
     total: Number(r.total) || 0, remito: r.remito || "", ts: Number(r.ts),
     anulado: !!r.anulado_ts, anulado_por: r.anulado_por || "", motivo: r.motivo || "",
-    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos, vencimientos: vencimientos, pesos: pesos, cargado_por: r.cargado_por || "",
+    foto_remito: r.foto_remito || "", subtipo: r.subtipo || "", kilos: kilos, vencimientos: vencimientos, pesos: pesos, rotulos: rotulos, cargado_por: r.cargado_por || "",
   };
 }
 
@@ -1318,7 +1320,21 @@ function _normalizarPesosConteo(pesos, contados) {
   return out;
 }
 
-function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos, fecha, paraEmpleadoId, modoLibre) {
+/** (1.115.0) Rótulos escaneados de cada vasqueta de una salida: {idSabor: ["20 dígitos" o "" si se pesó a mano]} alineado con los pesos. Solo es referencia (lote, turno y operario salen del código); no mueve stock. */
+function _normalizarRotulos(rotulos, pesos2) {
+  const out = {};
+  if (!rotulos || typeof rotulos !== "object") return out;
+  Object.keys(pesos2 || {}).forEach((id) => {
+    const lista = Array.isArray(rotulos[id]) ? rotulos[id] : [];
+    const n = (pesos2[id] || []).length;
+    const limpia = [];
+    for (let i = 0; i < n; i++) { const c = String(lista[i] || "").replace(/\D/g, ""); limpia.push(/^\d{20}$/.test(c) ? c : ""); }
+    if (limpia.some((c) => c)) out[id] = limpia;
+  });
+  return out;
+}
+
+function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, subtipo, motivo, kilos, vencimientos, pesos, fecha, paraEmpleadoId, modoLibre, rotulos) {
   // MODO LIBRE (sin señal): un responsable manda lo que se cargó sin PIN por persona. Cada movimiento queda a nombre de quien
   // lo cargó (paraEmpleadoId, de este local), con «cargado_por» del responsable y la hora real en que se cargó.
   let tsLibre = 0;
@@ -1369,6 +1385,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
   const normPesos = _normalizarPesos(pesos, items);
   if (!normPesos.ok) return normPesos;
   const pesos2 = normPesos.pesos;
+  const rotulos2 = (tipo === "salida") ? _normalizarRotulos(rotulos, pesos2) : {};
   if (Object.keys(pesos2).length) {
     const filaLocalPeso = _leerCrudo("Locales").filter((l) => String(l.nombre || "").trim() === String(local).trim())[0];
     if (!filaLocalPeso || (_esVerdadero(filaLocalPeso.escaner_peso) !== true && _esVerdadero(filaLocalPeso.kilos_reales) !== true && _esVerdadero(filaLocalPeso.escaner_salida) !== true)) return { ok: false, error: "Este local no tiene el escáner activado." };
@@ -1578,6 +1595,7 @@ function registrar(clienteId, tipo, local, items, remito, empleado, fotoRemito, 
       kilos: Object.keys(kilos2).length ? JSON.stringify(kilos2) : "",
       vencimientos: Object.keys(vencimientos2).length ? JSON.stringify(vencimientos2) : "",
       pesos: Object.keys(pesos2).length ? JSON.stringify(pesos2) : "",
+      rotulos: Object.keys(rotulos2).length ? JSON.stringify(rotulos2) : "",
       cargado_por: cargadoPor,
     });
     if (modoLibre) _auditar("modo_libre_movimiento", empleado._quien.id, empleado._quien.nombre, "Envió de " + local + " un/a " + tipo + (subtipo ? " (" + subtipo + ")" : "") + " cargado/a por " + empleado.nombre + " el " + new Date(ts).toISOString());
