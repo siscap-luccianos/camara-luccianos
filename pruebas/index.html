@@ -1974,7 +1974,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.223.0";
+const FRONTEND_VERSION = "1.223.3";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2298,7 +2298,11 @@ function kilosMap(hasta){
   S.sabores.forEach(s=>{ if(!esVasquetaKilos(s.id)) return;
     out[s.id] = !bts ? 0 : (+kb[s.id]>0 ? +kb[s.id] : (+base[s.id]>0 ? null : 0)); });
   for(const r of regsActivos().slice().sort((a,b)=>a.ts-b.ts)){ if(r.ts<=bts || r.ts>hasta) continue;
-    if(r.tipo==="cambio"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]+=(+k||0) } continue }
+    if(r.tipo==="cambio"){ const parcial=r.subtipo==="conteo_parcial";
+      for(const [id,k] of Object.entries(r.kilos||{})){ if(!(id in out)) continue;
+        if(out[id]!==null) out[id]+=(+k||0);
+        else if(parcial && +k>0) out[id]=+k; // el conteo parcial fija los kilos de ese sabor aunque el último conteo completo no los tuviera (antes quedaban «sin kilos cargados» para siempre)
+      } continue }
     if(r.subtipo==="merma_camara"){ for(const [id,k] of Object.entries(r.kilos||{})){ if(id in out && out[id]!==null) out[id]-=(+k||0) } continue } // merma en kilos de la cámara: resta kilos, no vasquetas
     if(r.tipo!=="ingreso" && r.tipo!=="salida") continue;
     for(const [id,q] of Object.entries(r.items||{})){ if(!(id in out) || out[id]===null || !(+q>0)) continue;
@@ -3494,7 +3498,9 @@ function iniciarConteo(conBorrador, alcance){
 const CONTEO_CERO_MIN=5, CONTEO_SALTO_X=3, CONTEO_SALTO_DIF=10;
 /** Conteo parcial: «solo un rubro» (decidido por Gabi 08/11/2026). Reemplaza el stock de los sabores de ESE rubro y no toca el resto. */
 function conteoParcialActivo(){ return !!S.conteo && !!S.conteoAlcance && S.conteoAlcance!=="todo" }
-function saboresDelConteo(){ const l=saboresDelLocal(); return conteoParcialActivo() ? l.filter(s=>grupoProductoDe(s)===S.conteoAlcance) : l }
+/** Rubros con el conteo cerrado este mes: no se vuelven a contar ni con «Poner el mismo número» ni en la revisión. */
+function rubroCerradoDe(s){ return !!s && (S.rubrosCerrados||[]).includes(grupoProductoDe(s)) }
+function saboresDelConteo(){ const l=saboresDelLocal(), c=conteoParcialActivo() ? l.filter(s=>grupoProductoDe(s)===S.conteoAlcance) : l; return (S.rubrosCerrados||[]).length ? c.filter(s=>!rubroCerradoDe(s)) : c }
 function etiquetaRubroConteo(){ return conteoParcialActivo() ? (GRUPO_PRODUCTO_LABEL[S.conteoAlcance]||S.conteoAlcance) : "todo el local" }
 function claveBorradorConteo(){ return "conteoBorrador:"+S.local }
 function descartarBorradorConteo(){ try{ ls.del(claveBorradorConteo()) }catch(e){} }
@@ -7968,7 +7974,7 @@ function renderBar(){
     const rc=conteoResumen();
     if(S.conteoRevisar){
       const pend=conteoFaltaConfirmar(rc);
-      inn.innerHTML=`<div class="sum"><div class="note" style="margin:0 0 8px"><b>Todavía no se guardó nada.</b> Revisá lo cargado: si está bien, tocá «Guardar definitivo»; si querés cambiar algo, «Seguir contando».</div>${rc.bloqueos.length?`<div class="warn">Corregí ${rc.bloqueos.length} ${rc.bloqueos.length===1?"número imposible":"números imposibles"} para poder guardar.</div>`:pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Seguir contando</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":(rc.sinContar.length?"Guardar definitivo 🔒":"Guardar conteo")}</button>`;
+      inn.innerHTML=`<div class="sum"><div class="note" style="margin:0 0 8px"><b>Todavía no se guardó nada.</b> Revisá lo cargado: si está bien, tocá «Guardar definitivo»; si querés cambiar algo, «Seguir contando».</div>${rc.bloqueos.length?`<div class="warn">Corregí ${rc.bloqueos.length} ${rc.bloqueos.length===1?"número imposible":"números imposibles"} para poder guardar.</div>`:pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Seguir contando</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":"Guardar definitivo 🔒"}</button>`;
     } else {
       inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar lo cargado</button>`;
     }
@@ -8220,7 +8226,10 @@ async function guardarContado(terminar,definitivo){
   } finally { S.busy=false; renderApp() }
 }
 async function guardarConteo(){
-  if(S.busy) return; S.busy=true; renderBar();
+  if(S.busy) return;
+  const rubrosTodos=[...new Set(saboresDelConteo().map(grupoProductoDe))];
+  if(!conteoParcialActivo() && !confirm("GUARDAR DEFINITIVO 🔒\nEsto cambia el stock ahora: se guarda el conteo de todo el local y se CIERRA el conteo de: "+rubrosTodos.map(g=>GRUPO_PRODUCTO_LABEL[g]||g).join(", ")+".\n\nDespués no vas a poder volver a contar esos rubros este mes (solo lo reabre supervisión).\n\n¿Cerrar definitivamente?")) return;
+  S.busy=true; renderBar();
   try{
   const parcial=conteoParcialActivo();
   const items={}; (parcial?saboresDelConteo().filter(s=>idsContados().indexOf(String(s.id))!==-1):S.sabores).forEach(s=>items[s.id]=S.conteo[s.id]||0);
@@ -8240,7 +8249,9 @@ async function guardarConteo(){
   } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined, pesos: Object.keys(pesosC).length ? pesosC : undefined, rotulos: Object.keys(rotC).length ? rotC : undefined};
   const r = await api(accion, payload);
   if(r && r.ok){
-    toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
+    let cierreMsg="";
+    if(!parcial){ const rc2=await api("cerrarConteoRubro",{local:S.local,rubros:rubrosTodos}); if(rc2&&rc2.ok){ S.rubrosCerrados=rc2.rubrosCerrados||[]; cierreMsg=" Rubros cerrados 🔒" } else cierreMsg=(rc2&&/desconocida/i.test(rc2.error||""))?" Falta actualizar el servidor para cerrar los rubros.":" No se pudieron cerrar los rubros." }
+    toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado."+cierreMsg);
     S.conteoAlcance="todo"; S.conteo=null; resetConteoEsc(); S.confirm=false; S.vencConteo={}; S.kilosConteo={}; S.conteoPesos={}; S.vencOmit={}; limpiarLotesExtra("conteo:");
     S.conteoRevisar=false; S.conteoTocado={}; S.conteoAck={}; S.conteoInicio=0; clearTimeout(_borradorTimer); descartarBorradorConteo();
     await cargarDatos();
@@ -8816,7 +8827,7 @@ document.addEventListener("click", async e=>{
   if(t.id==="aplicarTodos"){
     const v=Math.max(0,parseInt($("#aplicarTodosValor").value,10)||0);
     // «Todo el local» o solo lo que se está viendo (rubro y subcategoría elegidos, ej. Icepops › Frutales).
-    const objetivo=(S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap());
+    const objetivo=((S.conteoAplicar==="todo"&&!conteoParcialActivo()) ? saboresDelLocal() : listaFiltrada(stockMap())).filter(x=>!rubroCerradoDe(x)); // un rubro cerrado no se toca
     objetivo.forEach(x=>{ ceMano(x.id); S.conteo[x.id]=v; delete S.conteoTocado[x.id]; delete S.conteoAck[x.id]; delete S.kilosConteo[x.id]; if(S.conteoPesos) delete S.conteoPesos[x.id]; delete S.vencConteo[x.id] }); // los kilos y vencimientos de antes ya no valen con el número nuevo. No cuenta como haber contado: hay que tocar cada sabor
     renderApp(); return;
   }
@@ -8843,7 +8854,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.cverTodos!==undefined){ S.conteoVerTodos=!S.conteoVerTodos; renderApp(); return }
   if(t.id==="continuarConteo"){ iniciarConteo(true); return }
   if(t.id==="descartarBorradorBtn"){ if(!confirm("¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia.")) return; descartarBorradorConteo(); renderApp(); return }
-  if(t.id==="ok"){ if(S.tab==="stock"&&S.conteo){ if(conteoResumen().sinContar.length) guardarContado(true,true); else guardarConteo() } else guardarMovimiento(); return }
+  if(t.id==="ok"){ if(S.tab==="stock"&&S.conteo){ if(conteoResumen().sinContar.length||(S.rubrosCerrados||[]).length) guardarContado(true,true); else guardarConteo() } else guardarMovimiento(); return }
 });
 /** Los teclados numéricos del PIN (login y bloqueo de pantalla en PC) son
  *  paneles táctiles, pero en PC hace falta poder tipear con el teclado
