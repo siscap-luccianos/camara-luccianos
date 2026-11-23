@@ -1865,7 +1865,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.219.0";
+const FRONTEND_VERSION = "1.219.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3971,7 +3971,7 @@ function ctlCorrDe(corr, ids){
 function ctlLeyendaCorr(){ return `<div class="ctlLey noPrint"><span><u class="corrY"></u>Corregido 1 vez</span><span><u class="corrO"></u>Corregido 2 o más veces</span><span><u class="corrB"></u>Ajuste de supervisión</span><span>Sin color: sin reconteo</span></div>` }
 function ctlDetalleHTML(){
   const C=controlEstado(), D=C.detData;
-  const volver=`<div class="noPrint" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button type="button" class="btn volver" data-ctl-volver>‹ Volver a Control</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button></div>`;
+  const volver=`<div class="noPrint" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button type="button" class="btn volver" data-ctl-volver>‹ Volver a Stock</button><button type="button" class="rlvBtn" data-ctl-como>Cómo funciona</button></div>`;
   if(C.detError) return `<div class="rlv ctl">${volver}<div class="note">${esc(C.detError)}</div></div>`;
   if(D===undefined||D===null) return `<div class="rlv ctl">${volver}<div class="note">Cargando…</div></div>`;
   if(!D.conteo) return `<div class="rlv ctl">${volver}<div class="note">Este local todavía no tiene conteos guardados.</div>${D.pedido?`<div class="ctlPedir noPrint" style="margin-top:12px"><span><b>Hay una solicitud de ${D.pedido.tipo==="final"?"cierre":D.pedido.tipo==="inicial"?"conteo inicial":"parcial"} sin contar.</b></span><button type="button" class="rlvBtn" data-ctl-cancel="${esc(C.det)}">Anular solicitud</button></div>`:""}</div>`;
@@ -4470,7 +4470,7 @@ function renderNav(){
   // Operaciones (admin sin local elegido): solo Inicio (la portada) y Sabores (catálogo global).
   if(!S.local){
     if(!S.empleado || (S.empleado.rol!=="admin" && S.empleado.rol!=="supervisor")) return "";
-    const tabsOp=[["inicio","Inicio"],["relevar","Relevar"],["control","Control"]];
+    const tabsOp=[["inicio","Inicio"],["relevar","Relevar"],["control","Stock"]];
     if(S.empleado.rol==="admin"){ tabsOp.push(["sabores","Sabores"]); tabsOp.push(["locales","Locales"]) }
     const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : S.tab==="control" ? "control" : (S.tab==="locales"&&S.empleado.rol==="admin") ? "locales" : "inicio";
     return `<nav role="tablist" id="tabs" class="bottomNav navCorta">${tabsOp.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${act===t}">${ICONOS_TAB[t]}<span>${l}</span></button>`).join("")}</nav>`;
