@@ -8,6 +8,7 @@ const { chromium } = require("playwright");
   page.on("pageerror", e => err.push(e.message)); page.on("console", m => { if (m.type() === "error" && !/Failed to load|ERR_|fonts|404/.test(m.text())) err.push(m.text()) });
   page.on("request", q => { if (q.method() === "POST") { try { const j = JSON.parse(q.postData() || "{}"); if (/LocalAdmin|localesAdmin/.test(j.accion || "")) posts.push(j) } catch (e) {} } });
   let fallas = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) fallas++ };
+  const abrirTodo = () => page.evaluate(() => { document.querySelectorAll(".laBox details").forEach(d => { d.open = true }) });
   await page.addInitScript(() => localStorage.setItem("idioma", "es"));
   await page.goto("http://localhost:8999/"); await page.waitForSelector("#authLocal");
   await page.fill("#authLocal", "Operaciones"); await page.click("#authLocalOk");
@@ -51,7 +52,7 @@ const { chromium } = require("playwright");
   ok(await page.$("#tabs [data-t='locales']") !== null, "admin ve la pestaña «Locales» en Operaciones");
   await page.click("#tabs [data-t='locales']"); await page.waitForSelector("[data-la-l]");
   ok((await page.$$("[data-la-l]")).length === 4, "lista los 4 locales activos");
-  ok(/Activos\s*4/.test(await txt()) && /De baja\s*1/.test(await txt()), "los contadores dicen Activos 4 y De baja 1");
+  ok(/4\s*Activos/.test(await txt()) && /1\s*De baja/.test(await txt()), "los contadores dicen Activos 4 y De baja 1");
   ok(await page.$eval("[data-la-l='Torreon Mar del Plata']", e => /Kilos reales/.test(e.innerText) && /Escáner/.test(e.innerText)), "Torreón muestra sus etiquetas (Kilos reales, Escáner)");
   ok(await page.$eval("[data-la-l='Obelisco CABA']", e => /Sin baldes/.test(e.innerText)), "Obelisco muestra «Sin baldes»");
   await contraste("lista, crema");
@@ -59,28 +60,43 @@ const { chromium } = require("playwright");
   ok(await page.$eval("[data-la-l='Unicenter']", e => /3 dispositivos/.test(e.innerText)) && await page.$eval("[data-la-l='Torreon Mar del Plata']", e => /3 dispositivos/.test(e.innerText)), "todos los que tienen control de dispositivos muestran su cupo");
   ok(await page.$("main select, #main select") === null || (await page.$$eval("#main .la select", e => e.length)) === 0, "la pantalla no tiene menús desplegables recuadrados (<select>)");
   const ch = await page.evaluate(() => [...document.querySelectorAll(".laChips")].map(c => ({ cortado: c.scrollWidth > c.clientWidth + 1, fuera: [...c.children].some(b => b.getBoundingClientRect().right > window.innerWidth + 1) })));
-  ok(ch.length >= 3 && ch.every(c => !c.cortado && !c.fuera), "los filtros se ven completos: ninguno queda cortado ni fuera de la pantalla (" + ch.length + " filas)");
+  ok(ch.length >= 2 && ch.every(c => !c.cortado && !c.fuera), "los filtros se ven completos: ninguno queda cortado ni fuera de la pantalla (" + ch.length + " filas)");
   ok(await page.$("[data-la-pais='Argentina']") !== null && await page.$("[data-la-pais='Marruecos']") !== null, "el país se filtra con botones, uno por país");
 
   // 2) filtros
   await page.click("[data-la-f='baja']"); await page.waitForTimeout(150);
   ok((await page.$$("[data-la-l]")).length === 1 && /Bllis/.test(await txt()), "«De baja» muestra solo Bllis");
-  await page.click("[data-la-f='todos']");
+  await page.click("[data-la-f='act']");
   await page.fill("#laQ", "uni"); await page.waitForTimeout(200);
   ok((await page.$$("[data-la-l]")).length === 1 && /Unicenter/.test(await txt()), "el buscador filtra («uni» → Unicenter)");
   await page.fill("#laQ", ""); await page.waitForTimeout(150);
   await page.click("[data-la-of='kilos_reales']"); await page.waitForTimeout(150);
   ok((await page.$$("[data-la-l]")).length === 1, "«Con kilos reales» deja solo a Torreón");
-  await page.click("[data-la-of='kilos_reales']");
+  await page.click("[data-la-of='kilos_reales']"); await page.click("[data-la-f='act']");
+
+  // 2b) mosaicos como los de Control
+  const tl = await page.$$eval(".laTile", t => t.map(x => x.innerText.replace(/\s+/g, " ").trim()));
+  ok(tl.length === 9 && /^\d+ Todos/.test(tl[0]) && /Activos/.test(tl[1]) && /De baja/.test(tl[2]) && /Propios/.test(tl[3]) && /Franquicias/.test(tl[4]), "los mosaicos van en este orden: Todos, Activos y De baja, Propios y Franquicias: " + tl.slice(0, 5).join(" | "));
+  ok(!tl.some(x => /venta del día/i.test(x)) && tl.some(x => /Con escáner/.test(x)) && tl.some(x => /Producen helado/.test(x)), "no hay mosaico de «Venta del día» (está en todos) y sí «Con escáner» y «Producen helado»");
+  const par = await page.$$eval(".laTile", t => t.slice(1, 5).map(x => Math.round(x.getBoundingClientRect().top)));
+  ok(par[0] === par[1] && par[2] === par[3] && par[2] > par[0], "Activos / De baja y Propios / Franquicias quedan de a dos por fila");
+  await page.click("[data-la-f='all']"); await page.waitForTimeout(100);
+  ok((await page.$$("[data-la-l]")).length >= 5, "«Todos» incluye también los locales de baja");
+  await page.click("[data-la-of='escaner']"); await page.waitForTimeout(120);
+  ok((await page.$$("[data-la-l]")).length >= 1 && await page.$eval("[data-la-of='escaner']", e => e.getAttribute("aria-pressed") === "true"), "el mosaico «Con escáner» filtra la lista");
+  await page.click("[data-la-of='escaner']"); await page.click("[data-la-f='act']");
 
   // 3) hoja: interruptores, «Qué hace», cambios y guardado
   await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox");
+  ok((await page.$$eval(".laBox details", d => d.length)) === 4 && (await page.$$eval(".laBox details[open]", d => d.map(x => x.dataset.sec).join())) === "Operación", "la hoja trae 4 secciones y solo Operación abierta (rubros, escáner y producción cerrados)");
+  ok(/de 7/.test(await page.$eval("[data-sec='Rubros que lleva'] [data-res]", e => e.textContent)) && /Activo/.test(await page.$eval("[data-sec='Operación'] [data-res]", e => e.textContent)), "cada sección cerrada muestra su resumen sin abrirla");
+  await abrirTodo();
   ok(await page.$eval("[data-la-k='kilos_reales']", e => e.checked) && await page.$eval("[data-la-k='escaner_salida']", e => e.checked), "la hoja muestra los interruptores prendidos de Torreón");
   ok(await page.$eval("#ladt-kilos_reales", e => e.hidden), "el «Qué hace» arranca contraído");
   ok((await page.$$eval(".laBox select", e => e.length)) === 0, "la hoja tampoco tiene menús recuadrados: Tipo y País son botones");
   ok(await page.$eval("[data-la-tipo='Propios']", e => e.getAttribute("aria-pressed") === "true"), "el tipo del local aparece marcado");
-  ok(await page.$eval("#laCupo", e => !e.hidden) && (await page.innerText("#laCupoN")) === "3", "con control de dispositivos prendido se ve «Dispositivos permitidos» (3)");
-  await page.click("[data-la-k='control_equipos']"); ok(await page.$eval("#laCupo", e => e.hidden), "si se apaga el control de dispositivos, el cupo se esconde");
+  ok(await page.$eval("#laCupo", e => !e.hasAttribute("data-off")) && (await page.innerText("#laCupoN")) === "3", "con control de dispositivos prendido se ve «Dispositivos permitidos» (3)");
+  await page.click("[data-la-k='control_equipos']"); ok(await page.$eval("#laCupo", e => e.hasAttribute("data-off") && e.offsetHeight > 0) && /solo rige/.test(await page.innerText("#laCupoSub")), "si se apaga el control, el cupo sigue visible (atenuado) y se puede cambiar, con la aclaración de que solo rige prendido");
   await page.click("[data-la-k='control_equipos']");
   await page.click("[data-la-mas='kilos_reales']");
   ok(!(await page.$eval("#ladt-kilos_reales", e => e.hidden)) && /Conteo con kilos/.test(await page.innerText("#ladt-kilos_reales")), "«Qué hace» se despliega y explica la recomendación");
@@ -131,12 +147,14 @@ const { chromium } = require("playwright");
   ok(posts.some(p => p.accion === "guardarLocalAdmin" && p.local === "Obelisco CABA" && p.opciones.activo === false), "manda activo=false (baja)");
   await page.click("[data-la-f='baja']"); await page.waitForTimeout(150);
   ok(await page.$("[data-la-l='Obelisco CABA']") !== null, "el local dado de baja aparece en «De baja»");
-  await page.click("[data-la-f='todos']");
+  await page.click("[data-la-f='act']");
 
   // 6) cambiar una opción en varios
   await page.check("[data-la-ck='Unicenter']"); await page.check("[data-la-ck='Marruecos']"); await page.waitForTimeout(150);
   ok(/2 marcados/.test(await page.innerText(".laBarra")), "la barra dice «2 marcados»");
   await page.click("[data-la-masivo]"); await page.waitForSelector("[data-la-m]");
+  ok((await page.$$eval(".laBox details[open]", d => d.map(x => x.dataset.sec).join())) === "Operación" && (await page.$$eval(".laChs span", x => x.length)) === 2, "el cambio masivo arranca con solo Operación abierta y lista los 2 locales marcados");
+  await abrirTodo();
   ok(await page.$eval("[data-la-ok]", e => e.disabled), "sin elegir ningún cambio, «Aplicar» está apagado");
   await page.click("[data-la-m='kilos_reales'][data-v='1']"); await page.click("[data-la-m='escaner_salida'][data-v='1']"); await page.click("[data-la-m='lleva_baldes'][data-v='0']");
   ok(/Cambia 3 opciones en 2 de 2 locales/.test(await page.innerText("#laMres")), "se pueden elegir varias opciones juntas y avisa cuántas cambian: " + (await page.innerText("#laMres")));
@@ -155,14 +173,19 @@ const { chromium } = require("playwright");
   const pm = posts.find(p => p.accion === "localesAdminMasivo");
   ok(pm && pm.locales.length === 2 && pm.opciones.kilos_reales === true && pm.opciones.escaner_salida === true && pm.opciones.lleva_baldes === false && !("activo" in pm.opciones) && pm.cupo === 4, "manda las 3 opciones, el cupo (4) y solo a los 2 locales: " + JSON.stringify(pm && pm.opciones));
   ok(await page.$(".laBarra") === null, "la selección se limpia");
+  ok(await page.$("#laDeshacer") !== null, "después de aplicar aparece el aviso con «Deshacer»");
+  posts.length = 0; await page.click("#laDeshacer"); await page.waitForTimeout(1500);
+  const undo = posts.filter(p => p.accion === "localesAdminMasivo");
+  ok(undo.length >= 3 && undo.some(p => p.opciones.kilos_reales === false), "«Deshacer» vuelve cada opción a lo que tenía cada local (" + undo.length + " pedidos)");
 
   // 6b) baja y alta de varios de una vez
   await page.click("[data-la-f='fran']"); await page.waitForTimeout(150);
   await page.check("[data-la-ck='Marruecos']"); await page.click("[data-la-masivo]"); await page.waitForSelector("[data-la-m]");
+  await abrirTodo();
   await page.click("[data-la-m='activo'][data-v='0']"); await page.check("#laMconf");
   posts.length = 0; await page.click("[data-la-ok]"); await page.waitForTimeout(800);
   ok(posts.some(p => p.accion === "localesAdminMasivo" && p.opciones.activo === false), "la baja de varios manda activo=false");
-  await page.click("[data-la-f='todos']"); await page.waitForTimeout(100);
+  await page.click("[data-la-f='act']"); await page.waitForTimeout(100);
 
   // 7) grupos (los mismos de Control)
   await page.check("[data-la-ck='Unicenter']");
@@ -174,7 +197,7 @@ const { chromium } = require("playwright");
   // 8) tema dorado
   await page.evaluate(() => document.documentElement.setAttribute("data-tema", "dorado")); await page.waitForTimeout(200);
   await contraste("lista, dorado");
-  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await page.click("[data-la-todo]");
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await abrirTodo(); await page.click("[data-la-todo]");
   await contraste("hoja con todo desplegado, dorado");
   await page.click("[data-la-cerrar]");
   await page.evaluate(() => document.documentElement.removeAttribute("data-tema"));
