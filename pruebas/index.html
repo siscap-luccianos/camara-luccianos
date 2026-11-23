@@ -626,6 +626,83 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .hLinP{padding:6px 0 8px;border-top:1px solid var(--line);break-inside:avoid}
 .hLinP .hLin{border-top:0;padding:2px 0}
 .hFichas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px}
+/* ---- Panel de locales (solo admin): listas agrupadas, interruptores y hoja de detalle. Fondos sólidos y colores de la app: nada de texto sobre vidrio. ---- */
+.la{display:flex;flex-direction:column;gap:14px;max-width:760px;margin:0 auto;padding-bottom:20px}
+.laH1{font:700 1.9rem/1.1 var(--display);margin:4px 0 0;color:var(--ink)}
+.laSub{color:var(--muted);font-size:.9rem;margin:0}
+.laTop{background:var(--bg);padding:8px 0 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line)}
+.laCab{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.laSegs{display:flex;background:var(--accent-soft);border-radius:12px;padding:3px;gap:3px}
+.laSeg{flex:1;border:0;background:transparent;color:var(--ink);font:700 .8rem var(--body);padding:8px 4px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.laSeg .n{color:var(--muted);font-weight:700}
+.laSeg[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.laSeg[aria-pressed="true"] .n{color:var(--accent)}
+.laBusca{flex:1;min-width:150px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 12px;font:600 .95rem var(--body)}
+.laBusca::placeholder{color:var(--muted)}
+.laSel{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px;font:600 .88rem var(--body)}
+.laChips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none;align-items:center}.laChips::-webkit-scrollbar{display:none}
+.laChip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font:700 .78rem var(--body);cursor:pointer;white-space:nowrap;flex:none}
+.laChip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.laChip.grupo b{color:var(--muted);font-weight:700}.laChip.grupo[aria-pressed="true"] b{color:var(--accent-ink)}
+.laCuenta{font:700 .72rem var(--body);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0}
+.laLista{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.laRow{display:flex;gap:12px;align-items:center;padding:12px 14px;cursor:pointer;min-width:0;position:relative}
+.laRow+.laRow{border-top:1px solid var(--line)}
+.laRow.sel{background:var(--accent-soft)}.laRow.baja .laTx{opacity:.7}
+.laCk{appearance:none;-webkit-appearance:none;width:24px;height:24px;border-radius:50%;border:2px solid var(--muted);flex:none;margin:0;cursor:pointer;display:grid;place-items:center;background:transparent}
+.laCk:checked{background:var(--accent);border-color:var(--accent)}
+.laCk:checked::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2px 2px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.laTx{flex:1;min-width:0}.laTx b{display:block;font-weight:700;font-size:1rem;color:var(--ink)}.laTx .s{font-size:.8rem;color:var(--muted)}
+.laTags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.laTag{font:700 .68rem var(--body);border-radius:6px;padding:3px 8px;background:var(--accent-soft);color:var(--accent)}
+.laTag.k{background:var(--ok-soft);color:var(--ok)}.laTag.v{background:var(--warn-soft);color:var(--warn)}.laTag.x{background:var(--alert-soft);color:var(--alert)}
+.laChev{color:var(--muted);flex:none;font-size:1.3rem;line-height:1}
+.laVacio{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center;color:var(--muted)}
+.laNota{font-size:.82rem;color:var(--muted);margin:0}
+.laBarra{position:sticky;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:8;background:#2A1E17;color:#F5F0E8;border:1px solid #5a4636;border-radius:18px;padding:10px 12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.laBarra b{margin-right:auto;font-weight:700;color:#F5F0E8}
+.laBarra button{border:0;background:transparent;color:#FFD9A0;font:700 .9rem var(--body);cursor:pointer;padding:8px 10px;border-radius:10px}
+.laBarra button.fuerte{background:#FFD9A0;color:#2A1E17}
+.laTri{display:flex;background:var(--accent-soft);border-radius:10px;padding:2px;gap:2px;flex:none}
+.laTri button{border:0;background:transparent;color:var(--ink);font:700 .76rem var(--body);padding:7px 9px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.laTri button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.laTri button.si[aria-pressed="true"]{background:var(--ok-soft);color:var(--ok)}
+.laTri button.no[aria-pressed="true"]{background:var(--alert-soft);color:var(--alert)}
+.laConfBaja{display:flex;gap:10px;align-items:flex-start;background:var(--alert-soft);color:var(--alert);border-radius:12px;padding:10px 12px;font-size:.84rem;font-weight:700}
+.laConfBaja input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--alert)}
+.laBox button:disabled{opacity:.45;cursor:default}
+.laBox{max-width:560px;background:var(--bg);padding:0 !important;gap:0 !important;overflow:hidden !important}
+.laBox .laCuerpo{overflow-y:auto;flex:1 1 auto;min-height:0;padding:14px 16px 18px;-webkit-overflow-scrolling:touch}
+.laNav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;background:var(--bg);padding:12px 16px;border-bottom:1px solid var(--line);flex:none}
+.laNav h3{font:700 1.05rem var(--body);margin:0;text-align:center;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.laPlano{border:0;background:none;color:var(--accent);font:600 1rem var(--body);cursor:pointer;padding:6px 4px}.laPlano.fuerte{font-weight:800}
+.laCuerpo{display:flex;flex-direction:column;gap:14px}
+.laSec{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:2px 14px}
+.laSec h4{font:700 .7rem var(--body);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:12px 0 2px}
+.laOpt{display:flex;gap:12px;align-items:flex-start;padding:12px 0;min-width:0}.laOpt+.laOpt{border-top:1px solid var(--line)}
+.laOpt .d{flex:1;min-width:0}.laOpt .d>b{display:block;font-weight:700;font-size:.96rem;color:var(--ink)}.laOpt .d .sub{font-size:.8rem;color:var(--muted);display:block}
+.laSw{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:999px;background:var(--muted);position:relative;cursor:pointer;flex:none;border:0;margin:0;transition:background .2s}
+.laSw::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.35);transition:transform .2s}
+.laSw:checked{background:#2e9b4f}.laSw:checked::after{transform:translateX(20px)}
+.laMas{border:0;background:none;color:var(--accent);font:700 .78rem var(--body);cursor:pointer;padding:4px 0 0;display:inline-flex;gap:4px;align-items:center}
+.laMas::after{content:"";width:6px;height:6px;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(-45deg);transition:transform .2s;margin-left:3px}
+.laMas[aria-expanded="true"]::after{transform:rotate(45deg)}
+.laDt{background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:10px 12px;margin-top:6px;font-size:.82rem;line-height:1.5}
+.laDt[hidden]{display:none}.laDt b{color:var(--accent);font-weight:800}
+.laTodo{border:0;background:none;color:var(--accent);font:700 .84rem var(--body);cursor:pointer;align-self:flex-start;padding:0 4px}
+.laF2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px 0}
+.laF2 label{font-size:.74rem;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.laF2 input,.laF2 select{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px;font:600 .95rem var(--body)}
+.laAcc{width:100%;border:0;background:none;font:700 1rem var(--body);color:var(--accent);padding:14px;text-align:center;cursor:pointer}
+.laAcc.rojo{color:var(--alert)}
+.laCambios{background:var(--warn-soft);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:.84rem;font-weight:700}
+.laCambios[hidden]{display:none}
+.laConf{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.laConf input{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:10px;font:600 .95rem var(--body)}
+.laConf p{margin:0;font-size:.84rem;color:var(--ink)}
+.laErr{color:var(--alert);font-size:.84rem;font-weight:700;margin:0}
+.laReg{font-size:.76rem;color:var(--muted);text-align:center;margin:0}
+@media(max-width:560px){.laF2{grid-template-columns:1fr}.laSeg{font-size:.72rem}}
 .hRots{margin-top:6px;display:flex;flex-direction:column;gap:2px}.hRot{font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .hFicha.caja{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .hFicha{height:26px;padding:0 10px;border-radius:13px;background:var(--surface);border:1.5px solid var(--line);font-size:.78rem;font-weight:700;display:flex;align-items:center;white-space:nowrap}
@@ -1764,7 +1841,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.213.0";
+const FRONTEND_VERSION = "1.214.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3626,7 +3703,7 @@ const OPERACIONES_RECUERDO = "__operaciones__";
 function irAOperaciones(tabForzada){
   S.local=null;
   S.tab = tabForzada || ls.get("tabOperaciones","") || (S.empleado.rol==="admin" ? "sabores" : "relevar");
-  if(S.tab==="sabores" && S.empleado.rol!=="admin") S.tab="relevar";
+  if((S.tab==="sabores"||S.tab==="locales") && S.empleado.rol!=="admin") S.tab="relevar";
   S.verVencimientos=false; S.confirm=false; S.catAbierta=false;
   try{ ls.set("ultimoLocal", OPERACIONES_RECUERDO); }catch(e){}
   renderApp();
@@ -3661,6 +3738,7 @@ function renderHeader(){
 }
 
 const ICONOS_TAB = {
+  locales: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l1.5-5h15L21 10"/><path d="M4 10v10h16V10"/><path d="M9 20v-6h6v6"/></svg>`,
   salida: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>`,
   ingreso: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>`,
   devolucion: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>`,
@@ -4369,8 +4447,8 @@ function renderNav(){
   if(!S.local){
     if(!S.empleado || (S.empleado.rol!=="admin" && S.empleado.rol!=="supervisor")) return "";
     const tabsOp=[["inicio","Inicio"],["relevar","Relevar"],["control","Control"]];
-    if(S.empleado.rol==="admin") tabsOp.push(["sabores","Sabores"]);
-    const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : S.tab==="control" ? "control" : "inicio";
+    if(S.empleado.rol==="admin"){ tabsOp.push(["sabores","Sabores"]); tabsOp.push(["locales","Locales"]) }
+    const act = S.tab==="sabores" ? "sabores" : S.tab==="relevar" ? "relevar" : S.tab==="control" ? "control" : (S.tab==="locales"&&S.empleado.rol==="admin") ? "locales" : "inicio";
     return `<nav role="tablist" id="tabs" class="bottomNav navCorta">${tabsOp.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${act===t}">${ICONOS_TAB[t]}<span>${l}</span></button>`).join("")}</nav>`;
   }
   // La barra se arma por rol, sin esperar los datos del local (antes aparecía recién cuando llegaban los sabores).
@@ -4386,6 +4464,206 @@ function renderNav(){
   return `<nav role="tablist" id="tabs" class="bottomNav${tabs.length<=3?" navCorta":""}">${tabs.map(([t,l])=>`<button role="tab" data-t="${t}" aria-selected="${S.tab===t}">${ICONOS_TAB[t]}<span>${l}</span>${t==="stock"&&al.length?`<span class="n">${al.length}</span>`:""}</button>`).join("")}</nav>`;
 }
 
+/* ---------- Panel de locales (solo admin) ---------- */
+const LA_OPCIONES=[
+ ["Operación",[["activo","Local activo","Si se apaga, el local deja de poder entrar."],["venta_dia","Venta del día","Chocolatería se saca con «Salida de chocolatería» al cierre."],["control_equipos","Control de dispositivos","Los dispositivos nuevos se vinculan con un código de 6 números."],["stock_valorizado","Gestión con valores (responsable)","El responsable de local ve la solapa Gestión."],["ver_diferencias","Ver diferencias de conteo","El responsable ve el resultado de los conteos que pide supervisión."]]],
+ ["Rubros que lleva",[["lleva_vasquetas","Vasquetas"],["lleva_baldes","Baldes"],["lleva_icepops","Icepops"],["lleva_glutenfree","Gluten Free"],["lleva_chocolateria","Chocolatería"],["lleva_pasteleria","Pastelería"],["lleva_bolleria","Bollería"]]],
+ ["Escáner y kilos",[["kilos_reales","Kilos reales","Ingreso y conteo con kilos; la Salida pesa cada vasqueta."],["escaner_salida","Escáner en Salida","Escanear el rótulo de cada vasqueta al sacar."],["escaner_conteo","Escáner en Conteo","Contar escaneando vasquetas y cajas."],["sin_escaner","Sin escáner","Apaga el escáner aunque esté prendido."]]],
+ ["Producción",[["produccion","Produce helado","Aparece la pantalla de Producción."],["ingreso_solo_produccion","Ingreso = Producción","Solo fabrica: no recibe remito."]]]
+];
+const LA_DET={
+ activo:"<b>Qué hace:</b> el local puede entrar y operar. Al apagarlo (baja), nadie del local puede entrar. <b>Qué se conserva:</b> todos los movimientos y el historial. Se puede volver a dar de alta cuando quieras.",
+ venta_dia:"<b>Qué hace:</b> la chocolatería no se saca en la Salida común. Se descuenta al cierre con «Salida de chocolatería»: venta del día, gift card, sin cargo, baja o transferencia. La pestaña Chocolatería de Salida queda solo para consultar.",
+ control_equipos:"<b>Qué hace:</b> un dispositivo nuevo no ve la nómina hasta vincularse con un código de 6 números que genera el responsable (vale 15 minutos y se usa una sola vez). <b>Cupo:</b> 3 dispositivos por local, salvo que se indique otro número.",
+ stock_valorizado:"<b>Qué hace:</b> el responsable de local ve la solapa Gestión con el stock valorizado a precio de lista (solo locales de Argentina). <b>Aclaración:</b> admin y supervisor siempre la ven, tenga o no esta opción.",
+ ver_diferencias:"<b>Qué hace:</b> en los conteos que pide supervisión (parcial y de cierre), el responsable ve el resultado contra lo esperado. <b>Apagada:</b> solo supervisión ve las diferencias.",
+ kilos_reales:"<b>Qué hace:</b> las vasquetas se manejan en kilos reales. El Ingreso y la Devolución piden los kilos, el Conteo pide unidades y kilos, y cada vasqueta que sale se pesa. Stock muestra «Kilos de helado en cámara». <b>Recomendación:</b> hacer primero un Conteo con kilos, para que las vasquetas actuales no queden «sin kilos cargados».",
+ escaner_salida:"<b>Qué hace:</b> aparece «Escanear vasqueta» en Salida y Desperdicio. Cada escaneo suma una vasqueta con el peso de su rótulo y guarda el lote (LC) y el operario. <b>Si el rótulo no se lee:</b> se toca el sabor y se pesa a mano.",
+ escaner_conteo:"<b>Qué hace:</b> aparece «Contar escaneando» en el Conteo físico, solo para vasquetas. Una caja suma 2 y una vasqueta suma 1, con sus kilos, y se guarda el lote y el operario.",
+ sin_escaner:"<b>Qué hace:</b> apaga los dos escáneres aunque estén prendidos. <b>Cuándo:</b> en locales que pesan con el teclado de la pantalla, como Unicenter.",
+ produccion:"<b>Qué hace:</b> aparece la pantalla de Producción en Ingreso: se cargan los kilos fabricados y las vasquetas resultantes (los Icepops, por unidades). Habilita el rol Producción.",
+ ingreso_solo_produccion:"<b>Qué hace:</b> el Ingreso es directamente Producción, sin remito ni lector de fotos. <b>Cuándo:</b> locales que solo fabrican, como Marruecos. Solo vale si «Produce helado» está prendido."
+};
+const LA_RUBRO_DET="<b>Qué hace:</b> si se apaga, el rubro desaparece de este local: Salida, Ingreso, Stock, Conteo y Pedido. No toca el catálogo ni a otros locales. Para volver a verlo se prende de nuevo.";
+const LA_RUBROS_TXT={vasquetas:"vasquetas",baldes:"baldes",icepops:"icepops",glutenfree:"gluten free",chocolateria:"chocolatería",pasteleria:"pastelería",bolleria:"bollería"};
+const LA_PAISES=["Argentina","Chile","Uruguay","Paraguay","España","USA","Marruecos","Italia"];
+function laEstado(){ return S.locAdm||(S.locAdm={datos:null,cargando:false,error:"",f:"todos",q:"",pais:"",of:"",g:""}) }
+async function cargarLocalesAdm(){
+  const L=laEstado(); L.cargando=true; L.error="";
+  const [r]=await Promise.all([api("localesAdmin",{}), controlEstado().grupos?null:ctlGruposCargar()]);
+  L.cargando=false;
+  if(r&&r.ok) L.datos=r.locales||[];
+  else L.error=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para usar este panel.":((r&&r.error)||"No se pudo cargar. Probá de nuevo.");
+  if(!S.local&&S.tab==="locales") renderApp();
+}
+const laOn=(l,k)=>!!(l.opciones&&l.opciones[k]);
+function laTagsHTML(l){
+  const t=[];
+  if(!laOn(l,"activo")) t.push('<span class="laTag x">De baja</span>');
+  if(laOn(l,"kilos_reales")) t.push('<span class="laTag k">Kilos reales</span>');
+  if(laOn(l,"escaner_salida")||laOn(l,"escaner_conteo")) t.push('<span class="laTag k">Escáner</span>');
+  if(laOn(l,"produccion")) t.push('<span class="laTag v">Produce</span>');
+  if(laOn(l,"venta_dia")) t.push('<span class="laTag">Venta del día</span>');
+  const off=Object.keys(LA_RUBROS_TXT).filter(r=>!laOn(l,"lleva_"+r));
+  if(off.length) t.push('<span class="laTag x">Sin '+off.map(r=>LA_RUBROS_TXT[r]).join(", ")+'</span>');
+  return t.join("");
+}
+function laVisibles(){
+  const L=laEstado(), G=ctlGruposLeer(), grupo=L.g?(G.grupos||[]).find(g=>String(g.id)===String(L.g)):null, q=(L.q||"").trim().toLowerCase();
+  return (L.datos||[]).filter(l=>{
+    const act=laOn(l,"activo");
+    if(L.f==="baja"){ if(act) return false }
+    else { if(!act) return false; if(L.f==="propios"&&l.grupo!=="Propios") return false; if(L.f==="fran"&&l.grupo!=="Franquicias") return false }
+    if(grupo&&grupo.locales.indexOf(l.nombre)<0) return false;
+    if(q&&l.nombre.toLowerCase().indexOf(q)<0&&(l.region||"").toLowerCase().indexOf(q)<0) return false;
+    if(L.pais&&l.pais!==L.pais) return false;
+    if(L.of&&!laOn(l,L.of)) return false;
+    return true;
+  });
+}
+function localesAdmView(){
+  const L=laEstado();
+  if(L.datos===null&&!L.cargando&&!L.error) cargarLocalesAdm();
+  if(!L.datos) return `<div class="la"><h1 class="laH1">Locales</h1><div class="note">${L.error?esc(L.error)+` <button class="btn ghost" data-la-reint type="button">Reintentar</button>`:"Cargando locales…"}</div></div>`;
+  const C=controlEstado(); C.sel=C.sel||{};
+  const G=ctlGruposLeer(), grupos=(G.grupos||[]).filter(g=>g.propio);
+  const cnt=f=>L.datos.filter(l=>f==="baja"?!laOn(l,"activo"):laOn(l,"activo")&&(f==="todos"||(f==="propios"?l.grupo==="Propios":l.grupo==="Franquicias"))).length;
+  const paises=Array.from(new Set(L.datos.map(l=>l.pais).filter(Boolean))).sort();
+  const vis=laVisibles(), marcados=Object.keys(C.sel).filter(n=>C.sel[n]);
+  const filtros=[["kilos_reales","Con kilos reales"],["escaner_salida","Con escáner en Salida"],["escaner_conteo","Con escáner en Conteo"],["produccion","Que producen"],["control_equipos","Con control de dispositivos"]];
+  const filas=vis.map(l=>`<div class="laRow${C.sel[l.nombre]?" sel":""}${laOn(l,"activo")?"":" baja"}" data-la-l="${esc(l.nombre)}" tabindex="0" role="button" aria-label="Abrir ${esc(l.nombre)}"><input type="checkbox" class="laCk" data-la-ck="${esc(l.nombre)}"${C.sel[l.nombre]?" checked":""} aria-label="Marcar ${esc(l.nombre)}"><div class="laTx"><b>${esc(l.nombre)}</b><span class="s">${esc([l.grupo,l.region].filter(Boolean).join(" · "))}${l.pais?" · "+esc(l.pais):""}</span><div class="laTags">${laTagsHTML(l)}</div></div><span class="laChev" aria-hidden="true">›</span></div>`).join("");
+  return `<div class="la">
+    <div class="laTop">
+      <div class="laCab"><p class="laCuenta" style="margin-right:auto">Operaciones · solo admin</p><button class="btn" data-la-nuevo type="button">+ Nuevo local</button></div>
+      <div class="laSegs" role="group" aria-label="Tipo de local">${[["todos","Activos"],["propios","Propios"],["fran","Franquicias"],["baja","De baja"]].map(([k,t])=>`<button type="button" class="laSeg" data-la-f="${k}" aria-pressed="${L.f===k}">${t} <span class="n">${cnt(k)}</span></button>`).join("")}</div>
+      <div class="laCab"><input id="laQ" class="laBusca" type="search" placeholder="Buscar local" aria-label="Buscar local" value="${esc(L.q)}" autocomplete="off"><select id="laPais" class="laSel" aria-label="País"><option value="">Todos los países</option>${paises.map(p=>`<option${L.pais===p?" selected":""}>${esc(p)}</option>`).join("")}</select></div>
+      <div class="laChips" aria-label="Mis grupos">${grupos.map(g=>`<button type="button" class="laChip grupo" data-la-g="${esc(g.id)}" aria-pressed="${String(L.g)===String(g.id)}">${esc(g.nombre)} <b>${g.locales.length}</b></button>`).join("")}<button type="button" class="laChip" data-la-gnuevo>+ Grupo</button></div>
+      <div class="laChips" aria-label="Filtrar por opción">${filtros.map(([k,t])=>`<button type="button" class="laChip" data-la-of="${k}" aria-pressed="${L.of===k}">${t}</button>`).join("")}</div>
+    </div>
+    <div><h1 class="laH1">Locales</h1><p class="laSub">Alta, baja y cada opción, sin tocar la planilla.</p></div>
+    <p class="laCuenta">${vis.length} local${vis.length===1?"":"es"}${L.g?" en el grupo":""}</p>
+    <div class="laLista">${filas||`<div class="laVacio">Ningún local coincide.</div>`}</div>
+    <p class="laNota">Cada cambio queda guardado en la bitácora (quién, qué y cuándo). «Dar de baja» solo apaga el local: no borra movimientos ni historial, y se puede volver a dar de alta. Los grupos son los mismos de Control. Marcando varios locales podés agruparlos o cambiar una opción en todos de una vez.</p>
+    ${marcados.length?`<div class="laBarra" role="toolbar" aria-label="Acciones sobre los marcados"><b>${marcados.length} marcado${marcados.length===1?"":"s"}</b><button type="button" data-la-nada>Cancelar</button><button type="button" data-la-agrupar>Agrupar</button><button type="button" class="fuerte" data-la-masivo>Cambiar una opción</button></div>`:""}
+  </div>`;
+}
+function laInterruptor(l,k,tit,desc){
+  const dt=LA_DET[k]||(k.indexOf("lleva_")===0?LA_RUBRO_DET:"");
+  return `<div class="laOpt"><div class="d"><b>${tit}</b>${desc?`<span class="sub">${desc}</span>`:""}${dt?`<button class="laMas" type="button" data-la-mas="${k}" aria-expanded="false" aria-controls="ladt-${k}">Qué hace</button><div class="laDt" id="ladt-${k}" hidden>${dt}</div>`:""}</div><input class="laSw" type="checkbox" role="switch" data-la-k="${k}"${l.opciones[k]?" checked":""} aria-label="${tit}"></div>`;
+}
+/** Hoja de un local (o de uno nuevo). Estado propio, sin tocar la pantalla de atrás hasta guardar. */
+function laAbrir(nombre){
+  const L=laEstado(), nuevo=!nombre;
+  const base=nuevo?{nombre:"",grupo:"Franquicias",region:"",pais:"Argentina",opciones:{activo:true,venta_dia:true,control_equipos:true,lleva_vasquetas:true,lleva_baldes:true,lleva_icepops:true,lleva_glutenfree:true,lleva_chocolateria:true,lleva_pasteleria:true,lleva_bolleria:true}}:L.datos.find(x=>x.nombre===nombre);
+  if(!base) return;
+  const ov=document.createElement("div"); ov.className="mantenerOv"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+  const pintar=()=>{
+    ov.innerHTML=`<div class="mantenerBox laBox"><div class="laNav"><button class="laPlano" data-la-cerrar type="button">Cancelar</button><h3>${nuevo?"Nuevo local":esc(base.nombre)}</h3><button class="laPlano fuerte" data-la-guardar type="button">${nuevo?"Crear":"Listo"}</button></div>
+    <div class="laCuerpo"><button class="laTodo" type="button" data-la-todo aria-pressed="false">Desplegar todos los detalles</button>
+    <div class="laSec" style="padding:0 14px"><div class="laF2"><label>Nombre<input id="laN" value="${esc(base.nombre)}" placeholder="Ej. Palermo CABA"${nuevo?"":" readonly"} maxlength="60"></label><label>Tipo<select id="laG">${["Propios","Franquicias"].map(g=>`<option${base.grupo===g?" selected":""}>${g}</option>`).join("")}</select></label><label>Región<input id="laR" value="${esc(base.region)}" placeholder="Ej. CABA" maxlength="40"></label><label>País<select id="laP">${Array.from(new Set(LA_PAISES.concat(base.pais?[base.pais]:[]))).map(p=>`<option${base.pais===p?" selected":""}>${esc(p)}</option>`).join("")}</select></label></div></div>
+    ${LA_OPCIONES.map(([t,os])=>`<div class="laSec"><h4>${t}</h4>${os.map(([k,tit,d])=>laInterruptor(base,k,tit,d)).join("")}</div>`).join("")}
+    ${nuevo?`<p class="laNota">Al crearlo, el local arranca con todos los rubros, sin contraseña y con control de dispositivos prendido. Después generás el código de 6 números desde Equipo.</p>`:""}
+    <div class="laCambios" id="laCam" hidden></div><p class="laErr" id="laErr" hidden></p>
+    ${nuevo?"":`<div class="laSec" style="padding:0">${laOn(base,"activo")?`<button class="laAcc rojo" type="button" data-la-baja>Dar de baja este local</button>`:`<button class="laAcc" type="button" data-la-alta>Dar de alta este local</button>`}<div class="laConf" id="laConf" hidden><p>Para dar de baja escribí el nombre del local: <b>${esc(base.nombre)}</b>. Los movimientos y el historial se conservan.</p><input id="laConfN" placeholder="Nombre del local" autocomplete="off"><button class="btn" type="button" data-la-baja-ok disabled>Confirmar baja</button></div></div>`}
+    <p class="laReg">Se registra con tu nombre y la fecha en la bitácora.</p></div></div>`;
+  };
+  pintar(); document.body.appendChild(ov);
+  const q=s=>ov.querySelector(s);
+  const err=m=>{ const e=q("#laErr"); e.textContent=m; e.hidden=!m };
+  const cambios=()=>{ const lista=[]; ov.querySelectorAll("[data-la-k]").forEach(sw=>{ if(!!base.opciones[sw.dataset.laK]!==sw.checked) lista.push([sw.dataset.laK,sw.checked,sw.getAttribute("aria-label")]) }); return lista };
+  const resumen=()=>{ const c=cambios(), e=q("#laCam"); e.hidden=nuevo||!c.length; e.textContent=c.length?"Vas a cambiar: "+c.map(x=>x[2]+": "+(x[1]?"SÍ":"NO")).join(" · "):"" };
+  const guardar=async(extra)=>{
+    err("");
+    const btn=q("[data-la-guardar]"); btn.disabled=true;
+    const opc={}; cambios().forEach(([k,v])=>{ opc[k]=v }); if(extra) Object.assign(opc,extra);
+    let r;
+    if(nuevo){
+      const n=q("#laN").value.trim(); if(n.length<2){ err("Poné el nombre del local."); btn.disabled=false; return }
+      r=await api("crearLocalAdmin",{nombre:n,grupo:q("#laG").value,region:q("#laR").value.trim(),pais:q("#laP").value});
+      if(r&&r.ok&&Object.keys(opc).length){ r=await api("guardarLocalAdmin",{local:n,opciones:opc}) }
+    } else r=await api("guardarLocalAdmin",{local:base.nombre,opciones:opc,grupo:q("#laG").value,region:q("#laR").value.trim(),pais:q("#laP").value});
+    btn.disabled=false;
+    if(r&&r.ok){ ov.remove(); L.datos=null; cargarLocalesAdm(); toast(nuevo?"Local creado":(r.sinCambios?"Sin cambios":"Cambios guardados")); return }
+    err((r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":((r&&r.error)||"No se pudo guardar."));
+  };
+  ov.addEventListener("change",e=>{ if(e.target.matches("[data-la-k]")) resumen() });
+  ov.addEventListener("input",e=>{ if(e.target.id==="laConfN"){ const b=q("[data-la-baja-ok]"); if(b) b.disabled=e.target.value.trim().toLowerCase()!==base.nombre.toLowerCase() } });
+  ov.addEventListener("click",e=>{
+    if(e.target===ov||e.target.closest("[data-la-cerrar]")){ ov.remove(); return }
+    const mas=e.target.closest("[data-la-mas]"); if(mas){ const d=q("#ladt-"+mas.dataset.laMas), ab=mas.getAttribute("aria-expanded")==="true"; mas.setAttribute("aria-expanded",String(!ab)); d.hidden=ab; return }
+    if(e.target.closest("[data-la-todo]")){ const t=q("[data-la-todo]"), abre=t.getAttribute("aria-pressed")!=="true"; t.setAttribute("aria-pressed",String(abre)); t.textContent=abre?"Contraer todos los detalles":"Desplegar todos los detalles"; ov.querySelectorAll("[data-la-mas]").forEach(m=>{ m.setAttribute("aria-expanded",String(abre)); q("#ladt-"+m.dataset.laMas).hidden=!abre }); return }
+    if(e.target.closest("[data-la-guardar]")){ guardar(); return }
+    if(e.target.closest("[data-la-baja]")){ q("#laConf").hidden=false; q("#laConfN").focus(); return }
+    if(e.target.closest("[data-la-baja-ok]")){ guardar({activo:false}); return }
+    if(e.target.closest("[data-la-alta]")){ guardar({activo:true}); return }
+  });
+  ov.addEventListener("keydown",e=>{ if(e.key==="Escape") ov.remove() });
+}
+function laMasivo(){
+  const L=laEstado(), C=controlEstado(), ls=Object.keys(C.sel||{}).filter(n=>C.sel[n]); if(!ls.length) return;
+  const sel={}; let conf=false; // sel[k] = true (prender) | false (apagar) | sin definir (no cambiar)
+  const ov=document.createElement("div"); ov.className="mantenerOv"; ov.setAttribute("role","dialog"); ov.setAttribute("aria-modal","true");
+  const conteo=()=>{ const ks=Object.keys(sel); let cambios=0, locs=0; ls.forEach(n=>{ const l=L.datos.find(x=>x.nombre===n); if(!l) return; const c=ks.filter(k=>laOn(l,k)!==sel[k]).length; if(c){ locs++; cambios+=c } }); return {ks,cambios,locs} };
+  const pintar=()=>{
+    const c=conteo(), baja=sel.activo===false, alta=sel.activo===true;
+    ov.innerHTML=`<div class="mantenerBox laBox"><div class="laNav"><button class="laPlano" data-la-cerrar type="button">Cancelar</button><h3>Cambiar en ${ls.length} local${ls.length===1?"":"es"}</h3><button class="laPlano fuerte" data-la-ok type="button"${(!c.ks.length||(baja&&!conf))?" disabled":""}>Aplicar</button></div>
+    <div class="laCuerpo"><p class="laNota">Elegí qué prender y qué apagar. Lo que dejes en «No cambiar» queda como está en cada local.</p>
+    ${LA_OPCIONES.map(([t,os])=>`<div class="laSec"><h4>${t}</h4>${os.map(([k,tit])=>`<div class="laOpt" style="align-items:center"><div class="d"><b>${tit}</b></div><div class="laTri" role="group" aria-label="${tit}"><button type="button" data-la-m="${k}" data-v="" aria-pressed="${sel[k]===undefined}">No cambiar</button><button type="button" class="si" data-la-m="${k}" data-v="1" aria-pressed="${sel[k]===true}">Sí</button><button type="button" class="no" data-la-m="${k}" data-v="0" aria-pressed="${sel[k]===false}">No</button></div></div>`).join("")}</div>`).join("")}
+    <div class="laCambios" id="laMres">${c.ks.length?`Cambia ${c.ks.length} ${c.ks.length===1?"opción":"opciones"} en ${c.locs} de ${ls.length} local${ls.length===1?"":"es"} (${c.cambios} cambio${c.cambios===1?"":"s"} en total; el resto ya estaba así).`:"Todavía no elegiste ningún cambio."}</div>
+    ${baja?`<label class="laConfBaja"><input type="checkbox" id="laMconf"${conf?" checked":""}> Confirmo que se dan de baja ${ls.length} local${ls.length===1?"":"es"}. Sus movimientos y su historial se conservan.</label>`:""}
+    ${alta?`<p class="laNota">Se dan de alta ${ls.length} local${ls.length===1?"":"es"}: vuelven a poder entrar.</p>`:""}
+    <p class="laErr" id="laMerr" hidden></p></div></div>`;
+  };
+  pintar(); document.body.appendChild(ov);
+  const q=s=>ov.querySelector(s);
+  ov.addEventListener("change",e=>{ if(e.target.id==="laMconf"){ conf=e.target.checked; const cont=ov.querySelector(".laCuerpo"), y=cont?cont.scrollTop:0; pintar(); const c2=ov.querySelector(".laCuerpo"); if(c2) c2.scrollTop=y } });
+  ov.addEventListener("click",async e=>{
+    if(e.target===ov||e.target.closest("[data-la-cerrar]")){ ov.remove(); return }
+    const m=e.target.closest("[data-la-m]");
+    if(m){ const k=m.dataset.laM, v=m.dataset.v; if(v==="") delete sel[k]; else sel[k]=v==="1"; if(sel.activo!==false) conf=false; const cont=ov.querySelector(".laCuerpo"), y=cont?cont.scrollTop:0; pintar(); const c2=ov.querySelector(".laCuerpo"); if(c2) c2.scrollTop=y; return }
+    if(e.target.closest("[data-la-ok]")){
+      const b=q("[data-la-ok]"); if(b.disabled) return; b.disabled=true; let cambiados=0;
+      for(let i=0;i<ls.length;i+=25){ b.textContent="Aplicando "+Math.min(i+25,ls.length)+" de "+ls.length+"…"; const r=await api("localesAdminMasivo",{locales:ls.slice(i,i+25),opciones:sel},90000);
+        if(!(r&&r.ok)){ b.disabled=false; b.textContent="Aplicar"; const em=q("#laMerr"); em.textContent=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":((r&&r.error)||"No se pudo aplicar.")+(cambiados?" Ya se cambiaron "+cambiados+".":""); em.hidden=false; return }
+        cambiados+=r.cambiados||0 }
+      ov.remove(); C.sel={}; L.datos=null; cargarLocalesAdm(); toast("Cambio aplicado a "+cambiados+" local"+(cambiados===1?"":"es"));
+    }
+  });
+  ov.addEventListener("keydown",e=>{ if(e.key==="Escape") ov.remove() });
+}
+function laClick(t){
+  if(S.local||S.tab!=="locales") return false;
+  const L=laEstado(), C=controlEstado(); C.sel=C.sel||{};
+  if(t.dataset.laReint!==undefined){ cargarLocalesAdm(); renderApp(); return true }
+  if(t.dataset.laF){ L.f=t.dataset.laF; renderApp(); return true }
+  if(t.dataset.laOf){ L.of=L.of===t.dataset.laOf?"":t.dataset.laOf; renderApp(); return true }
+  if(t.dataset.laG){ L.g=String(L.g)===String(t.dataset.laG)?"":t.dataset.laG; renderApp(); return true }
+  if(t.dataset.laGnuevo!==undefined){ ctlNuevoGrupoVacio(); return true }
+  if(t.dataset.laNuevo!==undefined){ laAbrir(null); return true }
+  if(t.dataset.laNada!==undefined){ C.sel={}; renderApp(); return true }
+  if(t.dataset.laAgrupar!==undefined){ ctlMoverA(Object.keys(C.sel).filter(n=>C.sel[n])); return true }
+  if(t.dataset.laMasivo!==undefined){ laMasivo(); return true }
+  return false;
+}
+// Las filas y los casilleros no son botones: se atienden aparte (el manejador general solo mira botones y links).
+document.addEventListener("click",e=>{
+  if(S.local||S.tab!=="locales"||!e.target.closest) return;
+  if(e.target.closest("input,button,a,select")) return;
+  const fila=e.target.closest("[data-la-l]"); if(fila) laAbrir(fila.dataset.laL);
+});
+document.addEventListener("keydown",e=>{
+  if(S.local||S.tab!=="locales"||e.key!=="Enter"||!e.target.closest||e.target.tagName==="INPUT") return;
+  const fila=e.target.closest("[data-la-l]"); if(fila) laAbrir(fila.dataset.laL);
+});
+document.addEventListener("change",e=>{
+  const c=e.target&&e.target.closest&&e.target.closest("[data-la-ck]"); if(!c||S.local||S.tab!=="locales") return;
+  const C=controlEstado(); C.sel=C.sel||{}; if(c.checked) C.sel[c.dataset.laCk]=true; else delete C.sel[c.dataset.laCk]; renderApp();
+});
+document.addEventListener("input",e=>{
+  const t=e.target; if(!t||(t.id!=="laQ"&&t.id!=="laPais")) return;
+  const L=laEstado(); if(t.id==="laQ"){ L.q=t.value; const p=t.selectionStart; renderApp(); const q=document.getElementById("laQ"); if(q){ q.focus(); try{ q.setSelectionRange(p,p) }catch(_){} } } else { L.pais=t.value; renderApp() }
+});
+document.addEventListener("change",e=>{ const t=e.target; if(t&&t.id==="laPais"){ laEstado().pais=t.value; renderApp() } });
 /** Aviso de novedad (Conteo inicial). Se muestra a todos hasta tocar «Entendido» o hasta el 15/12/2026. */
 function avisoConteoInicialHTML(){
   if(Date.now()>=Date.parse("2026-12-01T00:00:00-03:00")) return ""; // fijo hasta el fin del 30/11 (00:00 del 1/12), sin botón para cerrarlo
@@ -4398,6 +4676,7 @@ function renderMain(){
   // y la barra LogiStock de arriba queda encima.
   if(!S.local && S.tab==="relevar" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return relevarView();
   if(!S.local && S.tab==="control" && S.empleado && (S.empleado.rol==="admin"||S.empleado.rol==="supervisor")) return controlView();
+  if(!S.local && S.tab==="locales" && S.empleado && S.empleado.rol==="admin") return localesAdmView();
   if(!S.local && S.tab!=="sabores") return `
     <div class="portadaLocal"><div class="portadaMarco"><img src="../media/bienvenida-lucciano.jpg" alt="Bienvenido a Lucciano's"></div>${S.empleado && S.empleado.rol==="admin" ? `<button type="button" class="btn portadaGestion" data-ir-operaciones="sabores">Gestionar sabores de todos los locales</button>` : ""}</div>`;
   // En Operaciones (sin local) la pestaña Sabores usa su propia lista (S.saboresAdmin): no hay que esperar los datos de ningún local.
@@ -7845,6 +8124,7 @@ document.addEventListener("click", async e=>{
 
   if(invClick(t)) return;
   if(relevarClick(t)) return;
+  if(laClick(t)) return;
   if(t.dataset.supToggle!==undefined){ S.supAbierta=!S.supAbierta; renderApp(); return }
   if(controlClick(t)) return;
   if(t.id==="pedidoConteoHacer"){ S.tab="stock"; S.hubInicial=true; S.inv=null; if(S.pedidoConteo&&S.pedidoConteo.tipo==="inicial"){ renderApp(); window.scrollTo(0,0); cargarConteoBloqueado(); return } invIniciarParcial(S.pedidoConteo&&S.pedidoConteo.id, S.pedidoConteo&&S.pedidoConteo.tipo, S.pedidoConteo&&S.pedidoConteo.rubro); return }
@@ -8484,13 +8764,13 @@ async function start(){
         // Estaba en Operaciones: vuelve ahí (misma pestaña que tenía), no al último local.
         S.local = null;
         S.tab = ls.get("tabOperaciones","") || (S.empleado.rol==="admin" ? "sabores" : "relevar");
-        if(S.tab==="sabores" && S.empleado.rol!=="admin") S.tab="relevar";
+        if((S.tab==="sabores"||S.tab==="locales") && S.empleado.rol!=="admin") S.tab="relevar";
       } else if(ultimo && S.locales.find(l=>l.nombre===ultimo && !l.esGestion)) S.local = ultimo;
     }
     // Admin/supervisor en la vista general: vuelve a la pestaña de Operaciones donde estaba (Relevar, Sabores), no a la portada.
     if(!S.local && esOperador()){
       const t=ls.get("tabOperaciones","");
-      if(t==="relevar" || (t==="sabores" && S.empleado.rol==="admin")) S.tab=t;
+      if(t==="relevar" || ((t==="sabores"||t==="locales") && S.empleado.rol==="admin")) S.tab=t;
     }
     // Si la página se recarga sin señal (se cerró sola, se reinició el
     // dispositivo), acá no veníamos de un login con datos frescos ni de
