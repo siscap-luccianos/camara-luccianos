@@ -23,5 +23,8 @@ r=run(`registrar("c-sin-rot","salida","L salida",{"4":1},"",emp,"","",undefined,
 const pub=run(`_registroPublico({id:"1",tipo:"salida",local:"x",items:"{}",rotulos:'{"4":["00040039313102622057"]}',ts:1})`);
 ok(pub.rotulos&&pub.rotulos["4"][0]==="00040039313102622057","el registro público devuelve los rótulos");
 ok(run(`_registroPublico({id:"1",tipo:"salida",local:"x",items:"{}",ts:1})`).rotulos&&Object.keys(run(`_registroPublico({id:"1",tipo:"salida",local:"x",items:"{}",ts:1})`).rotulos).length===0,"sin rótulos devuelve {}");
+const nc=run(`_normalizarRotulosConteo({"4":["00040039313102622057","9900090003550083529092621015","123"]},{"4":[3.93,"c:8.35",3.0]})`);
+ok(nc["4"]&&nc["4"][0]==="00040039313102622057"&&nc["4"][1]==="9900090003550083529092621015"&&nc["4"][2]==="","conteo: acepta rótulos de 20 (vasqueta) y 28 (caja) dígitos y descarta lo demás");
+ok(Object.keys(run(`_normalizarRotulosConteo({"4":["1"]},{"4":[3.9]})`)).length===0&&Object.keys(run(`_normalizarRotulosConteo(undefined,{"4":[3.9]})`)).length===0,"conteo: sin rótulos válidos no guarda nada");
 console.log(f?"FALLAS "+f:"FALLAS 0");
 process.exit(f?1:0);

@@ -1752,7 +1752,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.209.0";
+const FRONTEND_VERSION = "1.211.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -6225,7 +6225,7 @@ function pesosEntradas(r,id){
 /** Debajo de las fichas de peso: lote (LC), operario y turno de cada vasqueta que se escaneó (las pesadas a mano no tienen). */
 function rotulosHistHTML(r,id,pe){
   const rot=(r.rotulos&&r.rotulos[id])||[]; if(!rot.some(Boolean)) return "";
-  const filas=rot.map((c,i)=>{ const d=datosRotulo(c); if(!d) return ""; const kg=pe[i]?fmtKg(pe[i].kg)+" kg · ":""; return `<div class="hRot">${esc(kg)}${esc(d.lc)} · Operario ${esc(d.operario)} · ${esc(d.turno)}</div>` }).filter(Boolean);
+  const filas=rot.map((c,i)=>{ const d=datosRotulo(c); if(!d) return ""; const kg=pe[i]?(pe[i].caja?"caja ×2 · ":"")+fmtKg(pe[i].kg)+" kg · ":""; return `<div class="hRot">${esc(kg)}${esc(d.lc)} · Operario ${esc(d.operario)} · ${esc(d.turno)}</div>` }).filter(Boolean);
   return filas.length?`<div class="hRots"><span class="hLbl">LOTE Y OPERARIO</span>${filas.join("")}</div>`:"";
 }
 function lineaMovHTML(r,id,q){
@@ -7468,8 +7468,8 @@ async function guardarContado(terminar){
         if(S.kilosReales && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(items[id]>0&&k>0) kilosC[id]=k; const d=Math.round(((kilosC[id]||0)-(km[id]||0))*100)/100; if(d!==0) kilosDelta[id]=d }
         const d=items[id]-Math.max(0,st[id]||0); if(d!==0) deltas[id]=d;
       });
-      const pesosC=pesosConteoDe(porRubro[rubro]);
-      const payload={clienteId:uuid(), local:S.local, rubro, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined, pesos:Object.keys(pesosC).length?pesosC:undefined};
+      const pesosC=pesosConteoDe(porRubro[rubro]), rotC=rotulosConteoDe(porRubro[rubro]);
+      const payload={clienteId:uuid(), local:S.local, rubro, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined, pesos:Object.keys(pesosC).length?pesosC:undefined, rotulos:Object.keys(rotC).length?rotC:undefined};
       const r=await api("conteoParcial", payload);
       if(r && r.ok){ ok+=porRubro[rubro].length; porRubro[rubro].forEach(id=>{ S.conteoGuardado[id]=true; delete S.conteoAck[id] }) }
       else if(r && r.offline){
@@ -7496,15 +7496,15 @@ async function guardarConteo(){
   const vencimientos={};
   if(!parcial) for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
   const kilosC={}; if(S.kilosReales) for(const id of Object.keys(items)){ if(items[id]>0 && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(k>0) kilosC[id]=k } }
-  const pesosC=pesosConteoDe(Object.keys(items).filter(id=>items[id]>0));
+  const pesosC=pesosConteoDe(Object.keys(items).filter(id=>items[id]>0)), rotC=rotulosConteoDe(Object.keys(items).filter(id=>items[id]>0));
   let payload, accion="conteo", deltas={}, kilosDelta={};
   if(parcial){
     accion="conteoParcial";
     const st=stockMap(), km=kilosMap();
     Object.keys(items).forEach(id=>{ const d=items[id]-Math.max(0,st[id]||0); if(d!==0) deltas[id]=d });
     if(S.kilosReales) Object.keys(items).forEach(id=>{ if(esVasquetaKilos(id)){ const d=Math.round(((kilosC[id]||0)-(km[id]||0))*100)/100; if(d!==0) kilosDelta[id]=d } });
-    payload={clienteId, local:S.local, rubro:S.conteoAlcance, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined, pesos:Object.keys(pesosC).length?pesosC:undefined};
-  } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined, pesos: Object.keys(pesosC).length ? pesosC : undefined};
+    payload={clienteId, local:S.local, rubro:S.conteoAlcance, items, kilos:Object.keys(kilosC).length?kilosC:undefined, kilosDelta:Object.keys(kilosDelta).length?kilosDelta:undefined, pesos:Object.keys(pesosC).length?pesosC:undefined, rotulos:Object.keys(rotC).length?rotC:undefined};
+  } else payload={clienteId, local:S.local, items, vencimientos, kilos: Object.keys(kilosC).length ? kilosC : undefined, pesos: Object.keys(pesosC).length ? pesosC : undefined, rotulos: Object.keys(rotC).length ? rotC : undefined};
   const r = await api(accion, payload);
   if(r && r.ok){
     toast(parcial?(r.sinCambios?"Sin cambios: lo contado coincide con el sistema.":"Conteo de "+etiquetaRubroConteo()+" guardado"):"Conteo guardado");
@@ -8873,18 +8873,21 @@ function parseCodigoRotulo(txt){
     if(d.slice(0,2)!=="99") return null;
     const kg=Number(d.slice(12,17))/100, dd=+d.slice(17,19), mm=+d.slice(19,21);
     if(!(kg>0&&kg<=60)||dd<1||dd>31||mm<1||mm>12) return null;
-    return {tipo:"caja", codigo:d.slice(2,6), kg, lote:d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23), crudo:d};
+    return {tipo:"caja", codigo:d.slice(2,6), kg, lote:d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23)+" · Operario "+(+d.slice(25,28))+" · "+turnoRotulo(d.slice(23,25)), crudo:d};
   }
   if(d.length!==20) return null;
   const kg=Number(d.slice(4,9))/100, dd=+d.slice(9,11), mm=+d.slice(11,13);
   if(!(kg>0&&kg<=30)||dd<1||dd>31||mm<1||mm>12) return null;
-  return {tipo:"vasq", codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15), crudo:d};
+  // (1.210.0) El lote que se muestra trae también el LC (fecha + turno + operario), el operario y el turno, que salen del mismo código.
+  return {tipo:"vasq", codigo:d.slice(0,4), kg, lote:d.slice(9,11)+"/"+d.slice(11,13)+"/20"+d.slice(13,15)+" · LC"+d.slice(9,20)+" · Operario "+(+d.slice(17,20))+" · "+turnoRotulo(d.slice(15,17)), crudo:d};
 }
+function turnoRotulo(t){ return t==="21"?"mañana":t==="22"?"tarde":"turno "+t }
 /** Datos del rótulo de una vasqueta (20 dígitos): LC = fecha del lote + turno + operario (los últimos 11 dígitos). */
 function datosRotulo(crudo){
-  const d=String(crudo||"").replace(/\D/g,""); if(d.length!==20) return null;
-  const turno=d.slice(15,17);
-  return {lc:"LC"+d.slice(9,20), operario:String(+d.slice(17,20)), turno:turno==="21"?"mañana":turno==="22"?"tarde":"turno "+turno};
+  const d=String(crudo||"").replace(/\D/g,"");
+  if(d.length===28){ const g=d.slice(23,25); return {lc:"Lote "+d.slice(17,19)+"/"+d.slice(19,21)+"/20"+d.slice(21,23), operario:String(+d.slice(25,28)), turno:turnoRotulo(g)} } // caja (2 vasquetas)
+  if(d.length!==20) return null;
+  return {lc:"LC"+d.slice(9,20), operario:String(+d.slice(17,20)), turno:turnoRotulo(d.slice(15,17))};
 }
 function pitido(ok){
   try{
@@ -9094,6 +9097,12 @@ function pesosConteoDe(ids){
   const out={}; if(!S.conteoEsc) return out;
   (ids||[]).forEach(id=>{ const its=ceItemsDe(id); if(!its.length) return;
     out[id]=its.map(x=>x.t==="caja"?"c:"+(Math.round(x.kg*100)/100):Math.round(x.kg*100)/100) });
+  return out;
+}
+/** (1.211.0) Código de cada vasqueta o caja escaneada en el conteo, alineado con sus pesos (para guardar lote y operario como referencia). */
+function rotulosConteoDe(ids){
+  const out={}; if(!S.conteoEsc) return out;
+  (ids||[]).forEach(id=>{ const its=ceItemsDe(id); if(!its.length) return; const l=its.map(x=>/^(\d{20}|\d{28})$/.test(x.crudo||"")?x.crudo:""); if(l.some(Boolean)) out[id]=l });
   return out;
 }
 function ceAplicarInv(id){

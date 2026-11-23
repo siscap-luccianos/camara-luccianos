@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.115.0";
+const BACKEND_VERSION = "1.116.0";
 
 function doPost(e) {
   let resultado;
@@ -115,8 +115,8 @@ function _despacharConSesion(accion, body, empleado) {
     case "preciosStock": return preciosStock(body.local, empleado);
     case "registrar": return registrar(body.clienteId, body.tipo, body.local, body.items, body.remito, empleado, body.fotoRemito, body.subtipo, body.motivo, body.kilos, body.vencimientos, body.pesos, body.fecha, body.paraEmpleadoId, body.modoLibre, body.rotulos);
     case "leerRemito": return leerRemito(body.foto, body.mime, body.local, empleado);
-    case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos, body.pesos);
-    case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta, body.pesos);
+    case "conteo": return conteo(body.clienteId, body.local, body.items, empleado, body.vencimientos, body.kilos, body.pesos, undefined, body.rotulos);
+    case "conteoParcial": return conteoParcial(body.clienteId, body.local, body.rubro, body.items, empleado, body.kilos, body.kilosDelta, body.pesos, body.rotulos);
     case "guardarInventario": return guardarInventario(body.clienteId, body.local, body.items, body.camaraKg, empleado, body.pedidoId, body.camaraContada);
     case "corregirInventario": return corregirInventario(body.local, body.inventarioId, body.saborId, body.valor, body.motivo, empleado);
     case "inventarios": return inventarios(body.local, empleado);
@@ -1302,6 +1302,18 @@ function _normalizarPesos(pesos, items) {
 /** Pesos de un conteo escaneado: { idSabor: [kg, "c:kg", ...] }. Un número es una vasqueta suelta; "c:KG" es una caja cerrada
  *  (2 vasquetas con un solo peso). Cada peso entre 0 y 60 kg (las cajas pesan el doble que una vasqueta) y no puede haber
  *  más vasquetas pesadas que las contadas. Sirve solo para mostrar el detalle en Movimientos; no cambia ningún cálculo. */
+/** (1.116.0) Rótulos escaneados en un conteo: {idSabor: ["20 dígitos (vasqueta)" o "28 dígitos (caja)" o ""]} alineado con los pesos. Solo es referencia (lote, turno, operario). */
+function _normalizarRotulosConteo(rotulos, pesosOk) {
+  const out = {};
+  if (!rotulos || typeof rotulos !== "object") return out;
+  Object.keys(pesosOk || {}).forEach((id) => {
+    const lista = Array.isArray(rotulos[id]) ? rotulos[id] : [];
+    const limpia = [];
+    for (let i = 0; i < pesosOk[id].length; i++) { const c = String(lista[i] || "").replace(/\D/g, ""); limpia.push(/^(\d{20}|\d{28})$/.test(c) ? c : ""); }
+    if (limpia.some((c) => c)) out[id] = limpia;
+  });
+  return out;
+}
 function _normalizarPesosConteo(pesos, contados) {
   const out = {};
   if (!pesos || typeof pesos !== "object") return out;
@@ -2417,7 +2429,7 @@ function _conteoSueltoBloqueado(local, empleado) {
 }
 const MSJ_CONTEO_SUELTO = "El conteo suelto ya no se usa: el stock de la cámara lo controla supervisión con el conteo parcial o de cierre.";
 
-function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, esFinal) {
+function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, esFinal, rotulos) {
   if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -2481,6 +2493,7 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, e
       kilos: Object.keys(kilosConteo).length ? JSON.stringify(kilosConteo) : "",
       vencimientos: Object.keys(vencimientos2).length ? JSON.stringify(vencimientos2) : "",
       pesos: Object.keys(pesosConteo).length ? JSON.stringify(pesosConteo) : "",
+      rotulos: (function () { const r = _normalizarRotulosConteo(rotulos, pesosConteo); return Object.keys(r).length ? JSON.stringify(r) : ""; })(),
     });
 
     const sheet = _sheet("Stock");
@@ -2514,7 +2527,7 @@ function conteo(clienteId, local, items, empleado, vencimientos, kilos, pesos, e
  *  de cada sabor. Así los demás rubros, sus vencimientos y lo que se movió mientras se contaba quedan intactos; lo que sobre
  *  en chocolatería queda «sin fecha» y lo que falte sale por FEFO. No cuenta como consumo. En locales con kilos reales las
  *  vasquetas llevan sus kilos totales (`kilos`) y la diferencia de kilos (`kilosDelta`, calculada por el cliente). */
-function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDelta, pesos) {
+function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDelta, pesos, rotulos) {
   if (empleado.rol === "colaborador") return { ok: false, error: "No tenés permiso para hacer el conteo físico." };
   if (!local) return { ok: false, error: "Falta el local." };
   if (!_puedeVerLocal(empleado, local)) return { ok: false, error: "No tenés acceso a ese local." };
@@ -2571,6 +2584,7 @@ function conteoParcial(clienteId, local, rubro, items, empleado, kilos, kilosDel
       clienteId: clienteId || "", tipo: "cambio", local: local, empleadoId: empleado.id, empleado: empleado.nombre,
       items: JSON.stringify(deltas), total: total, remito: "", ts: ts, anulado_por: "", anulado_ts: "", motivo: "Conteo parcial: " + rubro,
       foto_remito: "", subtipo: "conteo_parcial", kilos: Object.keys(kilosDeltaOk).length ? JSON.stringify(kilosDeltaOk) : "", vencimientos: "", pesos: Object.keys(pesosParcial).length ? JSON.stringify(pesosParcial) : "",
+      rotulos: (function () { const r = _normalizarRotulosConteo(rotulos, pesosParcial); return Object.keys(r).length ? JSON.stringify(r) : ""; })(),
     });
     _auditar("conteo_parcial", empleado.id, empleado.nombre, local + ": conteo parcial de " + rubro + " (" + Object.keys(contados).length + " sabores contados, " + Object.keys(deltas).length + " cambian)");
     _invalidarCacheDatos(local);

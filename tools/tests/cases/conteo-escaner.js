@@ -4,7 +4,8 @@ const { chromium } = require("playwright");
 (async () => {
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 390, height: 900 } })).newPage();
-  const err = []; page.on("pageerror", e => err.push(e.message));
+  const err = [], posts = []; page.on("pageerror", e => err.push(e.message));
+  page.on("request", q => { if (q.method() === "POST") { try { const b = JSON.parse(q.postData() || "{}"); if (b.accion === "conteo" || b.accion === "conteoParcial") posts.push(b) } catch (e) {} } });
   let fallas = 0; const ok = (c, m) => { console.log((c ? "OK   " : "FALLA") + " " + m); if (!c) fallas++ };
   page.on("dialog", d => d.accept());
   await page.goto("http://localhost:8998/"); await page.waitForSelector("#authLocal");
@@ -24,7 +25,7 @@ const { chromium } = require("playwright");
 
   // decodificación pura
   const p = await S_(() => parseCodigoRotulo("9900090003550083529092621015"));
-  ok(p && p.tipo === "caja" && p.codigo === "0009" && p.kg === 8.35 && p.lote === "29/09/2026", "28 dígitos: caja, producto 0009, 8,35 kg, lote 29/09/2026");
+  ok(p && p.tipo === "caja" && p.codigo === "0009" && p.kg === 8.35 && p.lote === "29/09/2026 · Operario 15 · mañana", "28 dígitos: caja, producto 0009, 8,35 kg, lote 29/09/2026, operario 15, turno mañana");
   const pv = await S_(() => parseCodigoRotulo("00200036429092622031"));
   ok(pv && pv.tipo === "vasq" && pv.codigo === "0020" && pv.kg === 3.64, "20 dígitos sigue siendo vasqueta");
   ok(await S_(() => parseCodigoRotulo("98" + "0".repeat(26))) === null, "28 dígitos que no empiezan con 99 se rechazan");
@@ -91,6 +92,10 @@ const { chromium } = require("playwright");
   for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   await page.click("#ok"); await page.waitForTimeout(1300);
   ok(await S_(() => S.conteo) === null, "el conteo se guardó");
+  const pc = posts[posts.length - 1] || {};
+  const rotAll = Object.values(pc.rotulos || {}).flat().filter(Boolean);
+  ok(rotAll.length > 0 && rotAll.every(c => /^(\d{20}|\d{28})$/.test(c)), "el conteo manda el código de cada vasqueta/caja escaneada (lote y operario): " + rotAll.length);
+  ok(Object.entries(pc.rotulos || {}).every(([id, l]) => l.length === ((pc.pesos || {})[id] || []).length), "los rótulos del conteo van alineados con los pesos");
   ok(await S_(() => stockMap()["5"]) === 2, "Cheesecake quedó en 2 (escaneado)");
   ok(await S_(() => (S.conteoEsc.items.length)) === 0, "las lecturas se limpian al guardar");
 
