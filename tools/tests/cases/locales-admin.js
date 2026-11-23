@@ -96,7 +96,8 @@ const { chromium } = require("playwright");
   ok((await page.$$eval(".laBox select", e => e.length)) === 0, "la hoja tampoco tiene menús recuadrados: Tipo y País son botones");
   ok(await page.$eval("[data-la-tipo='Propios']", e => e.getAttribute("aria-pressed") === "true"), "el tipo del local aparece marcado");
   ok(await page.$eval("#laCupo", e => !e.hasAttribute("data-off")) && (await page.innerText("#laCupoN")) === "3", "con control de dispositivos prendido se ve «Dispositivos permitidos» (3)");
-  await page.click("[data-la-k='control_equipos']"); ok(await page.$eval("#laCupo", e => e.hasAttribute("data-off") && e.offsetHeight > 0) && /solo rige/.test(await page.innerText("#laCupoSub")), "si se apaga el control, el cupo sigue visible (atenuado) y se puede cambiar, con la aclaración de que solo rige prendido");
+  await page.click("[data-la-k='control_equipos']");
+  ok(await page.$eval("#laCupo", e => e.hasAttribute("data-off") && [...e.querySelectorAll("button")].every(b => b.disabled)) && /Primero prendé el control de dispositivos/.test(await page.innerText("#laCupoSub")), "sin control de dispositivos el cupo queda visible pero bloqueado, con el aviso de qué falta prender");
   await page.click("[data-la-k='control_equipos']");
   await page.click("[data-la-mas='kilos_reales']");
   ok(!(await page.$eval("#ladt-kilos_reales", e => e.hidden)) && /Conteo con kilos/.test(await page.innerText("#ladt-kilos_reales")), "«Qué hace» se despliega y explica la recomendación");
@@ -143,6 +144,36 @@ const { chromium } = require("playwright");
 
   await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await abrirTodo();
   ok(await page.$$eval("[data-la-k^='produce_']", e => e.every(i => i.disabled)) && /No produce/.test(await page.$eval("[data-sec='Producción'] [data-res]", e => e.textContent)), "un local que no produce muestra los rubros apagados y bloqueados, y la sección dice «No produce»");
+  await page.click("[data-la-cerrar]");
+
+  // 3d) dependencias: nada se puede tocar antes de lo que necesita
+  await page.click("[data-la-l='Marruecos']"); await page.waitForSelector(".laBox"); await abrirTodo();
+  ok(await page.$eval("[data-la-k='stock_valorizado']", e => e.disabled) && /Solo locales de Argentina/.test(await page.innerText("[data-hint='stock_valorizado']")), "Gestión con valores se bloquea en un local que no es de Argentina");
+  await page.click("[data-la-paisset='Argentina']");
+  ok(!(await page.$eval("[data-la-k='stock_valorizado']", e => e.disabled)), "al elegir Argentina como país se habilita");
+  await page.click("[data-la-k='lleva_vasquetas']");
+  ok(await page.$eval("[data-la-k='kilos_reales']", e => e.disabled) && await page.$eval("[data-la-k='escaner']", e => e.disabled) && await page.$eval("[data-la-k='produce_vasquetas']", e => e.disabled) && /Primero prendé el rubro Vasquetas/.test(await page.innerText("[data-hint='kilos_reales']")), "sin el rubro Vasquetas se bloquean Kilos reales, Escáner y «Produce vasquetas»");
+  await page.click("[data-la-k='lleva_vasquetas']");
+  ok(!(await page.$eval("[data-la-k='kilos_reales']", e => e.disabled)) && !(await page.$eval("[data-la-k='produce_vasquetas']", e => e.disabled)), "al volver a prenderlo se habilitan");
+  ok(await page.$eval("[data-la-k='venta_dia']", e => e.disabled) && /Chocolatería/.test(await page.innerText("[data-hint='venta_dia']")), "un local sin el rubro Chocolatería tiene bloqueado Venta del día");
+  await page.click("[data-la-k='lleva_chocolateria']");
+  ok(!(await page.$eval("[data-la-k='venta_dia']", e => e.disabled)), "al prender el rubro Chocolatería se habilita Venta del día");
+  ok(await page.$eval("[data-la-k='venta_dia']", e => !!e.closest("[data-sec='Rubros que lleva']")), "Venta del día está en la sección de rubros, después de los rubros que la habilitan");
+  await page.click("[data-la-k='lleva_icepops']");
+  ok(await page.$eval("[data-la-k='produce_icepops']", e => e.disabled) && /Icepops/.test(await page.innerText("[data-hint='produce_icepops']")), "un rubro que no lleva el local no se puede marcar como «Produce»");
+  await page.click("[data-la-k='produccion']");
+  ok(/Produce helado/.test(await page.innerText("[data-hint='produce_baldes']")), "sin «Produce helado» el aviso pide prender eso primero");
+  await page.click("[data-la-k='lleva_icepops']"); await page.click("[data-la-k='lleva_chocolateria']"); await page.click("[data-la-k='produccion']");
+  posts.length = 0;
+  await page.click("[data-la-k='lleva_baldes']"); await page.click("[data-la-k='produce_icepops']"); await page.click("[data-la-k='produccion']");
+  await page.click("[data-la-guardar]"); await page.waitForTimeout(600);
+  const pd = posts.find(p => p.accion === "guardarLocalAdmin");
+  ok(pd && pd.opciones.lleva_baldes === false && !("produce_icepops" in pd.opciones), "un interruptor bloqueado no se guarda aunque se lo haya tocado antes: " + JSON.stringify(pd && pd.opciones));
+
+  // 3e) el botón de guardar está abajo y siempre a la vista
+  await page.click("[data-la-l='Torreon Mar del Plata']"); await page.waitForSelector(".laBox"); await abrirTodo();
+  const gb = await page.$eval("[data-la-guardar]", e => { const r = e.getBoundingClientRect(); return { abajo: r.bottom, alto: window.innerHeight, enPie: !!e.closest(".laPie") } });
+  ok(gb.enPie && gb.abajo <= gb.alto + 1 && gb.abajo > gb.alto - 140, "«Guardar» está en un pie fijo, abajo de la hoja, aunque estén todas las secciones abiertas");
   await page.click("[data-la-cerrar]");
 
   // 4) alta de un local nuevo
@@ -197,6 +228,23 @@ const { chromium } = require("playwright");
   posts.length = 0; await page.click("#laDeshacer"); await page.waitForTimeout(1500);
   const undo = posts.filter(p => p.accion === "localesAdminMasivo");
   ok(undo.length >= 3 && undo.some(p => p.opciones.kilos_reales === false), "«Deshacer» vuelve cada opción a lo que tenía cada local (" + undo.length + " pedidos)");
+
+  // 6a) cambio masivo: «Qué hace» y dependencias
+  await page.check("[data-la-ck='Torreon Mar del Plata']"); await page.check("[data-la-ck='Unicenter']"); await page.click("[data-la-masivo]"); await page.waitForSelector(".laBox"); await abrirTodo();
+  ok(/Se aplica a 2 locales:/.test(await page.innerText(".laPie")) && /Torreon Mar del Plata/.test(await page.innerText(".laPie")) && /Unicenter/.test(await page.innerText(".laPie")), "antes de aplicar, el pie lista los locales marcados («Se aplica a 2 locales: …»)");
+  ok(await page.$eval("[data-la-ok]", e => !!e.closest(".laPie")), "«Aplicar» está en el pie fijo de abajo");
+  ok(await page.$$eval(".laBox [data-la-mas]", e => e.length) >= 20, "cada opción del cambio masivo tiene su «Qué hace» (" + (await page.$$eval(".laBox [data-la-mas]", e => e.length)) + ")");
+  await page.click("[data-la-mas='escaner']");
+  ok(/Salida, Desperdicio, Conteo físico/.test(await page.innerText(".laBox .laDt:not([hidden])")), "«Qué hace» se despliega en el cambio masivo y explica la opción");
+  ok(await page.$eval("[data-la-m='produce_icepops'][data-v='1']", e => e.disabled) && /en todos los locales marcados/.test(await page.innerText(".laBox")), "con un local que no produce marcado, los rubros que produce quedan bloqueados («en todos los locales marcados»)");
+  await page.click("[data-la-m='produccion'][data-v='1']");
+  ok(!(await page.$eval("[data-la-m='produce_icepops'][data-v='1']", e => e.disabled)), "si en el mismo cambio se prende «Produce helado», se habilitan los rubros");
+  await page.click("[data-la-m='produce_icepops'][data-v='1']");
+  await page.click("[data-la-m='produccion'][data-v='0']");
+  ok(await page.$eval("[data-la-m='produce_icepops'][data-v='1']", e => e.disabled) && !(await page.$eval("[data-la-m='produce_icepops'][data-v='1']", e => e.getAttribute("aria-pressed") === "true")), "si se cambia a «No» el requisito, lo elegido encima se saca solo");
+  await page.click("[data-la-m='lleva_vasquetas'][data-v='0']");
+  ok(await page.$eval("[data-la-m='kilos_reales'][data-v='1']", e => e.disabled) && await page.$eval("[data-la-m='escaner'][data-v='1']", e => e.disabled), "si se apaga el rubro Vasquetas en el cambio, Kilos reales y Escáner se bloquean");
+  await page.click("[data-la-cerrar]"); await page.click("[data-la-nada]");
 
   // 6b) baja y alta de varios de una vez
   await page.click("[data-la-f='fran']"); await page.waitForTimeout(150);
