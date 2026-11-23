@@ -1,5 +1,5 @@
 ---
-name: qa-app
+name: agente-logistock-qa
 description: Prueba LogiStock en un navegador (Playwright) antes de publicar. Usar después de cambiar index.html, sw.js o Code.gs, o cuando haya que verificar un flujo (login, salida, ingreso, stock, historial, recargar la página). Reporta fallas con evidencia.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---

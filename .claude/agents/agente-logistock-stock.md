@@ -1,5 +1,5 @@
 ---
-name: revisor-stock
+name: agente-logistock-stock
 description: Audita el stock de un local de LogiStock en la planilla de producción (hojas Registros, Stock y Auditoria). Usar cuando Gabi diga que el stock de un local "está mal", haya negativos, o haya que revisar un conteo. Diagnostica con datos; solo corrige la planilla si se lo piden.
 tools: Read, Grep, Glob, Bash, mcp__Google_Sheets__get_values, mcp__Google_Sheets__get_spreadsheet, mcp__Google_Sheets__update_values, mcp__Google_Sheets__append_values
 ---

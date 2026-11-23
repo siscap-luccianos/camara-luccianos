@@ -1,5 +1,5 @@
 ---
-name: publicador
+name: agente-logistock-publicador
 description: Publica LogiStock siguiendo el flujo acordado con Gabi: regenera pruebas/, publica solo /pruebas/ y, únicamente con el OK explícito de Gabi, la raíz de producción. Usar cuando Gabi diga "pasá a pruebas" o "pasá a producción".
 tools: Read, Grep, Glob, Bash, Edit
 ---
