@@ -1860,7 +1860,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.217.0";
+const FRONTEND_VERSION = "1.217.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -4487,7 +4487,7 @@ function renderNav(){
 const LA_OPCIONES=[
  ["Operación",[["activo","Local activo","Si se apaga, el local deja de poder entrar."],["venta_dia","Venta del día","Chocolatería se saca con «Salida de chocolatería» al cierre."],["control_equipos","Control de dispositivos","Los dispositivos nuevos se vinculan con un código de 6 números."],["stock_valorizado","Gestión con valores (responsable)","El responsable de local ve la solapa Gestión."],["ver_diferencias","Ver diferencias de conteo","El responsable ve el resultado de los conteos que pide supervisión."]]],
  ["Rubros que lleva",[["lleva_vasquetas","Vasquetas"],["lleva_baldes","Baldes"],["lleva_icepops","Icepops"],["lleva_glutenfree","Gluten Free"],["lleva_chocolateria","Chocolatería"],["lleva_pasteleria","Pastelería"],["lleva_bolleria","Bollería"]]],
- ["Escáner y kilos",[["kilos_reales","Kilos reales","Ingreso y conteo con kilos; la Salida pesa cada vasqueta."],["escaner_salida","Escáner en Salida","Escanear el rótulo de cada vasqueta al sacar."],["escaner_conteo","Escáner en Conteo","Contar escaneando vasquetas y cajas."],["sin_escaner","Sin escáner","Apaga el escáner aunque esté prendido."]]],
+ ["Escáner y kilos",[["kilos_reales","Kilos reales","Las vasquetas se cuentan en kilos en vez de unidades."],["escaner","Escáner","Leer el rótulo de la vasqueta con el lector o la cámara."]]],
  ["Producción",[["produccion","Produce helado","Aparece la pantalla de Producción."],["ingreso_solo_produccion","Ingreso = Producción","Solo fabrica: no recibe remito."]]]
 ];
 const LA_DET={
@@ -4496,10 +4496,8 @@ const LA_DET={
  control_equipos:"<b>Qué hace:</b> un dispositivo nuevo no ve la nómina hasta vincularse con un código de 6 números que genera el responsable (vale 15 minutos y se usa una sola vez). <b>Cupo:</b> 3 dispositivos por local, salvo que se indique otro número.",
  stock_valorizado:"<b>Qué hace:</b> el responsable de local ve la solapa Gestión con el stock valorizado a precio de lista (solo locales de Argentina). <b>Aclaración:</b> admin y supervisor siempre la ven, tenga o no esta opción.",
  ver_diferencias:"<b>Qué hace:</b> en los conteos que pide supervisión (parcial y de cierre), el responsable ve el resultado contra lo esperado. <b>Apagada:</b> solo supervisión ve las diferencias.",
- kilos_reales:"<b>Qué hace:</b> las vasquetas se manejan en kilos reales. El Ingreso y la Devolución piden los kilos, el Conteo pide unidades y kilos, y cada vasqueta que sale se pesa. Stock muestra «Kilos de helado en cámara». <b>Recomendación:</b> hacer primero un Conteo con kilos, para que las vasquetas actuales no queden «sin kilos cargados».",
- escaner_salida:"<b>Qué hace:</b> aparece «Escanear vasqueta» en Salida y Desperdicio. Cada escaneo suma una vasqueta con el peso de su rótulo y guarda el lote (LC) y el operario. <b>Si el rótulo no se lee:</b> se toca el sabor y se pesa a mano.",
- escaner_conteo:"<b>Qué hace:</b> aparece «Contar escaneando» en el Conteo físico, solo para vasquetas. Una caja suma 2 y una vasqueta suma 1, con sus kilos, y se guarda el lote y el operario.",
- sin_escaner:"<b>Qué hace:</b> apaga los dos escáneres aunque estén prendidos. <b>Cuándo:</b> en locales que pesan con el teclado de la pantalla, como Unicenter.",
+ kilos_reales:"<b>Qué hace:</b> las vasquetas se manejan en kilos reales. El Ingreso y la Devolución piden los kilos, el Conteo pide unidades y kilos, y cada vasqueta que sale se pesa. Stock muestra «Kilos de helado en cámara». <b>No prende el escáner:</b> los kilos se pueden cargar con el teclado de la pantalla. <b>Recomendación:</b> hacer primero un Conteo con kilos, para que las vasquetas actuales no queden «sin kilos cargados».",
+ escaner:"<b>Qué hace:</b> prende el escáner en todos los puntos donde se puede leer un rótulo: Salida, Desperdicio, Conteo físico y la transferencia recibida. Cada lectura suma la vasqueta con su peso y guarda el lote (LC) y el operario. <b>Si el rótulo no se lee:</b> se toca el sabor y se pesa a mano. <b>No incluye</b> el Ingreso con remito, que se carga leyendo el remito con foto. <b>Apagado:</b> el local pesa con el teclado de la pantalla, como Unicenter.",
  produccion:"<b>Qué hace:</b> aparece la pantalla de Producción en Ingreso: se cargan los kilos fabricados y las vasquetas resultantes (los Icepops, por unidades). Habilita el rol Producción.",
  ingreso_solo_produccion:"<b>Qué hace:</b> el Ingreso es directamente Producción, sin remito ni lector de fotos. <b>Cuándo:</b> locales que solo fabrican, como Marruecos. Solo vale si «Produce helado» está prendido."
 };
@@ -4511,20 +4509,22 @@ async function cargarLocalesAdm(){
   const L=laEstado(); L.cargando=true; L.error="";
   const [r]=await Promise.all([api("localesAdmin",{}), controlEstado().grupos?null:ctlGruposCargar()]);
   L.cargando=false;
-  if(r&&r.ok) L.datos=r.locales||[];
+  if(r&&r.ok){ L.datos=r.locales||[]; L.datos.forEach(l=>{ const o=l.opciones||(l.opciones={}); o.escaner=!o.sin_escaner&&!!(o.escaner_salida||o.escaner_conteo||o.kilos_reales) }) } // un solo «Escáner»: prendido si no está «Sin escáner» y hay escáner en Salida o Conteo (o kilos reales, que lo prendía antes)
   else L.error=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs) para usar este panel.":((r&&r.error)||"No se pudo cargar. Probá de nuevo.");
   if(!S.local&&S.tab==="locales") renderApp();
 }
+/** El interruptor «escaner» no es una columna: prende o apaga a la vez el escáner de Salida y de Conteo y «Sin escáner». */
+function laTraduce(o){ const r=Object.assign({},o); if("escaner" in r){ const v=!!r.escaner; delete r.escaner; r.escaner_salida=v; r.escaner_conteo=v; r.sin_escaner=!v } return r }
 const laOn=(l,k)=>!!(l.opciones&&l.opciones[k]);
 // Mosaicos de opciones (como los de Control): cada uno cuenta y filtra. «Venta del día» no va: está prendida en todos los locales.
-const LA_MOSAICOS_OPC={control_equipos:l=>laOn(l,"control_equipos"),kilos_reales:l=>laOn(l,"kilos_reales"),escaner:l=>laOn(l,"escaner_salida")||laOn(l,"escaner_conteo"),produccion:l=>laOn(l,"produccion")};
+const LA_MOSAICOS_OPC={control_equipos:l=>laOn(l,"control_equipos"),kilos_reales:l=>laOn(l,"kilos_reales"),escaner:l=>laOn(l,"escaner"),produccion:l=>laOn(l,"produccion")};
 const LA_MOSAICOS=[["all","Todos","t-todos","f"],["act","Activos","t-act","f"],["baja","De baja","t-baja","f"],["propios","Propios","t-prop","f"],["fran","Franquicias","t-fran","f"],["control_equipos","Con control de dispositivos","t-ctl","of"],["kilos_reales","Con kilos reales","t-kg","of"],["escaner","Con escáner","t-esc","of"],["produccion","Producen helado","t-prod","of"]];
 const laCuentaMosaico=(datos,k,tipo)=>datos.filter(l=>tipo==="of"?LA_MOSAICOS_OPC[k](l):k==="all"?true:k==="act"?laOn(l,"activo"):k==="baja"?!laOn(l,"activo"):k==="propios"?l.grupo==="Propios":l.grupo==="Franquicias").length;
 function laTagsHTML(l){
   const t=[];
   if(!laOn(l,"activo")) t.push('<span class="laTag x">De baja</span>');
   if(laOn(l,"kilos_reales")) t.push('<span class="laTag k">Kilos reales</span>');
-  if(laOn(l,"escaner_salida")||laOn(l,"escaner_conteo")) t.push('<span class="laTag k">Escáner</span>');
+  if(laOn(l,"escaner")) t.push('<span class="laTag k">Escáner</span>');
   if(laOn(l,"produccion")) t.push('<span class="laTag v">Produce</span>');
   if(laOn(l,"control_equipos")){ const n=l.maxEquipos||3; t.push('<span class="laTag">'+n+(n===1?' dispositivo':' dispositivos')+'</span>') } // siempre se ve el cupo, también el de 3 (el valor por defecto de una celda vacía)
   const off=Object.keys(LA_RUBROS_TXT).filter(r=>!laOn(l,"lleva_"+r));
@@ -4613,7 +4613,7 @@ function laAbrir(nombre){
   const guardar=async(extra)=>{
     err("");
     const btn=q("[data-la-guardar]"); btn.disabled=true;
-    const opc={}; cambios().forEach(([k,v])=>{ opc[k]=v }); if(extra) Object.assign(opc,extra);
+    const opc0={}; cambios().forEach(([k,v])=>{ opc0[k]=v }); if(extra) Object.assign(opc0,extra); const opc=laTraduce(opc0);
     const pf=paisFinal(); if(!pf){ err("Escribí el país."); btn.disabled=false; return }
     const cupoEnv=cupo!==(base.maxEquipos||3)?cupo:undefined;
     let r;
@@ -4656,7 +4656,7 @@ function laAvisoDeshacer(previo,kSel,cupoSel,cambiados){
     previo.forEach(p=>{ kSel.forEach(k=>{ const v=!!p.o[k], id=k+"|"+v; if(!grupos.has(id)) grupos.set(id,{k,v,ls:[]}); grupos.get(id).ls.push(p.n) });
       if(cupoSel!==undefined){ const id="cupo|"+p.cupo; if(!grupos.has(id)) grupos.set(id,{cupo:p.cupo,ls:[]}); grupos.get(id).ls.push(p.n) } });
     for(const g of grupos.values()){ for(let i=0;i<g.ls.length;i+=25){
-      const r=await api("localesAdminMasivo",{locales:g.ls.slice(i,i+25),opciones:g.k?{[g.k]:g.v}:{},cupo:g.cupo},90000);
+      const r=await api("localesAdminMasivo",{locales:g.ls.slice(i,i+25),opciones:g.k?laTraduce({[g.k]:g.v}):{},cupo:g.cupo},90000);
       if(!(r&&r.ok)){ falla=(r&&r.error)||"No se pudo deshacer." } } }
     laEstado().datos=null; cargarLocalesAdm(); e.hidden=true; toast(falla?"Se deshizo en parte: "+falla:"Cambios deshechos");
   });
@@ -4692,7 +4692,7 @@ function laMasivo(){
     if(e.target.closest("[data-la-ok]")){
       const b=q("[data-la-ok]"); if(b.disabled) return; b.disabled=true; let cambiados=0;
       const previo=ls.map(n=>{ const l=L.datos.find(x=>x.nombre===n); return l?{n,o:Object.assign({},l.opciones),cupo:l.maxEquipos||3}:null }).filter(Boolean), kSel=Object.keys(sel), cupoSel=cupo;
-      for(let i=0;i<ls.length;i+=25){ b.textContent="Aplicando "+Math.min(i+25,ls.length)+" de "+ls.length+"…"; const r=await api("localesAdminMasivo",{locales:ls.slice(i,i+25),opciones:sel,cupo:cupo},90000);
+      for(let i=0;i<ls.length;i+=25){ b.textContent="Aplicando "+Math.min(i+25,ls.length)+" de "+ls.length+"…"; const r=await api("localesAdminMasivo",{locales:ls.slice(i,i+25),opciones:laTraduce(sel),cupo:cupo},90000);
         if(!(r&&r.ok)){ b.disabled=false; b.textContent="Aplicar"; const em=q("#laMerr"); em.textContent=(r&&/desconocida/i.test(r.error||""))?"Falta actualizar el servidor (Code.gs).":((r&&r.error)||"No se pudo aplicar.")+(cambiados?" Ya se cambiaron "+cambiados+".":""); em.hidden=false; return }
         cambiados+=r.cambiados||0 }
       ov.remove(); C.sel={}; L.datos=null; cargarLocalesAdm(); laAvisoDeshacer(previo,kSel,cupoSel,cambiados);
