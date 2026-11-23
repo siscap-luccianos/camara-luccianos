@@ -1837,7 +1837,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.215.1";
+const FRONTEND_VERSION = "1.216.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -9608,17 +9608,21 @@ async function iniciarCamara(){
   }
   try{ await cargarZxing() }catch(_){ e.msg={tipo:"err", t:"No se pudo cargar el lector de la cámara. Usá el lector o escribí el número."}; apagarCamara(); return }
   if(!S.escaner||!e.camara) return;
-  const canvas=document.createElement("canvas"); let ocupado=false;
+  const canvas=document.createElement("canvas"); let ocupado=false, ciclo=0;
+  // Sin BarcodeDetector (iPhone, Windows) todo el trabajo lo hace ZXing en el procesador: a 1920×1080 con «tryHarder» cada cuadro tardaba casi un segundo en tablets.
+  // Ahora se achica el cuadro a 1280 px de ancho y se prueba primero una lectura rápida (horizontal); la lectura completa (rotada/invertida) va cada 3 cuadros.
   e.timer=setInterval(async()=>{
-    if(ocupado||!e.camara||v.readyState<2||!v.videoWidth) return; ocupado=true;
+    if(ocupado||!e.camara||v.readyState<2||!v.videoWidth) return; ocupado=true; ciclo++;
     try{
-      canvas.width=v.videoWidth; canvas.height=v.videoHeight;
-      const ctx=canvas.getContext("2d",{willReadFrequently:true}); ctx.drawImage(v,0,0);
-      const r=await ZXingWASM.readBarcodes(ctx.getImageData(0,0,canvas.width,canvas.height),{formats:["ITF","EAN-13"],tryHarder:true,maxNumberOfSymbols:1});
+      const k=Math.min(1,1280/v.videoWidth), w=Math.round(v.videoWidth*k), h=Math.round(v.videoHeight*k);
+      canvas.width=w; canvas.height=h;
+      const ctx=canvas.getContext("2d",{willReadFrequently:true}); ctx.drawImage(v,0,0,w,h);
+      const img=ctx.getImageData(0,0,w,h), completa=ciclo%3===0;
+      const r=await ZXingWASM.readBarcodes(img,{formats:["ITF","EAN-13"],tryHarder:completa,tryRotate:completa,tryInvert:completa,maxNumberOfSymbols:1});
       if(e.camara&&r&&r[0]&&r[0].text) procesarEscaneo(r[0].text, true);
     }catch(_){ /* sin código en este cuadro */ }
     ocupado=false;
-  }, 300);
+  }, 150);
 }
 function apagarCamara(){
   const e=S.escaner; if(!e) return;
