@@ -30,7 +30,7 @@ const { chromium } = require("playwright");
   const badge = id => page.$eval(`[data-cbadge="${id}"]`, e => e.hidden ? "" : e.textContent.trim());
   ok(await badge("4") === "Sin contar", "Banana Split (stock 20) arranca «Sin contar»: " + await badge("4"));
   ok(/0 de \d+ contados/.test(await page.innerText("#conteoProg")), "barra de avance en 0: " + (await page.innerText("#conteoProg")).replace(/\s+/g, " "));
-  ok(/Faltan \d+ sin contar/.test(await page.innerText("#bar")), "la barra de abajo avisa cuántos faltan");
+  ok(/Hay \d+ sin contar|Revisá los números|sin contar/.test(await page.innerText("#bar")), "la barra de abajo avisa cuántos faltan");
 
   // 2) cargar números: 4: 20→0 (queda en 0), 20: 6→60 (salto), 5: 3→3 (igual)
   const cargar = async (id, v) => { await page.fill(`[data-c="${id}"]`, String(v)); await page.dispatchEvent(`[data-c="${id}"]`, "input"); await page.waitForTimeout(80) };

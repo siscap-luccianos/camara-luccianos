@@ -23,9 +23,9 @@ const { chromium } = require("playwright");
   for (let i = 0; i < 10 && await page.$(".rcOk:not(.on)"); i++) { await page.click(".rcOk:not(.on)"); await page.waitForTimeout(100) }
   ok(!(await page.$eval("#ok", e => e.disabled)) && /Guardar definitivo/.test(await page.innerText("#ok")), "«Guardar definitivo» NO queda bloqueado por los sabores sin contar");
   await page.click("#ok"); await page.waitForTimeout(1500);
-  ok(/GUARDAR DEFINITIVO/.test(pregunta) && /queda como está/.test(pregunta), "pregunta antes de cerrar y avisa que lo no contado queda como está");
+  ok(/GUARDAR DEFINITIVO/.test(pregunta) && /queda en 0/.test(pregunta), "pregunta antes de cerrar y avisa que lo no contado queda en 0");
   ok(await stock("4") === 30, "Banana Split quedó en 30 en el sistema");
-  ok(await stock("5") === s5 && await stock("20") === s20, "los sabores no contados no se tocaron");
+  ok(await stock("5") === 0 && await stock("20") === 0, "en el rubro contado, lo que no se contó quedó en 0 (antes " + s5 + " y " + s20 + ")");
   ok(await page.evaluate(() => !S.conteo), "y el conteo se cerró");
   await page.click("#tabs [data-t='historial']"); await page.waitForTimeout(500);
   ok(/conteo parcial/i.test(await page.innerText("main")), "Historial muestra el guardado como «conteo parcial»");

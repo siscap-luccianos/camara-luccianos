@@ -38,13 +38,13 @@ const { chromium } = require("playwright");
   ok(/cerrado este mes/.test(await page.innerText("main")) && await page.$("[data-c='4']") === null, "al volver, Vasquetas muestra el candado y no deja contar");
   await page.click(".tabCat:has-text('Icepops')").catch(() => {}); await page.waitForTimeout(300);
   ok(await page.$("[data-c]") !== null, "los otros rubros (Icepops) siguen abiertos para contar");
-  // «Dejar en 0» (lo sin contar) no toca el rubro cerrado ni lo mete en la revisión
+  // Lo no contado de un rubro que se contó queda en 0 al revisar; el rubro cerrado no se toca ni se lista
   const antes4 = await page.evaluate(() => S.conteo["4"]);
   const idIce = await page.$eval("[data-c]", e => e.dataset.c);
   await page.fill(`[data-c="${idIce}"]`, "3"); await page.dispatchEvent(`[data-c="${idIce}"]`, "input");
   await page.click("#go"); await page.waitForTimeout(400);
-  if (await page.$("[data-csin0]")) { await page.evaluate(() => document.querySelector("[data-csin0]").click()); await page.waitForTimeout(300) }
-  ok(await page.evaluate(() => S.conteo["4"]) === antes4, "«Dejar en 0» no cambió las vasquetas del rubro cerrado");
+  ok(await page.$("[data-csin0]") === null, "ya no existe el botón «Dejar en 0»");
+  ok(await page.evaluate(() => S.conteo["4"]) === antes4, "las vasquetas del rubro cerrado no se tocaron");
   ok(!/Banana Split/.test(await page.innerText("main")), "la revisión no lista sabores del rubro cerrado");
   console.log("errores:", err.length ? err : "ninguno");
   console.log(fallas || err.length ? "FALLAS " + (fallas + err.length) : "FALLAS 0"); await b.close(); process.exit(fallas || err.length ? 1 : 0);

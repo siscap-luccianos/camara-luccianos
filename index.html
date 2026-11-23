@@ -1962,7 +1962,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.223.3";
+const FRONTEND_VERSION = "1.225.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3589,7 +3589,7 @@ function actualizarEstadoConteoDom(id){
 }
 function conteoProgresoHTML(r){
   const pct=r.total?Math.round(r.contados/r.total*100):100;
-  return `<div class="cProgTx"><b>${r.contados} de ${r.total} contados</b><span>Lo que no toques queda como está</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
+  return `<div class="cProgTx"><b>${r.contados} de ${r.total} contados</b><span>Lo que no cuentes en un rubro queda en 0</span></div><div class="cProgBar"><i style="width:${pct}%"></i></div>`;
 }
 /** Lotes extra de un renglón (además del principal): "+ Otro vencimiento". */
 function sumaExtra(extra){ return extra.reduce((a,l)=>a+(+l.c||0),0) }
@@ -5936,7 +5936,7 @@ function abrirElegirConteo(){
       ${alc==="rubro"?`<div class="ceRubros">${grupos.map(g=>`<button type="button" class="chip" data-ce-rubro="${g}" aria-pressed="${rub===g}">${esc(nombreR(g))}</button>`).join("")}</div>`:""}
       <p class="ceExp">${alc==="rubro"
         ? `Al guardar solo se reemplaza el stock de <b>${esc(nombreR(rub))}</b>. Los demás rubros, sus vencimientos y lo que se mueva mientras contás quedan como están. Ideal para recontar un rubro sin arriesgar el resto.`
-        : `Al guardar se reemplaza todo el stock del local. Empezás con cada sabor en «Sin contar» para que ninguno se cuele con el número viejo.`}</p>
+        : `Al guardar se reemplaza todo el stock del local. Todo arranca de cero: en los rubros que contás, lo que no cuentes queda en 0.`}</p>
       <div class="mantAcc"><button type="button" class="btn ghost" data-ce-cerrar>Cancelar</button><button type="button" class="btn" data-ce-empezar>${alc==="rubro"?"Empezar conteo de "+esc(nombreR(rub)):"Empezar conteo de todo el local"}</button></div>
     </div>`;
   };
@@ -6248,7 +6248,7 @@ function conteoRevisarView(){
   <p class="revSub">${conteoParcialActivo()?`Solo se reemplaza el stock de ${esc(etiquetaRubroConteo())}. Los demás rubros no se tocan. `:""}Se guarda tal cual lo ves. Tocá la ✕ para volver un sabor a como estaba.</p>
   ${r.cambian.length?`<p class="revGrupo">Cambian · ${r.cambian.length}${r.flags.length>3?` <button type="button" class="chip" data-cack-todos>${pend.length?"Confirmar todos":"Quitar confirmaciones"}</button>`:""}</p><div class="rcLista">${r.cambian.map(linea).join("")}</div>`:`<div class="empty">No cambia ningún número.</div>`}
   ${iguales.length?`<div class="rcResto"><b>Igual al sistema</b><span class="v">${iguales.length} ${iguales.length===1?"sabor":"sabores"} ✓</span></div>`:""}
-  ${r.sinContar.length?`<div class="rcResto"><b>Sin contar</b><span>${r.sinContar.length} ${r.sinContar.length===1?"sabor":"sabores"} · quedan como están</span><button type="button" class="chip" data-csin0>Dejar en 0</button></div>`:""}`;
+  ${r.sinContar.length?`<div class="rcResto"><b>Sin contar</b><span>${r.sinContar.length} ${r.sinContar.length===1?"sabor":"sabores"} de rubros que no contaste · quedan como están</span></div>`:""}`;
 }
 
 /* ---- Conteo cámara: las vasquetas se cargan igual que en el Conteo local: una casilla por vasqueta pesada, debajo del sabor, y el total se suma solo ---- */
@@ -7964,7 +7964,7 @@ function renderBar(){
       const pend=conteoFaltaConfirmar(rc);
       inn.innerHTML=`<div class="sum"><div class="note" style="margin:0 0 8px"><b>Todavía no se guardó nada.</b> Revisá lo cargado: si está bien, tocá «Guardar definitivo»; si querés cambiar algo, «Seguir contando».</div>${rc.bloqueos.length?`<div class="warn">Corregí ${rc.bloqueos.length} ${rc.bloqueos.length===1?"número imposible":"números imposibles"} para poder guardar.</div>`:pend.length?`<div class="warn">Confirmá ${pend.length} ${pend.length===1?"número":"números"} para poder guardar.</div>`:(conteoParcialActivo()?`Todo confirmado. Reemplaza solo el stock de <b>${esc(etiquetaRubroConteo())}</b> de ${esc(S.local)}.`:`Todo confirmado. Reemplaza el stock actual de <b>${esc(S.local)}</b>.`)}${avisoVK}</div><button class="btn ghost" id="volver" ${S.busy?"disabled":""}>Seguir contando</button><button class="btn" id="ok" ${(S.busy||faltaVencC.length||pend.length||rc.bloqueos.length||!nContados)?"disabled":""}>${S.busy?"Guardando…":"Guardar definitivo 🔒"}</button>`;
     } else {
-      inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Faltan ${rc.sinContar.length} sin contar: se quedan con el stock actual.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar lo cargado</button>`;
+      inn.innerHTML=`<div class="sum">${rc.sinContar.length?`<div class="warn">Hay ${rc.sinContar.length} sin contar en rubros que no tocaste: quedan como están. En los rubros que contás, lo que no cuentes queda en 0.</div>`:"Revisá los números y guardá."}${avisoVK}</div><button class="btn ghost" id="cancelConteo">Cancelar</button><button class="btn" id="go" ${(faltaKgTocados.length||faltaOtros)?"disabled":""}>Revisar lo cargado</button>`;
     }
   } else if(S.tab==="salida" || S.tab==="ingreso" || S.tab==="devolucion"){
     const cartKey=cartKeyActual(), enDevolucion=cartKey==="devolucion", enDesperdicio=cartKey==="desperdicio", enProduccion=cartKey==="produccion", enVenta=cartKey==="venta", enTransfIn=cartKey==="ingreso" && S.tipoIngreso==="transferencia" && puedeTransferir(), enTransfOut=cartKey==="salida" && salidaEsTransf();
@@ -8167,6 +8167,12 @@ async function guardarMovimiento(){
 function conteoIdsContables(){ return saboresDelConteo().map(x=>String(x.id)) }
 /** Sabores que se contaron: los que se tocaron o cuyo número ya difiere del sistema (ej. «Poner el mismo número»). El resto queda como está. */
 function idsContados(){ return conteoIdsContables().filter(id=>S.conteo[id]!==undefined && (S.conteoTocado[id] || S.conteo[id]>0)) }
+/** Regla acordada con Gabi: en un rubro que se contó, lo que no se contó es 0 (el conteo arranca de cero). Los rubros que no se tocaron quedan como están. */
+function conteoCeroLoNoContado(){
+  if(!S.conteo) return;
+  const rubros=new Set(idsContados().map(id=>grupoProductoDe(S.saboresPorId[id]||{})));
+  conteoResumen().sinContar.forEach(f=>{ if(rubros.has(grupoProductoDe(f.s))){ S.conteo[f.s.id]=0; S.conteoTocado[f.s.id]=true } });
+}
 /** «Guardar solo lo contado y seguir»: guarda únicamente los sabores que se contaron (por rubro, como conteo parcial) y se sigue contando.
  *  Lo no contado no se toca. Usa la acción conteoParcial (no hace falta tocar Code.gs). */
 async function guardarContado(terminar,definitivo){
@@ -8178,7 +8184,7 @@ async function guardarContado(terminar,definitivo){
   const nombres=ids.slice(0,4).map(id=>(S.saboresPorId[id]||{}).nombre||id).join(", ")+(ids.length>4?" y "+(ids.length-4)+" más":"");
   const resto=conteoResumen().sinContar.length;
   const rubrosTxt=Object.keys(porRubro).map(g=>GRUPO_PRODUCTO_LABEL[g]||g).join(", ");
-  const txt="GUARDAR DEFINITIVO 🔒\nEsto cambia el stock ahora: se guarda lo contado ("+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+") y se CIERRA el conteo de: "+rubrosTxt+".\n\nDespués no vas a poder volver a contar "+(Object.keys(porRubro).length===1?"ese rubro":"esos rubros")+" este mes (solo lo reabre supervisión). Lo que no contaste queda como está.\n\n¿Cerrar definitivamente?";
+  const txt="GUARDAR DEFINITIVO 🔒\nEsto cambia el stock ahora: se guarda lo contado ("+ids.length+" "+(ids.length===1?"sabor":"sabores")+": "+nombres+") y se CIERRA el conteo de: "+rubrosTxt+".\n\nDespués no vas a poder volver a contar "+(Object.keys(porRubro).length===1?"ese rubro":"esos rubros")+" este mes (solo lo reabre supervisión). En esos rubros, lo que no contaste queda en 0. Los rubros que no tocaste quedan como están.\n\n¿Cerrar definitivamente?";
   if(!confirm(txt)) return;
   S.busy=true; renderBar();
   let ok=0, offline=false;
@@ -8834,11 +8840,10 @@ document.addEventListener("click", async e=>{
     programarBorradorConteo(); renderApp(); renderBar(); return;
   }
   if(t.id==="volver"){ S.confirm=false; S.conteoRevisar=false; renderApp(); return }
-  if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); if(S.tab==="salida"&&cartKeyActual()==="salida") window.scrollTo(0,0); return }
+  if(t.id==="go"){ if(S.tab==="stock"&&S.conteo){ conteoCeroLoNoContado(); programarBorradorConteo(); S.conteoRevisar=true; renderApp(); window.scrollTo(0,0); return } S.confirm=true; renderApp(); if(S.tab==="salida"&&cartKeyActual()==="salida") window.scrollTo(0,0); return }
   if(t.dataset.apl){ const iv=$("#aplicarTodosValor"); if(iv) S.conteoAplicarVal=iv.value; S.conteoAplicar=t.dataset.apl==="todo"?"todo":"visible"; renderApp(); return }
   if(t.dataset.cack){ const id=t.dataset.cack; if(S.conteoAck[id]) delete S.conteoAck[id]; else S.conteoAck[id]=true; renderApp(); return }
-  if(t.dataset.csin0!==undefined){ conteoResumen().sinContar.forEach(f=>{ S.conteo[f.s.id]=0; S.conteoTocado[f.s.id]=true }); programarBorradorConteo(); renderApp(); return }
-  if(t.dataset.cackTodos!==undefined){ const r=conteoResumen(), pend=conteoFaltaConfirmar(r); if(pend.length) r.flags.forEach(f=>S.conteoAck[f.s.id]=true); else S.conteoAck={}; renderApp(); return }
+    if(t.dataset.cackTodos!==undefined){ const r=conteoResumen(), pend=conteoFaltaConfirmar(r); if(pend.length) r.flags.forEach(f=>S.conteoAck[f.s.id]=true); else S.conteoAck={}; renderApp(); return }
   if(t.dataset.cverTodos!==undefined){ S.conteoVerTodos=!S.conteoVerTodos; renderApp(); return }
   if(t.id==="continuarConteo"){ iniciarConteo(true); return }
   if(t.id==="descartarBorradorBtn"){ if(!confirm("¿Descartar el conteo sin terminar? Se pierde lo que cargaste. El stock del local no cambia.")) return; descartarBorradorConteo(); renderApp(); return }
@@ -10274,7 +10279,7 @@ function ayudaTemas(){
     "Escribí cuántas hay de cada sabor. Con Enter o las flechas pasás al siguiente. Las cajas se suman con <b>+1 caja</b>."+(S.kilosReales?" En las vasquetas cargá el peso de cada una.":""),
     escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
     "Tocá <b>Revisar lo cargado</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
-    "Lo que no tocaste queda «Sin contar» y conserva el stock. Con <b>Dejar en 0</b> lo ponés en cero a propósito.",
+    "En los rubros que contás, lo que no cuentes queda en 0 al revisar. Los rubros que no tocaste quedan como están.",
     "<b>Guardar definitivo 🔒</b> guarda lo contado, cambia el stock y cierra ese rubro. Si te tenés que ir antes, salí: tu avance queda en este equipo y al volver elegís <b>Continuar donde quedé</b>."])});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
