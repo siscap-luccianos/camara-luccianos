@@ -55,6 +55,9 @@ const { chromium } = require("playwright");
   await page.click(".rgBtn"); await page.waitForSelector("#riesgoOv"); await page.click("[data-rg-transf]"); await page.waitForTimeout(500);
   const car = await page.evaluate((id) => ({ tab: S.tab, tr: S.salidaTransf, n: (S.cart[cartKeyActual()] || {})[id] }), info.id);
   ok(car.tab === "salida" && car.tr && car.n > 0, "«Transferir» abre Transferencia enviada con " + car.n + " cargadas");
+  // portada de Salida: el dato de riesgo figura junto a «sin stock / bajo mínimo / por vencer»
+  await page.evaluate(() => { S.verVencimientos = false; resetSalidaMenu(); S.modoVenta = false; S.modoDesperdicio = false; S.cart[cartKeyActual()] = {}; S.confirm = false; _riesgoMemo = null; S.tab = "stock"; renderApp() }); await page.waitForTimeout(300); await page.click("#tabs [data-t='salida']"); await page.waitForTimeout(500);
+  ok(/en riesgo de vencer/.test(await page.innerText(".menuAvisos")), "la portada de Salida muestra «N en riesgo de vencer» en los avisos: " + (await page.innerText(".menuAvisos")).replace(/\s+/g, " "));
   // franja en la tarjeta y aviso en la portada de Chocolatería (antes de entrar a Vencimientos)
   await page.evaluate(() => { const k = cartKeyActual(); S.cart[k] = {}; S.tab = "salida"; S.salidaElegida = true; S.salidaTransf = false; S.modoVenta = false; S.modoDesperdicio = false; S.verVencimientos = false; S.filtroFamilia = "chocolateria"; S.filtroCategoria = "todas"; S.catAbierta = false; renderApp() }); await page.waitForTimeout(400);
   ok(await page.$(".rgFr") !== null, "la tarjeta del producto muestra la franja «~N en riesgo»");
