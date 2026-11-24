@@ -1215,6 +1215,7 @@ body:has(.mantenerOv){overflow:hidden}
 .loteL.venc{color:var(--alert);font-weight:700;text-decoration:line-through}
 .loteL .semDot{flex:none}
 /* Vencimiento en riesgo (colores fijos: se leen igual en crema y dorado) */
+.chocoBtn.rg{background:#FBE4E2;color:#A31818;border-color:#C62828;font-weight:800}
 .rgFr{display:block;margin-top:6px;border-radius:10px;padding:6px 9px;font-size:.76rem;font-weight:800;line-height:1.35;text-align:center;background:#FBE4E2;color:#A31818;cursor:pointer}
 .rgFr.warn{background:#FCF1D0;color:#6B4A00}
 .rgFr small{display:block;font-weight:600;font-size:.72rem}
@@ -5346,7 +5347,10 @@ function revisarAccion(t){
 function chocoBarraHTML(){
   const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
   const consumo=(ventaDiaActiva()&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
-  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>${riesgoIds().length?riesgoAvisoHTML():""}`;
+  // Una sola entrada a Vencimientos: si hay productos en riesgo el botón se pone rojo, lo dice y abre directo el filtro «En riesgo».
+  const rg=riesgoIds().length;
+  const btn=rg?`<button type="button" class="chocoBtn venc rg" data-riesgo-ir>Vencimientos${n?` · ${n} por vencer`:""} · ${rg} en riesgo</button>`:`<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button>`;
+  return `<div class="chocoBarra">${consumo}${btn}</div>`;
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
 /** Menú principal (Salida e Ingreso): una tarjeta grande con la acción de todos los días, el resumen de hoy y

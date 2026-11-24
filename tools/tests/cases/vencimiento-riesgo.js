@@ -49,10 +49,11 @@ const { chromium } = require("playwright");
   // franja en la tarjeta y aviso en la portada de Chocolatería (antes de entrar a Vencimientos)
   await page.evaluate(() => { const k = cartKeyActual(); S.cart[k] = {}; S.tab = "salida"; S.salidaElegida = true; S.salidaTransf = false; S.modoVenta = false; S.modoDesperdicio = false; S.verVencimientos = false; S.filtroFamilia = "chocolateria"; S.filtroCategoria = "todas"; S.catAbierta = false; renderApp() }); await page.waitForTimeout(400);
   ok(await page.$(".rgFr") !== null, "la tarjeta del producto muestra la franja «~N en riesgo»");
-  ok(await page.$(".chocoBarra + .rgAviso") !== null, "la portada de Chocolatería muestra el aviso debajo de «Vencimientos»");
+  ok(await page.$(".chocoBarra .rgAviso") === null && await page.$(".chocoBarra + .rgAviso") === null, "en Chocolatería no hay una tarjeta aparte: una sola entrada");
+  ok(/en riesgo/.test(await page.innerText(".chocoBtn.venc.rg")), "el botón «Vencimientos» se pone rojo y dice «N en riesgo»: " + (await page.innerText(".chocoBtn.venc.rg")));
   await page.screenshot({ path: "/tmp/riesgo-chocolateria.png" });
-  await page.click(".chocoBarra + .rgAviso"); await page.waitForTimeout(300);
-  ok(/Volver a Salida/.test(await page.innerText("main")) && /En riesgo · \d+/.test(await page.innerText("main")), "tocar el aviso abre Vencimientos en «En riesgo»");
+  await page.click(".chocoBtn.venc.rg"); await page.waitForTimeout(300);
+  ok(/Volver a Salida/.test(await page.innerText("main")) && /En riesgo · \d+/.test(await page.innerText("main")), "tocar el botón abre Vencimientos en «En riesgo»");
   // sin datos: menos de 14 días de historial → no se avisa nada
   const sin = await page.evaluate(() => { window.riesgoHistDias = () => 5; _riesgoMemo = null; return { aviso: riesgoAvisoHTML(), ids: riesgoIds().length } });
   ok(sin.aviso === "" && sin.ids === 0, "con menos de 14 días de historial no se avisa ni se estima");
