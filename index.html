@@ -1987,7 +1987,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.226.0";
+const FRONTEND_VERSION = "1.227.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3143,7 +3143,7 @@ function lotesPanelHTML(clave, id, cantidad){
  *  sin esperar a Guardar. Solo se reemplaza el panel, no el campo de cantidad, así no se pierde el foco. */
 function mostrarVencRenglon(input, id, prefijo, attr, cantidad){
   if(!usaLotes(id)) return;
-  if(prefijo==="conteo:" && conteoParcialActivo()) return; // en un conteo parcial los vencimientos no se tocan
+  if(prefijo==="conteo:") return; // el conteo no pide vencimientos: las fechas que ya estaban se mantienen solas (lotesTrasConteo)
   const fila=input.closest(".row"), clave=prefijo+id, panel=fila.querySelector(".lotesFull");
   if(cantidad<=0){ if(panel) panel.remove(); delete S.lotesExtra[clave]; return }
   const html=`<div class="lotesFull">${lotesPanelHTML(clave,id,cantidad)}</div>`;
@@ -3241,6 +3241,16 @@ function lotesPorSabor(){
     lotes[s.id]=ordenarFEFO(L.filter(l=>l.c>0));
   });
   return _lotesMemo=lotes;
+}
+/** Conteo sin pedir fechas (mock aprobado por Gabi 24/11/2026): los lotes que ya estaban se mantienen.
+ *  Si se contó menos, la diferencia sale del lote que vence antes (sin fecha al final); si se contó más, lo de más queda «sin fecha».
+ *  Devuelve [{f,c}] (f vacío = sin fecha) y suma exactamente lo contado. */
+function lotesTrasConteo(id, contado){
+  const L=ordenarFEFO((lotesPorSabor()[id]||[]).map(l=>({f:l.f||null,c:l.c}))), sis=sumaLotes(L);
+  if(contado<sis) consumirLotes(L, sis-contado, null);
+  const out=L.filter(l=>l.c>0).map(l=>({f:l.f||"",c:l.c}));
+  if(contado>sis){ const sf=out.find(l=>!l.f); if(sf) sf.c+=contado-sis; else out.push({f:"",c:contado-sis}) }
+  return out;
 }
 /** Lotes que se pueden vender: los que todavía no vencieron (sin fecha también se vende). */
 function lotesVendibles(id){ return (lotesPorSabor()[id]||[]).filter(l=>!l.f || diasHasta(l.f)>=0) }
@@ -8060,7 +8070,7 @@ function renderBar(){
     const faltaKgIds=S.kilosReales?idsC.filter(id=>S.conteo[id]>0 && esVasquetaKilos(id) && !(kilosNum(S.kilosConteo[id])>0)):[];
     const contadosIds=idsContados(), faltaKgTocados=faltaKgIds.filter(id=>contadosIds.indexOf(String(id))!==-1);
     const nContados=contadosIds.length;
-    const faltaVencIds=conteoParcialActivo()?[]:idsC.filter(id=>S.conteo[id]>0 && loteProblema("conteo:"+id, id, S.conteo[id], S.vencConteo[id]));
+    const faltaVencIds=[]; // el conteo ya no pide vencimientos
     const parc=conteoParcialActivo(); // en «solo un rubro» solo se guarda (y exige kilos) lo que se contó
     const faltaKgBloq=faltaKgTocados; // lo que no se contó queda como está: no se pide nada de eso
     const faltaVencC=faltaVencIds.concat(faltaKgBloq), faltaKgC=faltaKgBloq.length;
@@ -8338,7 +8348,7 @@ async function guardarConteo(){
   if(parcial && !Object.keys(items).length){ toast("Todavía no contaste ningún sabor."); S.busy=false; renderApp(); return }
   const clienteId=uuid();
   const vencimientos={};
-  if(!parcial) for(const id of Object.keys(items)){ if(items[id]>0){ const v=valorVencimiento("conteo:"+id, S.vencConteo[id], items[id]); if(v) vencimientos[id]=v } }
+  if(!parcial) for(const id of Object.keys(items)){ if(items[id]>0 && usaLotes(id)){ const L=lotesTrasConteo(id, items[id]); if(L.length) vencimientos[id]=L } }
   const kilosC={}; if(S.kilosReales) for(const id of Object.keys(items)){ if(items[id]>0 && esVasquetaKilos(id)){ const k=kilosNum(S.kilosConteo[id]); if(k>0) kilosC[id]=k } }
   const pesosC=pesosConteoDe(Object.keys(items).filter(id=>items[id]>0)), rotC=rotulosConteoDe(Object.keys(items).filter(id=>items[id]>0));
   let payload, accion="conteo", deltas={}, kilosDelta={};
@@ -10392,6 +10402,7 @@ function ayudaTemas(){
     escanerConteoDisponible()?"En <b>Vasquetas</b> podés <b>Contar escaneando</b> (opcional): caja cerrada suma 2; caja abierta, escaneá cada vasqueta.":null,
     "Tocá <b>Revisar lo cargado</b>. Si un número es raro te lo marca para confirmar con <b>Está bien</b>; si es imposible (ej. 7400 kg en 2 vasquetas) no te deja guardar: corregilo.",
     "En los rubros que contás, lo que no cuentes queda en 0 al revisar. Los rubros que no tocaste quedan como están.",
+    "En chocolatería no se cargan vencimientos al contar: las fechas que ya estaban se mantienen. Si contás menos, sale del lote que vence antes; si contás más, lo de más queda sin fecha y lo completás en Vencimientos.",
     "<b>Guardar definitivo 🔒</b> guarda lo contado, cambia el stock y cierra ese rubro. Si te tenés que ir antes, salí: tu avance queda en este equipo y al volver elegís <b>Continuar donde quedé</b>."])});
   if(!colab) T.push({id:"remito", titulo:"Leer un remito con la foto", sub:"Ingreso desde el remito", html:li([
     "En Ingreso tocá <b>Leer remito con una foto</b> y sacale una foto al remito.",
