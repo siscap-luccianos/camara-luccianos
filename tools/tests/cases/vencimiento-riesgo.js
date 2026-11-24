@@ -19,7 +19,7 @@ const { chromium } = require("playwright");
     S.regs.push({ id: "t2", tipo: "salida", subtipo: "transferencia", ts: Date.now() - 4 * 864e5, items: { [id]: 50 }, local: S.local });
     S.regs.push({ id: "t3", tipo: "salida", subtipo: "desperdicio", ts: Date.now() - 3 * 864e5, items: { [id]: 40 }, local: S.local });
     _lotesMemo = null; _riesgoMemo = null;
-    const R = riesgoTodos()[id], lotes = lotesPorSabor()[id].filter(l => l.f && l.c > 0 && diasHasta(l.f) >= 0).sort((a, b) => a.f < b.f ? -1 : 1);
+    const R = riesgoTodos()[id], lotes = lotesPorSabor()[id].filter(l => l.f && l.c > 0 && diasHasta(l.f) >= 0 && diasHasta(l.f) <= 30).sort((a, b) => a.f < b.f ? -1 : 1);
     // cuenta independiente: 3 vendidas en 30 días = 0,1 por día, lote por lote
     let vendido = 0, total = 0; lotes.forEach(l => { const d = diasHasta(l.f), v = Math.min(l.c, Math.max(0, 0.1 * d - vendido)); vendido += v; total += Math.round(l.c - v) });
     return { id, total: R && R.total, esperado: total, v30: R && R.v30, sin: R && R.sin, lotes: lotes.length };
@@ -27,6 +27,9 @@ const { chromium } = require("playwright");
   ok(!info.sin, "con más de 14 días de historial sí se estima");
   ok(info.v30 === 3, "el consumo toma solo la venta: 3 (la transferencia y el desperdicio no cuentan), dio " + info.v30);
   ok(info.total === info.esperado && info.total > 0, "el riesgo coincide con la cuenta aparte: " + info.total + " vs " + info.esperado);
+  // un lote que vence en más de 30 días NO genera alerta aunque no se haya vendido nada
+  const lejos = await page.evaluate((id) => { const L = lotesPorSabor()[id]; const f = new Date(Date.now() + 90 * 864e5).toISOString().slice(0, 10); L.push({ f, c: 50 }); _riesgoMemo = null; const R = riesgoTodos()[id]; const out = R.lotes.some(l => l.f === f); L.pop(); _riesgoMemo = null; return out }, info.id);
+  ok(lejos === false, "un lote que vence en 90 días no entra en la alerta (solo los de 30 días o menos)");
   // Stock: aviso en la portada
   await page.click("#tabs [data-t='stock']"); await page.waitForTimeout(500);
   const aviso = await page.$(".rgAviso"); ok(!!aviso, "Stock muestra el aviso de vencimientos en riesgo");

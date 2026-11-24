@@ -1987,7 +1987,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.227.0";
+const FRONTEND_VERSION = "1.227.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3375,7 +3375,7 @@ function resumenVenc(){
    Cruza cada lote con fecha de chocolatería con lo que realmente se vende del producto. Consumo diario = ventas de los últimos 30 días ÷ 30
    (venta, gift card y sin cargo; no cuentan transferencias, bajas ni desperdicio). Se reparte lote por lote, primero el que vence antes:
    en riesgo = unidades del lote − lo que se alcanza a vender antes de la fecha. Es una estimación (no distingue temporada). */
-const RIESGO_DIAS=30, RIESGO_MIN_HIST=14;
+const RIESGO_DIAS=30, RIESGO_MIN_HIST=14, RIESGO_HORIZONTE=30; // solo se avisa de lotes que vencen dentro de los próximos 30 días
 const SUBTIPOS_NO_VENTA=["transferencia","baja","desperdicio","merma_camara","merma_local"];
 let _riesgoMemo=null; // se borra en cada renderApp()
 function riesgoHistDias(){ let min=Infinity; for(const r of regsActivos()) if(r.ts&&r.ts<min) min=r.ts; return min===Infinity?0:(Date.now()-min)/864e5 }
@@ -3389,7 +3389,7 @@ function riesgoTodos(){
   if(_riesgoMemo) return _riesgoMemo;
   const out={}, hist=riesgoHistDias(), v=riesgoVentas30(), sin=hist<RIESGO_MIN_HIST, ventana=Math.min(RIESGO_DIAS,Math.max(RIESGO_MIN_HIST,hist));
   saboresConVencimiento().forEach(s=>{
-    const lotes=(lotesPorSabor()[s.id]||[]).filter(l=>l.f&&l.c>0&&diasHasta(l.f)>=0).sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:0);
+    const lotes=(lotesPorSabor()[s.id]||[]).filter(l=>l.f&&l.c>0&&diasHasta(l.f)>=0&&diasHasta(l.f)<=RIESGO_HORIZONTE).sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:0);
     if(!lotes.length) return;
     const v30=v[s.id]||0, diario=v30/ventana; let vendido=0, total=0;
     const ls=lotes.map(l=>{ const d=diasHasta(l.f), cupo=Math.max(0,diario*d-vendido), vende=Math.min(l.c,cupo); vendido+=vende; const r=sin?0:Math.round(l.c-vende); total+=r; return {f:l.f,c:l.c,d,vende:Math.round(vende),riesgo:r} });
@@ -3401,8 +3401,8 @@ function riesgoIds(){ const R=riesgoTodos(); return Object.keys(R).filter(id=>!R
 function riesgoLote(id,f){ const R=riesgoTodos()[id]; if(!R||R.sin) return null; const l=R.lotes.find(x=>x.f===f); return l&&l.riesgo>0?l:null }
 /** Aviso de la portada de Stock: rojo si hay productos en riesgo, verde («todo en orden») si se calculó y no hay ninguno; nada si no hay datos para estimar. */
 function riesgoAvisoHTML(){
-  const R=riesgoTodos(), claves=Object.keys(R); if(!claves.length||R[claves[0]].sin) return "";
-  const ids=riesgoIds();
+  if(riesgoHistDias()<RIESGO_MIN_HIST||!hayLotesConFecha()) return "";
+  const R=riesgoTodos(), ids=riesgoIds();
   if(!ids.length) return `<div class="rgAviso ok"><span class="rgL">Vencimientos</span><b>Todo en orden</b><span class="rgD">Lo que hay se alcanza a vender antes de vencer</span></div>`;
   const t=ids.reduce((a,id)=>a+R[id].total,0);
   return `<button type="button" class="rgAviso" data-riesgo-ir><span class="rgL">Vencimientos en riesgo</span><b>${ids.length} ${ids.length===1?"producto":"productos"}</b><span class="rgD">~${t} unidades no se alcanzan a vender antes de vencer</span></button>`;
@@ -3464,7 +3464,7 @@ function vencimientosPantallaHTML(){
   const lista=todos.filter(x=>pasa(x,f));
   return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">${S.tab==="salida"?"Volver a Salida":"Volver a Stock"}</button>
   <p class="sec">Vencimientos · de más cerca a más lejos</p>
-  ${f==="riesgo"?`<p class="rgNota"><b>En riesgo:</b> unidades que probablemente no se vendan antes de vencer. Se calcula con lo que se vendió en los últimos 30 días. Conviene rotarlas primero o transferirlas a otro local.</p>`:""}
+  ${f==="riesgo"?`<p class="rgNota"><b>En riesgo:</b> unidades que probablemente no se vendan antes de vencer. Avisa desde 30 días antes del vencimiento y se calcula con lo que se vendió en los últimos 30 días. Conviene rotarlas primero o transferirlas a otro local.</p>`:""}
   <div class="vencFiltros" role="group" aria-label="Filtrar vencimientos">
     ${FILTROS_VENC.map(([k,label])=>`<button type="button" class="chip" data-filtro-venc="${k}" aria-pressed="${f===k}">${label} · ${todos.filter(x=>pasa(x,k)).length}</button>`).join("")}
   </div>
@@ -10393,7 +10393,7 @@ function ayudaTemas(){
     "En <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Vencimientos</b>: lista cada lote con su fecha.",
     "Semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días.",
     "Al sacar, sale primero el lote que vence antes. Lo vencido no se vende.",
-    "<b>En riesgo:</b> unidades que probablemente no se vendan antes de vencer. Se calcula con lo que se vendió en los últimos 30 días. Conviene rotarlas primero o transferirlas a otro local. Es una estimación y no distingue temporada. Con menos de 14 días de ventas no se calcula.",
+    "<b>En riesgo:</b> unidades que probablemente no se vendan antes de vencer. Avisa desde 30 días antes del vencimiento y se calcula con lo que se vendió en los últimos 30 días. Conviene rotarlas primero o transferirlas a otro local. Es una estimación y no distingue temporada. Con menos de 14 días de ventas no se calcula.",
     colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock.",
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b>; en uno con fecha, <b>Cambiar fecha</b> (fecha y unidades)."])+nota("Las latas no tienen vencimiento.")});
   if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo contar sin errores", html:li([
