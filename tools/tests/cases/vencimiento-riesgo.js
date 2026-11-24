@@ -36,7 +36,12 @@ const { chromium } = require("playwright");
   ok(/vencimientos en riesgo/i.test(await page.innerText(".rgAviso")) && /no se alcanzan a vender/.test(await page.innerText(".rgAviso")), "el aviso dice cuántos productos y unidades");
   await page.click(".rgAviso"); await page.waitForTimeout(400);
   ok(/En riesgo · \d+/.test(await page.innerText("main")) && await page.$(".vencRow") !== null, "tocar el aviso abre Ver vencimientos con el filtro «En riesgo»");
-  ok(await page.$(".rgBtn") !== null && await page.$(".rgBar") !== null, "cada lote en riesgo muestra «~N en riesgo» y su barra");
+  ok(await page.$(".rgBtn") !== null && await page.$(".rgBar") === null, "cada lote en riesgo muestra una sola línea «~N en riesgo · se vendieron X en 30 días», sin barra");
+  ok(/se vendieron \d+ en 30 días/.test(await page.innerText(".vencNom .rgBtn")), "la línea dice cuánto se vendió en 30 días");
+  const col = await page.evaluate(() => getComputedStyle(document.querySelector(".vencNom .rgBtn")).color);
+  ok(col === "rgb(163, 24, 24)" || col === "rgb(107, 74, 0)", "el texto de riesgo va en rojo (o marrón si es parcial), no en gris: " + col);
+  const cf = await page.$(".cfecha");
+  if (cf) ok(await page.evaluate(e => getComputedStyle(e).color === "rgb(31, 95, 139)", cf), "«Cambiar fecha» va en azul en todas las filas");
   ok(/unidades que probablemente no se vendan antes de vencer/.test(await page.innerText(".rgNota")) && /últimos 30 días/.test(await page.innerText(".rgNota")), "con el filtro «En riesgo» hay una nota breve que explica qué significa");
   // detalle
   await page.click(".rgBtn"); await page.waitForSelector("#riesgoOv", { timeout: 2000 });
