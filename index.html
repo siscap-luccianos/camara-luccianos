@@ -1216,6 +1216,8 @@ body:has(.mantenerOv){overflow:hidden}
 .loteL .semDot{flex:none}
 /* Vencimiento en riesgo (colores fijos: se leen igual en crema y dorado) */
 .chocoBtn.rg{background:#FBE4E2;color:#A31818;border-color:#C62828;font-weight:800}
+.rgNota{margin:0 0 12px;font-size:.84rem;line-height:1.45;color:var(--muted)}
+.rgNota b{color:var(--ink)}
 .rgFr{display:block;margin-top:6px;border-radius:10px;padding:6px 9px;font-size:.76rem;font-weight:800;line-height:1.35;text-align:center;background:#FBE4E2;color:#A31818;cursor:pointer}
 .rgFr.warn{background:#FCF1D0;color:#6B4A00}
 .rgFr small{display:block;font-weight:600;font-size:.72rem}
@@ -3452,6 +3454,7 @@ function vencimientosPantallaHTML(){
   const lista=todos.filter(x=>pasa(x,f));
   return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">${S.tab==="salida"?"Volver a Salida":"Volver a Stock"}</button>
   <p class="sec">Vencimientos · de más cerca a más lejos</p>
+  ${f==="riesgo"?`<p class="rgNota"><b>En riesgo:</b> unidades que probablemente no se vendan antes de vencer. Se calcula con lo que se vendió en los últimos 30 días. Conviene rotarlas primero o transferirlas a otro local.</p>`:""}
   <div class="vencFiltros" role="group" aria-label="Filtrar vencimientos">
     ${FILTROS_VENC.map(([k,label])=>`<button type="button" class="chip" data-filtro-venc="${k}" aria-pressed="${f===k}">${label} · ${todos.filter(x=>pasa(x,k)).length}</button>`).join("")}
   </div>
@@ -10380,6 +10383,7 @@ function ayudaTemas(){
     "En <b>Salida › Retiro de cámara › Chocolatería</b> tocá <b>Vencimientos</b>: lista cada lote con su fecha.",
     "Semáforo: <b>rojo</b> = vencido o vence en 5 días o menos, <b>amarillo</b> = de 6 a 20 días, <b>verde</b> = más de 20 días.",
     "Al sacar, sale primero el lote que vence antes. Lo vencido no se vende.",
+    "<b>En riesgo:</b> unidades que probablemente no se vendan antes de vencer. Se calcula con lo que se vendió en los últimos 30 días. Conviene rotarlas primero o transferirlas a otro local. Es una estimación y no distingue temporada. Con menos de 14 días de ventas no se calcula.",
     colab?"Si ves un lote en rojo, avisale a tu responsable.":"En un lote <b>rojo</b>, <b>Pasar a desperdicio</b> lo saca del stock.",
     colab?"Los lotes sin fecha los completa tu responsable.":"En un lote <b>sin fecha</b>, <b>Poner fecha</b>; en uno con fecha, <b>Cambiar fecha</b> (fecha y unidades)."])+nota("Las latas no tienen vencimiento.")});
   if(!colab) T.push({id:"conteo", titulo:"Conteo cámara", sub:"Cómo contar sin errores", html:li([

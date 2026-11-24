@@ -34,6 +34,7 @@ const { chromium } = require("playwright");
   await page.click(".rgAviso"); await page.waitForTimeout(400);
   ok(/En riesgo · \d+/.test(await page.innerText("main")) && await page.$(".vencRow") !== null, "tocar el aviso abre Ver vencimientos con el filtro «En riesgo»");
   ok(await page.$(".rgBtn") !== null && await page.$(".rgBar") !== null, "cada lote en riesgo muestra «~N en riesgo» y su barra");
+  ok(/unidades que probablemente no se vendan antes de vencer/.test(await page.innerText(".rgNota")) && /últimos 30 días/.test(await page.innerText(".rgNota")), "con el filtro «En riesgo» hay una nota breve que explica qué significa");
   // detalle
   await page.click(".rgBtn"); await page.waitForSelector("#riesgoOv", { timeout: 2000 });
   const det = await page.innerText("#riesgoOv");
@@ -54,6 +55,7 @@ const { chromium } = require("playwright");
   await page.screenshot({ path: "/tmp/riesgo-chocolateria.png" });
   await page.click(".chocoBtn.venc.rg"); await page.waitForTimeout(300);
   ok(/Volver a Salida/.test(await page.innerText("main")) && /En riesgo · \d+/.test(await page.innerText("main")), "tocar el botón abre Vencimientos en «En riesgo»");
+  ok(await page.evaluate(() => ayudaTemas().some(x => x.id === "venc" && /probablemente no se vendan/.test(x.html))), "el «?» explica «En riesgo» en el tema de Vencimientos");
   // sin datos: menos de 14 días de historial → no se avisa nada
   const sin = await page.evaluate(() => { window.riesgoHistDias = () => 5; _riesgoMemo = null; return { aviso: riesgoAvisoHTML(), ids: riesgoIds().length } });
   ok(sin.aviso === "" && sin.ids === 0, "con menos de 14 días de historial no se avisa ni se estima");
