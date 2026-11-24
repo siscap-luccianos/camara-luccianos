@@ -1221,10 +1221,11 @@ body:has(.mantenerOv){overflow:hidden}
 .mantAcc .btn:disabled{opacity:.4}
 .loteInfo{display:flex;align-items:center;justify-content:center;gap:6px;align-self:stretch;font-size:.8rem;font-weight:700;line-height:1.3;color:var(--ink);text-align:center;overflow-wrap:anywhere;margin-top:2px}
 .loteLista{display:flex;flex-direction:column;align-items:stretch;gap:3px;align-self:stretch;margin-top:2px}
-.loteL{display:flex;align-items:center;justify-content:flex-start;gap:6px;font-size:.7rem;font-weight:600;line-height:1.3;color:var(--muted);text-align:left;white-space:nowrap}
+.loteT{font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left}
+.loteL{display:flex;align-items:center;justify-content:flex-start;gap:7px;font-size:.88rem;font-weight:600;line-height:1.3;color:var(--muted);text-align:left;white-space:nowrap}
 .loteL.prim{color:var(--ink);font-weight:800}
 .loteL.venc{color:var(--alert);font-weight:700;text-decoration:line-through}
-.loteL .semDot{flex:none;margin:0;width:8px;height:8px}
+.loteL .semDot{flex:none;margin:0;width:10px;height:10px}
 /* Vencimiento en riesgo (colores fijos: se leen igual en crema y dorado) */
 .chocoBtn.rg{background:#FBE4E2;color:#A31818;border-color:#C62828;font-weight:800}
 .rgNota{margin:0 0 12px;font-size:.84rem;line-height:1.45;color:var(--muted)}
@@ -1263,6 +1264,7 @@ body:has(.mantenerOv){overflow:hidden}
 .semDot.rojo{background:#A23B2A}
 .semDot.amarillo{background:#C9A227}
 .semDot.verde{background:#2F7D4A}
+.semDot.gris{background:#A39A90}
 .linkLote{display:block;font-size:.75rem;font-weight:800;color:var(--accent);text-decoration:underline;text-align:left;cursor:pointer}
 .lotesBox{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .loteP{margin:0;font-size:.75rem;color:var(--muted)}
@@ -2002,7 +2004,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxTK4NO9hRo7WDeP6twNqo6
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.230.2";
+const FRONTEND_VERSION = "1.231.2";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3294,12 +3296,8 @@ function loteInfoSpan(id, conVencidos){
   if(!todos.some(l=>l.f)) return "";
   // Desglose dentro de la misma tarjeta: cada lote con su fecha, unidades y días; el que sale primero va arriba.
   // «15 vencen en 70 días · 17/01»: cantidad primero, como se lee en voz alta.
-  const frase=(c,d,noSeVende)=>{
-    const v=c===1?"vence":"vencen";
-    const t=d<0?`${c} ${c===1?"vencido":"vencidos"} ${d===-1?"ayer":`hace ${-d} días`}${noSeVende?", no se venden":""}`
-      :d===0?`${c} ${v} hoy`:d===1?`${c} ${v} mañana`:`${c} ${v} en ${d} días`;
-    return t;
-  };
+  const frase=(c,d,noSeVende)=>d<0?`${c} hace ${-d} ${-d===1?"día":"días"}`
+    :d===0?`${c} hoy`:d===1?`${c} mañana`:`${c} en ${d} días`;
   const primero=loteMostrado(id, conVencidos);
   const conFecha=todos.filter(l=>l.f).sort((x,y)=>x.f<y.f?-1:x.f>y.f?1:0);
   const sinFecha=todos.filter(l=>!l.f);
@@ -3310,9 +3308,9 @@ function loteInfoSpan(id, conVencidos){
     lineas.push({k:venc&&!conVencidos?"rojo":sem.k, prim:esPrimero&&!(venc&&!conVencidos),
       txt:frase(l.c,sem.d,venc&&!conVencidos), fecha:fechaVencCorta(l.f), venc:venc&&!conVencidos});
   });
-  sinFecha.forEach(l=>lineas.push({k:"", prim:false, txt:`${l.c} sin fecha`}));
+  sinFecha.forEach(l=>lineas.push({k:"gris", prim:false, txt:`${l.c} sin fecha`}));
   const MAX=4, vis=lineas.slice(0,MAX), mas=lineas.length-vis.length;
-  return `<span class="loteLista" title="El primero (en negrita) es el que sale primero">${vis.map(l=>`<span class="loteL${l.prim?" prim":""}${l.venc?" venc":""}"${l.fecha?` title="Vence el ${esc(l.fecha)}"`:""}><span class="semDot ${l.k}"></span><span>${esc(l.txt)}</span></span>`).join("")}${mas>0?`<span class="loteN">+${mas} ${mas===1?"lote más":"lotes más"}</span>`:""}${conVencidos?"":riesgoFranjaHTML(id)}</span>`;
+  return `<span class="loteLista" title="El primero (en negrita) es el que sale primero"><span class="loteT">Vto</span>${vis.map(l=>`<span class="loteL${l.prim?" prim":""}${l.venc?" venc":""}"${l.fecha?` title="Vence el ${esc(l.fecha)}"`:""}><span class="semDot ${l.k}"></span><span>${esc(l.txt)}</span></span>`).join("")}${mas>0?`<span class="loteN">+${mas} ${mas===1?"lote más":"lotes más"}</span>`:""}${conVencidos?"":riesgoFranjaHTML(id)}</span>`;
 }
 /** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
 function loteElegirBtn(id, conVencidos){
