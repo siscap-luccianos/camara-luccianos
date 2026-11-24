@@ -15,16 +15,25 @@ const { chromium } = require("playwright");
   const info = await page.evaluate(() => {
     const id = String(Object.keys(lotesPorSabor()).find(i => saboresConVencimiento().some(s => String(s.id) === i) && lotesPorSabor()[i].some(l => l.f && diasHasta(l.f) >= 0)));
     S.regs.push({ id: "t0", tipo: "ingreso", ts: Date.now() - 45 * 864e5, items: {}, local: S.local });
-    S.regs.push({ id: "t1", tipo: "salida", subtipo: "venta", ts: Date.now() - 5 * 864e5, items: { [id]: 3 }, local: S.local });
+    S.regs.push({ id: "t1", tipo: "salida", subtipo: "venta", ts: Date.now() - 29 * 864e5, items: { [id]: 3 }, local: S.local });
+    const otro = String(S.sabores.find(x => grupoProductoDe(x) === "chocolateria" && String(x.id) !== id).id);
+    S.regs.push({ id: "t4", tipo: "salida", subtipo: "venta", ts: Date.now() - 1 * 864e5, items: { [otro]: 1 }, local: S.local });
     S.regs.push({ id: "t2", tipo: "salida", subtipo: "transferencia", ts: Date.now() - 4 * 864e5, items: { [id]: 50 }, local: S.local });
     S.regs.push({ id: "t3", tipo: "salida", subtipo: "desperdicio", ts: Date.now() - 3 * 864e5, items: { [id]: 40 }, local: S.local });
     _lotesMemo = null; _riesgoMemo = null;
     const R = riesgoTodos()[id], lotes = lotesPorSabor()[id].filter(l => l.f && l.c > 0 && diasHasta(l.f) >= 0 && diasHasta(l.f) <= 30).sort((a, b) => a.f < b.f ? -1 : 1);
     // cuenta independiente: 3 vendidas en 30 días = 0,1 por día, lote por lote
-    let vendido = 0, total = 0; lotes.forEach(l => { const d = diasHasta(l.f), v = Math.min(l.c, Math.max(0, 0.1 * d - vendido)); vendido += v; total += Math.round(l.c - v) });
+    let vendido = 0, total = 0; lotes.forEach(l => { const d = diasHasta(l.f), v = Math.min(l.c, Math.max(0, (3 / 29) * d - vendido)); vendido += v; total += Math.round(l.c - v) });
     return { id, total: R && R.total, esperado: total, v30: R && R.v30, sin: R && R.sin, lotes: lotes.length };
   });
-  ok(!info.sin, "con más de 14 días de historial sí se estima");
+  ok(!info.sin, "con más de 14 días de consumo cargado sí se estima");
+  // sin consumo reciente (3 jornadas) o sin consumo cargado nunca: no se estima, aunque haya movimientos viejos
+  const apagado = await page.evaluate(() => { const g = S.regs.slice(); const out = [];
+    S.regs = g.filter(r => r.id !== "t4" && r.id !== "t1"); _riesgoMemo = null; out.push(Object.values(riesgoTodos()).every(r => r.sin));
+    S.regs = g.filter(r => r.id !== "t4"); S.regs.forEach(r => { if (r.id === "t1") r.ts = Date.now() - 3 * 864e5 }); _riesgoMemo = null; out.push(Object.values(riesgoTodos()).every(r => r.sin));
+    S.regs = g; S.regs.forEach(r => { if (r.id === "t1") r.ts = Date.now() - 29 * 864e5 }); _riesgoMemo = null; return out });
+  ok(apagado[0] === true, "sin consumo de chocolatería cargado: no se estima (nada en riesgo)");
+  ok(apagado[1] === true, "con 3 días sin cargar consumo: no se estima");
   ok(info.v30 === 3, "el consumo toma solo la venta: 3 (la transferencia y el desperdicio no cuentan), dio " + info.v30);
   ok(info.total === info.esperado && info.total > 0, "el riesgo coincide con la cuenta aparte: " + info.total + " vs " + info.esperado);
   // un lote que vence en más de 30 días NO genera alerta aunque no se haya vendido nada
