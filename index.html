@@ -1210,16 +1210,16 @@ body:has(.mantenerOv){overflow:hidden}
 .mantAcc .btn:disabled{opacity:.4}
 .loteInfo{display:flex;align-items:center;justify-content:center;gap:6px;align-self:stretch;font-size:.8rem;font-weight:700;line-height:1.3;color:var(--ink);text-align:center;overflow-wrap:anywhere;margin-top:2px}
 .loteLista{display:flex;flex-direction:column;align-items:stretch;gap:3px;align-self:stretch;margin-top:2px}
-.loteL{display:flex;align-items:center;justify-content:center;gap:6px;font-size:.76rem;font-weight:600;line-height:1.3;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.loteL{display:flex;align-items:flex-start;justify-content:flex-start;gap:8px;font-size:.76rem;font-weight:600;line-height:1.3;color:var(--muted);text-align:left;overflow-wrap:anywhere}
 .loteL.prim{color:var(--ink);font-weight:800}
 .loteL.venc{color:var(--alert);font-weight:700;text-decoration:line-through}
-.loteL .semDot{flex:none}
+.loteL .semDot{flex:none;margin:.2em 0 0}
 /* Vencimiento en riesgo (colores fijos: se leen igual en crema y dorado) */
 .chocoBtn.rg{background:#FBE4E2;color:#A31818;border-color:#C62828;font-weight:800}
 .rgNota{margin:0 0 12px;font-size:.84rem;line-height:1.45;color:var(--muted)}
 .rgNota b{color:var(--ink)}
-.rgFr{display:block;margin-top:6px;border-radius:10px;padding:6px 9px;font-size:.76rem;font-weight:800;line-height:1.35;text-align:center;background:#FBE4E2;color:#A31818;cursor:pointer}
-.rgFr.warn{background:#FCF1D0;color:#6B4A00}
+.rgFr{display:block;margin-top:6px;padding:0;font-size:.76rem;font-weight:800;line-height:1.35;text-align:left;background:none;color:#A31818;cursor:pointer}
+.rgFr.warn{color:#8A5A00}
 .rgFr small{display:block;font-weight:600;font-size:.72rem}
 .rgAviso{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;border:1px solid #C62828;background:#FBE4E2;color:#8E1B1B;border-radius:16px;padding:12px 14px;margin:0 0 12px;cursor:pointer;font:inherit}
 .rgAviso .rgL{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:800}
@@ -1990,7 +1990,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.230.0";
+const FRONTEND_VERSION = "1.230.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
