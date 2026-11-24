@@ -31,7 +31,7 @@ const DIAS_HISTORIAL = 60; // igual que el podado que hacía el cliente contra l
  *  que "Implementar → Nueva implementación" realmente se hizo: pegar
  *  código en el editor NO alcanza, si no se crea una versión nueva el
  *  Web App sigue sirviendo la anterior. */
-const BACKEND_VERSION = "1.123.0";
+const BACKEND_VERSION = "1.124.0";
 
 function doPost(e) {
   let resultado;
@@ -310,7 +310,17 @@ function verificarClaveLocal(local, clave) {
   const fila = _leerCrudo("Locales").filter((l) => String(l.nombre) === String(local))[0];
   if (!fila) return { ok: false, error: "No se encontró el local." };
   const claveGuardada = String(fila.clave || "").trim();
-  if (!claveGuardada) return { ok: true }; // este local no tiene clave configurada
+  if (!claveGuardada) {
+    // Este local no tiene clave. Si igual se tipeó un código de admin (entrar a otro local desde una
+    // tablet fijada), se valida igual: antes devolvía ok sin modoAdmin y el código parecía "incorrecto".
+    const t0 = String(clave || "").trim();
+    if (/^\d{6}$/.test(t0)) {
+      const adm0 = _verificarCodigoAdmin(t0);
+      if (adm0.ok) return { ok: true, modoAdmin: true };
+      return { ok: true, adminError: adm0.error };
+    }
+    return { ok: true };
+  }
   const tipeada = String(clave || "").trim();
   const rlKey = "clave:" + String(local).trim();
   const bloqueado = _rlBloqueado(rlKey, CLAVE_LOCAL_MAX_FALLOS);

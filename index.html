@@ -1992,7 +1992,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.233.0";
+const FRONTEND_VERSION = "1.233.1";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2779,7 +2779,7 @@ async function authEnviarClave(){
   S.auth.cargando=true; S.auth.error=""; renderApp();
   const r = await api("verificarClaveLocal", {local:S.auth.local, clave});
   S.auth.cargando=false;
-  if(r && r.ok && S.auth.otroLocal && !r.modoAdmin){ S.auth.error="Para entrar a otro local desde acá necesitás el código de admin."; renderApp(); return }
+  if(r && r.ok && S.auth.otroLocal && !r.modoAdmin){ S.auth.error=r.adminError||"Para entrar a otro local desde acá necesitás el código de admin."; renderApp(); return }
   if(r && r.ok && S.auth.accionDispositivo && r.modoAdmin){
     // Gesto oculto en el logo (5 toques) + código de admin: fijar o desfijar el local de ESTE dispositivo.
     // Es un gesto aparte del de «Elegí tu perfil» (entrar a otro local), que nunca toca el local fijo.
