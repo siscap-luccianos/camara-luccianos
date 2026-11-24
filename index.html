@@ -1214,6 +1214,28 @@ body:has(.mantenerOv){overflow:hidden}
 .loteL.prim{color:var(--ink);font-weight:800}
 .loteL.venc{color:var(--alert);font-weight:700;text-decoration:line-through}
 .loteL .semDot{flex:none}
+/* Vencimiento en riesgo (colores fijos: se leen igual en crema y dorado) */
+.rgFr{display:block;margin-top:6px;border-radius:10px;padding:6px 9px;font-size:.76rem;font-weight:800;line-height:1.35;text-align:center;background:#FBE4E2;color:#A31818;cursor:pointer}
+.rgFr.warn{background:#FCF1D0;color:#6B4A00}
+.rgFr small{display:block;font-weight:600;font-size:.72rem}
+.rgAviso{display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;border:1px solid #C62828;background:#FBE4E2;color:#8E1B1B;border-radius:16px;padding:12px 14px;margin:0 0 12px;cursor:pointer;font:inherit}
+.rgAviso .rgL{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;font-weight:800}
+.rgAviso b{font-family:'Fraunces',Georgia,serif;font-size:1.5rem;line-height:1.15}
+.rgAviso .rgD{font-size:.82rem;color:#6B2A26}
+.rgAviso.ok{border-color:#1E8A4C;background:#E3F2E8;color:#1E6B3D;cursor:default}
+.rgAviso.ok .rgD{color:#2F5E41}
+.rgBtn{display:inline-flex;align-self:flex-start;margin-top:4px;border-radius:999px;padding:3px 10px;font-size:.72rem;font-weight:800;background:#FBE4E2;color:#A31818;cursor:pointer}
+.rgBtn.warn{background:#FCF1D0;color:#6B4A00}
+.rgBar{display:flex;height:8px;border-radius:99px;overflow:hidden;background:#F3B9B4;margin-top:6px}
+.rgBar i{display:block;height:100%}.rgBar .v{background:#1E8A4C}.rgBar .s{background:#C62828}
+.rgLey{display:flex;justify-content:space-between;gap:8px;font-size:.7rem;color:var(--muted);font-weight:600;margin-top:3px}
+.rgGran{border:1px solid #C62828;background:#FBE4E2;color:#8E1B1B;border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.rgGran.warn{border-color:#E0A800;background:#FCF1D0;color:#6B4A00}
+.rgGran b{font-family:'Fraunces',Georgia,serif;font-size:1.5rem;line-height:1.15}
+.rgGran span{font-size:.92rem;font-weight:600;color:inherit}
+.rgAcc{display:grid;gap:8px}
+.rgAcc .btn{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left}
+.rgAcc small{display:block;font-weight:500;font-size:.72rem;color:var(--muted);margin-top:2px}
 .loteN{align-self:stretch;text-align:center;font-size:.74rem;font-weight:700;color:var(--muted)}
 .loteN.alertTxt{color:var(--alert)}
 .card>.pick.sem-rojo{border:4px solid #C62828}
@@ -1962,7 +1984,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.225.0";
+const FRONTEND_VERSION = "1.226.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -3262,7 +3284,7 @@ function loteInfoSpan(id, conVencidos){
   });
   sinFecha.forEach(l=>lineas.push({k:"", prim:false, txt:`${l.c} sin fecha`}));
   const MAX=4, vis=lineas.slice(0,MAX), mas=lineas.length-vis.length;
-  return `<span class="loteLista" title="El primero (en negrita) es el que sale primero">${vis.map(l=>`<span class="loteL${l.prim?" prim":""}${l.venc?" venc":""}"${l.fecha?` title="Vence el ${esc(l.fecha)}"`:""}><span class="semDot ${l.k}"></span><span>${esc(l.txt)}</span></span>`).join("")}${mas>0?`<span class="loteN">+${mas} ${mas===1?"lote más":"lotes más"}</span>`:""}</span>`;
+  return `<span class="loteLista" title="El primero (en negrita) es el que sale primero">${vis.map(l=>`<span class="loteL${l.prim?" prim":""}${l.venc?" venc":""}"${l.fecha?` title="Vence el ${esc(l.fecha)}"`:""}><span class="semDot ${l.k}"></span><span>${esc(l.txt)}</span></span>`).join("")}${mas>0?`<span class="loteN">+${mas} ${mas===1?"lote más":"lotes más"}</span>`:""}${conVencidos?"":riesgoFranjaHTML(id)}</span>`;
 }
 /** Botón "Elegir lote" de la tarjeta, cuando hay más de una fecha para elegir. */
 function loteElegirBtn(id, conVencidos){
@@ -3325,7 +3347,7 @@ function ventaDesperdicioLote(id, f){
   renderApp();
 }
 /* Pantalla completa de vencimientos: todos los lotes con fecha, de más cerca a más lejos (los vencidos quedan arriba). */
-const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"]];
+const FILTROS_VENC = [["todos","Todos"],["vencidos","Rojo"],["pronto","Amarillo"],["verde","Verde"],["sinfecha","Sin fecha"],["riesgo","En riesgo"]];
 /** Solo la chocolatería lleva vencimiento: helados (vasquetas, icepops) no aparecen en las listas de lotes. */
 function saboresConVencimiento(){ return saboresDelLocalBase().filter(s=>esChocolateria(s.id) && s.categoria!=="Latas") }
 /** Hay chocolatería en stock, con fecha o sin fecha. */
@@ -3335,6 +3357,84 @@ function resumenVenc(){
   const r={rojo:{l:0,u:0},amarillo:{l:0,u:0},verde:{l:0,u:0},sin:{l:0,u:0}};
   saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!(l.c>0)) return; const k=l.f?semaforoVenc(l.f).k:"sin"; r[k].l++; r[k].u+=l.c }));
   return r;
+}
+/* ---- Vencimiento en riesgo (mock aprobado por Gabi 24/11/2026) ----
+   Cruza cada lote con fecha de chocolatería con lo que realmente se vende del producto. Consumo diario = ventas de los últimos 30 días ÷ 30
+   (venta, gift card y sin cargo; no cuentan transferencias, bajas ni desperdicio). Se reparte lote por lote, primero el que vence antes:
+   en riesgo = unidades del lote − lo que se alcanza a vender antes de la fecha. Es una estimación (no distingue temporada). */
+const RIESGO_DIAS=30, RIESGO_MIN_HIST=14;
+const SUBTIPOS_NO_VENTA=["transferencia","baja","desperdicio","merma_camara","merma_local"];
+let _riesgoMemo=null; // se borra en cada renderApp()
+function riesgoHistDias(){ let min=Infinity; for(const r of regsActivos()) if(r.ts&&r.ts<min) min=r.ts; return min===Infinity?0:(Date.now()-min)/864e5 }
+function riesgoVentas30(){
+  const since=Date.now()-RIESGO_DIAS*864e5, m={};
+  for(const r of regsActivos()) if(r.tipo==="salida"&&r.ts>=since&&!SUBTIPOS_NO_VENTA.includes(r.subtipo)) for(const [id,q] of Object.entries(r.items||{})) m[id]=(m[id]||0)+(+q||0);
+  return m;
+}
+/** Por sabor con lotes vendibles con fecha: {sin, total, v30, unid, lotes:[{f,c,d,vende,riesgo}]}. «sin» = menos de 14 días de historial: no se estima. */
+function riesgoTodos(){
+  if(_riesgoMemo) return _riesgoMemo;
+  const out={}, hist=riesgoHistDias(), v=riesgoVentas30(), sin=hist<RIESGO_MIN_HIST, ventana=Math.min(RIESGO_DIAS,Math.max(RIESGO_MIN_HIST,hist));
+  saboresConVencimiento().forEach(s=>{
+    const lotes=(lotesPorSabor()[s.id]||[]).filter(l=>l.f&&l.c>0&&diasHasta(l.f)>=0).sort((a,b)=>a.f<b.f?-1:a.f>b.f?1:0);
+    if(!lotes.length) return;
+    const v30=v[s.id]||0, diario=v30/ventana; let vendido=0, total=0;
+    const ls=lotes.map(l=>{ const d=diasHasta(l.f), cupo=Math.max(0,diario*d-vendido), vende=Math.min(l.c,cupo); vendido+=vende; const r=sin?0:Math.round(l.c-vende); total+=r; return {f:l.f,c:l.c,d,vende:Math.round(vende),riesgo:r} });
+    out[s.id]={sin,total,v30,lotes:ls,unid:lotes.reduce((a,l)=>a+l.c,0)};
+  });
+  return _riesgoMemo=out;
+}
+function riesgoIds(){ const R=riesgoTodos(); return Object.keys(R).filter(id=>!R[id].sin&&R[id].total>0) }
+function riesgoLote(id,f){ const R=riesgoTodos()[id]; if(!R||R.sin) return null; const l=R.lotes.find(x=>x.f===f); return l&&l.riesgo>0?l:null }
+/** Aviso de la portada de Stock: rojo si hay productos en riesgo, verde («todo en orden») si se calculó y no hay ninguno; nada si no hay datos para estimar. */
+function riesgoAvisoHTML(){
+  const R=riesgoTodos(), claves=Object.keys(R); if(!claves.length||R[claves[0]].sin) return "";
+  const ids=riesgoIds();
+  if(!ids.length) return `<div class="rgAviso ok"><span class="rgL">Vencimientos</span><b>Todo en orden</b><span class="rgD">Lo que hay se alcanza a vender antes de vencer</span></div>`;
+  const t=ids.reduce((a,id)=>a+R[id].total,0);
+  return `<button type="button" class="rgAviso" data-riesgo-ir><span class="rgL">Vencimientos en riesgo</span><b>${ids.length} ${ids.length===1?"producto":"productos"}</b><span class="rgD">~${t} unidades no se alcanzan a vender antes de vencer</span></button>`;
+}
+/** Franja dentro de la tarjeta del producto (Salida/Stock). Se toca para ver el detalle. */
+function riesgoFranjaHTML(id){
+  const R=riesgoTodos()[id]; if(!R||R.sin||R.total<=0) return "";
+  return `<span class="rgFr${R.total>=R.unid/2?"":" warn"}" role="button" tabindex="0" data-riesgo-det="${id}">~${R.total} en riesgo<small>Se vendieron ${R.v30} en 30 días</small></span>`;
+}
+function renderRiesgoDet(){
+  let ov=document.getElementById("riesgoOv");
+  const id=S.riesgoDet, s=id&&S.saboresPorId[id], R=id&&riesgoTodos()[id];
+  if(!s||!R||R.sin||R.total<=0){ S.riesgoDet=null; if(ov) ov.remove(); return }
+  if(!ov){ ov=document.createElement("div"); ov.id="riesgoOv"; ov.className="mantenerOv"; ov.addEventListener("click", riesgoClick); document.body.appendChild(ov) }
+  const peor=R.lotes.find(l=>l.riesgo>0), n=R.total;
+  ov.innerHTML=`<div class="mantenerBox" role="dialog" aria-modal="true" aria-labelledby="rgTit">
+    <p class="mantTit" id="rgTit">${esc(s.nombre)}</p>
+    <div class="rgGran${n>=R.unid/2?"":" warn"}"><b>En riesgo: ~${n} ${unidad(id,n)}</b><span>Se vendieron ${R.v30} en los últimos 30 días.</span><span>Vencen en ${peor.d} ${peor.d===1?"día":"días"}.</span></div>
+    <div class="rgAcc">
+      <button type="button" class="btn ghost" data-rg-primero><span>Ofrecerlas primero<small>Te lleva a Salida para venderlas antes</small></span><span>›</span></button>
+      ${puedeTransferir()?`<button type="button" class="btn ghost" data-rg-transf><span>Transferir a otro local<small>Abre Transferencia enviada con ${Math.min(peor.riesgo,stockMap()[id]||0)} cargadas</small></span><span>›</span></button>`:""}
+      <button type="button" class="btn ghost" disabled><span>Pasar a desperdicio<small>Disponible cuando venza</small></span><span>›</span></button>
+    </div>
+    <p class="mantAyuda">Es una estimación: no distingue temporada.</p>
+    <div class="mantAcc"><button type="button" class="btn ghost" data-rg-cerrar>Cerrar</button></div>
+  </div>`;
+}
+function cerrarRiesgoDet(){ S.riesgoDet=null; renderRiesgoDet() }
+function riesgoClick(e){
+  const id=S.riesgoDet; if(!id) return;
+  if(e.target===e.currentTarget){ cerrarRiesgoDet(); return }
+  const t=e.target.closest("button"); if(!t) return;
+  if(t.hasAttribute("data-rg-cerrar")){ cerrarRiesgoDet(); return }
+  const R=riesgoTodos()[id], peor=R&&R.lotes.find(l=>l.riesgo>0); if(!peor){ cerrarRiesgoDet(); return }
+  const aSalida=()=>{ S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=false; S.modoVenta=false; S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; S.verPedido=false; S.hubInicial=false; S.q=""; S.soloAlerta=false; S.filtroFamilia="chocolateria"; S.filtroCategoria="todas"; S.catAbierta=false };
+  if(t.hasAttribute("data-rg-primero")){
+    cerrarRiesgoDet(); aSalida(); S.lotePick[id]=peor.f; resetTipoChoco(); S.fechaVenta="";
+    if(S.ventaDia){ S.modoVenta=true } else { S.salidaElegida=true; S.salidaTransf=false }
+    renderApp(); return;
+  }
+  if(t.hasAttribute("data-rg-transf")){
+    cerrarRiesgoDet(); aSalida(); resetTipoChoco(); S.fechaVenta=""; S.salidaElegida=true; S.salidaTransf=true; S.destinoTransf="";
+    const n=Math.min(peor.riesgo, stockMap()[id]||0), k=cartKeyActual(); if(n>0){ S.cart[k]=S.cart[k]||{}; S.cart[k][id]=n }
+    renderApp(); return;
+  }
 }
 function hayLotesConFecha(){ return saboresConVencimiento().some(s=>(lotesPorSabor()[s.id]||[]).some(l=>l.f)) }
 /** Leyenda del semáforo, visible en Salida para que se entienda sin preguntar. */
@@ -3346,7 +3446,7 @@ function vencimientosPantallaHTML(){
   saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(l.f) todos.push({s, l, sem:semaforoVenc(l.f)}) }));
   todos.sort((a,b)=>a.l.f<b.l.f?-1:a.l.f>b.l.f?1:a.s.nombre.localeCompare(b.s.nombre));
   saboresConVencimiento().forEach(s=>(lotesPorSabor()[s.id]||[]).forEach(l=>{ if(!l.f) todos.push({s, l, sem:null}) }));
-  const pasa=(x,k)=>k==="todos"||(k==="sinfecha"?!x.sem:(!!x.sem&&((k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde"))));
+  const pasa=(x,k)=>k==="todos"||(k==="riesgo"?(!!x.sem&&!!riesgoLote(x.s.id,x.l.f)):k==="sinfecha"?!x.sem:(!!x.sem&&((k==="vencidos"&&x.sem.k==="rojo")||(k==="pronto"&&x.sem.k==="amarillo")||(k==="verde"&&x.sem.k==="verde"))));
   const f=FILTROS_VENC.some(([k])=>k===S.filtroVenc) ? S.filtroVenc : "todos";
   const lista=todos.filter(x=>pasa(x,f));
   return `<button type="button" class="btn volver" data-volver-venc style="margin-bottom:12px">${S.tab==="salida"?"Volver a Salida":"Volver a Stock"}</button>
@@ -3364,7 +3464,7 @@ function vencimientosPantallaHTML(){
       +(sem&&sem.d>=0&&!S.ventaDia&&venderPrimeroLote(s,l)?`<button type="button" class="btn ghost" data-venc-primero="${s.id}|${l.f}">Vender primero</button>`:"");
     return `<div class="vencRow ${sem?SEM_CLASE[sem.k]:""}${vencido?" vencido":""}">
       <div class="vencFecha">${sem?tachar(fechaVencCorta(l.f)):"Sin fecha"}<span>${sem?sem.label:"no se sabe cuándo vence"}</span></div>
-      <div class="vencNom">${tachar(esc(s.nombre))}<span>${l.c} ${unidad(s.id,l.c)}</span></div>
+      <div class="vencNom">${tachar(esc(s.nombre))}<span>${l.c} ${unidad(s.id,l.c)}</span>${(()=>{ const g=sem&&sem.d>=0?riesgoLote(s.id,l.f):null; if(!g) return ""; const pc=Math.round(g.riesgo/g.c*100); return `<span class="rgBtn${g.riesgo>=g.c/2?"":" warn"}" role="button" tabindex="0" data-riesgo-det="${s.id}">~${g.riesgo} en riesgo</span><span class="rgBar"><i class="v" style="width:${100-pc}%"></i><i class="s" style="width:${pc}%"></i></span><span class="rgLey"><span>Se venden ~${g.vende}</span><span>Sobran ~${g.riesgo}</span></span>` })()}</div>
       ${(etq||acc)?`<div class="vencAcciones">${etq}${acc}</div>`:""}
     </div>`; }).join("")}</div>`:`<div class="empty">${todos.length?"No hay lotes en este filtro.":"Todavía no hay chocolatería cargada."}</div>`}${S.etiq?etiquetarSheetHTML():""}`;
 }
@@ -5246,7 +5346,7 @@ function revisarAccion(t){
 function chocoBarraHTML(){
   const rv=resumenVenc(), n=rv.rojo.l+rv.amarillo.l;
   const consumo=(ventaDiaActiva()&&S.empleado.rol!=="colaborador")?`<button type="button" class="chocoBtn consumo" id="irVentaDia2">Registrar consumo</button>`:"";
-  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>`;
+  return `<div class="chocoBarra">${consumo}<button type="button" class="chocoBtn venc" data-ver-venc>Vencimientos${n?` · ${n} por vencer`:""}</button></div>${riesgoIds().length?riesgoAvisoHTML():""}`;
 }
 /** Menú «¿Qué vas a hacer?» de Salida: primero se elige la acción, recién después aparece la lista de sabores. */
 /** Menú principal (Salida e Ingreso): una tarjeta grande con la acción de todos los días, el resumen de hoy y
@@ -6059,6 +6159,7 @@ function stockViewGeneral(st){
     ${km?`<div class="kpi"><span class="lbl">Kilos de helado en cámara</span><span class="val">${fmtKg(kgReal)} kg</span><span class="sub">${sinKilos?`${sinKilos} ${sinKilos===1?"sabor sin kilos cargados":"sabores sin kilos cargados"}: se cargan con un conteo con kilos`:"Lo que entró menos lo que salió, pesado"}</span></div>`:""}
     ${(!km&&kgTotal>0)?`<div class="kpi"><span class="lbl">Peso en cámara (estimado)</span><span class="val">${kgTotal.toFixed(1)} kg</span><span class="sub">Según el peso promedio cargado por sabor, no el peso real</span></div>`:""}
   </div>
+  ${puedeGestionar?riesgoAvisoHTML():""}
   ${bannerBorradorConteoHTML_si(puedeGestionar)}
   ${stockAccionesHTML(puedePedido,puedeGestionar,al,pedidoTotal,{consumoSemanal,sem3})}
   <p style="margin:20px 0 0;color:var(--muted);font-size:.85rem">${last?`Último conteo: ${last}${S.stock.empleado?" · "+esc(S.stock.empleado):""}`:"Sin conteo todavía"}</p>
@@ -8498,6 +8599,8 @@ document.addEventListener("click", async e=>{
   // "Elegir lote" va dentro del botón de la tarjeta: se atiende antes que el toque de sumar.
   const le=e.target.closest("[data-elegir-lote]");
   if(le){ S.elegirLote=le.dataset.elegirLote; renderElegirLote(); return }
+  const rd=e.target.closest("[data-riesgo-det]");
+  if(rd){ S.riesgoDet=rd.dataset.riesgoDet; renderRiesgoDet(); return }
   const t=e.target.closest("button,a"); if(!t) return;
 
   if(t.dataset.authback){ authVolver(); return }
@@ -8784,6 +8887,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.vencDesp){ const [id,f]=t.dataset.vencDesp.split("|"); ventaDesperdicioLote(id,f); return }
   if(t.dataset.vencPrimero){ const [id,f]=t.dataset.vencPrimero.split("|"); S.lotePick[id]=f; S.tab="salida"; S.verVencimientos=false; S.modoDesperdicio=false; S.modoVenta=false; S.fechaVenta=""; resetTipoChoco(); S.modoDevolucion=false; S.modoProduccion=false; S.confirm=false; renderApp(); return }
   if(t.dataset.verVenc!==undefined){ S.verVencimientos=true; S.filtroVenc="todos"; renderApp(); return }
+  if(t.dataset.riesgoIr!==undefined){ S.verVencimientos=true; S.filtroVenc="riesgo"; renderApp(); return }
   if(t.dataset.etiqAbrir!==undefined){ etiqAbrir(t.dataset.etiqAbrir); return }
   if(t.dataset.etiqCambiar!==undefined){ const [id,f]=t.dataset.etiqCambiar.split("|"); etiqAbrir(id,f); return }
   if(t.dataset.etiqCancelar!==undefined){ S.etiq=null; renderApp(); return }
@@ -10333,7 +10437,7 @@ function scheduleRender(){
   requestAnimationFrame(()=>{ _renderProgramado=false; renderApp(); });
 }
 function renderApp(){
-  _lotesMemo=null;
+  _lotesMemo=null; _riesgoMemo=null;
   guardarTabLocal();
   i18nSet(i18nIdiomaActual()); // idioma según la persona o el país del local
   document.body.classList.remove("sinLocal");
