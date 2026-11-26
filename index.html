@@ -921,6 +921,9 @@ body:has(.etiqOv){overflow:hidden}
 .escMsg.err{background:var(--alert-soft);color:var(--alert)}
 .escLista{display:flex;flex-direction:column;gap:6px;font-size:.88rem}
 .escMsg.warn{background:#F2B400;color:#2A2118}
+.escMsg.ask{background:#FBF1D6;color:#2A2118}
+.cajaAsk{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.cajaAsk .btn{padding:10px 14px;font-size:.95rem}
 .accGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 .accGrid.impar .accTile:last-child{grid-column:1/-1}
 .accTile{display:flex;flex-direction:row;align-items:center;gap:10px;text-align:left;min-height:64px;padding:10px 12px;border-radius:18px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer;box-shadow:0 6px 18px rgba(74,63,56,.06)}
@@ -1992,7 +1995,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw6xlN3nrDdJ4w-kVoNunOK
 // independiente de BACKEND_VERSION (que solo se mueve con cambios en Code.gs).
 // Sirve para confirmar a simple vista, mirando el header, que el dispositivo
 // ya cargó la última versión pusheada (útil por el caché del navegador/GitHub Pages).
-const FRONTEND_VERSION = "1.233.1";
+const FRONTEND_VERSION = "1.234.0";
 /** Nombre de un renglón del remito sin su encabezado de sección ("ICE POPS BAÑADOS - OLI KING" → "OLI KING"); no corta los " - " que son parte del producto. */
 function nombreSinSeccion(n){ const t=String(n||"").split(" - "); return t.length>1 && /^(sabores|sin gluten|ice pops?|cannolis?|mi villano|chocolates|alfajores|conitos|squares|envasado|lata carrusel|envases)/i.test(t[0].trim()) ? t.slice(1).join(" - ") : String(n||"") }
 const GRUPOS_PAD=["icepops","geladot","chocolateria","pasteleria","bolleria"]; // Salida/Desperdicio con pad de cantidad; va arriba porque el primer render de una sesión abierta ya lo usa
@@ -2053,7 +2056,7 @@ const S = {
   tab: "salida",
   cart: { salida:{}, ingreso:{}, devolucion:{}, desperdicio:{}, produccion:{}, venta:{} },
   detVenta: {}, // de dónde vino cada unidad del carrito de la venta: {idSabor:{x6,x10,x6s,x10s,lata5}} en unidades (el resto son sueltas)
-  pesos: {salida:{},desperdicio:{},devolucion:{},ingreso:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, escaner: null,
+  pesos: {salida:{},desperdicio:{},devolucion:{},ingreso:{}}, escaneadas: [], escItems: [], escN: 0, devSel: {}, devTip: {}, devCajaSel: {}, devCajaKg: {}, escaner: null,
   vencimientos: {}, // chocolatería: vencimiento por sabor del carrito de Ingreso (YYYY-MM-DD)
   vencConteo: {}, // chocolatería: vencimiento por sabor del conteo físico (YYYY-MM-DD)
   inv: null, invCor: null, conteoTocado: {}, conteoAck: {}, conteoRevisar: false, conteoVerTodos: false, conteoAplicarAbierto: false, conteoAplicar: "visible", conteoAplicarVal: "", conteoAlcance: "todo", tipoHist: "todos", // conteo físico: qué sabores se tocaron, saltos confirmados, pantalla de revisión
@@ -2404,7 +2407,7 @@ const VENTANA_DEVOLUCION_MS=48*3600*1000;
 function desdeDevolucion(){ return Math.max(Date.now()-VENTANA_DEVOLUCION_MS, (S.stock&&+S.stock.ts)||0) }
 /** De quién es la devolución que se está cargando: la propia, o la de un compañero (solo responsables). */
 function resetSalidaMenu(){ S.salidaElegida=false; S.salidaTransf=false; S.destinoTransf="" }
-function resetIngresoMenu(){ S.ingresoElegido=false; S.devPor=null; S.devCompa=false; S.devMotivo=""; if(S.cart&&S.cart.devolucion){ S.cart.devolucion={}; } S.devSel={}; S.devTip={} }
+function resetIngresoMenu(){ S.ingresoElegido=false; S.devPor=null; S.devCompa=false; S.devMotivo=""; if(S.cart&&S.cart.devolucion){ S.cart.devolucion={}; } S.devSel={}; S.devTip={}; S.devCajaSel={}; S.devCajaKg={} }
 function empDev(){ return S.devPor||(S.modoLibre&&S.modoLibre.carga)||S.empleado.id }
 /** Devolución del equipo (desde 1.191): lo que se sacó en el local (por cualquiera) y todavía no volvió.
  *  Cualquiera del equipo puede devolverlo; la devolución queda a nombre de quien la hace. El parámetro se ignora (compatibilidad). */
@@ -2450,15 +2453,24 @@ function pesosPendientesDev(){
   const desde=desdeDevolucion(), pend=pendienteDevolucionHoy(), tomadas={}, out={};
   const regs=regsActivos().filter(r=>r.ts>desde).sort((a,b)=>a.ts-b.ts);
   for(const r of regs){
-    if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})) (tomadas[id]=tomadas[id]||[]).push(...a.map(kg=>({kg,nombre:r.empleado||"Sin nombre"})));
+    // (1.234.0) Una vasqueta sacada dentro de una caja trae el rótulo de 28 dígitos: su peso es la mitad de los kilos de la caja (estimado).
+    if(r.tipo==="salida" && !r.subtipo) for(const [id,a] of Object.entries(r.pesos||{})){ const rot=(r.rotulos&&r.rotulos[id])||[];
+      (tomadas[id]=tomadas[id]||[]).push(...a.map((kg,i)=>{ const c=String(rot[i]||""), pc=c.length===28?parseCodigoRotulo(c):null; return {kg,nombre:r.empleado||"Sin nombre",caja:pc?String(r.id)+"|"+c:null,cajaKg:pc?pc.kg:0} })) }
   }
+  const vueltoCaja={}; // kilos reales ya devueltos de cada caja
   for(const r of regs){
-    if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,a] of Object.entries(r.pesos||{})) for(const kg of a){ const l=tomadas[id]||[], i=l.findIndex(x=>Math.abs(x.kg-kg)<0.005); if(i>=0) l.splice(i,1) }
+    if(r.tipo==="ingreso" && r.subtipo==="devolucion") for(const [id,a] of Object.entries(r.pesos||{})) for(const kg of a){
+      const l=tomadas[id]||[];
+      let i=l.findIndex(x=>!x.caja && Math.abs(x.kg-kg)<0.005);
+      if(i<0) i=l.findIndex(x=>x.caja); // el peso escrito no coincide con una vasqueta suelta: es una de caja (se pesa al devolver)
+      if(i>=0){ const x=l[i]; if(x.caja) vueltoCaja[x.caja]=(vueltoCaja[x.caja]||0)+kg; l.splice(i,1) }
+    }
   }
   Object.keys(pend).forEach(id=>{
     if(!esVasquetaKilos(id)) return;
-    const l=(tomadas[id]||[]).slice(0,pend[id]);
-    out[id]={pesos:l.map(x=>x.kg), quienes:l.map(x=>x.nombre), sinPeso:Math.max(0,pend[id]-l.length)};
+    const l=(tomadas[id]||[]).slice(0,pend[id]), sueltas=l.filter(x=>!x.caja), deCaja=l.filter(x=>x.caja);
+    const cajas=deCaja.map(x=>{ const quedan=deCaja.filter(y=>y.caja===x.caja).length; return {key:x.caja, est:Math.max(0.1,Math.round((x.cajaKg-(vueltoCaja[x.caja]||0))/quedan*100)/100), nombre:x.nombre} });
+    out[id]={pesos:sueltas.map(x=>x.kg), quienes:sueltas.map(x=>x.nombre), cajas, sinPeso:Math.max(0,pend[id]-l.length)};
   });
   return out;
 }
@@ -2468,6 +2480,8 @@ function syncDevolucion(){
   Object.keys(pend).forEach(id=>{
     const ws=[];
     (S.devSel[id]||[]).forEach(i=>{ if(pend[id].pesos[i]!==undefined) ws.push(pend[id].pesos[i]) });
+    // vasqueta que salió en caja: vuelve con el peso real que se escribe (la caja solo trae un peso estimado)
+    (S.devCajaSel[id]||[]).forEach(j=>{ const kg=kilosNum((S.devCajaKg[id]||{})[j]); if(pend[id].cajas&&pend[id].cajas[j]&&kg>=0.1&&kg<=KG_VASQ_MAX) ws.push(Math.round(kg*100)/100) });
     const tip=S.devTip[id]||{};
     for(let k=0;k<pend[id].sinPeso;k++){ const kg=kilosNum(tip[k]); if(kg>=0.1&&kg<=KG_VASQ_MAX) ws.push(Math.round(kg*100)/100) }
     if(ws.length){ cart[id]=ws.length; pes[id]=ws; S.kilosProduccion[id]=String(Math.round(ws.reduce((a,x)=>a+x,0)*100)/100).replace(".",",") }
@@ -6000,6 +6014,7 @@ function gridDevolucion(st){
       <div class="nm">${esc(s.nombre)}<div class="meta">Sin devolver: ${max} ${unidad(s.id,max)} · Sacaron: ${textoQuienes(quienes[s.id])}${q?` · <b>${q} vuelve${q===1?"":"n"}</b>`:""}</div></div>
       <div class="lotesFull">
         ${d.pesos.length?`<div class="devChips">${d.pesos.map((kg,i)=>`<button type="button" class="devChip${sel.includes(i)?" on":""}" data-devchip="${s.id}:${i}" aria-pressed="${sel.includes(i)}"><b>${fmtKg(kg)} kg</b><small>${esc((d.quienes&&d.quienes[i])||"")}</small><small>${sel.includes(i)?"✓ vuelve":"tocá si vuelve"}</small></button>`).join("")}</div>`:""}
+        ${(d.cajas||[]).length?`<div class="devChips">${d.cajas.map((c,j)=>{ const on=(S.devCajaSel[s.id]||[]).includes(j); return `<button type="button" class="devChip${on?" on":""}" data-devcaja="${s.id}:${j}" aria-pressed="${on}"><b>≈ ${fmtKg(c.est)} kg</b><small>De caja · peso estimado</small><small>${on?"✓ vuelve":"tocá si vuelve"}</small></button>` }).join("")}</div>${(S.devCajaSel[s.id]||[]).map(j=>`<div class="kgFila"><label for="dc-${s.id}-${j}">Peso real de la vasqueta</label><input type="text" inputmode="decimal" id="dc-${s.id}-${j}" data-devcajakg="${s.id}:${j}" value="${esc((S.devCajaKg[s.id]||{})[j]||"")}" placeholder="0,00"> kg</div>`).join("")}`:""}
         ${d.sinPeso?`<div class="devSin">${d.sinPeso===1?"Salió 1 sin peso registrado":"Salieron "+d.sinPeso+" sin peso registrado"}: si vuelve${d.sinPeso===1?"":"n"}, escribí cuánto pesa${d.sinPeso===1?"":" cada una"}.${Array.from({length:d.sinPeso},(_,k)=>`<div class="kgFila"><label for="dt-${s.id}-${k}">Vasqueta ${k+1}</label><input type="text" inputmode="decimal" id="dt-${s.id}-${k}" data-devtip="${s.id}:${k}" value="${esc(tip[k]||"")}" placeholder="0,00"> kg</div>`).join("")}</div>`:""}
       </div>
     </div>`;
@@ -7092,7 +7107,7 @@ function pesosEntradas(r,id){
 /** Debajo de las fichas de peso: lote (LC) y operario de cada vasqueta que se escaneó (las pesadas a mano no tienen). */
 function rotulosHistHTML(r,id,pe){
   const rot=(r.rotulos&&r.rotulos[id])||[]; if(!rot.some(Boolean)) return "";
-  const filas=rot.map((c,i)=>{ const d=datosRotulo(c); if(!d) return ""; const kg=pe[i]?(pe[i].caja?"caja ×2 · ":"")+fmtKg(pe[i].kg)+" kg · ":""; return `<div class="hRot">${esc(kg)}${esc(d.lc)} · Operario ${esc(d.operario)}</div>` }).filter(Boolean);
+  const filas=rot.map((c,i)=>{ const d=datosRotulo(c); if(!d) return ""; const kg=pe[i]?(pe[i].caja?"caja ×2 · ":(String(c).length===28?"de caja · ≈ ":""))+fmtKg(pe[i].kg)+" kg · ":""; return `<div class="hRot">${esc(kg)}${esc(d.lc)} · Operario ${esc(d.operario)}</div>` }).filter(Boolean);
   return filas.length?`<div class="hRots"><span class="hLbl">LOTE Y OPERARIO</span>${filas.join("")}</div>`:"";
 }
 function lineaMovHTML(r,id,q){
@@ -8276,7 +8291,7 @@ async function guardarMovimiento(){
       const usados=new Set(); const seq=[]; S.escItemsIng.forEach(x=>(x.pesos||[x.kg]).forEach(k=>seq.push({id:String(x.id),kg:k,crudo:x.crudo})));
       for(const id of Object.keys(pesosEnv)){ const l=pesosEnv[id].map(kg=>{ const i=seq.findIndex((e,j)=>e.id===String(id)&&e.kg===kg&&!usados.has(j)&&/^(\d{20}|\d{28})$/.test(e.crudo||"")); if(i>=0){ usados.add(i); return seq[i].crudo } return "" }); if(l.some(Boolean)) rotEnv[id]=l; } }
     if(tipo==="salida"&&!enVenta){ const usados=new Set(); for(const id of Object.keys(pesosEnv)){
-      const l=pesosEnv[id].map(kg=>{ const x=S.escItems.find(e=>String(e.id)===String(id)&&e.kg===kg&&!usados.has(e.n)&&/^\d{20}$/.test(e.crudo||"")); if(x){ usados.add(x.n); return x.crudo } return "" });
+      const l=pesosEnv[id].map(kg=>{ const x=S.escItems.find(e=>String(e.id)===String(id)&&e.kg===kg&&!usados.has(e.n)&&/^(\d{20}|\d{28})$/.test(e.crudo||"")); if(x){ usados.add(x.n); return x.crudo } return "" });
       if(l.some(Boolean)) rotEnv[id]=l; } }
     const payload={clienteId, tipo, local:S.local, items,
       remito: tipo==="ingreso"&&!enDevolucion&&!enProduccion&&!enTransfIn ? S.remito.trim() : undefined,
@@ -8752,6 +8767,7 @@ document.addEventListener("click", async e=>{
   if(t.dataset.ccaja){ const id=t.dataset.ccaja; ceMano(id); S.conteo[id]=(S.conteo[id]||0)+(Number(t.dataset.cant)||0); S.conteoTocado[id]=true; delete S.conteoAck[id]; S.confirm=false; renderApp(); return }
   if(t.dataset.iinc){ const c=S.cart.ingreso; c[t.dataset.iinc]=(c[t.dataset.iinc]||0)+(esGel(t.dataset.iinc)?GEL_CAJA:1); S.confirm=false; scheduleRender(); return }
   if(t.dataset.idec){ const c=S.cart.ingreso; c[t.dataset.idec]=Math.max(0,(c[t.dataset.idec]||0)-(esGel(t.dataset.idec)?GEL_CAJA:1)); if(!c[t.dataset.idec]) delete c[t.dataset.idec]; S.confirm=false; scheduleRender(); return }
+  if(t.dataset.devcaja){ const [did,dj]=t.dataset.devcaja.split(":"); const a=S.devCajaSel[did]||(S.devCajaSel[did]=[]); const k=a.indexOf(+dj); if(k>=0) a.splice(k,1); else a.push(+dj); syncDevolucion(); S.confirm=false; scheduleRender(); return }
   if(t.dataset.devchip){ const [did,di]=t.dataset.devchip.split(":"); const a=S.devSel[did]||(S.devSel[did]=[]); const k=a.indexOf(+di); if(k>=0) a.splice(k,1); else a.push(+di); syncDevolucion(); S.confirm=false; scheduleRender(); return }
   if(t.dataset.escRevisar!==undefined){ abrirEscaner(); return }
   if(t.dataset.dinc){ const c=S.cart.devolucion, max=Number(t.dataset.max)||0; c[t.dataset.dinc]=Math.min(max,(c[t.dataset.dinc]||0)+1); S.confirm=false; scheduleRender(); return }
@@ -8855,7 +8871,7 @@ document.addEventListener("click", async e=>{
     else if(k==="cambio"){ resetCambio(); S.modoCambio=true }
     else if(k==="prod"){ S.modoProduccion=true }
     renderApp(); return }
-  if(t.dataset.devPor){ S.devPor=t.dataset.devPor; S.cart.devolucion={}; S.pesos.devolucion={}; S.devSel={}; S.devTip={}; S.kilosProduccion={}; renderApp(); return }
+  if(t.dataset.devPor){ S.devPor=t.dataset.devPor; S.cart.devolucion={}; S.pesos.devolucion={}; S.devSel={}; S.devTip={}; S.devCajaSel={}; S.devCajaKg={}; S.kilosProduccion={}; renderApp(); return }
   if(t.dataset.devMotivo){ S.devMotivo=t.dataset.devMotivo; renderApp(); return }
   if(t.id==="irDevolucionAviso"){ S.devCompa=false; S.devPor=null; S.modoDevolucion=true; S.confirm=false; renderApp(); return }
   if(t.id==="irDevolucion"){ S.modoDevolucion=true; S.confirm=false; renderApp(); return }
@@ -9127,6 +9143,7 @@ document.addEventListener("input", e=>{
   }
   if(e.target.dataset.remitoQty!==undefined){ S.lectorRemito.items[+e.target.dataset.remitoQty].cantidad=Math.max(0,parseInt(e.target.value,10)||0) }
   if(e.target.dataset.kilos){ S.kilosProduccion[e.target.dataset.kilos]=e.target.value; S.confirm=false; renderBar() }
+  if(e.target.dataset.devcajakg){ const [did,dj]=e.target.dataset.devcajakg.split(":"); (S.devCajaKg[did]=S.devCajaKg[did]||{})[dj]=e.target.value; syncDevolucion(); S.confirm=false; renderBar() }
   if(e.target.dataset.devtip){ const [did,ds]=e.target.dataset.devtip.split(":"); (S.devTip[did]=S.devTip[did]||{})[ds]=e.target.value; syncDevolucion(); S.confirm=false; renderBar() }
   if(e.target.dataset.kc){ S.kilosConteo[e.target.dataset.kc]=e.target.value; S.confirm=false; renderBar() }
   if(e.target.dataset.cw!==undefined){
@@ -9685,7 +9702,7 @@ const ZXING_SRC="vendor/zxing-wasm-reader-3.1.6.iife.js", ZXING_WASM="vendor/zxi
 const GRUPOS_PESABLES=["vasquetas","baldes"]; // lo que viene en vasqueta/balde con peso; Gluten Free viene por pote armado (por unidad), Icepops y chocolatería tampoco
 function fmtKg(k){ return (Number(k)||0).toLocaleString("es-AR",{minimumFractionDigits:2,maximumFractionDigits:2}) }
 function limpiarPesos(){ S.pesos={salida:{},desperdicio:{},devolucion:{},ingreso:{}}; S.escaneadas=[]; S.escItems=[]; S.escItemsIng=[]; resetSelPesos(); }
-function resetSelPesos(){ S.devSel={}; S.devTip={}; }
+function resetSelPesos(){ S.devSel={}; S.devTip={}; S.devCajaSel={}; S.devCajaKg={}; }
 function pesosDe(c){ c=c||"salida"; return S.pesos[c]||(S.pesos[c]={}) }
 function cantPesos(c){ return Object.values(pesosDe(c)).reduce((a,l)=>a+l.length,0) }
 function sumaPesos(c){ return Math.round(Object.values(pesosDe(c)).reduce((a,l)=>a+l.reduce((x,y)=>x+y,0),0)*100)/100 }
@@ -9710,17 +9727,20 @@ function reconciliarEsc(){
 function escDuplicados(){
   reconciliarEsc();
   const vistos={}, out=[];
-  S.escItems.forEach(x=>{ if(vistos[x.crudo]) out.push(x); vistos[x.crudo]=true });
+  S.escItems.forEach(x=>{ const k=x.caja?"c"+x.caja:"v"+x.n; if(vistos[x.crudo]!==undefined && vistos[x.crudo]!==k) out.push(x); if(vistos[x.crudo]===undefined) vistos[x.crudo]=k });
   return out;
 }
 /** Quita UNA vasqueta escaneada: baja 1 el sabor y saca ese peso. */
 function quitarEscItem(n){
   const x=S.escItems.find(i=>i.n===n); if(!x) return;
-  const a=pesosDe("salida")[x.id], k=a?a.indexOf(x.kg):-1;
-  if(k>=0) a.splice(k,1);
-  if(a && !a.length) delete pesosDe("salida")[x.id];
-  const c=S.cart.salida; c[x.id]=Math.max(0,(c[x.id]||0)-1); if(!c[x.id]) delete c[x.id];
-  S.escItems=S.escItems.filter(i=>i.n!==n);
+  const grupo=x.caja ? S.escItems.filter(i=>i.caja===x.caja) : [x]; // una caja son 2 vasquetas: se quita entera
+  grupo.forEach(y=>{
+    const a=pesosDe("salida")[y.id], k=a?a.indexOf(y.kg):-1;
+    if(k>=0) a.splice(k,1);
+    if(a && !a.length) delete pesosDe("salida")[y.id];
+    const c=S.cart.salida; c[y.id]=Math.max(0,(c[y.id]||0)-1); if(!c[y.id]) delete c[y.id];
+  });
+  S.escItems=S.escItems.filter(i=>!grupo.includes(i));
   S.confirm=false; scheduleRender();
 }
 /** Quita una pesada cargada a mano (Salida o Desperdicio) por su posición en la lista del diálogo «¿Cuánto pesa?». */
@@ -9818,6 +9838,7 @@ function abrirEscaner(modo){
     if(e.target===ov){ cerrarEscaner(); return }
     const b=e.target.closest("button"); if(!b) return;
     if(b.dataset.escQuitar!==undefined){ if(S.escaner&&S.escaner.modo==="ingreso") quitarEscItemIng(+b.dataset.escQuitar); else quitarEscItem(+b.dataset.escQuitar); renderEscaner(); const i=document.getElementById("escCodigo"); if(i) i.focus(); return }
+    if(b.dataset.escCaja!==undefined){ cajaSalidaRespuesta(b.dataset.escCaja==="si"); const i=document.getElementById("escCodigo"); if(i) i.focus(); return }
     if(b.dataset.escCerrar!==undefined) cerrarEscaner();
     else if(b.dataset.escCamara!==undefined){ if(S.escaner&&S.escaner.camara) apagarCamara(); else iniciarCamara() }
   });
@@ -9847,26 +9868,55 @@ function renderEscaner(){
   if(e.modo==="ingreso") return renderEscanerIng();
   reconciliarEsc();
   const m=document.getElementById("escMsg"), l=document.getElementById("escLista"), v=document.getElementById("escVideo"), cb=document.querySelector("[data-esc-camara]");
-  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…" }
+  if(m){ m.className="escMsg"+(e.msg&&e.msg.tipo?" "+e.msg.tipo:""); m.innerHTML=(e.msg?(e.msg.titulo?`<b style="display:block;font-size:1rem">${e.msg.tipo==="warn"?"⚠ ":""}${esc(e.msg.titulo)}</b>`:"")+esc(e.msg.t):"Esperando el código…")
+      + (e.cajaPend?`<span class="cajaAsk"><button type="button" class="btn" data-esc-caja="si">Sí, cerrada y completa</button><button type="button" class="btn ghost" data-esc-caja="no">No, una por una</button></span>`:"") }
   if(l){
-    const items=S.escItems.slice().reverse(), vistos={}, dupN=new Set();
-    S.escItems.forEach(x=>{ if(vistos[x.crudo]) dupN.add(x.n); vistos[x.crudo]=true });
+    const dupN=new Set(escDuplicados().map(x=>x.n));
+    // una caja ocupa UNA fila (sus 2 vasquetas se quitan juntas)
+    const items=S.escItems.filter((x,i,a)=>!x.caja||a.findIndex(y=>y.caja===x.caja)===i).slice().reverse();
     const sumaEsc=Math.round(S.escItems.reduce((a,x)=>a+x.kg,0)*100)/100;
     l.innerHTML = items.length
-      ? `<div class="escCab"><span>Escaneadas en esta salida</span><span>${items.length} · ${fmtKg(sumaEsc)} kg</span></div>`
-        + items.map(x=>`<div class="escRow${dupN.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dupN.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">${/^etiqueta/.test(x.lote)?esc(x.lote):"lote "+esc(x.lote)}${dupN.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="Quitar esta vasqueta">✕</button></div>`).join("")
+      ? `<div class="escCab"><span>Escaneadas en esta salida</span><span>${S.escItems.length} · ${fmtKg(sumaEsc)} kg</span></div>`
+        + items.map(x=>`<div class="escRow${dupN.has(x.n)?" dup":""}"><span>${esc(x.nombre)}${dupN.has(x.n)?" ⚠":""}<br><small style="color:var(--muted)">${x.caja?"Caja (2 vasquetas) · ":""}${/^etiqueta/.test(x.lote)?esc(x.lote):"lote "+esc(x.lote)}${dupN.has(x.n)?" · repetido":""}</small></span><b>${fmtKg(x.caja?x.cajaKg:x.kg)} kg</b><button type="button" class="escX" data-esc-quitar="${x.n}" aria-label="${x.caja?"Quitar esta caja":"Quitar esta vasqueta"}">✕</button></div>`).join("")
         + `<div style="border:0;font-size:.78rem;color:var(--muted);display:block">La ✕ quita solo esa vasqueta: baja 1 el sabor y saca ese peso.${cantPesos("salida")>items.length?` En la salida hay además ${cantPesos("salida")-items.length} pesada(s) cargadas a mano.`:""}</div>`
       : "";
   }
   if(v) v.classList.toggle("on", !!e.camara);
   if(cb) cb.textContent=e.camara?"Apagar cámara":"Usar la cámara";
 }
+/** Respuesta a «¿La caja está cerrada y completa?»: Sí suma 2 vasquetas del sabor (cada una con la mitad de los kilos de la caja); No pide escanear de a una. */
+function cajaSalidaRespuesta(si){
+  const e=S.escaner; if(!e||!e.cajaPend) return;
+  const {p,s}=e.cajaPend; e.cajaPend=null;
+  if(!si){ e.msg={tipo:"warn", titulo:"Escaneá las vasquetas una por una", t:"Cada vasqueta trae su propio rótulo con su peso."}; renderEscaner(); return }
+  reconciliarEsc();
+  if(disponibleParaPesar(s.id,"salida")<2){ e.msg={tipo:"err", t:"No hay 2 vasquetas de "+s.nombre+" para sacar."}; pitido(false); renderEscaner(); return }
+  const repetido=S.escItems.some(x=>x.crudo===p.crudo);
+  const k1=Math.round(p.kg/2*100)/100, k2=Math.round((p.kg-k1)*100)/100, cajaId=++S.escN;
+  S.escaneadas.push(p.crudo);
+  [k1,k2].forEach(kg=>{ S.escItems.push({n:++S.escN, id:s.id, nombre:s.nombre, kg, lote:p.lote, crudo:p.crudo, caja:cajaId, cajaKg:p.kg}); sumarPesada.silencio=true; sumarPesada("salida", s.id, kg); sumarPesada.silencio=false });
+  e.msg = repetido
+    ? {tipo:"warn", titulo:"Esta caja ya se escaneó", t:s.nombre+" · caja de 2 vasquetas · "+fmtKg(p.kg)+" kg · lote "+p.lote+". Si fue un error, tocá la ✕ de esa fila."}
+    : {tipo:"ok", t:s.nombre+" · caja de 2 vasquetas · "+fmtKg(p.kg)+" kg · lote "+p.lote};
+  pitido(repetido?"dup":true); renderEscaner();
+}
 function procesarEscaneo(txt, cam){
   const e=S.escaner; if(!e) return;
   if(e.modo==="conteo") return procesarEscaneoConteo(txt, cam);
   if(e.modo==="ingreso") return procesarEscaneoIng(txt, cam);
   const p=parseCodigoRotulo(txt);
-  if(p && p.tipo==="caja"){ e.msg={tipo:"err", t:"Ese es el rótulo de una CAJA (2 vasquetas). En la salida se escanea el rótulo de cada vasqueta."}; pitido(false); renderEscaner(); return }
+  e.cajaPend=null;
+  if(p && p.tipo==="caja"){
+    // (1.234.0) Caja cerrada en Salida: se pregunta «¿cerrada y completa?» y suma 2 vasquetas del sabor con los kilos de la caja (cada una, la mitad).
+    const sc=saboresDelLocal().find(x=>x.codigo_fabrica===p.codigo);
+    if(!sc){ e.msg={tipo:"err", t:"Código de sabor "+p.codigo+" sin asignar en la planilla (caja de "+fmtKg(p.kg)+" kg). Cerrá y tocá el sabor para cargarlo a mano."}; pitido(false); renderEscaner(); return }
+    if(!esVasquetaNormal(sc.id)){ e.msg={tipo:"err", t:"Ese rótulo es de una caja de "+sc.nombre+": la caja solo se saca con el escáner si son vasquetas. Cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
+    const disp=disponibleParaPesar(sc.id,"salida");
+    if(disp<2){ e.msg={tipo:"err", t:"No hay 2 vasquetas de "+sc.nombre+" para sacar una caja (quedan "+disp+"). Escaneá las vasquetas una por una."}; pitido(false); renderEscaner(); return }
+    e.cajaPend={p, s:sc};
+    e.msg={tipo:"ask", titulo:"¿La caja está cerrada y completa?", t:sc.nombre+" · caja de 2 vasquetas · "+fmtKg(p.kg)+" kg. Si está abierta o le falta algo, escaneá las vasquetas una por una."};
+    pitido(true); renderEscaner(); return;
+  }
   if(!p){ e.msg={tipo:"err", t:"No se pudo leer ese código: el rótulo de fábrica tiene 20 números y la etiqueta de producción 13 ("+String(txt).replace(/\D/g,"").length+" leídos). Si el rótulo está dañado, cerrá y tocá el sabor."}; pitido(false); renderEscaner(); return }
   const ahora=Date.now();
   if(cam){ // la cámara repite la misma lectura varios cuadros seguidos; el lector de mano no (1.200.4: antes también se descartaba la 2.ª vasqueta idéntica si llegaba en menos de 2,5 s)
@@ -10407,6 +10457,7 @@ function ayudaTemas(){
   if(escanerDisponible()) T.push({id:"escaner", titulo:"Cómo usar el escáner", sub:"Sacar vasquetas con su peso real", html:li([
     "En Salida tocá <b>Activar escáner</b>.",
     "Pasá el lector por cada rótulo: pip, pip, pip. Cada pip suma 1 vasqueta con su peso real.",
+    "<b>Caja cerrada:</b> escaneá el rótulo de la caja y tocá <b>Sí, cerrada y completa</b>: suma 2 vasquetas con los kilos de la caja. Si está abierta o le falta algo, escaneá las vasquetas una por una. Si después vuelve una sola, en Devolución se pesa.",
     "Si suena triple y sale <b>amarillo</b>, ese código ya se escaneó. Si fue un error, tocá la <b>✕</b> de esa fila para quitar solo esa vasqueta.",
     "Si un rótulo no se lee: cerrá, tocá el sabor y escribí cuánto pesa (con coma, ej. 3,40). Con «Agregar otra» cargás varias seguidas.",
     "Revisá el total de abajo y tocá <b>Confirmar salida</b>."])+nota("Sin peso no se puede sacar una vasqueta: así los kilos en cámara siempre cierran.")});
