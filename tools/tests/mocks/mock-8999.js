@@ -147,7 +147,7 @@ function resp(b){
       if(b.tipo==="salida"){const f=ids.filter(i=>((b.pesos||{})[i]||[]).length!==b.items[i]); if(f.length) return {ok:false,error:"Falta pesar cada vasqueta de: "+f.map(nom).join(", ")+"."}}
       else {const f=ids.filter(i=>!((b.kilos||{})[i]>0)); if(f.length) return {ok:false,error:"Faltan los kilos totales de: "+f.map(nom).join(", ")+"."}}
     }
-    const r={id:String(db.nextId++),clienteId:b.clienteId,tipo:b.tipo,subtipo:b.subtipo||"",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:b.items,kilos:b.kilos||{},pesos:b.pesos||{},total:Object.values(b.items).reduce((x,y)=>x+y,0),ts:Date.now()};
+    const r={id:String(db.nextId++),clienteId:b.clienteId,tipo:b.tipo,subtipo:b.subtipo||"",local:b.local,empleadoId:"1",empleado:"Gabi Busquets",items:b.items,kilos:b.kilos||{},pesos:b.pesos||{},rotulos:b.rotulos||{},total:Object.values(b.items).reduce((x,y)=>x+y,0),ts:Date.now()};
     db.regs.push(r); console.log("REGISTRAR",JSON.stringify({tipo:b.tipo,subtipo:b.subtipo,items:b.items,kilos:b.kilos,pesos:b.pesos})); return {ok:true,registro:r};
   }
   return {ok:true,sabores:[],empleados:[],locales:[]};
